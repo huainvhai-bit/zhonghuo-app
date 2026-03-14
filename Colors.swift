@@ -1,28 +1,40 @@
 //
 //  Colors.swift
-//  终活 - 颜色定义
+//  终活
+//
+//  颜色定义
 //
 
 import SwiftUI
 
+// MARK: - 主题色
 extension Color {
-    // 主色调 - 蓝紫色系
-    static let primaryPurple = Color(red: 0.4, green: 0.3, blue: 0.8)
-    static let primaryBlue = Color(red: 0.2, green: 0.6, blue: 0.9)
-    
-    // 辅助色
-    static let accentGreen = Color(red: 0.2, green: 0.8, blue: 0.5)
-    static let warningOrange = Color(red: 1.0, green: 0.6, blue: 0.2)
-    static let errorRed = Color(red: 0.9, green: 0.3, blue: 0.3)
-    
-    // 背景色
-    static let backgroundLight = Color(red: 0.97, green: 0.97, blue: 0.98)
-    static let cardLight = Color.white
-    static let backgroundDark = Color(red: 0.1, green: 0.1, blue: 0.15)
-    static let cardDark = Color(red: 0.18, green: 0.18, blue: 0.22)
-    
-    // 文字色
-    static let textPrimary = Color(red: 0.1, green: 0.1, blue: 0.15)
-    static let textSecondary = Color(red: 0.5, green: 0.5, blue: 0.55)
-    static let textLight = Color.white
+    static let appPrimary = Color(hex: "AF52DE")
+    static let appSecondary = Color(hex: "007AFF")
+    static let appSuccess = Color(hex: "34C759")
+    static let appWarning = Color(hex: "FF9500")
+    static let appDanger = Color(hex: "FF3B30")
+    static let appBackground = Color(hex: "F2F2F7")
+    static let appCardBackground = Color.white
+}
+
+// MARK: - 胶囊类型颜色
+extension TimeCapsule.CapsuleType {
+    var swiftUIColor: Color {
+        Color(hex: color)
+    }
+}
+
+// MARK: - 遗嘱类型颜色
+extension WillModule.WillType {
+    var swiftUIColor: Color {
+        Color(hex: color)
+    }
+}
+
+// MARK: - 资产类型颜色
+extension Asset.AssetType {
+    var swiftUIColor: Color {
+        Color(hex: color)
+    }
 }
