@@ -181,9 +181,8 @@ class DataManager: ObservableObject {
     }
     
     func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        guard let lastCheckIn = lastCheckInDate else {
-            return (false, Double(checkInInterval))
-        }
+        // 如果没有签到过，使用当前时间作为初始签到时间（模拟刚签到）
+        let lastCheckIn = lastCheckInDate ?? Date()
         
         let elapsed = Date().timeIntervalSince(lastCheckIn)
         let intervalSeconds = Double(checkInInterval) * 3600

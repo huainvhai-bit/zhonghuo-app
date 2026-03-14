@@ -10,7 +10,7 @@ import SwiftUI
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
     @State private var showCheckInAnimation = false
-    @State private var checkInTimer: Timer?
+    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var hoursRemaining: Double = 0
     @State private var isSafe: Bool = true
     
@@ -27,27 +27,12 @@ struct HomeStatusView: View {
                 .padding(16)
             }
             .background(Color(hex: "F2F2F7"))
-            .navigationTitle("终活")
+            .navigationTitle("终活 v2.0 ✅")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                startTimer()
-            }
-            .onDisappear {
-                stopTimer()
+            .onReceive(timer) { _ in
+                updateStatus()
             }
         }
-    }
-    
-    private func startTimer() {
-        updateStatus()
-        checkInTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            updateStatus()
-        }
-    }
-    
-    private func stopTimer() {
-        checkInTimer?.invalidate()
-        checkInTimer = nil
     }
     
     private func updateStatus() {
