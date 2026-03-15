@@ -9,13 +9,16 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
+    @StateObject private var userManager = UserManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @State private var showingEmergencyContactAlert = false
     
     var body: some View {
         Group {
-            if isFirstLaunch {
+            if !userManager.isLoggedIn {
+                AuthView()
+            } else if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
                 mainTabView
@@ -23,6 +26,7 @@ struct ContentView: View {
         }
         .onAppear {
             checkEmergencyContacts()
+            autoCheckIn()
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
@@ -35,10 +39,14 @@ struct ContentView: View {
     }
     
     private func checkEmergencyContacts() {
-        // TODO: 集成 UserManager 后启用
-        // if userManager.needsEmergencyContactCheck {
-        //     showingEmergencyContactAlert = true
-        // }
+        if userManager.needsEmergencyContactCheck {
+            showingEmergencyContactAlert = true
+        }
+    }
+    
+    private func autoCheckIn() {
+        // Bug 2: 每次打开 App 自动签到
+        userManager.performAutoCheckIn()
     }
     
     private var mainTabView: some View {
