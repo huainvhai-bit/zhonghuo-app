@@ -71,10 +71,9 @@ struct HomeStatusView: View {
             .onReceive(timer) { _ in
                 updateStatus()
             }
-            // 见证人页面暂时禁用，等待项目配置修复
-            // .sheet(isPresented: $showingWitnessSheet) {
-            //     WitnessView()
-            // }
+            .sheet(isPresented: $showingWitnessSheet) {
+                WitnessView()
+            }
         }
     }
     
@@ -229,7 +228,6 @@ struct HomeStatusView: View {
                     color: Color(hex: "FF9500"),
                     action: {
                         print("🔵 点击见证人")
-                        // TODO: 见证人独立页面开发中
                         showingWitnessSheet = true
                     }
                 )
@@ -399,9 +397,8 @@ struct HomeStatusView: View {
     }
     
     private func scheduleCheckInReminder() {
-        // TODO: 通知功能待集成
-        // let status = dataManager.getCheckInStatus()
-        // NotificationManager.shared.scheduleCheckInReminder(hoursRemaining: status.hoursRemaining)
+        let status = dataManager.getCheckInStatus()
+        NotificationManager.shared.scheduleCheckInReminder(hoursRemaining: status.hoursRemaining)
     }
 }
 

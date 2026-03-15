@@ -10,17 +10,16 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
     @State private var selectedTab = 0
-    // @AppStorage("isFirstLaunch") private var isFirstLaunch = true
+    @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     
     var body: some View {
-        // Group {
-        //     if isFirstLaunch {
-        //         OnboardingView(isFirstLaunch: $isFirstLaunch)
-        //     } else {
-        //         mainTabView
-        //     }
-        // }
-        mainTabView
+        Group {
+            if isFirstLaunch {
+                OnboardingView(isFirstLaunch: $isFirstLaunch)
+            } else {
+                mainTabView
+            }
+        }
     }
     
     private var mainTabView: some View {

@@ -13,8 +13,8 @@ struct WillAssetsView: View {
     @State private var showingAddAssetModal = false
     @State private var showingTemplateModal = false
     @State private var editingModule: WillModule? = nil
-    // @State private var showingPDFExport = false
-    // @State private var pdfExportSuccess = false
+    @State private var showingPDFExport = false
+    @State private var pdfExportSuccess = false
     
     var body: some View {
         NavigationView {
@@ -50,16 +50,16 @@ struct WillAssetsView: View {
                     .foregroundColor(Color(hex: "AF52DE"))
                 }
                 
-                // ToolbarItem(placement: .navigationBarTrailing) {
-                //     Button(action: { showingPDFExport = true }) {
-                //         HStack(spacing: 4) {
-                //             Image(systemName: "doc.badge.plus")
-                //             Text("导出 PDF")
-                //         }
-                //         .font(.system(size: 13, weight: .medium))
-                //         .foregroundColor(Color(hex: "AF52DE"))
-                //     }
-                // }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingPDFExport = true }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.badge.plus")
+                            Text("导出 PDF")
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(hex: "AF52DE"))
+                    }
+                }
             }
             .sheet(isPresented: $showingAddAssetModal) {
                 AddAssetModal(dataManager: dataManager)
@@ -70,11 +70,11 @@ struct WillAssetsView: View {
             .sheet(item: $editingModule) { module in
                 EditWillModuleModal(dataManager: dataManager, module: module)
             }
-            // .sheet(isPresented: $showingPDFExport) {
-            //     PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, onSuccess: {
-            //         pdfExportSuccess = true
-            //     })
-            // }
+            .sheet(isPresented: $showingPDFExport) {
+                PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, onSuccess: {
+                    pdfExportSuccess = true
+                })
+            }
         }
     }
     

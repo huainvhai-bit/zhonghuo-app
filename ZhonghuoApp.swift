@@ -7,6 +7,8 @@ import SwiftUI
 
 @main
 struct ZhonghuoApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -15,14 +17,14 @@ struct ZhonghuoApp: App {
 }
 
 // MARK: - AppDelegate
-// class AppDelegate: NSObject, UIApplicationDelegate {
-//     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-//         // 初始化通知
-//         NotificationManager.shared.requestAuthorization()
-//         NotificationManager.shared.registerCategories()
-//         UNUserNotificationCenter.current().delegate = NotificationManager.shared
-//         
-//         print("✅ 终活 App 启动完成")
-//         return true
-//     }
-// }
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // 初始化通知
+        NotificationManager.shared.requestAuthorization()
+        NotificationManager.shared.registerCategories()
+        UNUserNotificationCenter.current().delegate = NotificationManager.shared
+        
+        print("✅ 终活 App 启动完成")
+        return true
+    }
+}

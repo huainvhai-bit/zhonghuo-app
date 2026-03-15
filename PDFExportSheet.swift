@@ -115,7 +115,7 @@ struct PDFExportSheet: View {
             }
             .fileExporter(
                 isPresented: $exportSuccess,
-                document: PDFDocument(url: exportedFileURL) ?? PDFDocument(),
+                document: exportedFileURL.map { PDFDocument(url: $0) } ?? PDFDocument(),
                 contentType: .pdf,
                 defaultFilename: "终活 - 遗嘱文档_\(formatDate(Date())).pdf"
             ) { result in
@@ -203,6 +203,13 @@ struct PDFDocument: FileDocument {
     
     init?(url: URL) {
         guard let data = try? Data(contentsOf: url) else { return nil }
+        self.data = data
+    }
+    
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
         self.data = data
     }
     

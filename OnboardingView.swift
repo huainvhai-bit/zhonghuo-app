@@ -52,7 +52,7 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 // 页面指示器
                 HStack(spacing: 8) {
-                    ForEach(0..<pages.count, id: \.self) { index }
+                    ForEach(0..<pages.count, id: \.self) { index in
                         Circle()
                             .fill(index == currentPage ? Color(hex: "AF52DE") : Color(hex: "D1D1D6"))
                             .frame(width: 8, height: 8)

@@ -7,10 +7,12 @@
 
 import UserNotifications
 
-class NotificationManager {
+class NotificationManager: NSObject {
     static let shared = NotificationManager()
     
-    private init() {}
+    private override init() {
+        super.init()
+    }
     
     /// 请求通知权限
     func requestAuthorization() {

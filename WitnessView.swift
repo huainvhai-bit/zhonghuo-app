@@ -286,7 +286,7 @@ struct WitnessCard: View {
             HStack(spacing: 12) {
                 Label(formatDate(witness.createdAt), systemImage: "clock")
                     .font(.system(size: 11))
-                    .foregroundColor(.tertiary)
+                    .foregroundColor(.gray)
                 
                 if witness.isConfirmed {
                     Label(formatDate(witness.confirmedAt ?? Date()), systemImage: "checkmark.circle.fill")
@@ -371,8 +371,8 @@ struct AddWitnessModal: View {
                 }
                 
                 Section(header: Text("备注")) {
-                    TextField("备注信息（可选）", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
+                    TextField("备注信息（可选）", text: $notes)
+                        .lineLimit(6)
                 }
                 
                 Section(header: Text("确认状态")) {
@@ -406,7 +406,7 @@ struct AddWitnessModal: View {
                         saveWitness()
                     }
                     .disabled(name.isEmpty || relationship.isEmpty)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 15, weight: .semibold))
                 }
             }
         }
@@ -460,8 +460,8 @@ struct EditWitnessModal: View {
                 }
                 
                 Section(header: Text("备注")) {
-                    TextField("备注信息（可选）", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
+                    TextField("备注信息（可选）", text: $notes)
+                        .lineLimit(6)
                 }
                 
                 Section(header: Text("确认状态")) {
@@ -482,7 +482,7 @@ struct EditWitnessModal: View {
                         updateWitness()
                     }
                     .disabled(name.isEmpty || relationship.isEmpty)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 15, weight: .semibold))
                 }
             }
         }
