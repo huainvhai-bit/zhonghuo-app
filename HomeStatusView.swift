@@ -13,6 +13,7 @@ struct HomeStatusView: View {
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var secondsRemaining: Double = 0
     @State private var isSafe: Bool = true
+    @State private var selectedTab: Int = 0
     
     var body: some View {
         NavigationView {
@@ -196,14 +197,24 @@ struct HomeStatusView: View {
                 Text("我的事务")
                     .font(.headline)
                 Spacer()
-                Text("查看全部")
-                    .font(.subheadline)
-                    .foregroundColor(Color(hex: "AF52DE"))
+                Button(action: {
+                    // 导航到嘱托与资产页面
+                }) {
+                    Text("查看全部")
+                        .font(.subheadline)
+                        .foregroundColor(Color(hex: "AF52DE"))
+                }
             }
             
-            ProgressRow(label: "身后嘱托", progress: 0.6, color: Color(hex: "34C759"))
-            ProgressRow(label: "见证人", progress: 0.67, color: Color(hex: "FF9500"))
-            ProgressRow(label: "资产管理", progress: 0.33, color: Color(hex: "007AFF"))
+            ProgressRow(label: "身后嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
+                // 导航到身后嘱托详情
+            })
+            ProgressRow(label: "见证人", progress: dataManager.getWitnessProgress(), color: Color(hex: "FF9500"), action: {
+                // 导航到见证人页面
+            })
+            ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
+                // 导航到资产管理页面
+            })
         }
         .padding(18)
         .background(Color.white)
@@ -240,7 +251,9 @@ struct HomeStatusView: View {
                 .padding(.vertical, 32)
             } else {
                 ForEach(dataManager.capsules.prefix(3)) { capsule in
-                    CapsulePreviewRow(capsule: capsule)
+                    CapsulePreviewRow(capsule: capsule, onTap: {
+                        // TODO: 点击编辑胶囊
+                    })
                 }
             }
         }
@@ -259,9 +272,12 @@ struct HomeStatusView: View {
     }
     
     private func performCheckIn() {
+        print("🔵 签到按钮被点击")
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             showCheckInAnimation = true
             dataManager.checkIn()
+            // 立即更新倒计时
+            updateStatus()
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -303,37 +319,40 @@ struct ProgressRow: View {
     let label: String
     let progress: Double
     let color: Color
+    let action: () -> Void
     
     var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text(label)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
-                Spacer()
-                Text("\(Int(progress * 100))%")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.secondary)
-            }
-            
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color(hex: "E5E5EA"))
-                        .frame(height: 6)
-                    
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [color.opacity(0.7), color]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geometry.size.width * progress, height: 6)
+        Button(action: action) {
+            VStack(spacing: 6) {
+                HStack {
+                    Text(label)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
                 }
+                
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(hex: "E5E5EA"))
+                            .frame(height: 6)
+                        
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [color.opacity(0.7), color]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * progress, height: 6)
+                    }
+                }
+                .frame(height: 6)
             }
-            .frame(height: 6)
         }
     }
 }
@@ -341,6 +360,7 @@ struct ProgressRow: View {
 // MARK: - 胶囊预览行
 struct CapsulePreviewRow: View {
     let capsule: TimeCapsule
+    let onTap: () -> Void
     
     var body: some View {
         HStack(spacing: 14) {
@@ -380,7 +400,7 @@ struct CapsulePreviewRow: View {
         .padding(.vertical, 6)
         .contentShape(Rectangle())
         .onTapGesture {
-            // TODO: 点击编辑
+            onTap()
         }
     }
     

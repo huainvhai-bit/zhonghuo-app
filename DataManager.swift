@@ -96,6 +96,17 @@ class DataManager: ObservableObject {
         return Double(completed) / Double(willModules.count)
     }
     
+    func getWitnessProgress() -> Double {
+        guard !witnesses.isEmpty else { return 0 }
+        let confirmed = witnesses.filter { $0.isConfirmed }.count
+        return Double(confirmed) / Double(witnesses.count)
+    }
+    
+    func getAssetProgress() -> Double {
+        // 简单计算：有资产就算完成
+        return assets.isEmpty ? 0 : 0.33
+    }
+    
     // MARK: - 资产操作
     func addAsset(type: Asset.AssetType, name: String, institution: String, balance: Double, accountNumber: String, details: [String: String]) {
         let asset = Asset(
@@ -185,6 +196,7 @@ class DataManager: ObservableObject {
         lastCheckInDate = now
         settings.lastCheckInDate = now
         saveSettings()
+        print("✅ 签到成功：\(now)")
     }
     
     func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {

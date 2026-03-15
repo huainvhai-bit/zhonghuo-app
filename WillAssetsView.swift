@@ -415,6 +415,7 @@ struct EditWillModuleModal: View {
     let module: WillModule
     @State private var content: String
     @State private var isCompleted: Bool
+    @State private var showingTemplatePicker = false
     
     init(dataManager: DataManager, module: WillModule) {
         self.dataManager = dataManager
@@ -432,7 +433,19 @@ struct EditWillModuleModal: View {
                 }
                 
                 Section {
+                    Button(action: { showingTemplatePicker = true }) {
+                        HStack {
+                            Image(systemName: "doc.text.fill")
+                            Text("使用模板快速填充")
+                        }
+                        .foregroundColor(Color(hex: "AF52DE"))
+                    }
+                    
                     Toggle("标记为已完成", isOn: $isCompleted)
+                }
+                
+                Section(footer: Text("💡 提示：点击模板按钮可快速填充常用内容，然后根据需要修改")) {
+                    EmptyView()
                 }
             }
             .navigationTitle(module.title)
@@ -450,6 +463,241 @@ struct EditWillModuleModal: View {
                         dataManager.updateWillModule(updated)
                         dismiss()
                     }
+                }
+            }
+            .sheet(isPresented: $showingTemplatePicker) {
+                TemplatePickerModal(moduleType: module.type, onTemplateSelected: { template in
+                    content = template
+                })
+            }
+        }
+    }
+}
+
+// MARK: - 模板选择器
+struct TemplatePickerModal: View {
+    let moduleType: WillModule.WillType
+    let onTemplateSelected: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    var templates: [(title: String, content: String)] {
+        switch moduleType {
+        case .property:
+            return [
+                (
+                    title: "标准财产分配",
+                    content: """
+                    本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+                    
+                    一、房产
+                    位于 [地址] 的房产（房产证号：[号码]），由 [继承人姓名] 继承，占 100% 份额。
+                    
+                    二、银行存款
+                    名下所有银行账户存款，由 [继承人姓名] 继承。
+                    
+                    三、其他财产
+                    包括但不限于股票、基金、保险、车辆等，均由 [继承人姓名] 继承。
+                    
+                    四、遗嘱执行人
+                    指定 [姓名] 为本遗嘱的执行人。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                ),
+                (
+                    title: "多人分配",
+                    content: """
+                    本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+                    
+                    一、房产
+                    位于 [地址] 的房产，由 [继承人 A] 继承 50% 份额，[继承人 B] 继承 50% 份额。
+                    
+                    二、银行存款
+                    [银行名称] 账户（尾号 [XXXX]）存款由 [继承人 A] 继承。
+                    [银行名称] 账户（尾号 [XXXX]）存款由 [继承人 B] 继承。
+                    
+                    三、其他财产
+                    剩余财产由 [继承人 A] 和 [继承人 B] 平均分配。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                )
+            ]
+        case .heirs:
+            return [
+                (
+                    title: "唯一继承人",
+                    content: """
+                    本人 [姓名]，身份证号 [号码]，指定 [继承人姓名]（身份证号：[号码]）为本人的唯一遗产继承人。
+                    
+                    本人名下全部财产（包括但不限于房产、存款、股票、基金、保险、车辆等）均归其个人所有，不属于其夫妻共同财产。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                ),
+                (
+                    title: "多个继承人",
+                    content: """
+                    本人 [姓名]，身份证号 [号码]，现将遗产继承人指定如下：
+                    
+                    一、第一顺序继承人
+                    1. [姓名]（关系：[如：配偶]），继承比例：[XX]%
+                    2. [姓名]（关系：[如：子女]），继承比例：[XX]%
+                    
+                    二、替补继承人
+                    如上述继承人先于本人去世，其应继承份额由 [替补继承人姓名] 继承。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                )
+            ]
+        case .specialItems:
+            return [
+                (
+                    title: "纪念品分配",
+                    content: """
+                    关于本人有特殊纪念意义的物品，分配如下：
+                    
+                    一、珠宝首饰
+                    [具体描述] 传给 [继承人姓名]
+                    
+                    二、收藏品
+                    [具体描述] 传给 [继承人姓名]
+                    
+                    三、照片和文件
+                    所有家庭照片、文件资料由 [继承人姓名] 保管。
+                    
+                    四、其他物品
+                    其余物品由 [继承人姓名] 处理。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                )
+            ]
+        case .funeral:
+            return [
+                (
+                    title: "丧事从简",
+                    content: """
+                    关于本人的丧葬事宜，希望家人遵循以下意愿：
+                    
+                    一、丧事从简
+                    不举行大型追悼会，仅邀请至亲好友参加告别仪式。
+                    
+                    二、火化
+                    遗体火化后，骨灰 [撒入大海/安葬于 XX 墓园/其他]。
+                    
+                    三、费用
+                    丧葬费用从本人名下存款中支出。
+                    
+                    四、其他
+                    [其他具体要求]
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                ),
+                (
+                    title: "环保葬礼",
+                    content: """
+                    关于本人的后事，希望遵循环保理念：
+                    
+                    一、遗体处理
+                    选择生态葬（树葬、花葬、海葬等），不使用传统墓地。
+                    
+                    二、仪式
+                    不举行传统葬礼，可举办小型纪念聚会。
+                    
+                    三、费用
+                    节省下来的丧葬费用捐赠给 [慈善机构名称]。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                )
+            ]
+        case .otherInstructions:
+            return [
+                (
+                    title: "数字遗产",
+                    content: """
+                    关于本人的数字遗产处理：
+                    
+                    一、社交媒体
+                    [微信/QQ/微博] 账号由 [继承人姓名] 处理（注销或纪念）。
+                    
+                    二、电子邮箱
+                    邮箱账号 [邮箱地址] 由 [继承人姓名] 保管。
+                    
+                    三、云存储
+                    [iCloud/百度网盘等] 账号密码已告知 [继承人姓名]。
+                    
+                    四、其他数字资产
+                    [游戏账号/付费会员等] 由 [继承人姓名] 处理。
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                ),
+                (
+                    title: "宠物安置",
+                    content: """
+                    关于本人饲养的宠物安置：
+                    
+                    一、宠物信息
+                    姓名：[宠物名]
+                    品种：[品种]
+                    年龄：[年龄]
+                    
+                    二、安置安排
+                    宠物由 [继承人姓名] 继续饲养。
+                    
+                    三、费用
+                    从本人存款中预留 [金额] 元作为宠物抚养费用。
+                    
+                    四、特殊说明
+                    [宠物的生活习惯、医疗需求等]
+                    
+                    立遗嘱人：[签名]
+                    日期：[年] 年 [月] 月 [日] 日
+                    """
+                )
+            ]
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(templates, id: \.title) { template in
+                    Button(action: {
+                        onTemplateSelected(template.content)
+                        dismiss()
+                    }) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(template.title)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.primary)
+                            
+                            Text(template.content.prefix(80) + "...")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                                .lineLimit(3)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
+            }
+            .navigationTitle("选择模板")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { dismiss() }
                 }
             }
         }
