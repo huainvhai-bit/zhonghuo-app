@@ -177,6 +177,7 @@ struct UserSettings: Codable {
     var checkInInterval: Int // 小时
     var notificationsEnabled: Bool
     var cloudSyncEnabled: Bool
+    var lastCheckInDate: Date? // 上次签到时间
     
     struct EmergencyContact: Codable {
         var name: String

@@ -29,12 +29,17 @@ class DataManager: ObservableObject {
             emergencyContact: nil,
             checkInInterval: 48,
             notificationsEnabled: true,
-            cloudSyncEnabled: true
+            cloudSyncEnabled: true,
+            lastCheckInDate: nil
         )
         // 然后加载
         if let loaded = loadSettingsFromFile() {
             self.settings = loaded
         }
+        
+        // 从 settings 同步签到状态到 @Published 属性（用于 UI 观察）
+        self.lastCheckInDate = settings.lastCheckInDate
+        self.checkInInterval = settings.checkInInterval
         
         // 加载数据
         loadAllData()
@@ -176,15 +181,22 @@ class DataManager: ObservableObject {
     @Published var checkInInterval: Int = 48 // 48 小时
     
     func checkIn() {
-        lastCheckInDate = Date()
+        let now = Date()
+        lastCheckInDate = now
+        settings.lastCheckInDate = now
         saveSettings()
     }
     
     func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        // 如果没有签到过，使用当前时间作为初始签到时间（模拟刚签到）
-        let lastCheckIn = lastCheckInDate ?? Date()
+        // 如果没有签到过，初始化 lastCheckInDate 为当前时间（模拟刚签到）
+        // 这样倒计时才会真正开始走动
+        if lastCheckInDate == nil {
+            lastCheckInDate = Date()
+            settings.lastCheckInDate = lastCheckInDate
+            saveSettings()
+        }
         
-        let elapsed = Date().timeIntervalSince(lastCheckIn)
+        let elapsed = Date().timeIntervalSince(lastCheckInDate!)
         let intervalSeconds = Double(checkInInterval) * 3600
         let remaining = intervalSeconds - elapsed
         
