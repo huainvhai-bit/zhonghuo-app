@@ -191,18 +191,47 @@ struct ChecklistItem: Identifiable, Codable {
     }
 }
 
+// MARK: - 签到间隔
+enum CheckInInterval: String, Codable, CaseIterable {
+    case oneMinute = "1 分钟"
+    case oneDay = "1 天"
+    case twoDays = "2 天"
+    case threeDays = "3 天"
+    case fourDays = "4 天"
+    case fiveDays = "5 天"
+    case sixDays = "6 天"
+    case sevenDays = "7 天"
+    
+    var hours: Double {
+        switch self {
+        case .oneMinute: return 0.017
+        case .oneDay: return 24
+        case .twoDays: return 48
+        case .threeDays: return 72
+        case .fourDays: return 96
+        case .fiveDays: return 120
+        case .sixDays: return 144
+        case .sevenDays: return 168
+        }
+    }
+}
+
 // MARK: - 用户设置
 struct UserSettings: Codable {
     var name: String
     var emergencyContact: EmergencyContact?
-    var checkInInterval: Int // 小时
+    var emergencyContacts: [EmergencyContact] = [] // 新增：支持多个紧急联系人
+    var checkInInterval: CheckInInterval = .twoDays
     var notificationsEnabled: Bool
     var cloudSyncEnabled: Bool
-    var lastCheckInDate: Date? // 上次签到时间
+    var lastCheckInDate: Date?
     
-    struct EmergencyContact: Codable {
+    struct EmergencyContact: Codable, Identifiable {
+        var id: String = UUID().uuidString
         var name: String
         var phone: String
         var relationship: String
+        var isConfirmed: Bool = false
+        var createdAt: Date = Date()
     }
 }

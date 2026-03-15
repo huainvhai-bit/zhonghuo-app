@@ -110,58 +110,35 @@ struct SettingsView: View {
                         Spacer()
                         
                         Picker("", selection: $dataManager.checkInInterval) {
-                            Text("24 小时").tag(24)
-                            Text("48 小时").tag(48)
-                            Text("72 小时").tag(72)
+                            ForEach(CheckInInterval.allCases, id: \.self) { interval in
+                                Text(interval.rawValue).tag(interval)
+                            }
                         }
                         .pickerStyle(.menu)
-                        .onChange(of: dataManager.checkInInterval) { newValue in
-                            dataManager.checkInInterval = newValue
+                        .onChange(of: dataManager.checkInInterval) { _ in
                             dataManager.saveSettings()
                         }
                     }
                     .padding(.vertical, 8)
                 }
                 
-                // 数据管理
+                // 数据同步
                 Section(header: Text("数据")) {
-                    Button(action: {
-                        // TODO: 导出数据
-                    }) {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                                .foregroundColor(Color(hex: "34C759"))
-                                .frame(width: 30)
-                            
-                            Text("导出数据")
-                                .font(.system(size: 16))
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
+                    HStack {
+                        Image(systemName: "icloud.fill")
+                            .foregroundColor(Color(hex: "007AFF"))
+                            .frame(width: 30)
+                        
+                        Text("自动同步")
+                            .font(.system(size: 16))
+                        
+                        Spacer()
+                        
+                        Text("实时同步中")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
                     }
-                    
-                    Button(action: {
-                        // TODO: 导入数据
-                    }) {
-                        HStack {
-                            Image(systemName: "square.and.arrow.down")
-                                .foregroundColor(Color(hex: "007AFF"))
-                                .frame(width: 30)
-                            
-                            Text("导入数据")
-                                .font(.system(size: 16))
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
-                    }
+                    .padding(.vertical, 8)
                 }
                 
                 // 关于
@@ -169,13 +146,14 @@ struct SettingsView: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.4.0")
+                        Text("终活 v2.0 ✅")
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 8)
                     
                     Button(action: {
-                        // TODO: 显示使用说明
+                        // TODO: 打开使用说明
+                        print("📖 使用说明")
                     }) {
                         HStack {
                             Text("使用说明")
@@ -187,7 +165,8 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        // TODO: 隐私政策
+                        // TODO: 打开隐私政策
+                        print("🔒 隐私政策")
                     }) {
                         HStack {
                             Text("隐私政策")

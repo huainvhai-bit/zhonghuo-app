@@ -27,7 +27,8 @@ class DataManager: ObservableObject {
         self.settings = UserSettings(
             name: "用户",
             emergencyContact: nil,
-            checkInInterval: 48,
+            emergencyContacts: [],
+            checkInInterval: .twoDays,
             notificationsEnabled: true,
             cloudSyncEnabled: true,
             lastCheckInDate: nil
@@ -178,7 +179,7 @@ class DataManager: ObservableObject {
     
     // MARK: - 签到功能
     @Published var lastCheckInDate: Date?
-    @Published var checkInInterval: Int = 48 // 48 小时
+    @Published var checkInInterval: CheckInInterval = .twoDays
     
     func checkIn() {
         let now = Date()
@@ -200,7 +201,7 @@ class DataManager: ObservableObject {
         }
         
         let elapsed = Date().timeIntervalSince(lastCheckIn)
-        let intervalSeconds = Double(checkInInterval) * 3600
+        let intervalSeconds = checkInInterval.hours * 3600
         let remaining = intervalSeconds - elapsed
         
         if remaining > 0 {

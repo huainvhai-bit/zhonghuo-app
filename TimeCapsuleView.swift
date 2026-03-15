@@ -303,16 +303,20 @@ struct AddCapsuleModal: View {
                         VStack(spacing: 12) {
                             Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
                                 .font(.system(size: 40))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(hex: "AF52DE"))
                             
                             Text("点击录制\(selectedType == .audio ? "语音" : "视频")")
                                 .foregroundColor(.secondary)
                             
-                            Button("开始录制") {
-                                // TODO: 实现录制功能
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color(hex: "AF52DE"))
+                            Text("🚧 功能开发中")
+                                .font(.system(size: 13))
+                                .foregroundColor(.orange)
+                            
+                            Text("录音/录像功能需要访问麦克风和摄像头，将在后续版本中实现。目前请先使用文字胶囊。")
+                                .font(.system(size: 11))
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 20)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)

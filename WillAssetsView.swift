@@ -179,6 +179,7 @@ struct WillAssetsView: View {
             // 操作按钮
             Button(action: {
                 // TODO: 预览遗嘱
+                print("👁️ 预览遗嘱")
             }) {
                 HStack {
                     Text("👁️")
@@ -192,26 +193,8 @@ struct WillAssetsView: View {
                 .cornerRadius(12)
             }
             
-            Button(action: {
-                // TODO: 导出 PDF
-            }) {
-                HStack {
-                    Text("📤")
-                    Text("导出 PDF")
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color.white)
-                .foregroundColor(Color(hex: "AF52DE"))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(hex: "AF52DE"), lineWidth: 1)
-                )
-            }
         }
-        .padding(.bottom, 100)
+        .padding(.bottom, 80)
     }
     
     // MARK: - 资产内容
