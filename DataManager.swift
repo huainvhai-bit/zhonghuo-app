@@ -13,7 +13,7 @@ class DataManager: ObservableObject {
     @Published var capsules: [TimeCapsule] = []
     @Published var willModules: [WillModule] = []
     @Published var assets: [Asset] = []
-    @Published var witnesses: [Witness] = []
+    @Published var witnesses: [WillWitness] = []
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
     
@@ -102,6 +102,11 @@ class DataManager: ObservableObject {
         return Double(confirmed) / Double(witnesses.count)
     }
     
+    func getWitnessProgressString() -> String {
+        let confirmed = witnesses.filter { $0.isConfirmed }.count
+        return "\(confirmed)/\(witnesses.count)"
+    }
+    
     func getAssetProgress() -> Double {
         // 简单计算：有资产就算完成
         return assets.isEmpty ? 0 : 0.33
@@ -140,35 +145,19 @@ class DataManager: ObservableObject {
     }
     
     // MARK: - 见证人操作
-    func addWitness(name: String, role: String, phone: String, order: Int) {
-        let witness = Witness(
-            id: UUID().uuidString,
-            name: name,
-            role: role,
-            phone: phone,
-            isConfirmed: false,
-            order: order
-        )
+    func addWitness(_ witness: WillWitness) {
         witnesses.append(witness)
-        witnesses.sort { $0.order < $1.order }
         saveWitnesses()
     }
     
-    func deleteWitness(id: String) {
-        witnesses.removeAll { $0.id == id }
+    func deleteWitness(_ witness: WillWitness) {
+        witnesses.removeAll { $0.id == witness.id }
         saveWitnesses()
     }
     
-    func updateWitness(_ witness: Witness) {
+    func updateWitness(_ witness: WillWitness) {
         if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
             witnesses[index] = witness
-            saveWitnesses()
-        }
-    }
-    
-    func confirmWitness(id: String) {
-        if let index = witnesses.firstIndex(where: { $0.id == id }) {
-            witnesses[index].isConfirmed = true
             saveWitnesses()
         }
     }
@@ -304,8 +293,8 @@ class DataManager: ObservableObject {
         
         // 示例见证人
         witnesses = [
-            Witness(id: UUID().uuidString, name: "李四", role: "律师", phone: "138****5678", isConfirmed: true, order: 1),
-            Witness(id: UUID().uuidString, name: "王五", role: "朋友", phone: "139****9012", isConfirmed: false, order: 2)
+            WillWitness(id: UUID().uuidString, name: "李四", relationship: "律师", phone: "138****5678", idNumber: "110101********1234", notes: "北京市某某律师事务所", isConfirmed: true, createdAt: Date(), confirmedAt: Date()),
+            WillWitness(id: UUID().uuidString, name: "王五", relationship: "大学同学", phone: "139****9012", idNumber: "", notes: "", isConfirmed: false, createdAt: Date(), confirmedAt: nil)
         ]
         
         // 示例待办事项

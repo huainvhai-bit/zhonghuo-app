@@ -135,6 +135,19 @@ struct Asset: Identifiable, Codable {
 }
 
 // MARK: - 见证人
+struct WillWitness: Identifiable, Codable {
+    var id: String
+    var name: String
+    var relationship: String
+    var phone: String
+    var idNumber: String
+    var notes: String
+    var isConfirmed: Bool
+    var createdAt: Date
+    var confirmedAt: Date?
+}
+
+// 兼容旧代码
 struct Witness: Identifiable, Codable {
     var id: String
     var name: String

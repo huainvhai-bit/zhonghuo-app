@@ -44,8 +44,6 @@ ttA1000012 /* WitnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A
 		A200000D /* LifeCheckStatusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeCheckStatusManager.swift; sourceTree = SOURCE_ROOT; };
 		A200000E /* AppStabilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStabilityManager.swift; sourceTree = SOURCE_ROOT; };
 		A200000F /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = SOURCE_ROOT; };
-ttA2000012 /* WitnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WitnessView.swift; sourceTree = SOURCE_ROOT; };
-
 		A2000010 /* CloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageManager.swift; sourceTree = SOURCE_ROOT; };
 		A2000011 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = SOURCE_ROOT; };
 		A2000012 /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };

@@ -16,6 +16,7 @@ struct HomeStatusView: View {
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
     @State private var navigateToWitness = false
+    @State private var showingWitnessSheet = false
     
     var body: some View {
         NavigationView {
@@ -70,6 +71,10 @@ struct HomeStatusView: View {
             .onReceive(timer) { _ in
                 updateStatus()
             }
+            // 见证人页面暂时禁用，等待项目配置修复
+            // .sheet(isPresented: $showingWitnessSheet) {
+            //     WitnessView()
+            // }
         }
     }
     
@@ -224,7 +229,8 @@ struct HomeStatusView: View {
                     color: Color(hex: "FF9500"),
                     action: {
                         print("🔵 点击见证人")
-                        navigateToWitness = true
+                        // TODO: 见证人独立页面开发中
+                        showingWitnessSheet = true
                     }
                 )
                 QuickActionItem(
@@ -278,7 +284,7 @@ struct HomeStatusView: View {
             })
             ProgressRow(label: "见证人", progress: dataManager.getWitnessProgress(), color: Color(hex: "FF9500"), action: {
                 print("🔵 点击见证人进度")
-                navigateToWitness = true
+                showingWitnessSheet = true
             })
             ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
                 print("🔵 点击资产管理进度")
