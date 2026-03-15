@@ -152,7 +152,7 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                     
                     Button(action: {
-                        // TODO: 打开使用说明
+                        // 使用说明功能即将上线
                         print("📖 使用说明")
                     }) {
                         HStack {
@@ -165,7 +165,7 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        // TODO: 打开隐私政策
+                        // 隐私政策功能即将上线
                         print("🔒 隐私政策")
                     }) {
                         HStack {

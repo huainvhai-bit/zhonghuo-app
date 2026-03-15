@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
+    @State private var showingEmergencyContactAlert = false
     
     var body: some View {
         Group {
@@ -20,6 +21,24 @@ struct ContentView: View {
                 mainTabView
             }
         }
+        .onAppear {
+            checkEmergencyContacts()
+        }
+        .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
+            Button("稍后设置", role: .cancel) {}
+            Button("立即设置") {
+                selectedTab = 3
+            }
+        } message: {
+            Text("为了您的安全，请至少设置 2 位紧急联系人。")
+        }
+    }
+    
+    private func checkEmergencyContacts() {
+        // TODO: 集成 UserManager 后启用
+        // if userManager.needsEmergencyContactCheck {
+        //     showingEmergencyContactAlert = true
+        // }
     }
     
     private var mainTabView: some View {

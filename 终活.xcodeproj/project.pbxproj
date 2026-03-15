@@ -31,6 +31,8 @@
 		A1000034 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* NotificationManager.swift */; };
 		A1000035 /* WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000035 /* WillPreviewView.swift */; };
 		A1000036 /* HelpPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036 /* HelpPolicyView.swift */; };
+		A1000037 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000037 /* UserManager.swift */; };
+		A1000038 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000038 /* AuthView.swift */; };
 
 /* End PBXBuildFile section */
 
@@ -60,7 +62,8 @@
 		A2000034 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = SOURCE_ROOT; };
 		A2000035 /* WillPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillPreviewView.swift; sourceTree = SOURCE_ROOT; };
 		A2000036 /* HelpPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpPolicyView.swift; sourceTree = SOURCE_ROOT; };
-		A2000016 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = SOURCE_ROOT; };
+		A2000037 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = SOURCE_ROOT; };
+		A2000038 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = SOURCE_ROOT; };
 
 		A2000015 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = SOURCE_ROOT; };
 
