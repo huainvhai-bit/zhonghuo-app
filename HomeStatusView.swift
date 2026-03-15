@@ -127,10 +127,8 @@ struct HomeStatusView: View {
                 .foregroundColor(Color(hex: "34C759"))
                 .cornerRadius(14)
                 .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
-                .scaleEffect(isSafe ? 1.0 : 1.02)
             }
-            .disabled(isSafe)
-            .opacity(isSafe ? 0.5 : 1)
+            .scaleEffect(showCheckInAnimation ? 0.95 : 1.0)
         }
         .padding(26)
         .background(
@@ -149,21 +147,21 @@ struct HomeStatusView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Circle()
-                    .fill(Color(hex: "34C759"))
+                    .fill(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
                     .frame(width: 10, height: 10)
-                    .shadow(color: Color(hex: "34C759").opacity(0.4), radius: 4, x: 0, y: 2)
+                    .shadow(color: (isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30")).opacity(0.4), radius: 4, x: 0, y: 2)
                 
-                Text("监测正常")
+                Text(isSafe ? "监测正常" : "需要签到")
                     .font(.headline)
-                    .foregroundColor(Color(hex: "34C759"))
+                    .foregroundColor(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
                 
                 Spacer()
                 
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Color(hex: "34C759"))
+                Image(systemName: isSafe ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    .foregroundColor(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
             }
             
-            Text("一切安好，记得定期签到哦")
+            Text(isSafe ? "一切安好，记得定期签到哦" : "您已超过签到时间，请立即签到")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
@@ -177,13 +175,13 @@ struct HomeStatusView: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
+                                gradient: Gradient(colors: [isSafe ? Color(hex: "AF52DE") : Color(hex: "FF3B30"), isSafe ? Color(hex: "007AFF") : Color(hex: "FF9500")]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geometry.size.width * 0.76, height: 6)
-                        .shadow(color: Color(hex: "AF52DE").opacity(0.3), radius: 3, x: 0, y: 2)
+                        .frame(width: geometry.size.width * (isSafe ? 0.76 : 0.1), height: 6)
+                        .shadow(color: (isSafe ? Color(hex: "AF52DE") : Color(hex: "FF3B30")).opacity(0.3), radius: 3, x: 0, y: 2)
                 }
             }
             .frame(height: 6)
