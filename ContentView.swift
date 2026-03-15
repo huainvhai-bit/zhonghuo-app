@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  终活
 //
-//  主界面 - 5 个 Tab + 悬浮机器人
+//  主界面 - 4 个 Tab + 首页悬浮机器人
 //
 
 import SwiftUI
@@ -35,24 +35,19 @@ struct ContentView: View {
                     }
                     .tag(2)
                 
-                SimplifiedAIView()
-                    .tabItem {
-                        Image(systemName: "sparkles")
-                        Text("AI 助手")
-                    }
-                    .tag(3)
-                
                 SettingsView()
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("我的")
                     }
-                    .tag(4)
+                    .tag(3)
             }
             .accentColor(Color(hex: "AF52DE"))
             
-            // 悬浮 AI 机器人 - 在所有页面显示
-            AIRobotView()
+            // 悬浮 AI 机器人 - 仅在首页显示
+            if selectedTab == 0 {
+                AIRobotView()
+            }
         }
     }
 }

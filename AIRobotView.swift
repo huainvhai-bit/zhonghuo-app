@@ -2,19 +2,20 @@
 //  AIRobotView.swift
 //  终活
 //
-//  悬浮 AI 机器人 - 可拖拽、自动贴边
+//  悬浮 AI 机器人 - 靠边隐藏，露个头
 //
 
 import SwiftUI
 
 struct AIRobotView: View {
     @State private var isExpanded = false
-    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 80, y: UIScreen.main.bounds.height - 200)
+    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 60, y: UIScreen.main.bounds.height - 180)
     @State private var dragOffset: CGSize = .zero
     @State private var message = ""
     @State private var messages: [ChatMessage] = [
-        ChatMessage(id: "1", text: "您好！我是您的终活助手，有什么可以帮您？", isUser: false)
+        ChatMessage(id: "1", text: "您好！我是您的终活助手 🤖", isUser: false)
     ]
+    @State private var isPeeking = true // 是否只露出头
     
     var body: some View {
         ZStack {
@@ -78,26 +79,60 @@ struct AIRobotView: View {
                 .transition(.move(edge: .bottom))
             }
             
-            // 悬浮按钮
-            Button(action: { withAnimation { isExpanded.toggle() } }) {
-                ZStack {
-                    Circle()
+            // 小机器人 - 靠边隐藏，露个头
+            ZStack {
+                // 机器人头部（始终可见）
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+                    .shadow(color: Color(hex: "AF52DE").opacity(0.4), radius: 6, x: 0, y: 3)
+                    .overlay(
+                        // 机器人眼睛
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 8, height: 8)
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 8, height: 8)
+                        }
+                        .offset(y: -4)
+                    )
+                    .overlay(
+                        // 机器人嘴巴
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white)
+                            .frame(width: 12, height: 3)
+                            .offset(y: 6)
+                    )
+                
+                // 机器人身体（展开时显示）
+                if isExpanded {
+                    RoundedRectangle(cornerRadius: 12)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                                gradient: Gradient(colors: [Color(hex: "AF52DE").opacity(0.8), Color(hex: "007AFF").opacity(0.8)]),
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
                         )
-                        .frame(width: 56, height: 56)
-                        .shadow(color: Color(hex: "AF52DE").opacity(0.4), radius: 8, x: 0, y: 4)
-                    
-                    Image(systemName: isExpanded ? "xmark" : "sparkles")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundColor(.white)
+                        .frame(width: 36, height: 30)
+                        .offset(y: 35)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
             .position(x: position.x, y: position.y)
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    isExpanded.toggle()
+                }
+            }
             .gesture(
                 DragGesture()
                     .onChanged { value in
@@ -111,16 +146,16 @@ struct AIRobotView: View {
                         let screenWidth = UIScreen.main.bounds.width
                         if position.x < screenWidth / 2 {
                             withAnimation(.spring()) {
-                                position.x = 70
+                                position.x = 35 // 左边，只露出头
                             }
                         } else {
                             withAnimation(.spring()) {
-                                position.x = screenWidth - 70
+                                position.x = screenWidth - 35 // 右边，只露出头
                             }
                         }
                         
                         // 确保不超出边界
-                        position.y = max(70, min(position.y, UIScreen.main.bounds.height - 70))
+                        position.y = max(50, min(position.y, UIScreen.main.bounds.height - 50))
                     }
             )
         }
@@ -132,7 +167,6 @@ struct AIRobotView: View {
         let userMessage = ChatMessage(id: UUID().uuidString, text: message, isUser: true)
         messages.append(userMessage)
         
-        let userText = message
         message = ""
         
         // 模拟 AI 回复
