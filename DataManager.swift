@@ -200,22 +200,19 @@ class DataManager: ObservableObject {
     }
     
     func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        // 如果没有签到过，初始化 lastCheckInDate 为当前时间（模拟刚签到）
-        // 这样倒计时才会真正开始走动
-        if lastCheckInDate == nil {
-            lastCheckInDate = Date()
-            settings.lastCheckInDate = lastCheckInDate
-            saveSettings()
+        // 如果没有签到过，返回需要签到的状态
+        guard let lastCheckIn = lastCheckInDate else {
+            return (false, 0) // 需要签到
         }
         
-        let elapsed = Date().timeIntervalSince(lastCheckInDate!)
+        let elapsed = Date().timeIntervalSince(lastCheckIn)
         let intervalSeconds = Double(checkInInterval) * 3600
         let remaining = intervalSeconds - elapsed
         
         if remaining > 0 {
-            return (true, remaining / 3600)
+            return (true, remaining / 3600) // 安全期内
         } else {
-            return (false, 0)
+            return (false, 0) // 需要签到
         }
     }
     

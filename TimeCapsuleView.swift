@@ -41,10 +41,21 @@ struct TimeCapsuleView: View {
             .navigationTitle("时光胶囊")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "capsule.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("时光胶囊")
+                            .font(.system(size: 17, weight: .bold))
+                    }
+                    .foregroundColor(Color(hex: "AF52DE"))
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddModal = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color(hex: "AF52DE"))
                     }
                 }
             }

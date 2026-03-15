@@ -37,6 +37,17 @@ struct WillAssetsView: View {
             .background(Color(hex: "F2F2F7"))
             .navigationTitle("嘱托与资产")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.text.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("嘱托与资产")
+                            .font(.system(size: 17, weight: .bold))
+                    }
+                    .foregroundColor(Color(hex: "AF52DE"))
+                }
+            }
             .sheet(isPresented: $showingAddAssetModal) {
                 AddAssetModal(dataManager: dataManager)
             }
