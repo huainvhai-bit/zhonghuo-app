@@ -48,6 +48,14 @@ ttA2000012 /* WitnessView.swift */ = {isa = PBXFileReference; lastKnownFileType 
 
 		A2000010 /* CloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageManager.swift; sourceTree = SOURCE_ROOT; };
 		A2000011 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = SOURCE_ROOT; };
+		A2000016 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = SOURCE_ROOT; };
+
+		A2000015 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = SOURCE_ROOT; };
+
+		A2000014 /* PDFExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportSheet.swift; sourceTree = SOURCE_ROOT; };
+
+		A2000013 /* PDFGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFGenerator.swift; sourceTree = SOURCE_ROOT; };
+
 		A2000012 /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -160,6 +168,10 @@ ttA2000012 /* WitnessView.swift */ = {isa = PBXFileReference; lastKnownFileType 
 				A100000F /* ErrorHandler.swift in Sources */,
 				A1000010 /* CloudStorageManager.swift in Sources */,
 				A1000011 /* SecureStorage.swift in Sources */,
+				A1000016 /* NotificationManager.swift in Sources */,
+				A1000015 /* OnboardingView.swift in Sources */,
+				A1000014 /* PDFExportSheet.swift in Sources */,
+				A1000013 /* PDFGenerator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -389,11 +389,19 @@ struct HomeStatusView: View {
             dataManager.checkIn()
             // 立即更新倒计时
             updateStatus()
+            // 安排签到提醒
+            scheduleCheckInReminder()
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             showCheckInAnimation = false
         }
+    }
+    
+    private func scheduleCheckInReminder() {
+        // TODO: 通知功能待集成
+        // let status = dataManager.getCheckInStatus()
+        // NotificationManager.shared.scheduleCheckInReminder(hoursRemaining: status.hoursRemaining)
     }
 }
 
