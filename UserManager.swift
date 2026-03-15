@@ -120,7 +120,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if saveUser(user) {
             self.currentUser = user
             self.isLoggedIn = true
+            self.lastCheckInDate = user.lastCheckInDate
             self.needsEmergencyContactCheck = true
+            startUpdatingLocation()
             return .success(user)
         } else {
             return .failure(Error.saveFailed)
