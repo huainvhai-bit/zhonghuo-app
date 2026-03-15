@@ -200,9 +200,14 @@ class DataManager: ObservableObject {
     }
     
     func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        // 如果没有签到过，返回需要签到的状态
+        // 如果没有签到过，自动进行首次签到
+        if lastCheckInDate == nil {
+            checkIn()
+            print("✅ 首次使用，自动签到")
+        }
+        
         guard let lastCheckIn = lastCheckInDate else {
-            return (false, 0) // 需要签到
+            return (false, 0)
         }
         
         let elapsed = Date().timeIntervalSince(lastCheckIn)

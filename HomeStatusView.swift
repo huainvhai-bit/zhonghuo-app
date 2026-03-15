@@ -13,21 +13,37 @@ struct HomeStatusView: View {
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var secondsRemaining: Double = 0
     @State private var isSafe: Bool = true
+    @State private var navigateToWillAssets = false
+    @State private var navigateToTimeCapsule = false
+    @State private var navigateToWitness = false
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 16) {
-                    checkInCard
-                    statusCard
-                    quickActionsGrid
-                    progressCard
-                    capsulePreview
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        checkInCard
+                        statusCard
+                        quickActionsGrid
+                        progressCard
+                        capsulePreview
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .background(Color(hex: "F6F6F8"))
+                
+                // 隐藏的全局导航链接
+                NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                NavigationLink(destination: TimeCapsuleView(), isActive: $navigateToTimeCapsule) {
+                    EmptyView()
+                }
+                .opacity(0)
             }
-            .background(Color(hex: "F6F6F8"))
             .navigationTitle("终活")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -191,6 +207,7 @@ struct HomeStatusView: View {
                     label: "录制语音",
                     color: Color(hex: "AF52DE"),
                     action: {
+                        print("🔵 点击录制语音")
                         // TODO: 导航到录音功能
                     }
                 )
@@ -199,7 +216,8 @@ struct HomeStatusView: View {
                     label: "身后事务",
                     color: Color(hex: "34C759"),
                     action: {
-                        // 导航到嘱托页面
+                        print("🔵 点击身后事务")
+                        navigateToWillAssets = true
                     }
                 )
                 QuickActionItem(
@@ -207,7 +225,8 @@ struct HomeStatusView: View {
                     label: "见证人",
                     color: Color(hex: "FF9500"),
                     action: {
-                        // TODO: 导航到见证人功能
+                        print("🔵 点击见证人")
+                        navigateToWitness = true
                     }
                 )
                 QuickActionItem(
@@ -215,7 +234,8 @@ struct HomeStatusView: View {
                     label: "资产",
                     color: Color(hex: "007AFF"),
                     action: {
-                        // 导航到资产页面
+                        print("🔵 点击资产")
+                        navigateToWillAssets = true
                     }
                 )
             }
@@ -241,7 +261,8 @@ struct HomeStatusView: View {
                 Spacer()
                 
                 Button(action: {
-                    // 导航到嘱托与资产页面
+                    print("🔵 点击查看全部")
+                    navigateToWillAssets = true
                 }) {
                     HStack(spacing: 4) {
                         Text("查看全部")
@@ -254,13 +275,16 @@ struct HomeStatusView: View {
             }
             
             ProgressRow(label: "身后嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
-                // 导航到身后嘱托详情
+                print("🔵 点击身后嘱托进度")
+                navigateToWillAssets = true
             })
             ProgressRow(label: "见证人", progress: dataManager.getWitnessProgress(), color: Color(hex: "FF9500"), action: {
-                // 导航到见证人页面
+                print("🔵 点击见证人进度")
+                navigateToWitness = true
             })
             ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
-                // 导航到资产管理页面
+                print("🔵 点击资产管理进度")
+                navigateToWillAssets = true
             })
         }
         .padding(18)
@@ -284,7 +308,8 @@ struct HomeStatusView: View {
                 Spacer()
                 
                 Button(action: {
-                    // TODO: 导航到时光胶囊页面
+                    print("🔵 点击全部胶囊")
+                    navigateToTimeCapsule = true
                 }) {
                     HStack(spacing: 4) {
                         Text("全部")
@@ -313,7 +338,8 @@ struct HomeStatusView: View {
                         .foregroundColor(.secondary)
                     
                     Button(action: {
-                        // TODO: 创建胶囊
+                        print("🔵 点击创建胶囊")
+                        navigateToTimeCapsule = true
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "plus")
@@ -332,7 +358,8 @@ struct HomeStatusView: View {
             } else {
                 ForEach(dataManager.capsules.prefix(3)) { capsule in
                     CapsulePreviewRow(capsule: capsule, onTap: {
-                        // TODO: 点击编辑胶囊
+                        print("🔵 点击胶囊：\(capsule.title)")
+                        navigateToTimeCapsule = true
                     })
                 }
             }
