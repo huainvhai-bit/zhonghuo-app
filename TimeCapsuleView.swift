@@ -21,9 +21,6 @@ struct TimeCapsuleView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    // 云同步状态
-                    syncStatusCard
-                    
                     // 统计卡片
                     statsCard
                     
@@ -31,7 +28,11 @@ struct TimeCapsuleView: View {
                     filterButtons
                     
                     // 胶囊列表
-                    capsuleList
+                    if filteredCapsules.isEmpty {
+                        emptyState
+                    } else {
+                        capsuleList
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
@@ -56,69 +57,40 @@ struct TimeCapsuleView: View {
         }
     }
     
-    // MARK: - 云同步状态
-    private var syncStatusCard: some View {
-        HStack(spacing: 12) {
-            Text("☁️")
-                .font(.title2)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("云端已同步")
-                    .font(.subheadline.bold())
-                    .foregroundColor(Color(hex: "34C759"))
-                
-                Text("所有胶囊已安全备份到云端")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(Color(hex: "34C759"))
-        }
-        .padding(14)
-        .background(Color(hex: "34C759").opacity(0.08))
-        .cornerRadius(12)
-    }
-    
     // MARK: - 统计卡片
     private var statsCard: some View {
-        HStack(spacing: 8) {
-            FilterChip(text: "全部 \(dataManager.capsules.count)", isActive: selectedFilter == nil) {
-                selectedFilter = nil
-            }
-            
-            FilterChip(text: "待发送 \(dataManager.capsules.filter { !$0.isSent }.count)", isActive: false) {}
-            
-            FilterChip(text: "已发送 \(dataManager.capsules.filter { $0.isSent }.count)", isActive: false) {}
+        HStack(spacing: 12) {
+            StatItem(icon: "capsule.fill", value: "\(dataManager.capsules.count)", label: "全部", color: Color(hex: "AF52DE"))
+            StatItem(icon: "clock.fill", value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", color: Color(hex: "FF9500"))
+            StatItem(icon: "checkmark.circle.fill", value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", color: Color(hex: "34C759"))
         }
         .padding(16)
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
     
     // MARK: - 筛选按钮
     private var filterButtons: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterButton(text: "全部", isActive: selectedFilter == nil) {
+                FilterButton(text: "全部", systemImage: "square.grid.2x2", isActive: selectedFilter == nil) {
                     selectedFilter = nil
                 }
                 
-                FilterButton(text: "文字", isActive: selectedFilter == .text) {
+                FilterButton(text: "文字", systemImage: "doc.text.fill", isActive: selectedFilter == .text) {
                     selectedFilter = .text
                 }
                 
-                FilterButton(text: "语音", isActive: selectedFilter == .audio) {
+                FilterButton(text: "语音", systemImage: "mic.fill", isActive: selectedFilter == .audio) {
                     selectedFilter = .audio
                 }
                 
-                FilterButton(text: "视频", isActive: selectedFilter == .video) {
+                FilterButton(text: "视频", systemImage: "video.fill", isActive: selectedFilter == .video) {
                     selectedFilter = .video
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 4)
         }
     }
     
@@ -133,48 +105,91 @@ struct TimeCapsuleView: View {
                 })
             }
         }
-        .padding(.bottom, 100)
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - 空状态
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "capsule.fill")
+                .font(.system(size: 48))
+                .foregroundColor(.secondary.opacity(0.4))
+            
+            Text("暂无时光胶囊")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Text("点击右上角 + 创建您的第一个胶囊")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Button(action: { showingAddModal = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                    Text("创建胶囊")
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color(hex: "AF52DE"))
+                .cornerRadius(12)
+            }
+        }
+        .padding(.vertical, 60)
+    }
+}
+
+// MARK: - 统计项
+struct StatItem: View {
+    let icon: String
+    let value: String
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.primary)
+            
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
 // MARK: - 筛选按钮
 struct FilterButton: View {
     let text: String
+    let systemImage: String
     let isActive: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isActive ? Color(hex: "AF52DE") : Color.white)
-                .foregroundColor(isActive ? .white : .primary)
-                .cornerRadius(18)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(isActive ? Color.clear : Color(hex: "E5E5EA"), lineWidth: 1)
-                )
-        }
-    }
-}
-
-// MARK: - 筛选 Chip
-struct FilterChip: View {
-    let text: String
-    let isActive: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(text)
-                .font(.system(size: 12, weight: .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(isActive ? Color(hex: "AF52DE").opacity(0.12) : Color.clear)
-                .foregroundColor(isActive ? Color(hex: "AF52DE") : .primary)
-                .cornerRadius(6)
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(text)
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isActive ? Color(hex: "AF52DE") : Color.white)
+            .foregroundColor(isActive ? .white : .primary)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isActive ? Color.clear : Color(hex: "E5E5EA"), lineWidth: 1)
+            )
+            .shadow(color: isActive ? Color(hex: "AF52DE").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
         }
     }
 }
@@ -187,48 +202,47 @@ struct CapsuleCard: View {
     @State private var showingDeleteConfirm = false
     
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 16) {
             // 图标
-            Text(capsule.type.icon)
-                .font(.system(size: 22))
-                .frame(width: 50, height: 50)
+            Image(systemName: capsule.type.systemImage)
+                .font(.system(size: 20, weight: .semibold))
+                .frame(width: 52, height: 52)
                 .background(Color(hex: capsule.type.color).opacity(0.12))
-                .cornerRadius(12)
+                .foregroundColor(Color(hex: capsule.type.color))
+                .cornerRadius(14)
             
             // 内容
             VStack(alignment: .leading, spacing: 4) {
                 Text(capsule.title)
                     .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
                 
-                Text(formatSendDate(capsule.sendDate))
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
+                HStack(spacing: 6) {
+                    Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                        .font(.system(size: 10))
+                    Text(formatSendDate(capsule.sendDate))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
             }
             
             Spacer()
             
-            // 标签
-            Text(capsule.type.rawValue)
-                .font(.system(size: 12, weight: .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Color(hex: capsule.type.color).opacity(0.12))
-                .cornerRadius(6)
-            
             // 删除按钮
             Button(action: { showingDeleteConfirm = true }) {
                 Image(systemName: "trash")
-                    .font(.system(size: 14))
+                    .font(.system(size: 16))
                     .foregroundColor(.secondary)
-                    .padding(8)
+                    .padding(10)
                     .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .cornerRadius(10)
             }
         }
         .padding(16)
         .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .contentShape(Rectangle())
         .onTapGesture {
             onEdit()
         }
@@ -242,7 +256,7 @@ struct CapsuleCard: View {
     
     private func formatSendDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = capsule.isSent ? "yyyy 年 M 月 d 日已发送" : "yyyy 年 M 月 d 日发送"
+        formatter.dateFormat = capsule.isSent ? "yyyy/MM/dd 已发送" : "yyyy/MM/dd 发送"
         return formatter.string(from: date)
     }
 }
@@ -261,10 +275,11 @@ struct AddCapsuleModal: View {
             Form {
                 Section(header: Text("类型")) {
                     Picker("类型", selection: $selectedType) {
-                        Text("✉️ 文字").tag(TimeCapsule.CapsuleType.text)
-                        Text("🎙️ 语音").tag(TimeCapsule.CapsuleType.audio)
-                        Text("🎥 视频").tag(TimeCapsule.CapsuleType.video)
+                        Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
+                        Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
+                        Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
                     }
+                    .pickerStyle(.segmented)
                 }
                 
                 Section(header: Text("内容")) {
@@ -286,6 +301,7 @@ struct AddCapsuleModal: View {
                                 // TODO: 实现录制功能
                             }
                             .buttonStyle(.borderedProminent)
+                            .tint(Color(hex: "AF52DE"))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)

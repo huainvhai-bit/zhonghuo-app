@@ -9,13 +9,12 @@ import SwiftUI
 
 struct AIRobotView: View {
     @State private var isExpanded = false
-    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 60, y: UIScreen.main.bounds.height - 180)
-    @State private var dragOffset: CGSize = .zero
+    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 50, y: UIScreen.main.bounds.height - 160)
     @State private var message = ""
     @State private var messages: [ChatMessage] = [
         ChatMessage(id: "1", text: "您好！我是您的终活助手 🤖", isUser: false)
     ]
-    @State private var isPeeking = true // 是否只露出头
+    @State private var isOnRightSide = true
     
     var body: some View {
         ZStack {
@@ -37,7 +36,7 @@ struct AIRobotView: View {
                                         
                                         Text(msg.text)
                                             .padding(12)
-                                            .background(msg.isUser ? Color(hex: "AF52DE") : Color.gray.opacity(0.2))
+                                            .background(msg.isUser ? Color(hex: "AF52DE") : Color.gray.opacity(0.15))
                                             .foregroundColor(msg.isUser ? .white : .primary)
                                             .cornerRadius(16)
                                         
@@ -47,9 +46,9 @@ struct AIRobotView: View {
                                     }
                                 }
                             }
-                            .padding()
+                            .padding(.horizontal, 4)
                         }
-                        .frame(maxHeight: 300)
+                        .frame(maxHeight: 280)
                         
                         // 输入框
                         HStack(spacing: 8) {
@@ -60,70 +59,74 @@ struct AIRobotView: View {
                             
                             Button(action: sendMessage) {
                                 Image(systemName: "paperplane.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(Color(hex: "AF52DE"))
-                                    .padding(12)
-                                    .background(Color(hex: "AF52DE").opacity(0.1))
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.white)
+                                    .padding(10)
+                                    .background(Color(hex: "AF52DE"))
                                     .clipShape(Circle())
                             }
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 4)
                     }
                     .background(Color.white)
                     .cornerRadius(20)
-                    .shadow(radius: 10)
-                    .padding()
+                    .shadow(radius: 12)
+                    .padding(.horizontal, 16)
                     
                     Spacer()
                 }
-                .transition(.move(edge: .bottom))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
-            // 小机器人 - 靠边隐藏，露个头
+            // 小机器人 - 靠边隐藏，只露出一半
             ZStack {
-                // 机器人头部（始终可见）
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // 机器人头部
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 44, height: 44)
-                    .shadow(color: Color(hex: "AF52DE").opacity(0.4), radius: 6, x: 0, y: 3)
-                    .overlay(
-                        // 机器人眼睛
-                        HStack(spacing: 6) {
+                        .frame(width: 50, height: 50)
+                        .shadow(color: Color(hex: "AF52DE").opacity(0.4), radius: 8, x: 0, y: 4)
+                    
+                    // 机器人脸部
+                    VStack(spacing: 4) {
+                        // 眼睛
+                        HStack(spacing: 8) {
                             Circle()
                                 .fill(Color.white)
-                                .frame(width: 8, height: 8)
+                                .frame(width: 10, height: 10)
                             Circle()
                                 .fill(Color.white)
-                                .frame(width: 8, height: 8)
+                                .frame(width: 10, height: 10)
                         }
-                        .offset(y: -4)
-                    )
-                    .overlay(
-                        // 机器人嘴巴
+                        .offset(y: -2)
+                        
+                        // 嘴巴
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color.white)
-                            .frame(width: 12, height: 3)
-                            .offset(y: 6)
-                    )
+                            .frame(width: 14, height: 3)
+                    }
+                    .offset(y: 2)
+                }
+                .offset(x: isOnRightSide ? -12 : 12) // 让一半隐藏在屏幕边缘
                 
                 // 机器人身体（展开时显示）
                 if isExpanded {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 10)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE").opacity(0.8), Color(hex: "007AFF").opacity(0.8)]),
+                                gradient: Gradient(colors: [Color(hex: "AF52DE").opacity(0.9), Color(hex: "007AFF").opacity(0.9)]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                         )
-                        .frame(width: 36, height: 30)
-                        .offset(y: 35)
+                        .frame(width: 40, height: 35)
+                        .offset(y: 38)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -145,17 +148,19 @@ struct AIRobotView: View {
                         // 自动贴边
                         let screenWidth = UIScreen.main.bounds.width
                         if position.x < screenWidth / 2 {
+                            isOnRightSide = false
                             withAnimation(.spring()) {
-                                position.x = 35 // 左边，只露出头
+                                position.x = 38 // 左边，一半隐藏
                             }
                         } else {
+                            isOnRightSide = true
                             withAnimation(.spring()) {
-                                position.x = screenWidth - 35 // 右边，只露出头
+                                position.x = screenWidth - 38 // 右边，一半隐藏
                             }
                         }
                         
                         // 确保不超出边界
-                        position.y = max(50, min(position.y, UIScreen.main.bounds.height - 50))
+                        position.y = max(60, min(position.y, UIScreen.main.bounds.height - 60))
                     }
             )
         }

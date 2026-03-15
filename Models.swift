@@ -30,6 +30,14 @@ struct TimeCapsule: Identifiable, Codable {
             }
         }
         
+        var systemImage: String {
+            switch self {
+            case .text: return "doc.text.fill"
+            case .audio: return "mic.fill"
+            case .video: return "video.fill"
+            }
+        }
+        
         var color: String {
             switch self {
             case .text: return "007AFF"
