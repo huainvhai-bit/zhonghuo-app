@@ -187,10 +187,7 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 8)
                     
-                    Button(action: {
-                        // 使用说明功能即将上线
-                        print("📖 使用说明")
-                    }) {
+                    NavigationLink(destination: HelpPolicyView()) {
                         HStack {
                             Text("使用说明")
                             Spacer()
@@ -200,10 +197,7 @@ struct SettingsView: View {
                         .padding(.vertical, 8)
                     }
                     
-                    Button(action: {
-                        // 隐私政策功能即将上线
-                        print("🔒 隐私政策")
-                    }) {
+                    NavigationLink(destination: HelpPolicyView()) {
                         HStack {
                             Text("隐私政策")
                             Spacer()

@@ -32,6 +32,8 @@
 		A1000032 /* PDFExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* PDFExportSheet.swift */; };
 		A1000033 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* OnboardingView.swift */; };
 		A1000034 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* NotificationManager.swift */; };
+		A1000035 /* WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000035 /* WillPreviewView.swift */; };
+		A1000036 /* HelpPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036 /* HelpPolicyView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -192,6 +194,8 @@
 				A1000032 /* PDFExportSheet.swift in Sources */,
 				A1000033 /* OnboardingView.swift in Sources */,
 				A1000034 /* NotificationManager.swift in Sources */,
+				A1000035 /* WillPreviewView.swift in Sources */,
+				A1000036 /* HelpPolicyView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
