@@ -216,6 +216,28 @@ enum CheckInInterval: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - 用户模型
+struct User: Codable, Identifiable {
+    var id: String
+    var name: String
+    var phone: String
+    var createdAt: Date
+    var emergencyContacts: [EmergencyContact]
+    var checkInInterval: CheckInInterval
+    var notificationsEnabled: Bool
+    var cloudSyncEnabled: Bool
+    var lastCheckInDate: Date?
+    
+    struct EmergencyContact: Codable, Identifiable {
+        var id: String = UUID().uuidString
+        var name: String
+        var phone: String
+        var relationship: String
+        var isConfirmed: Bool = false
+        var createdAt: Date = Date()
+    }
+}
+
 // MARK: - 用户设置
 struct UserSettings: Codable {
     var name: String

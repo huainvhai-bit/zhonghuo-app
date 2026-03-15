@@ -190,12 +190,24 @@ struct AddAssetModal: View {
                 Section(header: Text("详细信息")) {
                     switch selectedType {
                     case .bank:
-                        TextField("开户行", text: $details["开户行", default: ""])
+                        TextField("开户行", text: Binding(
+                            get: { details["开户行"] ?? "" },
+                            set: { details["开户行"] = $0 }
+                        ))
                     case .stock:
-                        TextField("持仓", text: $details["持仓", default: ""])
+                        TextField("持仓", text: Binding(
+                            get: { details["持仓"] ?? "" },
+                            set: { details["持仓"] = $0 }
+                        ))
                     case .insurance:
-                        TextField("保单号", text: $details["保单号", default: ""])
-                        TextField("受益人", text: $details["受益人", default: ""])
+                        TextField("保单号", text: Binding(
+                            get: { details["保单号"] ?? "" },
+                            set: { details["保单号"] = $0 }
+                        ))
+                        TextField("受益人", text: Binding(
+                            get: { details["受益人"] ?? "" },
+                            set: { details["受益人"] = $0 }
+                        ))
                     default:
                         EmptyView()
                     }

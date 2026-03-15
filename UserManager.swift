@@ -31,11 +31,11 @@ class UserManager: ObservableObject {
     // MARK: - 用户注册
     func register(name: String, phone: String) -> Result<User, Error> {
         if !isValidPhone(phone) {
-            return .failure(RegisterError.invalidPhone)
+            return .failure(Error.invalidPhone)
         }
         
         if let _ = loadUserFromFile() {
-            return .failure(RegisterError.alreadyRegistered)
+            return .failure(Error.alreadyRegistered)
         }
         
         let user = User(
@@ -56,17 +56,17 @@ class UserManager: ObservableObject {
             self.needsEmergencyContactCheck = true
             return .success(user)
         } else {
-            return .failure(RegisterError.saveFailed)
+            return .failure(Error.saveFailed)
         }
     }
     
     func login(phone: String) -> Result<User, Error> {
         guard let user = loadUserFromFile() else {
-            return .failure(LoginError.userNotFound)
+            return .failure(Error.userNotFound)
         }
         
         if user.phone != phone {
-            return .failure(LoginError.phoneMismatch)
+            return .failure(Error.phoneMismatch)
         }
         
         self.currentUser = user
@@ -145,7 +145,7 @@ class UserManager: ObservableObject {
         }
     }
     
-    func updateCheckInInterval(_ interval: User.CheckInInterval) -> Result<Void, Error> {
+    func updateCheckInInterval(_ interval: CheckInInterval) -> Result<Void, Error> {
         guard var user = currentUser else {
             return .failure(Error.userNotLoggedIn)
         }
@@ -203,40 +203,22 @@ class UserManager: ObservableObject {
         return predicate.evaluate(with: phone)
     }
     
-    enum RegisterError: LocalizedError {
+    enum Error: LocalizedError {
         case invalidPhone
         case alreadyRegistered
+        case userNotLoggedIn
         case saveFailed
-        
-        var errorDescription: String? {
-            switch self {
-            case .invalidPhone: return "请输入有效的手机号码"
-            case .alreadyRegistered: return "该设备已注册"
-            case .saveFailed: return "注册失败，请重试"
-            }
-        }
-    }
-    
-    enum LoginError: LocalizedError {
         case userNotFound
         case phoneMismatch
         
         var errorDescription: String? {
             switch self {
-            case .userNotFound: return "用户未注册"
-            case .phoneMismatch: return "手机号不匹配"
-            }
-        }
-    }
-    
-    enum Error: LocalizedError {
-        case userNotLoggedIn
-        case saveFailed
-        
-        var errorDescription: String? {
-            switch self {
+            case .invalidPhone: return "请输入有效的手机号码"
+            case .alreadyRegistered: return "该设备已注册"
             case .userNotLoggedIn: return "用户未登录"
             case .saveFailed: return "操作失败，请重试"
+            case .userNotFound: return "用户未注册"
+            case .phoneMismatch: return "手机号不匹配"
             }
         }
     }
