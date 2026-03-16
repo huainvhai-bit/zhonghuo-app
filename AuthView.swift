@@ -20,6 +20,15 @@ struct AuthView: View {
     @State private var timer: Timer?
     @State private var sentCode = ""
     
+    // MARK: - 短信验证码响应模型
+    struct SMSResponse: Codable {
+        let success: Bool
+        let message: String?
+        let code: String?
+        let error: String?
+        let expiresIn: Int?
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
@@ -155,11 +164,7 @@ struct AuthView: View {
     private func sendVerifyCode() {
         guard !phone.isEmpty else { return }
         
-        // 生成 6 位随机验证码
-        sentCode = String(Int.random(in: 100000...999999))
-        print("📱 验证码：\(sentCode)（测试用，实际应发送短信）")
-        
-        // 开始倒计时
+        // 开始倒计时（先开始，避免请求期间可重复点击）
         countdown = 60
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             countdown -= 1
@@ -171,29 +176,68 @@ struct AuthView: View {
         
         showingVerifyCode = true
         
-        // 模拟发送短信
-        errorMessage = "验证码：\(sentCode)（测试用）"
-        showingError = true
+        // 调用后端 API 发送验证码
+        Task {
+            do {
+                let url = URL(string: "\(DataManager.apiURL)/sms.php")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let body: [String: Any] = [
+                    "phone": phone,
+                    "action": isRegistering ? "register" : "login"
+                ]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    throw NSError(domain: "Server error", code: -1)
+                }
+                
+                let result = try JSONDecoder().decode(SMSResponse.self, from: data)
+                
+                await MainActor.run {
+                    if result.success {
+                        // 开发环境显示验证码（用于测试）
+                        if let code = result.code {
+                            errorMessage = "验证码：\(code)（开发环境）"
+                            showingError = true
+                        } else {
+                            errorMessage = "验证码已发送到手机"
+                            showingError = true
+                        }
+                    } else {
+                        errorMessage = result.error ?? "发送失败"
+                        showingError = true
+                        countdown = 0 // 重置倒计时允许重试
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "网络错误：\(error.localizedDescription)"
+                    showingError = true
+                    countdown = 0 // 重置倒计时允许重试
+                }
+            }
+        }
     }
     
     // MARK: - 提交处理
     private func handleSubmit() {
         if isRegistering {
-            // 验证验证码
-            if verifyCode != sentCode {
-                errorMessage = "验证码错误，请重新输入"
+            // 验证验证码（开发环境可以跳过）
+            if verifyCode.isEmpty {
+                errorMessage = "请输入验证码"
                 showingError = true
                 return
             }
             
-            // 注册
-            let result = userManager.register(name: name, phone: phone)
-            switch result {
-            case .success:
-                print("✅ 注册成功")
-            case .failure(let error):
-                errorMessage = error.localizedDescription
-                showingError = true
+            // 调用后端 API 验证验证码并注册
+            Task {
+                await registerWithAPI()
             }
         } else {
             // 登录：也需要验证码
@@ -204,23 +248,108 @@ struct AuthView: View {
                 return
             }
             
-            // 验证验证码
-            if verifyCode != sentCode {
-                errorMessage = "验证码错误，请重新输入"
+            // 验证验证码（开发环境可以跳过）
+            if verifyCode.isEmpty {
+                errorMessage = "请输入验证码"
                 showingError = true
                 return
             }
             
-            // 登录
-            let result = userManager.login(phone: phone)
-            switch result {
-            case .success:
-                print("✅ 登录成功")
-            case .failure(let error):
-                errorMessage = error.localizedDescription
+            // 调用后端 API 验证验证码并登录
+            Task {
+                await loginWithAPI()
+            }
+        }
+    }
+    
+    // MARK: - API 注册
+    private func registerWithAPI() async {
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/users.php")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let body: [String: Any] = [
+                "action": "register",
+                "name": name,
+                "phone": phone,
+                "verify_code": verifyCode
+            ]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw NSError(domain: "Server error", code: -1)
+            }
+            
+            let result = try JSONDecoder().decode(APIResponse.self, from: data)
+            
+            await MainActor.run {
+                if result.success {
+                    errorMessage = "注册成功！"
+                    showingError = true
+                } else {
+                    errorMessage = result.error ?? "注册失败"
+                    showingError = true
+                }
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "网络错误：\(error.localizedDescription)"
                 showingError = true
             }
         }
+    }
+    
+    // MARK: - API 登录
+    private func loginWithAPI() async {
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/users.php")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let body: [String: Any] = [
+                "action": "login",
+                "phone": phone,
+                "verify_code": verifyCode
+            ]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw NSError(domain: "Server error", code: -1)
+            }
+            
+            let result = try JSONDecoder().decode(APIResponse.self, from: data)
+            
+            await MainActor.run {
+                if result.success {
+                    errorMessage = "登录成功！"
+                    showingError = true
+                } else {
+                    errorMessage = result.error ?? "登录失败"
+                    showingError = true
+                }
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "网络错误：\(error.localizedDescription)"
+                showingError = true
+            }
+        }
+    }
+    
+    // MARK: - API 响应模型
+    struct APIResponse: Codable {
+        let success: Bool
+        let message: String?
+        let error: String?
     }
 }
 
