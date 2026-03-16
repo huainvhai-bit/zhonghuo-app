@@ -115,10 +115,27 @@ class DataManager: ObservableObject {
     func checkAPIReady() async throws {
         // 如果已初始化，直接返回
         if !DataManager.apiURL.isEmpty && isBackendOnline {
+            print("✅ API 已就绪：\(DataManager.apiURL)")
             return
         }
         
-        // 等待初始化
+        // 如果后端离线，使用备用地址
+        if !isBackendOnline {
+            // 使用 UserDefaults 中保存的地址
+            if let savedURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") {
+                DataManager.baseURL = savedURL
+                DataManager.apiURL = "\(savedURL)/api"
+                print("⚠️ 使用备用地址：\(DataManager.apiURL)")
+                return
+            }
+            // 使用默认地址
+            DataManager.baseURL = "http://8.136.41.211:3395"
+            DataManager.apiURL = "http://8.136.41.211:3395/api"
+            print("⚠️ 使用默认地址：\(DataManager.apiURL)")
+            return
+        }
+        
+        // 等待初始化（最多 3 秒）
         var attempts = 0
         while DataManager.apiURL.isEmpty && attempts < 30 {
             try await Task.sleep(nanoseconds: 100_000_000) // 100ms
@@ -126,7 +143,11 @@ class DataManager: ObservableObject {
         }
         
         if DataManager.apiURL.isEmpty {
-            throw NSError(domain: "API initialization timeout", code: -1)
+            // 超时后使用默认地址
+            DataManager.baseURL = "http://8.136.41.211:3395"
+            DataManager.apiURL = "http://8.136.41.211:3395/api"
+            print("⚠️ 初始化超时，使用默认地址：\(DataManager.apiURL)")
+            return
         }
     }
     
