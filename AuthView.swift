@@ -28,11 +28,18 @@ struct AuthView: View {
         let debug: String?
     }
     
-    // MARK: - API 响应模型
-    struct APIResponse: Codable {
+    // MARK: - 注册/登录 API 响应模型
+    struct AuthResponse: Codable {
         let success: Bool
         let message: String?
         let error: String?
+        let data: AuthData?
+        
+        struct AuthData: Codable {
+            let token: String
+            let user_id: String
+            let is_new: Bool
+        }
     }
     
     var body: some View {
@@ -369,6 +376,25 @@ struct AuthView: View {
             
             print("  HTTP 状态码：\(httpResponse.statusCode)")
             
+            // 检查是否是验证码错误（后端返回特定错误码）
+            if httpResponse.statusCode == 400 || httpResponse.statusCode == 500 {
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  响应内容：\(responseString)")
+                    // 尝试解析错误信息
+                    if let errorData = try? JSONDecoder().decode(AuthResponse.self, from: data) {
+                        if errorData.error?.contains("验证码") == true {
+                            await MainActor.run {
+                                errorMessage = "验证码错误或已过期"
+                                showingError = true
+                                countdown = 0 // 允许重新获取
+                            }
+                            return
+                        }
+                    }
+                }
+                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+            }
+            
             guard (200...299).contains(httpResponse.statusCode) else {
                 print("❌ HTTP 错误：\(httpResponse.statusCode)")
                 if let responseString = String(data: data, encoding: .utf8) {
@@ -378,16 +404,25 @@ struct AuthView: View {
             }
             
             do {
-                let result = try JSONDecoder().decode(APIResponse.self, from: data)
+                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
                 print("✅ JSON 解析成功")
                 print("  success: \(result.success)")
                 print("  message: \(result.message ?? "nil")")
                 print("  error: \(result.error ?? "nil")")
                 
                 await MainActor.run {
-                    if result.success {
+                    if result.success, let data = result.data {
+                        // 保存 token 到 UserDefaults
+                        UserDefaults.standard.set(data.token, forKey: "userToken")
+                        UserDefaults.standard.set(data.user_id, forKey: "userId")
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        
+                        // 更新 UserManager 状态
+                        userManager.isLoggedIn = true
+                        
                         errorMessage = "注册成功！"
                         showingError = true
+                        // 不需要手动跳转，ContentView 会监听 isLoggedIn 变化
                     } else {
                         errorMessage = result.error ?? "注册失败"
                         showingError = true
@@ -414,7 +449,7 @@ struct AuthView: View {
                 } else if error._domain == "Invalid URL" {
                     errorMessage = "服务器地址无效"
                 } else if error._domain == "Server error" {
-                    errorMessage = "服务器错误 (HTTP \(error._code))"
+                    errorMessage = "服务器错误，请稍后重试"
                 } else {
                     errorMessage = "网络错误：\(error.localizedDescription)"
                 }
@@ -425,15 +460,28 @@ struct AuthView: View {
     
     // MARK: - API 登录
     private func loginWithAPI() async {
+        print("🔵 开始登录流程...")
+        print("  phone: \(phone)")
+        print("  verify_code: \(verifyCode)")
+        
         do {
             // 等待 API 初始化完成
             try await DataManager.shared.checkAPIReady()
+            print("✅ API 已就绪")
             
             guard !DataManager.apiURL.isEmpty else {
+                print("❌ API URL 为空")
                 throw NSError(domain: "API URL not initialized", code: -1)
             }
             
-            let url = URL(string: "\(DataManager.apiURL)/users.php")!
+            let urlString = "\(DataManager.apiURL)/users.php"
+            print("🌐 请求 URL: \(urlString)")
+            
+            guard let url = URL(string: urlString) else {
+                print("❌ URL 无效")
+                throw NSError(domain: "Invalid URL", code: -1)
+            }
+            
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -443,19 +491,60 @@ struct AuthView: View {
                 "phone": phone,
                 "verify_code": verifyCode
             ]
+            
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("📡 发送请求...")
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                throw NSError(domain: "Server error", code: -1)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 响应不是 HTTPURLResponse")
+                throw NSError(domain: "Invalid response type", code: -1)
             }
             
-            let result = try JSONDecoder().decode(APIResponse.self, from: data)
+            print("  HTTP 状态码：\(httpResponse.statusCode)")
+            
+            // 检查验证码错误
+            if httpResponse.statusCode == 400 || httpResponse.statusCode == 500 {
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  响应内容：\(responseString)")
+                    if let errorData = try? JSONDecoder().decode(AuthResponse.self, from: data) {
+                        if errorData.error?.contains("验证码") == true {
+                            await MainActor.run {
+                                errorMessage = "验证码错误或已过期"
+                                showingError = true
+                                countdown = 0 // 允许重新获取
+                            }
+                            return
+                        }
+                    }
+                }
+                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                print("❌ HTTP 错误：\(httpResponse.statusCode)")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  响应内容：\(responseString)")
+                }
+                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+            }
+            
+            let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+            print("✅ JSON 解析成功")
+            print("  success: \(result.success)")
+            print("  message: \(result.message ?? "nil")")
             
             await MainActor.run {
-                if result.success {
+                if result.success, let data = result.data {
+                    // 保存 token 到 UserDefaults
+                    UserDefaults.standard.set(data.token, forKey: "userToken")
+                    UserDefaults.standard.set(data.user_id, forKey: "userId")
+                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                    
+                    // 更新 UserManager 状态
+                    userManager.isLoggedIn = true
+                    
                     errorMessage = "登录成功！"
                     showingError = true
                 } else {
@@ -463,9 +552,16 @@ struct AuthView: View {
                     showingError = true
                 }
             }
+            
         } catch {
+            print("❌ 登录失败：\(error)")
+            
             await MainActor.run {
-                errorMessage = "网络错误：\(error.localizedDescription)"
+                if error._domain == "Server error" {
+                    errorMessage = "服务器错误，请稍后重试"
+                } else {
+                    errorMessage = "网络错误：\(error.localizedDescription)"
+                }
                 showingError = true
             }
         }

@@ -30,6 +30,11 @@ struct ContentView: View {
             // 确保 API 配置已初始化（立即可用）
             DataManager.shared.initializeAPIConfig()
             
+            // 检查 UserDefaults 中的登录状态（兼容注册/登录后立即跳转）
+            if UserDefaults.standard.bool(forKey: "isLoggedIn") {
+                userManager.isLoggedIn = true
+            }
+            
             checkEmergencyContacts()
             autoCheckIn()
             
