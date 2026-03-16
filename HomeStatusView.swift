@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
+    @Environment(\.scenePhase) var scenePhase
     @State private var showCheckInAnimation = false
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var secondsRemaining: Double = 0
@@ -25,7 +26,6 @@ struct HomeStatusView: View {
                     VStack(spacing: 16) {
                         checkInCard
                         statusCard
-                        quickActionsGrid
                         progressCard
                         capsulePreview
                     }
@@ -49,27 +49,28 @@ struct HomeStatusView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
                         Text("终活")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
                     }
-                    .foregroundColor(Color(hex: "AF52DE"))
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("v2.0")
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "AF52DE").opacity(0.1))
-                        .foregroundColor(Color(hex: "AF52DE"))
-                        .cornerRadius(6)
                 }
             }
             .onReceive(timer) { _ in
                 updateStatus()
+            }
+            .onAppear {
+                print("🟢 首页 onAppear - 触发自动签到")
+                handleAutoCheckIn()
+            }
+            .onChange(of: scenePhase) { newPhase in
+                if newPhase == .active {
+                    print("🟢 场景变为 active - 触发自动签到")
+                    handleAutoCheckIn()
+                }
             }
             .sheet(isPresented: $showingWitnessSheet) {
                 WitnessView()
@@ -77,10 +78,46 @@ struct HomeStatusView: View {
         }
     }
     
+    private func handleAutoCheckIn() {
+        let userManager = UserManager.shared
+        guard userManager.isLoggedIn else {
+            print("⚠️ 自动签到：用户未登录")
+            return
+        }
+        
+        let now = Date()
+        let lastCheckIn = userManager.lastCheckInDate ?? Date.distantPast
+        let intervalSeconds = userManager.checkInInterval.hours * 3600
+        let elapsed = now.timeIntervalSince(lastCheckIn)
+        
+        print("⏰ 检查自动签到：")
+        print("   - 当前时间：\(now)")
+        print("   - lastCheckIn: \(lastCheckIn)")
+        print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue))")
+        print("   - elapsed: \(elapsed)s")
+        print("   - elapsed >= interval: \(elapsed >= intervalSeconds)")
+        
+        // 强制签到：无论是否超时，每次都重置倒计时
+        print("✅ 执行自动签到（强制重置）")
+        let result = userManager.recordCheckIn()
+        print("   - recordCheckIn 结果：\(result)")
+        dataManager.lastCheckInDate = Date()
+        
+        // 立即更新状态并安排提醒
+        updateStatus()
+    }
+    
     private func updateStatus() {
+        // 确保使用最新的签到间隔
+        dataManager.checkInInterval = UserManager.shared.checkInInterval
+        dataManager.lastCheckInDate = UserManager.shared.lastCheckInDate
         let status = dataManager.getCheckInStatus()
         isSafe = status.isSafe
         secondsRemaining = status.hoursRemaining * 3600
+        print("🔄 updateStatus: secondsRemaining=\(secondsRemaining), isSafe=\(isSafe)")
+        
+        // 安排签到提醒（低于 12 小时时每 3 小时提醒一次）
+        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
     }
     
     // MARK: - 签到卡片
@@ -112,27 +149,13 @@ struct HomeStatusView: View {
                 .foregroundColor(.white)
                 .monospacedDigit()
             
-            Button(action: performCheckIn) {
-                HStack(spacing: 10) {
-                    Image(systemName: "hand.thumbsup.fill")
-                        .font(.system(size: 18))
-                    Text("我很好，签到确认")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.white, Color(hex: "F8F9FA")]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .foregroundColor(Color(hex: "34C759"))
-                .cornerRadius(14)
-                .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
-            }
-            .scaleEffect(showCheckInAnimation ? 0.95 : 1.0)
+            Text("✅ 自动签到中")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.9))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(20)
         }
         .padding(26)
         .background(
@@ -179,68 +202,16 @@ struct HomeStatusView: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [isSafe ? Color(hex: "AF52DE") : Color(hex: "FF3B30"), isSafe ? Color(hex: "007AFF") : Color(hex: "FF9500")]),
+                                gradient: Gradient(colors: [isSafe ? Color(hex: "6366F1") : Color(hex: "FF3B30"), isSafe ? Color(hex: "007AFF") : Color(hex: "FF9500")]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .frame(width: geometry.size.width * (isSafe ? 0.76 : 0.1), height: 6)
-                        .shadow(color: (isSafe ? Color(hex: "AF52DE") : Color(hex: "FF3B30")).opacity(0.3), radius: 3, x: 0, y: 2)
+                        .shadow(color: (isSafe ? Color(hex: "6366F1") : Color(hex: "FF3B30")).opacity(0.3), radius: 3, x: 0, y: 2)
                 }
             }
             .frame(height: 6)
-        }
-        .padding(18)
-        .background(Color.white)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
-    }
-    
-    // MARK: - 快捷操作网格
-    private var quickActionsGrid: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("快捷操作")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                QuickActionItem(
-                    systemImage: "mic.fill",
-                    label: "录制语音",
-                    color: Color(hex: "AF52DE"),
-                    action: {
-                        print("🔵 点击录制语音")
-                        // TODO: 导航到录音功能
-                    }
-                )
-                QuickActionItem(
-                    systemImage: "doc.text.fill",
-                    label: "身后事务",
-                    color: Color(hex: "34C759"),
-                    action: {
-                        print("🔵 点击身后事务")
-                        navigateToWillAssets = true
-                    }
-                )
-                QuickActionItem(
-                    systemImage: "person.2.fill",
-                    label: "见证人",
-                    color: Color(hex: "FF9500"),
-                    action: {
-                        print("🔵 点击见证人")
-                        showingWitnessSheet = true
-                    }
-                )
-                QuickActionItem(
-                    systemImage: "yensign.circle.fill",
-                    label: "资产",
-                    color: Color(hex: "007AFF"),
-                    action: {
-                        print("🔵 点击资产")
-                        navigateToWillAssets = true
-                    }
-                )
-            }
         }
         .padding(18)
         .background(Color.white)
@@ -272,7 +243,7 @@ struct HomeStatusView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
                     }
-                    .foregroundColor(Color(hex: "AF52DE"))
+                    .foregroundColor(Color(hex: "6366F1"))
                 }
             }
             
@@ -319,7 +290,7 @@ struct HomeStatusView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
                     }
-                    .foregroundColor(Color(hex: "AF52DE"))
+                    .foregroundColor(Color(hex: "6366F1"))
                 }
             }
             
@@ -327,12 +298,12 @@ struct HomeStatusView: View {
                 VStack(spacing: 14) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "AF52DE").opacity(0.1))
+                            .fill(Color(hex: "6366F1").opacity(0.1))
                             .frame(width: 56, height: 56)
                         
                         Image(systemName: "capsule.fill")
                             .font(.system(size: 24))
-                            .foregroundColor(Color(hex: "AF52DE"))
+                            .foregroundColor(Color(hex: "6366F1"))
                     }
                     
                     Text("暂无时光胶囊")
@@ -348,10 +319,10 @@ struct HomeStatusView: View {
                             Text("创建第一个胶囊")
                         }
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color(hex: "AF52DE"))
+                        .foregroundColor(Color(hex: "6366F1"))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(Color(hex: "AF52DE").opacity(0.1))
+                        .background(Color(hex: "6366F1").opacity(0.1))
                         .cornerRadius(20)
                     }
                 }
@@ -380,26 +351,6 @@ struct HomeStatusView: View {
         return String(format: "%02d:%02d:%02d", hrs, mins, secs)
     }
     
-    private func performCheckIn() {
-        print("🔵 签到按钮被点击")
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            showCheckInAnimation = true
-            dataManager.checkIn()
-            // 立即更新倒计时
-            updateStatus()
-            // 安排签到提醒
-            scheduleCheckInReminder()
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            showCheckInAnimation = false
-        }
-    }
-    
-    private func scheduleCheckInReminder() {
-        let status = dataManager.getCheckInStatus()
-        NotificationManager.shared.scheduleCheckInReminder(hoursRemaining: status.hoursRemaining)
-    }
 }
 
 // MARK: - 快捷操作项

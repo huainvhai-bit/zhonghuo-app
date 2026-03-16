@@ -2,150 +2,138 @@
 //  NotificationManager.swift
 //  终活
 //
-//  本地通知管理
+//  签到提醒管理 - 倒计时低于 12 小时时每 3 小时推送一次
 //
 
+import Foundation
 import UserNotifications
 
-class NotificationManager: NSObject {
+class NotificationManager: ObservableObject {
     static let shared = NotificationManager()
     
-    private override init() {
-        super.init()
+    private let center = UNUserNotificationCenter.current()
+    
+    init() {
+        requestPermission()
     }
     
-    /// 请求通知权限
-    func requestAuthorization() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+    // MARK: - 权限请求
+    func requestPermission() {
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
-                print("✅ 通知权限已授予")
+                print("✅ 通知权限已获取")
             } else if let error = error {
-                print("❌ 通知权限请求失败：\(error)")
+                print("❌ 通知权限失败：\(error)")
             }
         }
     }
     
-    /// 安排签到提醒
-    func scheduleCheckInReminder(hoursRemaining: Double) {
-        // 如果已经超过 48 小时，立即提醒
-        if hoursRemaining <= 0 {
-            sendImmediateReminder()
+    // MARK: - 签到提醒
+    /// 当倒计时低于 12 小时时，每 3 小时推送一次签到提醒
+    /// 如果倒计时很短（<1 小时），则立即提醒
+    func scheduleCheckInReminders(hoursRemaining: Double) {
+        print("🔔 检查是否需要安排签到提醒：hoursRemaining=\(hoursRemaining)小时")
+        
+        // 取消所有现有提醒
+        cancelAllCheckInReminders()
+        
+        // 只有低于 12 小时才需要提醒
+        guard hoursRemaining < 12 else {
+            print("⏰ 倒计时还有 \(hoursRemaining) 小时，不需要提醒")
             return
         }
         
-        // 计算提醒时间（提前 6 小时）
-        let reminderTime = hoursRemaining * 3600 - 6 * 3600 // 6 小时前
-        
-        if reminderTime <= 0 {
-            // 已经不到 6 小时，立即提醒
-            sendImmediateReminder()
+        // 如果倒计时非常短（<1 小时），立即提醒
+        if hoursRemaining < 1 {
+            let minutesRemaining = Int(hoursRemaining * 60)
+            print("⚠️ 倒计时紧急：只剩 \(minutesRemaining) 分钟，立即提醒")
+            scheduleImmediateReminder(minutes: minutesRemaining)
             return
         }
         
-        // 安排延迟通知
+        // 计算需要推送几次提醒（每 3 小时一次）
+        let reminderCount = max(1, Int(hoursRemaining / 3) + 1)
+        print("📅 需要安排 \(reminderCount) 次提醒")
+        
+        for i in 0..<reminderCount {
+            let hoursFromNow = Double(i) * 3
+            let triggerTime = Date().addingTimeInterval(hoursFromNow * 3600)
+            
+            print("   - 提醒 \(i+1): \(hoursFromNow) 小时后 (\(triggerTime))")
+            
+            scheduleReminder(
+                identifier: "checkin_reminder_\(i)",
+                title: "⏰ 签到提醒",
+                body: "距离下次签到还有 \(Int(hoursRemaining - hoursFromNow)) 小时，记得打开 App 签到哦~",
+                triggerDate: triggerTime
+            )
+        }
+    }
+    
+    // MARK: - 立即提醒
+    /// 用于测试或紧急情况
+    func scheduleImmediateReminder(minutes: Int = 1) {
+        print("🔔 安排立即提醒（\(minutes) 分钟后）")
+        
+        // 立即推送（10 秒后）
+        let triggerDate = Date().addingTimeInterval(10)
+        scheduleReminder(
+            identifier: "checkin_immediate",
+            title: "⏰ 签到提醒",
+            body: "距离下次签到还有 \(minutes) 分钟，记得打开 App 签到哦~",
+            triggerDate: triggerDate
+        )
+    }
+    
+    // MARK: - 测试立即推送
+    /// 测试用：5 秒后推送
+    func testImmediatePush() {
+        print("🧪 测试推送（5 秒后）")
+        let triggerDate = Date().addingTimeInterval(5)
+        scheduleReminder(
+            identifier: "test_push",
+            title: "🧪 测试通知",
+            body: "如果你收到这条消息，说明通知系统正常工作！",
+            triggerDate: triggerDate
+        )
+    }
+    
+    // MARK: - 私有方法
+    private func scheduleReminder(identifier: String, title: String, body: String, triggerDate: Date) {
         let content = UNMutableNotificationContent()
-        content.title = "⏰ 签到提醒"
-        content.body = "您已接近签到时间，记得及时签到哦～"
+        content.title = title
+        content.body = body
         content.sound = .default
-        content.categoryIdentifier = "checkinReminder"
+        content.categoryIdentifier = "checkin"
         
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: reminderTime, repeats: false)
-        let request = UNNotificationRequest(identifier: "checkinReminder", content: content, trigger: trigger)
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: triggerDate),
+            repeats: false
+        )
         
-        UNUserNotificationCenter.current().add(request) { error in
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: trigger
+        )
+        
+        center.add(request) { error in
             if let error = error {
-                print("❌ 安排签到提醒失败：\(error)")
+                print("❌ 添加提醒失败：\(error)")
             } else {
-                print("✅ 签到提醒已安排：\(Int(reminderTime / 3600)) 小时后")
+                print("✅ 提醒已安排：\(identifier)")
             }
         }
     }
     
-    /// 立即发送提醒
-    private func sendImmediateReminder() {
-        let content = UNMutableNotificationContent()
-        content.title = "⚠️ 需要签到"
-        content.body = "您已超过签到时间，请立即签到以确保家人安心"
-        content.sound = .default
-        content.categoryIdentifier = "checkinUrgent"
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        let request = UNNotificationRequest(identifier: "checkinUrgent", content: content, trigger: trigger)
-        
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("❌ 发送紧急提醒失败：\(error)")
-            } else {
-                print("✅ 紧急签到提醒已发送")
-            }
-        }
+    // MARK: - 取消提醒
+    func cancelAllCheckInReminders() {
+        let identifiers = (0..<10).map { "checkin_reminder_\($0)" } + ["checkin_immediate"]
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        print("🗑️ 已取消所有签到提醒")
     }
     
-    /// 取消所有签到提醒
-    func cancelAllReminders() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["checkinReminder", "checkinUrgent"])
-        print("✅ 已取消所有签到提醒")
-    }
-    
-    /// 检查通知权限
-    func checkAuthorization() -> Bool {
-        var granted = false
-        let group = DispatchGroup()
-        group.enter()
-        
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            granted = settings.authorizationStatus == .authorized
-            group.leave()
-        }
-        
-        group.wait()
-        return granted
-    }
-}
-
-// MARK: - 通知分类
-extension NotificationManager {
-    func registerCategories() {
-        // 签到提醒分类
-        let checkinAction = UNNotificationAction(
-            identifier: "CHECKIN_ACTION",
-            title: "立即签到",
-            options: .foreground
-        )
-        
-        let checkinCategory = UNNotificationCategory(
-            identifier: "checkinReminder",
-            actions: [checkinAction],
-            intentIdentifiers: [],
-            options: []
-        )
-        
-        // 紧急签到分类
-        let urgentCategory = UNNotificationCategory(
-            identifier: "checkinUrgent",
-            actions: [checkinAction],
-            intentIdentifiers: [],
-            options: []
-        )
-        
-        UNUserNotificationCenter.current().setNotificationCategories([checkinCategory, urgentCategory])
-    }
-}
-
-// MARK: - 通知代理
-extension NotificationManager: UNUserNotificationCenterDelegate {
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // 前台显示通知
-        completionHandler([.banner, .sound])
-    }
-    
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        // 处理通知点击
-        if response.actionIdentifier == "CHECKIN_ACTION" {
-            // 用户点击了"立即签到"
-            DataManager.shared.checkIn()
-            print("✅ 用户通过通知签到")
-        }
-        completionHandler()
+    func cancelReminder(identifier: String) {
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
     }
 }

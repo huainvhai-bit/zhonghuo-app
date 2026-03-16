@@ -20,9 +20,6 @@ struct WillAssetsView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    // 云同步状态
-                    syncStatusCard
-                    
                     // 分段控制器
                     segmentControl
                     
@@ -41,23 +38,21 @@ struct WillAssetsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: "doc.text.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
                         Text("嘱托与资产")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
                     }
-                    .foregroundColor(Color(hex: "AF52DE"))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingPDFExport = true }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "doc.badge.plus")
-                            Text("导出 PDF")
-                        }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(hex: "AF52DE"))
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -78,37 +73,6 @@ struct WillAssetsView: View {
         }
     }
     
-    // MARK: - 云同步状态
-    private var syncStatusCard: some View {
-        HStack(spacing: 12) {
-            Text("☁️")
-                .font(.title2)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("云端已同步")
-                    .font(.subheadline.bold())
-                    .foregroundColor(Color(hex: "34C759"))
-                
-                Text("上次同步：刚刚 · 所有数据已安全备份")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Button("详情") {
-                // TODO: 显示同步详情
-            }
-            .font(.system(size: 12))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-        }
-        .padding(14)
-        .background(Color(hex: "34C759").opacity(0.08))
-        .cornerRadius(12)
-    }
     
     // MARK: - 分段控制器
     private var segmentControl: some View {
@@ -118,7 +82,7 @@ struct WillAssetsView: View {
                     .font(.system(size: 14, weight: .medium))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .background(selectedTab == 0 ? Color(hex: "AF52DE") : Color.clear)
+                    .background(selectedTab == 0 ? Color(hex: "6366F1") : Color.clear)
                     .foregroundColor(selectedTab == 0 ? .white : .primary)
                     .cornerRadius(8)
             }
@@ -128,7 +92,7 @@ struct WillAssetsView: View {
                     .font(.system(size: 14, weight: .medium))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .background(selectedTab == 1 ? Color(hex: "AF52DE") : Color.clear)
+                    .background(selectedTab == 1 ? Color(hex: "6366F1") : Color.clear)
                     .foregroundColor(selectedTab == 1 ? .white : .primary)
                     .cornerRadius(8)
             }
@@ -143,24 +107,6 @@ struct WillAssetsView: View {
         VStack(spacing: 16) {
             // 进度卡片
             progressCard
-            
-            // 使用模板按钮
-            Button(action: { showingTemplateModal = true }) {
-                HStack {
-                    Text("📋")
-                    Text("使用预设模板")
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color.white)
-                .foregroundColor(Color(hex: "AF52DE"))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(hex: "AF52DE"), lineWidth: 1)
-                )
-            }
             
             // 遗嘱模块列表
             ForEach(dataManager.willModules) { module in
@@ -185,7 +131,7 @@ struct WillAssetsView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color(hex: "AF52DE"))
+                .background(Color(hex: "6366F1"))
                 .foregroundColor(.white)
                 .cornerRadius(12)
             }
@@ -218,7 +164,7 @@ struct WillAssetsView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color(hex: "AF52DE"))
+                .background(Color(hex: "6366F1"))
                 .foregroundColor(.white)
                 .cornerRadius(12)
             }
@@ -243,7 +189,7 @@ struct WillAssetsView: View {
                 
                 Text("\(Int(dataManager.getWillProgress() * 100))%")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(Color(hex: "AF52DE"))
+                    .foregroundColor(Color(hex: "6366F1"))
             }
             
             GeometryReader { geometry in
@@ -256,7 +202,7 @@ struct WillAssetsView: View {
                     Rectangle()
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
+                                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "007AFF")]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -302,7 +248,7 @@ struct WillAssetsView: View {
             Spacer()
         }
         .padding(14)
-        .background(Color(hex: "AF52DE").opacity(0.08))
+        .background(Color(hex: "6366F1").opacity(0.08))
         .cornerRadius(12)
     }
 }
@@ -374,7 +320,7 @@ struct AssetCard: View {
                 
                 Text("¥\(formatBalance(asset.balance))")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Color(hex: "AF52DE"))
+                    .foregroundColor(Color(hex: "6366F1"))
             }
             
             Divider()

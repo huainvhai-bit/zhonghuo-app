@@ -9,12 +9,14 @@ import SwiftUI
 
 struct AIRobotView: View {
     @State private var isExpanded = false
-    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 50, y: UIScreen.main.bounds.height - 160)
+    @State private var position: CGPoint = CGPoint(x: UIScreen.main.bounds.width - 25, y: UIScreen.main.bounds.height - 100)
     @State private var message = ""
     @State private var messages: [ChatMessage] = [
-        ChatMessage(id: "1", text: "您好！我是您的终活助手 🤖", isUser: false)
+        ChatMessage(id: "1", text: "您好！我是您的终活助手 ✨", isUser: false)
     ]
     @State private var isOnRightSide = true
+    @AppStorage("aiRobotPosition") private var savedPositionX: Double = -1
+    @AppStorage("aiRobotPositionY") private var savedPositionY: Double = -1
     
     var body: some View {
         ZStack {
@@ -36,7 +38,7 @@ struct AIRobotView: View {
                                         
                                         Text(msg.text)
                                             .padding(12)
-                                            .background(msg.isUser ? Color(hex: "AF52DE") : Color.gray.opacity(0.15))
+                                            .background(msg.isUser ? Color(hex: "6366F1") : Color.gray.opacity(0.15))
                                             .foregroundColor(msg.isUser ? .white : .primary)
                                             .cornerRadius(16)
                                         
@@ -62,7 +64,7 @@ struct AIRobotView: View {
                                     .font(.system(size: 16))
                                     .foregroundColor(.white)
                                     .padding(10)
-                                    .background(Color(hex: "AF52DE"))
+                                    .background(Color(hex: "6366F1"))
                                     .clipShape(Circle())
                             }
                         }
@@ -78,62 +80,42 @@ struct AIRobotView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
             
-            // 小机器人 - 靠边隐藏，只露出一半
+            // 小机器人 - 靠边半隐藏，半透明
             ZStack {
-                // 机器人头部
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE"), Color(hex: "007AFF")]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                // 机器人图标
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "FF6B6B")]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 50, height: 50)
-                        .shadow(color: Color(hex: "AF52DE").opacity(0.4), radius: 8, x: 0, y: 4)
-                    
-                    // 机器人脸部
-                    VStack(spacing: 4) {
-                        // 眼睛
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color.white)
-                                .frame(width: 10, height: 10)
-                            Circle()
-                                .fill(Color.white)
-                                .frame(width: 10, height: 10)
-                        }
-                        .offset(y: -2)
-                        
-                        // 嘴巴
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white)
-                            .frame(width: 14, height: 3)
-                    }
-                    .offset(y: 2)
-                }
-                .offset(x: isOnRightSide ? -12 : 12) // 让一半隐藏在屏幕边缘
-                
-                // 机器人身体（展开时显示）
-                if isExpanded {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "AF52DE").opacity(0.9), Color(hex: "007AFF").opacity(0.9)]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 40, height: 35)
-                        .offset(y: 38)
-                        .transition(.scale.combined(with: .opacity))
-                }
+                    )
+                    .frame(width: 45, height: 45)
+                    .shadow(color: isExpanded ? Color(hex: "6366F1").opacity(0.4) : .clear, radius: isExpanded ? 8 : 0, x: 0, y: 4)
+                    .overlay(
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.white)
+                    )
+                    .overlay(
+                        // 未展开时半透明遮罩
+                        isExpanded ? nil : Color.black.opacity(0.3)
+                    )
+                    .offset(x: isOnRightSide ? -20 : 20) // 让一半隐藏在屏幕边缘
+                    .opacity(isExpanded ? 1 : 0.5) // 不使用时半透明
+                    .scaleEffect(isExpanded ? 1 : 0.9)
             }
             .position(x: position.x, y: position.y)
             .onTapGesture {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     isExpanded.toggle()
+                }
+            }
+            .onAppear {
+                // 初始化位置
+                if savedPositionX != -1 {
+                    position = CGPoint(x: savedPositionX, y: savedPositionY)
                 }
             }
             .gesture(
@@ -150,17 +132,21 @@ struct AIRobotView: View {
                         if position.x < screenWidth / 2 {
                             isOnRightSide = false
                             withAnimation(.spring()) {
-                                position.x = 38 // 左边，一半隐藏
+                                position.x = 22 // 左边，一半隐藏
                             }
                         } else {
                             isOnRightSide = true
                             withAnimation(.spring()) {
-                                position.x = screenWidth - 38 // 右边，一半隐藏
+                                position.x = screenWidth - 22 // 右边，一半隐藏
                             }
                         }
                         
                         // 确保不超出边界
                         position.y = max(60, min(position.y, UIScreen.main.bounds.height - 60))
+                        
+                        // 保存位置
+                        savedPositionX = position.x
+                        savedPositionY = position.y
                     }
             )
         }

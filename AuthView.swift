@@ -11,9 +11,14 @@ struct AuthView: View {
     @StateObject private var userManager = UserManager.shared
     @State private var name = ""
     @State private var phone = ""
+    @State private var verifyCode = ""
     @State private var isRegistering = true
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingVerifyCode = false
+    @State private var countdown = 0
+    @State private var timer: Timer?
+    @State private var sentCode = ""
     
     var body: some View {
         NavigationView {
@@ -45,11 +50,37 @@ struct AuthView: View {
                             .disableAutocorrection(true)
                     }
                     
+                    // 手机号输入
                     TextField("手机号码", text: $phone)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .keyboardType(.phonePad)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
+                    
+                    // 验证码输入（获取验证码后显示）
+                    if showingVerifyCode {
+                        HStack {
+                            TextField("验证码", text: $verifyCode)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .onChange(of: verifyCode) { newValue in
+                                    if newValue.count > 6 {
+                                        verifyCode = String(newValue.prefix(6))
+                                    }
+                                }
+                            
+                            Button(action: sendVerifyCode) {
+                                Text(countdown > 0 ? "\(countdown)秒" : "获取验证码")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                                    .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
+                                    .cornerRadius(8)
+                            }
+                            .disabled(countdown > 0 || phone.isEmpty)
+                        }
+                    }
                     
                     Button(action: handleSubmit) {
                         Text(isRegistering ? "注册" : "登录")
@@ -60,7 +91,7 @@ struct AuthView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(phone.isEmpty || (isRegistering && name.isEmpty))
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || verifyCode.isEmpty) : phone.isEmpty)
                 }
                 .padding(.horizontal, 30)
                 
@@ -120,8 +151,41 @@ struct AuthView: View {
         }
     }
     
+    // MARK: - 发送验证码
+    private func sendVerifyCode() {
+        guard !phone.isEmpty else { return }
+        
+        // 生成 6 位随机验证码
+        sentCode = String(Int.random(in: 100000...999999))
+        print("📱 验证码：\(sentCode)（测试用，实际应发送短信）")
+        
+        // 开始倒计时
+        countdown = 60
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            countdown -= 1
+            if countdown <= 0 {
+                timer?.invalidate()
+                timer = nil
+            }
+        }
+        
+        showingVerifyCode = true
+        
+        // 模拟发送短信
+        errorMessage = "验证码：\(sentCode)（测试用）"
+        showingError = true
+    }
+    
+    // MARK: - 提交处理
     private func handleSubmit() {
         if isRegistering {
+            // 验证验证码
+            if verifyCode != sentCode {
+                errorMessage = "验证码错误，请重新输入"
+                showingError = true
+                return
+            }
+            
             // 注册
             let result = userManager.register(name: name, phone: phone)
             switch result {
@@ -132,6 +196,21 @@ struct AuthView: View {
                 showingError = true
             }
         } else {
+            // 登录：也需要验证码
+            if !showingVerifyCode {
+                sendVerifyCode()
+                errorMessage = "请先获取验证码"
+                showingError = true
+                return
+            }
+            
+            // 验证验证码
+            if verifyCode != sentCode {
+                errorMessage = "验证码错误，请重新输入"
+                showingError = true
+                return
+            }
+            
             // 登录
             let result = userManager.login(phone: phone)
             switch result {

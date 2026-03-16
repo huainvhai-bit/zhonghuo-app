@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AVFoundation
+import AVKit
 
 struct TimeCapsuleView: View {
     @ObservedObject var dataManager = DataManager.shared
@@ -42,20 +44,21 @@ struct TimeCapsuleView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "capsule.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                    HStack(spacing: 8) {
+                        Image(systemName: "hourglass")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
                         Text("时光胶囊")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
                     }
-                    .foregroundColor(Color(hex: "AF52DE"))
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddModal = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(Color(hex: "AF52DE"))
+                            .foregroundColor(Color(hex: "6366F1"))
                     }
                 }
             }
@@ -70,15 +73,41 @@ struct TimeCapsuleView: View {
     
     // MARK: - 统计卡片
     private var statsCard: some View {
-        HStack(spacing: 12) {
-            StatItem(icon: "capsule.fill", value: "\(dataManager.capsules.count)", label: "全部", color: Color(hex: "AF52DE"))
-            StatItem(icon: "clock.fill", value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", color: Color(hex: "FF9500"))
-            StatItem(icon: "checkmark.circle.fill", value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", color: Color(hex: "34C759"))
+        VStack(spacing: 12) {
+            // 欢迎语
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("⏰ 时光胶囊")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    
+                    Text("记录美好，留给未来的自己")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
+                }
+                
+                Spacer()
+            }
+            
+            // 统计
+            HStack(spacing: 12) {
+                StatItem(icon: "capsule.fill", value: "\(dataManager.capsules.count)", label: "全部", color: .white)
+                StatItem(icon: "clock.fill", value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", color: .white)
+                StatItem(icon: "checkmark.circle.fill", value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", color: .white)
+            }
         }
         .padding(16)
-        .background(Color.white)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 3)
+        .shadow(color: Color(hex: "6366F1").opacity(0.3), radius: 12, x: 0, y: 6)
     }
     
     // MARK: - 筛选按钮
@@ -143,7 +172,7 @@ struct TimeCapsuleView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
-                .background(Color(hex: "AF52DE"))
+                .background(Color(hex: "6366F1"))
                 .cornerRadius(12)
             }
         }
@@ -193,14 +222,14 @@ struct FilterButton: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isActive ? Color(hex: "AF52DE") : Color.white)
+            .background(isActive ? Color(hex: "6366F1") : Color.white)
             .foregroundColor(isActive ? .white : .primary)
             .cornerRadius(20)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(isActive ? Color.clear : Color(hex: "E5E5EA"), lineWidth: 1)
             )
-            .shadow(color: isActive ? Color(hex: "AF52DE").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+            .shadow(color: isActive ? Color(hex: "6366F1").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
         }
     }
 }
@@ -267,7 +296,7 @@ struct CapsuleCard: View {
     
     private func formatSendDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = capsule.isSent ? "yyyy/MM/dd 已发送" : "yyyy/MM/dd 发送"
+        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
         return formatter.string(from: date)
     }
 }
@@ -280,6 +309,11 @@ struct AddCapsuleModal: View {
     @State private var content = ""
     @State private var selectedType: TimeCapsule.CapsuleType = .text
     @State private var sendDate = Date()
+    @State private var isRecording = false
+    @State private var recordedAudioURL: URL?
+    @State private var recordedVideoURL: URL?
+    @State private var showingRecorder = false
+    @State private var showingPlayer = false
     
     var body: some View {
         NavigationView {
@@ -301,25 +335,38 @@ struct AddCapsuleModal: View {
                             .frame(minHeight: 100)
                     } else {
                         VStack(spacing: 12) {
-                            Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(Color(hex: "AF52DE"))
+                            // 录制按钮
+                            Button(action: {
+                                showingRecorder = true
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color(hex: "6366F1"))
+                                .cornerRadius(10)
+                            }
                             
-                            Text("点击录制\(selectedType == .audio ? "语音" : "视频")")
-                                .foregroundColor(.secondary)
-                            
-                            Text("🚧 功能开发中")
-                                .font(.system(size: 13))
-                                .foregroundColor(.orange)
-                            
-                            Text("录音/录像功能需要访问麦克风和摄像头，将在后续版本中实现。目前请先使用文字胶囊。")
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 20)
+                            // 预览按钮（录制完成后显示）
+                            if selectedType == .audio, let url = recordedAudioURL {
+                                PreviewButton(icon: "mic.fill", title: "已录制音频", url: url, showingPlayer: $showingPlayer)
+                            } else if selectedType == .video, let url = recordedVideoURL {
+                                PreviewButton(icon: "video.fill", title: "已录制视频", url: url, showingPlayer: $showingPlayer)
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
+                        .sheet(isPresented: $showingPlayer) {
+                            // 优先使用录制的 URL
+                            if let url = recordedAudioURL ?? recordedVideoURL {
+                                AVPlayerView(player: AVPlayer(url: url))
+                            }
+                        }
                     }
                 }
                 
@@ -336,12 +383,56 @@ struct AddCapsuleModal: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("创建") {
-                        dataManager.addCapsule(title: title, content: content, type: selectedType, sendDate: sendDate)
+                        var capsuleContent = content
+                        if selectedType == .audio, let url = recordedAudioURL {
+                            capsuleContent = url.absoluteString
+                        } else if selectedType == .video, let url = recordedVideoURL {
+                            capsuleContent = url.absoluteString
+                        }
+                        dataManager.addCapsule(title: title, content: capsuleContent, type: selectedType, sendDate: sendDate)
                         dismiss()
                     }
-                    .disabled(title.isEmpty)
+                    .disabled(title.isEmpty || (selectedType != .text && recordedAudioURL == nil && recordedVideoURL == nil))
                 }
             }
+            .sheet(isPresented: $showingRecorder) {
+                MediaRecorderView(
+                    type: selectedType,
+                    recordedURL: selectedType == .audio ? $recordedAudioURL : $recordedVideoURL
+                )
+            }
+        }
+    }
+}
+
+// MARK: - 预览按钮
+struct PreviewButton: View {
+    let icon: String
+    let title: String
+    let url: URL
+    @Binding var showingPlayer: Bool
+    
+    var body: some View {
+        Button(action: {
+            showingPlayer = true
+        }) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+                    .foregroundColor(.green)
+                
+                Text(title)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.green)
+            }
+            .padding(12)
+            .background(Color.green.opacity(0.1))
+            .cornerRadius(10)
         }
     }
 }
@@ -354,6 +445,7 @@ struct EditCapsuleModal: View {
     @State private var title: String
     @State private var content: String
     @State private var sendDate: Date
+    @State private var showingPlayer = false
     
     init(dataManager: DataManager, capsule: TimeCapsule) {
         self.dataManager = dataManager
@@ -373,8 +465,35 @@ struct EditCapsuleModal: View {
                         TextEditor(text: $content)
                             .frame(minHeight: 100)
                     } else {
-                        Text("当前内容：\(content.isEmpty ? "无" : content)")
+                        // 播放按钮
+                        Button(action: {
+                            showingPlayer = true
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: capsule.type == .audio ? "waveform" : "film")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.green)
+                                
+                                Text(capsule.type == .audio ? "播放录音" : "播放视频")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.green)
+                            }
+                            .padding(12)
+                            .background(Color.green.opacity(0.1))
+                            .cornerRadius(10)
+                        }
+                        
+                        Text("文件路径：\(content)")
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
+                            .lineLimit(2)
+                            .truncationMode(.middle)
                     }
                 }
                 
@@ -400,7 +519,30 @@ struct EditCapsuleModal: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingPlayer) {
+                if let url = parseMediaURL(from: content) {
+                    AVPlayerView(player: AVPlayer(url: url))
+                }
+            }
         }
+    }
+    
+    /// 解析媒体文件 URL
+    private func parseMediaURL(from path: String) -> URL? {
+        // 如果已经是完整 URL，直接返回
+        if path.hasPrefix("file://") {
+            return URL(string: path)
+        }
+        
+        // 如果是绝对路径
+        if path.hasPrefix("/") {
+            return URL(fileURLWithPath: path)
+        }
+        
+        // 如果是相对路径（只包含文件名），构建完整路径
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
+        let capsulesFolder = URL(fileURLWithPath: documentsPath).appendingPathComponent("TimeCapsules")
+        return capsulesFolder.appendingPathComponent(path)
     }
 }
 

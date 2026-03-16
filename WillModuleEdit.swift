@@ -14,6 +14,7 @@ struct EditWillModuleModal: View {
     let module: WillModule
     @State private var content: String
     @State private var isCompleted: Bool
+    @State private var showingTemplatePicker = false
     
     init(dataManager: DataManager, module: WillModule) {
         self.dataManager = dataManager
@@ -26,6 +27,17 @@ struct EditWillModuleModal: View {
         NavigationView {
             Form {
                 Section(header: Text(module.title)) {
+                    // 使用模板按钮
+                    Button(action: { showingTemplatePicker = true }) {
+                        HStack {
+                            Image(systemName: "doc.on.doc")
+                            Text("使用模板")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
                     TextEditor(text: $content)
                         .frame(minHeight: 200)
                 }
@@ -51,6 +63,118 @@ struct EditWillModuleModal: View {
                     }
                 }
             }
+            .confirmationDialog("选择模板", isPresented: $showingTemplatePicker) {
+                ForEach(getTemplatesForModule(module), id: \.title) { template in
+                    Button(template.title) {
+                        content = template.content
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            }
+        }
+    }
+    
+    private func getTemplatesForModule(_ module: WillModule) -> [(title: String, content: String)] {
+        switch module.type {
+        case .property:
+            return [
+                ("标准财产分配", """
+                    本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+                    
+                    一、房产
+                    位于 [地址] 的房产（房产证号：[号码]），由 [继承人姓名] 继承，占 100% 份额。
+                    
+                    二、银行存款
+                    名下所有银行账户存款，由 [继承人姓名] 继承。
+                    
+                    三、其他财产
+                    包括但不限于股票、基金、保险、车辆等，均由 [继承人姓名] 继承。
+                    
+                    四、遗嘱执行人
+                    指定 [姓名] 为本遗嘱的执行人。
+                    """),
+                ("按比例分配", """
+                    本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+                    
+                    一、房产
+                    位于 [地址] 的房产，由 [继承人 A] 继承 [50]% 份额，[继承人 B] 继承 [50]% 份额。
+                    
+                    二、银行存款
+                    名下所有银行存款，按以下比例分配：
+                    - [继承人 A]：[50]%
+                    - [继承人 B]：[50]%
+                    
+                    三、遗嘱执行人
+                    指定 [姓名] 为本遗嘱的执行人。
+                    """)
+            ]
+        case .heirs:
+            return [
+                ("继承人指定", """
+                    本人 [姓名]，身份证号 [号码]，现将继承人指定如下：
+                    
+                    一、第一顺序继承人
+                    配偶：[姓名]，身份证号：[号码]
+                    子女：[姓名]，身份证号：[号码]
+                    父母：[姓名]，身份证号：[号码]
+                    
+                    二、继承份额
+                    上述继承人平均分配本人全部遗产。
+                    
+                    三、遗嘱执行人
+                    指定 [姓名] 为本遗嘱的执行人。
+                    """)
+            ]
+        case .specialItems:
+            return [
+                ("特殊物品分配", """
+                    本人 [姓名]，身份证号 [号码]，现将特殊物品分配如下：
+                    
+                    一、首饰
+                    [物品描述] 由 [姓名] 继承。
+                    
+                    二、收藏品
+                    [物品描述] 由 [姓名] 继承。
+                    
+                    三、纪念品
+                    [物品描述] 由 [姓名] 继承。
+                    """)
+            ]
+        case .funeral:
+            return [
+                ("简约葬礼", """
+                    本人 [姓名]，身份证号 [号码]，现将后事安排如下：
+                    
+                    一、葬礼形式
+                    希望举行简约的告别仪式，不铺张浪费。
+                    
+                    二、骨灰处理
+                    骨灰 [撒海/树葬/存放]，不留墓碑。
+                    
+                    三、其他要求
+                    不举行追悼会，不通知亲友。
+                    """),
+                ("传统葬礼", """
+                    本人 [姓名]，身份证号 [号码]，现将后事安排如下：
+                    
+                    一、葬礼形式
+                    希望举行传统的告别仪式，地点在 [殡仪馆名称]。
+                    
+                    二、骨灰处理
+                    骨灰安葬于 [墓地名称]，墓碑刻字：[碑文]。
+                    
+                    三、追悼会
+                    希望举行追悼会，邀请亲友参加。
+                    """)
+            ]
+        case .otherInstructions:
+            return [
+                ("其他嘱托", """
+                    本人 [姓名]，身份证号 [号码]，现将其他嘱托如下：
+                    
+                    [请在此处填写您的嘱托内容]
+                    """)
+            ]
         }
     }
 }

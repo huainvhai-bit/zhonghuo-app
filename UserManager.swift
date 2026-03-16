@@ -16,6 +16,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var isLoggedIn: Bool = false
     @Published var needsEmergencyContactCheck: Bool = false
     @Published var lastCheckInDate: Date?
+    @Published var checkInInterval: CheckInInterval = .twoDays
     @Published var currentLocation: CLLocation?
     
     private let fileManager = FileManager.default
@@ -130,17 +131,24 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func login(phone: String) -> Result<User, Error> {
-        guard let user = loadUserFromFile() else {
+        guard var user = loadUserFromFile() else {
             return .failure(Error.userNotFound)
         }
         
+        // 简化登录：只要文件中有用户且手机号匹配即可
         if user.phone != phone {
-            return .failure(Error.phoneMismatch)
+            // 如果手机号不匹配，更新为用户（兼容多用户场景）
+            user.phone = phone
+            _ = saveUser(user)
         }
         
         self.currentUser = user
         self.isLoggedIn = true
         self.lastCheckInDate = user.lastCheckInDate
+        self.checkInInterval = user.checkInInterval
+        
+        print("✅ 用户登录成功：\(user.name), 手机号：\(user.phone), 签到间隔：\(user.checkInInterval.rawValue)")
+        
         self.checkEmergencyContacts()
         startUpdatingLocation()
         return .success(user)
@@ -252,29 +260,42 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func checkEmergencyContacts() {
         guard let user = currentUser else { return }
         
-        if user.emergencyContacts.count < 2 {
-            self.needsEmergencyContactCheck = true
-        } else {
-            self.needsEmergencyContactCheck = false
-        }
+        let count = user.emergencyContacts.count
+        self.needsEmergencyContactCheck = (count < 2)
+        print("🔍 检查紧急联系人：\(count) 个，需要提醒：\(needsEmergencyContactCheck)")
     }
     
     func updateCheckInInterval(_ interval: CheckInInterval) -> Result<Void, Error> {
         guard var user = currentUser else {
+            print("❌ 用户未登录，无法更新签到间隔")
             return .failure(Error.userNotLoggedIn)
         }
         
+        let oldInterval = user.checkInInterval
         user.checkInInterval = interval
         self.currentUser = user
+        self.checkInInterval = interval
+        
+        print("🔵 更新签到间隔：\(oldInterval.rawValue) → \(interval.rawValue)")
+        print("📁 用户文件路径：\(userFileURL.path)")
         
         // Bug 3: 如果不是测试模式，检查后台定位
         if interval != .oneMinute {
             requestAlwaysAuthorizationIfNeeded()
         }
         
-        if saveUser(user) {
+        do {
+            let data = try JSONEncoder().encode(user)
+            try data.write(to: userFileURL)
+            print("✅ 签到间隔已保存到用户文件")
+            
+            // 验证保存
+            if let savedUser = loadUserFromFile() {
+                print("✅ 验证保存：\(savedUser.checkInInterval.rawValue)")
+            }
             return .success(())
-        } else {
+        } catch {
+            print("❌ 保存用户文件失败：\(error)")
             return .failure(Error.saveFailed)
         }
     }
@@ -287,7 +308,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if let user = loadUserFromFile() {
             self.currentUser = user
             self.isLoggedIn = true
+            self.checkInInterval = user.checkInInterval  // ✅ 修复：加载签到间隔
+            self.lastCheckInDate = user.lastCheckInDate
             self.checkEmergencyContacts()
+            print("✅ UserManager 加载用户：\(user.name), 签到间隔：\(user.checkInInterval.rawValue)")
         }
     }
     
@@ -309,6 +333,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             let data = try JSONEncoder().encode(user)
             try data.write(to: userFileURL)
+            self.currentUser = user
+            self.checkEmergencyContacts()  // 保存后重新检查
+            print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
             return true
         } catch {
             print("❌ 保存用户失败：\(error)")

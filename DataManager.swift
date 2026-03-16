@@ -40,7 +40,11 @@ class DataManager: ObservableObject {
         
         // 从 settings 同步签到状态到 @Published 属性（用于 UI 观察）
         self.lastCheckInDate = settings.lastCheckInDate
-        self.checkInInterval = settings.checkInInterval
+        
+        // 强制从 UserManager 加载（触发 UserManager 初始化）
+        let userManager = UserManager.shared
+        self.checkInInterval = userManager.checkInInterval
+        print("✅ DataManager: 从 UserManager 加载签到间隔 \(self.checkInInterval.rawValue)")
         
         // 加载数据
         loadAllData()
@@ -67,8 +71,39 @@ class DataManager: ObservableObject {
     }
     
     func deleteCapsule(id: String) {
+        // 先删除对应的媒体文件（如果是音频或视频）
+        if let capsule = capsules.first(where: { $0.id == id }) {
+            if capsule.type == .audio || capsule.type == .video {
+                deleteMediaFile(atPath: capsule.content)
+            }
+        }
         capsules.removeAll { $0.id == id }
         saveCapsules()
+    }
+    
+    /// 删除媒体文件
+    private func deleteMediaFile(atPath path: String) {
+        // 尝试从绝对路径或 URL 字符串解析
+        var fileURL: URL?
+        
+        if path.hasPrefix("file://") {
+            fileURL = URL(string: path)
+        } else if path.hasPrefix("/") {
+            fileURL = URL(fileURLWithPath: path)
+        } else {
+            // 相对路径，构建完整路径
+            let capsulesFolder = URL(fileURLWithPath: documentsPath).appendingPathComponent("TimeCapsules")
+            fileURL = capsulesFolder.appendingPathComponent(path)
+        }
+        
+        if let url = fileURL, fileManager.fileExists(atPath: url.path) {
+            do {
+                try fileManager.removeItem(at: url)
+                print("🗑️ 已删除媒体文件：\(url.lastPathComponent)")
+            } catch {
+                print("❌ 删除媒体文件失败：\(error)")
+            }
+        }
     }
     
     func updateCapsule(_ capsule: TimeCapsule) {
@@ -179,7 +214,14 @@ class DataManager: ObservableObject {
     
     // MARK: - 签到功能
     @Published var lastCheckInDate: Date?
-    @Published var checkInInterval: CheckInInterval = .twoDays
+    @Published var checkInInterval: CheckInInterval = .twoDays {
+        didSet {
+            // 同步到 UserManager（如果已登录）
+            if UserManager.shared.isLoggedIn && checkInInterval != oldValue {
+                _ = UserManager.shared.updateCheckInInterval(checkInInterval)
+            }
+        }
+    }
     
     func checkIn() {
         let now = Date()
