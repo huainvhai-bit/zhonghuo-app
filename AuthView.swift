@@ -187,6 +187,11 @@ struct AuthView: View {
             .background(Color(hex: "F6F6F8"))
             .navigationTitle("")
             .navigationBarHidden(true)
+            .onAppear {
+                // 初始化 API 配置（必须在获取验证码之前）
+                print("🟢 AuthView onAppear - 初始化 API 配置")
+                DataManager.shared.initializeAPIConfig()
+            }
             .alert("提示", isPresented: $showingError) {
                 Button("确定", role: .cancel) {}
             } message: {
