@@ -12,7 +12,7 @@ struct ContentView: View {
     @StateObject private var userManager = UserManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
-    @AppStorage("customServerURL") private var customServerURL = "http://192.168.1.100"
+    @AppStorage("customServerURL") private var customServerURL = "http://8.136.41.211:3395"
     @State private var showingEmergencyContactAlert = false
     @State private var showingServerConfig = false
     
@@ -30,7 +30,7 @@ struct ContentView: View {
             checkEmergencyContacts()
             autoCheckIn()
             // 如果用户自定义了服务器地址，使用自定义地址
-            if !customServerURL.isEmpty && customServerURL != "http://192.168.1.100" {
+            if !customServerURL.isEmpty && customServerURL != "http://8.136.41.211:3395" {
                 DataManager.baseURL = customServerURL
                 DataManager.apiURL = "\(customServerURL)/api"
                 dataManager.initializeAPIConfig()

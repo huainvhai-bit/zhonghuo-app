@@ -12,7 +12,7 @@ class DataManager: ObservableObject {
     
     // MARK: - 后端 API 配置（动态获取）
     // 默认配置（首次启动时使用）
-    static var baseURL: String = "http://192.168.1.100"  // 可修改为默认服务器
+    static var baseURL: String = "http://8.136.41.211:3395"  // 生产服务器
     static var apiURL: String = "\(baseURL)/api"
     
     // 从服务器动态获取的配置
