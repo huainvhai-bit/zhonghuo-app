@@ -27,8 +27,12 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            // 确保 API 配置已初始化（立即可用）
+            DataManager.shared.initializeAPIConfig()
+            
             checkEmergencyContacts()
             autoCheckIn()
+            
             // 如果用户自定义了服务器地址，使用自定义地址（用于特殊场景）
             if !customServerURL.isEmpty {
                 DataManager.baseURL = customServerURL

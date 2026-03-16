@@ -313,15 +313,30 @@ struct AuthView: View {
     
     // MARK: - API 注册
     private func registerWithAPI() async {
+        print("🔵 开始注册流程...")
+        print("  name: \(name)")
+        print("  phone: \(phone)")
+        print("  verify_code: \(verifyCode)")
+        print("  DataManager.apiURL: \(DataManager.apiURL)")
+        
         do {
             // 等待 API 初始化完成
             try await DataManager.shared.checkAPIReady()
+            print("✅ API 已就绪")
             
             guard !DataManager.apiURL.isEmpty else {
+                print("❌ API URL 为空")
                 throw NSError(domain: "API URL not initialized", code: -1)
             }
             
-            let url = URL(string: "\(DataManager.apiURL)/users.php")!
+            let urlString = "\(DataManager.apiURL)/users.php"
+            print("🌐 请求 URL: \(urlString)")
+            
+            guard let url = URL(string: urlString) else {
+                print("❌ URL 无效")
+                throw NSError(domain: "Invalid URL", code: -1)
+            }
+            
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -332,29 +347,77 @@ struct AuthView: View {
                 "phone": phone,
                 "verify_code": verifyCode
             ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                print("✅ 请求体已序列化")
+            } catch {
+                print("❌ JSON 序列化失败：\(error)")
+                throw error
+            }
+            
+            print("📡 发送请求...")
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                throw NSError(domain: "Server error", code: -1)
+            print("📥 收到响应")
+            print("  响应类型：\(type(of: response))")
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 响应不是 HTTPURLResponse")
+                throw NSError(domain: "Invalid response type", code: -1)
             }
             
-            let result = try JSONDecoder().decode(APIResponse.self, from: data)
+            print("  HTTP 状态码：\(httpResponse.statusCode)")
             
-            await MainActor.run {
-                if result.success {
-                    errorMessage = "注册成功！"
-                    showingError = true
-                } else {
-                    errorMessage = result.error ?? "注册失败"
-                    showingError = true
+            guard (200...299).contains(httpResponse.statusCode) else {
+                print("❌ HTTP 错误：\(httpResponse.statusCode)")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  响应内容：\(responseString)")
                 }
+                throw NSError(domain: "Server error", code: httpResponse.statusCode)
             }
+            
+            do {
+                let result = try JSONDecoder().decode(APIResponse.self, from: data)
+                print("✅ JSON 解析成功")
+                print("  success: \(result.success)")
+                print("  message: \(result.message ?? "nil")")
+                print("  error: \(result.error ?? "nil")")
+                
+                await MainActor.run {
+                    if result.success {
+                        errorMessage = "注册成功！"
+                        showingError = true
+                    } else {
+                        errorMessage = result.error ?? "注册失败"
+                        showingError = true
+                    }
+                }
+            } catch {
+                print("❌ JSON 解析失败：\(error)")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  原始响应：\(responseString)")
+                }
+                throw error
+            }
+            
         } catch {
+            print("❌ 注册失败：\(error)")
+            print("  错误域：\(error._domain)")
+            print("  错误码：\(error._code)")
+            print("  错误描述：\(error.localizedDescription)")
+            
             await MainActor.run {
-                errorMessage = "网络错误：\(error.localizedDescription)"
+                // 根据错误类型显示更详细的信息
+                if error._domain == "API URL not initialized" {
+                    errorMessage = "API 未初始化，请检查网络设置"
+                } else if error._domain == "Invalid URL" {
+                    errorMessage = "服务器地址无效"
+                } else if error._domain == "Server error" {
+                    errorMessage = "服务器错误 (HTTP \(error._code))"
+                } else {
+                    errorMessage = "网络错误：\(error.localizedDescription)"
+                }
                 showingError = true
             }
         }
