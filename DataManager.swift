@@ -479,4 +479,126 @@ class DataManager: ObservableObject {
             capsules[index] = capsule
         }
     }
+    
+    // MARK: - 批量同步到服务器
+    
+    /// 同步签到状态（App 启动时调用）
+    func syncCheckInStatus() async -> (isSafe: Bool, hoursRemaining: Double, autoCheckInPerformed: Bool)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/checkin.php?action=sync")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONDecoder().decode(ServerCheckInResponse.self, from: data)
+                print("✅ 签到同步成功：剩余 \(result.data.hoursRemaining) 小时，自动签到=\(result.data.autoCheckInPerformed)")
+                return (result.data.isSafe, result.data.hoursRemaining, result.data.autoCheckInPerformed)
+            }
+        } catch {
+            print("❌ 签到同步失败：\(error)")
+        }
+        return nil
+    }
+    
+    /// 批量同步遗嘱模块到服务器
+    func batchSyncWillModules() async -> (total: Int, created: Int, updated: Int)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // 转换为后端格式
+        let modulesData = willModules.map { module in
+            [
+                "id": module.id,
+                "type": module.type,
+                "title": module.title,
+                "subtitle": module.subtitle,
+                "content": module.content,
+                "is_completed": module.isCompleted,
+                "template": module.template ?? ""
+            ]
+        }
+        
+        let body: [String: Any] = ["modules": modulesData]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let data = result?["data"] as? [String: Any] {
+                    let total = data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            }
+        } catch {
+            print("❌ 遗嘱同步失败：\(error)")
+        }
+        return nil
+    }
+    
+    /// 批量同步胶囊到服务器
+    func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/capsules.php?action=batch_sync")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // 转换为后端格式
+        let capsulesData = capsules.map { capsule in
+            var data: [String: Any] = [
+                "id": capsule.id,
+                "title": capsule.title,
+                "content": capsule.content,
+                "type": capsule.type.rawValue,
+                "send_date": ISO8601DateFormatter().string(from: capsule.sendDate),
+                "is_sent": capsule.isSent
+            ]
+            if !capsule.mediaURL.isEmpty {
+                data["media_url"] = capsule.mediaURL
+            }
+            return data
+        }
+        
+        let body: [String: Any] = ["capsules": capsulesData]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let data = result?["data"] as? [String: Any] {
+                    let total = data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            }
+        } catch {
+            print("❌ 胶囊同步失败：\(error)")
+        }
+        return nil
+    }
 }

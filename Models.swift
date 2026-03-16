@@ -56,12 +56,31 @@ struct ServerConfig: Codable {
     }
 }
 
+// MARK: - 签到同步响应
+struct ServerCheckInResponse: Codable {
+    let success: Bool
+    let data: CheckInData
+    let message: String?
+    
+    struct CheckInData: Codable {
+        let isSafe: Bool
+        let hoursRemaining: Double
+        let interval: String
+        let intervalHours: Double
+        let lastCheckIn: String?
+        let nextCheckIn: String
+        let autoCheckInPerformed: Bool
+        let needCheckIn: Bool
+    }
+}
+
 // MARK: - 时光胶囊
 struct TimeCapsule: Identifiable, Codable {
     var id: String
     var title: String
     var content: String
     var type: CapsuleType
+    var mediaURL: String = ""
     var sendDate: Date
     var isSent: Bool
     var createdAt: Date
