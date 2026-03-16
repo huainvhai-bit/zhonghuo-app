@@ -10,9 +10,12 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
+    @Binding var showingServerConfig: Bool
     @State private var showingEditProfile = false
     @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
+    @AppStorage("customServerURL") private var customServerURL = "http://192.168.1.100"
+    @State private var tempServerURL = ""
     
     var body: some View {
         NavigationView {
@@ -393,6 +396,114 @@ struct EmergencyContactModal: View {
     }
 }
 
+// MARK: - 服务器配置弹窗
+struct ServerConfigModal: View {
+    @Environment(\.dismiss) var dismiss
+    @AppStorage("customServerURL") private var customServerURL = "http://192.168.1.100"
+    @State private var tempURL = ""
+    @State private var isTesting = false
+    @State private var testResult = ""
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("服务器地址")) {
+                    TextField("http://192.168.1.100", text: $tempURL)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+                    
+                    Text("修改后需要重启 App 生效")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Section(header: Text("测试连接")) {
+                    HStack {
+                        Text("状态")
+                        Spacer()
+                        if isTesting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("测试中...")
+                                .foregroundColor(.secondary)
+                        } else if !testResult.isEmpty {
+                            Text(testResult)
+                                .foregroundColor(testResult == "成功" ? .green : .red)
+                        } else {
+                            Text("未测试")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Button(action: testConnection) {
+                        HStack {
+                            Spacer()
+                            Text("测试连接")
+                            Spacer()
+                        }
+                    }
+                    .disabled(isTesting || tempURL.isEmpty)
+                }
+                
+                Section {
+                    Button(action: {
+                        customServerURL = tempURL
+                        DataManager.baseURL = tempURL
+                        DataManager.apiURL = "\(tempURL)/api"
+                        dismiss()
+                    }) {
+                        HStack {
+                            Spacer()
+                            Text("保存并重启")
+                            Spacer()
+                        }
+                    }
+                    .disabled(tempURL.isEmpty)
+                }
+            }
+            .navigationTitle("服务器配置")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { dismiss() }
+                }
+            }
+            .onAppear {
+                tempURL = customServerURL
+            }
+        }
+    }
+    
+    private func testConnection() {
+        isTesting = true
+        testResult = ""
+        
+        Task {
+            do {
+                let url = URL(string: "\(tempURL)/api/config.php")!
+                let (data, response) = try await URLSession.shared.data(from: url)
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    throw NSError(domain: "Server error", code: -1)
+                }
+                
+                let config = try JSONDecoder().decode(ServerConfig.self, from: data)
+                
+                await MainActor.run {
+                    isTesting = false
+                    testResult = config.success ? "成功" : "失败"
+                }
+            } catch {
+                await MainActor.run {
+                    isTesting = false
+                    testResult = "失败"
+                }
+            }
+        }
+    }
+}
+
 #Preview {
-    SettingsView()
+    SettingsView(showingServerConfig: .constant(false))
 }

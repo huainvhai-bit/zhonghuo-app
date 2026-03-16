@@ -10,10 +10,14 @@ import Foundation
 class DataManager: ObservableObject {
     static let shared = DataManager()
     
-    // MARK: - 后端 API 配置
-    // ⚠️ 请修改为实际的服务器 IP 地址
-    static let baseURL = "http://192.168.1.100"  // 替换为你的服务器 IP
-    static let apiURL = "\(baseURL)/api"
+    // MARK: - 后端 API 配置（动态获取）
+    // 默认配置（首次启动时使用）
+    static var baseURL: String = "http://192.168.1.100"  // 可修改为默认服务器
+    static var apiURL: String = "\(baseURL)/api"
+    
+    // 从服务器动态获取的配置
+    @Published var serverConfig: ServerConfig?
+    @Published var isBackendOnline = false
     
     @Published var capsules: [TimeCapsule] = []
     @Published var willModules: [WillModule] = []
@@ -21,6 +25,50 @@ class DataManager: ObservableObject {
     @Published var witnesses: [WillWitness] = []
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
+    
+    // MARK: - API 配置管理
+    /// 从服务器获取 API 配置
+    func fetchServerConfig(baseURL: String) async throws {
+        let configURL = "\(baseURL)/api/config.php"
+        guard let url = URL(string: configURL) else {
+            throw NSError(domain: "Invalid URL", code: -1)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw NSError(domain: "Server error", code: -1)
+        }
+        
+        let config = try JSONDecoder().decode(ServerConfig.self, from: data)
+        
+        if config.success, let configData = config.data {
+            DispatchQueue.main.async {
+                self.serverConfig = ServerConfig(success: true, data: configData, error: nil)
+                DataManager.baseURL = configData.endpoints.base
+                DataManager.apiURL = configData.endpoints.api
+                self.isBackendOnline = true
+                print("✅ 后端配置获取成功：\(DataManager.apiURL)")
+            }
+        } else {
+            throw NSError(domain: config.error ?? "Unknown error", code: -1)
+        }
+    }
+    
+    /// 初始化 API 配置（先尝试默认地址，失败则使用本地模式）
+    func initializeAPIConfig() {
+        Task {
+            do {
+                try await fetchServerConfig(baseURL: DataManager.baseURL)
+            } catch {
+                DispatchQueue.main.async {
+                    self.isBackendOnline = false
+                    print("⚠️ 后端离线，使用本地模式：\(error)")
+                }
+            }
+        }
+    }
     
     private let fileManager = FileManager.default
     private var documentsPath: String {
@@ -38,6 +86,10 @@ class DataManager: ObservableObject {
             cloudSyncEnabled: true,
             lastCheckInDate: nil
         )
+        
+        // 初始化 API 配置（异步获取服务器配置）
+        initializeAPIConfig()
+        
         // 然后加载
         if let loaded = loadSettingsFromFile() {
             self.settings = loaded

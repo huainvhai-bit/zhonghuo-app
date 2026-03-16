@@ -12,7 +12,9 @@ struct ContentView: View {
     @StateObject private var userManager = UserManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
+    @AppStorage("customServerURL") private var customServerURL = "http://192.168.1.100"
     @State private var showingEmergencyContactAlert = false
+    @State private var showingServerConfig = false
     
     var body: some View {
         Group {
@@ -27,6 +29,12 @@ struct ContentView: View {
         .onAppear {
             checkEmergencyContacts()
             autoCheckIn()
+            // 如果用户自定义了服务器地址，使用自定义地址
+            if !customServerURL.isEmpty && customServerURL != "http://192.168.1.100" {
+                DataManager.baseURL = customServerURL
+                DataManager.apiURL = "\(customServerURL)/api"
+                dataManager.initializeAPIConfig()
+            }
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
@@ -73,7 +81,7 @@ struct ContentView: View {
                     }
                     .tag(2)
                 
-                SettingsView()
+                SettingsView(showingServerConfig: $showingServerConfig)
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("我的")
@@ -85,6 +93,44 @@ struct ContentView: View {
             // 悬浮 AI 机器人 - 仅在首页显示
             if selectedTab == 0 {
                 AIRobotView()
+            }
+            
+            // 服务器状态指示器
+            VStack {
+                HStack {
+                    Spacer()
+                    VStack {
+                        HStack {
+                            Image(systemName: dataManager.isBackendOnline ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                                .foregroundColor(dataManager.isBackendOnline ? .green : .orange)
+                            Text(dataManager.isBackendOnline ? "云端" : "本地")
+                                .font(.caption2)
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(12)
+                        .onTapGesture {
+                            showingServerConfig = true
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding()
+                }
+                Spacer()
+            }
+            .allowsHitTesting(false)
+            
+            // 服务器配置弹窗
+            if showingServerConfig {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture { showingServerConfig = false }
+                
+                ServerConfigModal()
+                    .transition(.scale)
             }
         }
     }

@@ -7,6 +7,41 @@
 
 import Foundation
 
+// MARK: - 服务器配置
+struct ServerConfig: Codable {
+    let success: Bool
+    let data: ServerConfigData?
+    let error: String?
+    
+    struct ServerConfigData: Codable {
+        let apiVersion: String
+        let serverName: String
+        let endpoints: Endpoints
+        let features: Features
+        let limits: Limits
+        
+        struct Endpoints: Codable {
+            let base: String
+            let api: String
+            let upload: String
+        }
+        
+        struct Features: Codable {
+            let userSync: Bool
+            let capsuleSync: Bool
+            let willSync: Bool
+            let checkinSync: Bool
+            let witnessSync: Bool
+        }
+        
+        struct Limits: Codable {
+            let maxUploadSize: Int
+            let maxCapsules: Int
+            let maxWillModules: Int
+        }
+    }
+}
+
 // MARK: - 时光胶囊
 struct TimeCapsule: Identifiable, Codable {
     var id: String
