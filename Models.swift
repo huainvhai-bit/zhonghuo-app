@@ -20,6 +20,7 @@ struct ServerConfig: Codable {
         let features: Features
         let limits: Limits
         let sms: SMSConfig?  // 短信配置
+        let serverInfo: ServerInfo?  // 服务器信息（用于调试）
         
         struct Endpoints: Codable {
             let base: String
@@ -45,6 +46,12 @@ struct ServerConfig: Codable {
             let enabled: Bool
             let provider: String
             let isDevelopment: Bool
+        }
+        
+        struct ServerInfo: Codable {
+            let configuredUrl: String
+            let detectedUrl: String
+            let usingConfigured: Bool
         }
     }
 }
@@ -197,6 +204,16 @@ struct Witness: Identifiable, Codable {
     var phone: String
     var isConfirmed: Bool
     var order: Int
+    var idNumber: String = ""
+    var notes: String = ""
+    var confirmedAt: Date?
+    var createdAt: Date = Date()
+    
+    // 兼容 relationship 字段（别名）
+    var relationship: String {
+        get { role }
+        set { role = newValue }
+    }
     
     var statusText: String {
         isConfirmed ? "已确认" : "待确认"

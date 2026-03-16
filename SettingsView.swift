@@ -105,7 +105,7 @@ struct SettingsView: View {
                                     // 保存到 UserManager（会自动保存到 user.json）
                                     _ = userManager.updateCheckInInterval(interval)
                                     // 同步到 DataManager
-                                    DataManager.shared.checkInInterval = interval
+                                    DataManager.shared.settings.checkInInterval = interval
                                 }
                             }
                         } label: {
@@ -384,16 +384,13 @@ struct EmergencyContactModal: View {
                 Section {
                     Button(action: {
                         if !name.isEmpty && !phone.isEmpty {
-                            let witness = WillWitness(
+                            let witness = Witness(
                                 id: UUID().uuidString,
                                 name: name,
-                                relationship: relationship,
+                                role: relationship,
                                 phone: phone,
-                                idNumber: "",
-                                notes: "紧急联系人",
                                 isConfirmed: false,
-                                createdAt: Date(),
-                                confirmedAt: nil
+                                order: 0
                             )
                             dataManager.addWitness(witness)
                             
@@ -402,7 +399,7 @@ struct EmergencyContactModal: View {
                                 phone: phone,
                                 relationship: relationship
                             )
-                            dataManager.saveSettings()
+                            dataManager.saveSettingsToFile()
                             dismiss()
                         }
                     }) {

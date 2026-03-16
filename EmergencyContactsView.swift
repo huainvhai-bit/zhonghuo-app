@@ -12,7 +12,7 @@ struct EmergencyContactsView: View {
     @ObservedObject var userManager = UserManager.shared
     @State private var showingAddEmergencyContact = false
     @State private var showingAddWitness = false
-    @State private var selectedWitness: WillWitness?
+    @State private var selectedWitness: Witness?
     @State private var showingEditWitness = false
     
     var body: some View {

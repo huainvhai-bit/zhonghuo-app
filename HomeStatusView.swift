@@ -109,15 +109,26 @@ struct HomeStatusView: View {
     
     private func updateStatus() {
         // 确保使用最新的签到间隔
-        dataManager.checkInInterval = UserManager.shared.checkInInterval
+        dataManager.settings.checkInInterval = UserManager.shared.checkInInterval
+        dataManager.settings.lastCheckInDate = UserManager.shared.lastCheckInDate
         dataManager.lastCheckInDate = UserManager.shared.lastCheckInDate
-        let status = dataManager.getCheckInStatus()
+        let status = getCheckInStatus()
         isSafe = status.isSafe
         secondsRemaining = status.hoursRemaining * 3600
         print("🔄 updateStatus: secondsRemaining=\(secondsRemaining), isSafe=\(isSafe)")
         
         // 安排签到提醒（低于 12 小时时每 3 小时提醒一次）
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
+    }
+    
+    private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
+        guard let lastCheckIn = dataManager.lastCheckInDate else {
+            return (false, 0)
+        }
+        let hours = dataManager.settings.checkInInterval.hours
+        let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
+        let remaining = hours - elapsed
+        return (remaining > 0, max(0, remaining))
     }
     
     // MARK: - 签到卡片

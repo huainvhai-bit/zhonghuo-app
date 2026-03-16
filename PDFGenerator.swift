@@ -11,7 +11,7 @@ import PDFKit
 class PDFGenerator {
     
     /// 导出遗嘱模块为 PDF
-    static func exportWillModulesToPDF(modules: [WillModule], witnesses: [WillWitness], assets: [Asset]) -> Data? {
+    static func exportWillModulesToPDF(modules: [WillModule], witnesses: [Witness], assets: [Asset]) -> Data? {
         let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842)) // A4 size
         
         let data = pdfRenderer.pdfData { ctx in
@@ -103,7 +103,7 @@ class PDFGenerator {
         return currentY
     }
     
-    private static func drawWitnessSection(ctx: UIGraphicsPDFRendererContext, witnesses: [WillWitness], startY: CGFloat) -> CGFloat {
+    private static func drawWitnessSection(ctx: UIGraphicsPDFRendererContext, witnesses: [Witness], startY: CGFloat) -> CGFloat {
         var currentY = startY
         
         // 章节标题
@@ -123,7 +123,7 @@ class PDFGenerator {
             currentY += 25
         } else {
             for witness in witnesses {
-                let witnessStr = "• \(witness.name)（\(witness.relationship)）- \(witness.isConfirmed ? "已确认" : "待确认")"
+                let witnessStr = "• \(witness.name)（\(witness.role)）- \(witness.isConfirmed ? "已确认" : "待确认")"
                 let witnessAttributes: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 14),
                     .foregroundColor: UIColor.black

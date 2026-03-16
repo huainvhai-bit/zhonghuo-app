@@ -346,14 +346,17 @@ struct AddAssetModal: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("添加") {
-                        dataManager.addAsset(
+                        let asset = Asset(
+                            id: UUID().uuidString,
                             type: selectedType,
                             name: name,
                             institution: institution,
                             balance: balance,
                             accountNumber: accountNumber,
-                            details: details
+                            details: details,
+                            createdAt: Date()
                         )
+                        dataManager.addAsset(asset)
                         dismiss()
                     }
                     .disabled(name.isEmpty || institution.isEmpty)

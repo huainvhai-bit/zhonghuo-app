@@ -141,7 +141,7 @@ struct TimeCapsuleView: View {
                 CapsuleCard(capsule: capsule, onEdit: {
                     editingCapsule = capsule
                 }, onDelete: {
-                    dataManager.deleteCapsule(id: capsule.id)
+                    dataManager.deleteCapsule(capsule)
                 })
             }
         }
@@ -389,7 +389,16 @@ struct AddCapsuleModal: View {
                         } else if selectedType == .video, let url = recordedVideoURL {
                             capsuleContent = url.absoluteString
                         }
-                        dataManager.addCapsule(title: title, content: capsuleContent, type: selectedType, sendDate: sendDate)
+                        let capsule = TimeCapsule(
+                            id: UUID().uuidString,
+                            title: title,
+                            content: capsuleContent,
+                            type: selectedType,
+                            sendDate: sendDate,
+                            isSent: false,
+                            createdAt: Date()
+                        )
+                        dataManager.addCapsule(capsule)
                         dismiss()
                     }
                     .disabled(title.isEmpty || (selectedType != .text && recordedAudioURL == nil && recordedVideoURL == nil))

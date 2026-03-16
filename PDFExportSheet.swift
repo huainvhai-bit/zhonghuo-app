@@ -12,7 +12,7 @@ struct PDFExportSheet: View {
     @Environment(\.dismiss) var dismiss
     @Binding var isPresented: Bool
     let modules: [WillModule]
-    let witnesses: [WillWitness]
+    let witnesses: [Witness]
     let assets: [Asset]
     let onSuccess: () -> Void
     

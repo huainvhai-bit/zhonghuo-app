@@ -48,7 +48,7 @@ struct WillPreviewView: View {
                     if !dataManager.witnesses.isEmpty {
                         infoSection(
                             title: "见证人信息",
-                            content: dataManager.witnesses.map { "\($0.name) - \($0.relationship) - \($0.phone)" }.joined(separator: "\n")
+                            content: dataManager.witnesses.map { "\($0.name) - \($0.role) - \($0.phone)" }.joined(separator: "\n")
                         )
                     }
                     

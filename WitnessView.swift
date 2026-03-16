@@ -10,7 +10,7 @@ import SwiftUI
 struct WitnessView: View {
     @ObservedObject var dataManager = DataManager.shared
     @State private var showingAddModal = false
-    @State private var selectedWitness: WillWitness?
+    @State private var selectedWitness: Witness?
     @State private var showingEditModal = false
     
     var body: some View {
@@ -71,7 +71,7 @@ struct WitnessView: View {
                 
                 Spacer()
                 
-                Text("\(dataManager.getWitnessProgressString())")
+                Text("\(dataManager.witnesses.count) 人")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color(hex: "FF9500"))
             }
@@ -196,14 +196,14 @@ struct WitnessView: View {
         }
     }
     
-    private func deleteWitness(_ witness: WillWitness) {
+    private func deleteWitness(_ witness: Witness) {
         dataManager.deleteWitness(witness)
     }
 }
 
 // MARK: - 见证人卡片
 struct WitnessCard: View {
-    let witness: WillWitness
+    let witness: Witness
     let onEdit: () -> Void
     let onDelete: () -> Void
     @State private var showingDeleteConfirm = false
@@ -218,7 +218,7 @@ struct WitnessCard: View {
                         .foregroundColor(.primary)
                     
                     HStack(spacing: 8) {
-                        Label(witness.relationship, systemImage: "person.crop.rectangle")
+                        Label(witness.role, systemImage: "person.crop.rectangle")
                             .font(.system(size: 12))
                         
                         Spacer()
@@ -413,16 +413,13 @@ struct AddWitnessModal: View {
     }
     
     private func saveWitness() {
-        let witness = WillWitness(
+        let witness = Witness(
             id: UUID().uuidString,
             name: name,
-            relationship: relationship,
+            role: relationship,
             phone: phone,
-            idNumber: idNumber,
-            notes: notes,
             isConfirmed: isConfirmed,
-            createdAt: Date(),
-            confirmedAt: isConfirmed ? Date() : nil
+            order: 0
         )
         
         dataManager.addWitness(witness)
@@ -435,7 +432,7 @@ struct EditWitnessModal: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var dataManager = DataManager.shared
     @Binding var isPresented: Bool
-    let witness: WillWitness
+    let witness: Witness
     
     @State private var name = ""
     @State private var relationship = ""
