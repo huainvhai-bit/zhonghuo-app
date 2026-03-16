@@ -15,10 +15,8 @@ struct AuthView: View {
     @State private var isRegistering = true
     @State private var showingError = false
     @State private var errorMessage = ""
-    @State private var showingVerifyCode = false
     @State private var countdown = 0
     @State private var timer: Timer?
-    @State private var sentCode = ""
     
     // MARK: - 短信验证码响应模型
     struct SMSResponse: Codable {
@@ -27,6 +25,13 @@ struct AuthView: View {
         let code: String?
         let error: String?
         let expiresIn: Int?
+    }
+    
+    // MARK: - API 响应模型
+    struct APIResponse: Codable {
+        let success: Bool
+        let message: String?
+        let error: String?
     }
     
     var body: some View {
@@ -66,8 +71,9 @@ struct AuthView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                     
-                    // 验证码输入（获取验证码后显示）
-                    if showingVerifyCode {
+                    // 验证码区域
+                    if countdown > 0 || verifyCode.isEmpty == false {
+                        // 验证码输入框 + 重新获取按钮
                         HStack {
                             TextField("验证码", text: $verifyCode)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -79,31 +85,44 @@ struct AuthView: View {
                                 }
                             
                             Button(action: sendVerifyCode) {
-                                Text(countdown > 0 ? "\(countdown)秒" : "获取验证码")
+                                Text(countdown > 0 ? "\(countdown)秒" : "重新获取")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
                                     .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
                                     .cornerRadius(8)
                             }
                             .disabled(countdown > 0 || phone.isEmpty)
                         }
+                    } else {
+                        // 获取验证码按钮
+                        Button(action: sendVerifyCode) {
+                            HStack {
+                                Image(systemName: "message.fill")
+                                Text("获取验证码")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .background(Color(hex: "AF52DE").opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .disabled(phone.isEmpty)
                     }
                     
+                    // 注册/登录按钮
                     Button(action: handleSubmit) {
-                        HStack {
-                            Image(systemName: isRegistering && !showingVerifyCode ? "arrow.right.circle.fill" : "checkmark.circle.fill")
-                            Text(isRegistering && !showingVerifyCode ? "先获取验证码" : (isRegistering ? "注册" : "登录"))
-                        }
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(hex: "AF52DE"))
-                        .cornerRadius(12)
+                        Text(isRegistering ? "注册" : "登录")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(hex: "AF52DE"))
+                            .cornerRadius(12)
                     }
-                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || !showingVerifyCode || verifyCode.isEmpty) : phone.isEmpty)
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || verifyCode.isEmpty) : (phone.isEmpty || verifyCode.isEmpty))
                 }
                 .padding(.horizontal, 30)
                 
@@ -115,6 +134,11 @@ struct AuthView: View {
                     Button(action: {
                         withAnimation {
                             isRegistering.toggle()
+                            // 切换时重置状态
+                            verifyCode = ""
+                            countdown = 0
+                            timer?.invalidate()
+                            timer = nil
                         }
                     }) {
                         Text(isRegistering ? "立即登录" : "立即注册")
@@ -167,7 +191,12 @@ struct AuthView: View {
     private func sendVerifyCode() {
         guard !phone.isEmpty else { return }
         
-        // 开始倒计时（先开始，避免请求期间可重复点击）
+        // 检查是否正在倒计时
+        if countdown > 0 {
+            return
+        }
+        
+        // 开始倒计时
         countdown = 60
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             countdown -= 1
@@ -176,8 +205,6 @@ struct AuthView: View {
                 timer = nil
             }
         }
-        
-        showingVerifyCode = true
         
         // 调用后端 API 发送验证码
         Task {
@@ -231,34 +258,44 @@ struct AuthView: View {
     // MARK: - 提交处理
     private func handleSubmit() {
         if isRegistering {
-            // 验证验证码（开发环境可以跳过）
+            // 验证输入
+            if phone.isEmpty {
+                errorMessage = "请输入手机号"
+                showingError = true
+                return
+            }
+            
+            if name.isEmpty {
+                errorMessage = "请输入姓名"
+                showingError = true
+                return
+            }
+            
             if verifyCode.isEmpty {
                 errorMessage = "请输入验证码"
                 showingError = true
                 return
             }
             
-            // 调用后端 API 验证验证码并注册
+            // 调用后端 API 注册
             Task {
                 await registerWithAPI()
             }
         } else {
-            // 登录：也需要验证码
-            if !showingVerifyCode {
-                sendVerifyCode()
-                errorMessage = "请先获取验证码"
+            // 登录
+            if phone.isEmpty {
+                errorMessage = "请输入手机号"
                 showingError = true
                 return
             }
             
-            // 验证验证码（开发环境可以跳过）
             if verifyCode.isEmpty {
                 errorMessage = "请输入验证码"
                 showingError = true
                 return
             }
             
-            // 调用后端 API 验证验证码并登录
+            // 调用后端 API 登录
             Task {
                 await loginWithAPI()
             }
@@ -346,13 +383,6 @@ struct AuthView: View {
                 showingError = true
             }
         }
-    }
-    
-    // MARK: - API 响应模型
-    struct APIResponse: Codable {
-        let success: Bool
-        let message: String?
-        let error: String?
     }
 }
 
