@@ -17,7 +17,10 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if !userManager.isLoggedIn {
+            // 双重检查：userManager.isLoggedIn 或 UserDefaults
+            let isActuallyLoggedIn = userManager.isLoggedIn || UserDefaults.standard.bool(forKey: "isLoggedIn")
+            
+            if !isActuallyLoggedIn {
                 AuthView()
             } else if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
@@ -26,12 +29,24 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            print("🟢 ContentView onAppear")
+            print("   userManager.isLoggedIn: \(userManager.isLoggedIn)")
+            print("   UserDefaults isLoggedIn: \(UserDefaults.standard.bool(forKey: "isLoggedIn"))")
+            print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
+            
             // 确保 API 配置已初始化（立即可用）
             DataManager.shared.initializeAPIConfig()
             
-            // 检查 UserDefaults 中的登录状态（兼容注册/登录后立即跳转）
+            // 强制同步登录状态
             if UserDefaults.standard.bool(forKey: "isLoggedIn") {
                 userManager.isLoggedIn = true
+                print("✅ 从 UserDefaults 恢复登录状态")
+            }
+            
+            // 如果没有 currentUser 但有 isLoggedIn，尝试重新加载
+            if userManager.isLoggedIn && userManager.currentUser == nil {
+                userManager.loadUser()
+                print("🔄 重新加载用户数据")
             }
             
             checkEmergencyContacts()

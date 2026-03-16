@@ -375,12 +375,29 @@ class DataManager: ObservableObject {
     // MARK: - 资产管理
     func addAsset(_ asset: Asset) {
         assets.append(asset)
+        saveAssetsToFile()
+    }
+    
+    func deleteAsset(_ asset: Asset) {
+        assets.removeAll { $0.id == asset.id }
+        saveAssetsToFile()
+    }
+    
+    func deleteAssets(at offsets: IndexSet) {
+        assets.remove(atOffsets: offsets)
+        saveAssetsToFile()
     }
     
     func updateWillModule(_ module: WillModule) {
         if let index = willModules.firstIndex(where: { $0.id == module.id }) {
             willModules[index] = module
+            saveWillModulesToFile()
         }
+    }
+    
+    func deleteWillModule(_ module: WillModule) {
+        willModules.removeAll { $0.id == module.id }
+        saveWillModulesToFile()
     }
     
     func getWillProgress() -> Double {

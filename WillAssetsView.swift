@@ -119,8 +119,10 @@ struct WillAssetsView: View {
             
             // 遗嘱模块列表
             ForEach(dataManager.willModules) { module in
-                WillModuleCard(module: module, onTap: {
+                WillModuleRow(module: module, onTap: {
                     editingModule = module
+                }, onDelete: {
+                    dataManager.deleteWillModule(module)
                 })
             }
             
@@ -186,7 +188,12 @@ struct WillAssetsView: View {
             
             // 资产列表
             ForEach(dataManager.assets) { asset in
-                AssetCard(asset: asset)
+                AssetRow(asset: asset, onDelete: {
+                    dataManager.deleteAsset(asset)
+                })
+            }
+            .onDelete { atOffsets in
+                dataManager.deleteAssets(at: atOffsets)
             }
             
             // 添加资产按钮
@@ -382,6 +389,142 @@ struct AssetCard: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         return formatter.string(from: NSNumber(value: balance)) ?? "0"
+    }
+}
+
+// MARK: - 资产行（支持删除）
+struct AssetRow: View {
+    let asset: Asset
+    let onDelete: () -> Void
+    
+    @State private var showingDeleteAlert = false
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // 头部
+            HStack(spacing: 12) {
+                Text(asset.type.icon)
+                    .font(.system(size: 20))
+                    .frame(width: 44, height: 44)
+                    .background(Color(hex: asset.type.color).opacity(0.12))
+                    .cornerRadius(10)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(asset.name)
+                        .font(.system(size: 16, weight: .semibold))
+                    
+                    Text(asset.institution)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Text("¥\(formatBalance(asset.balance))")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(Color(hex: "6366F1"))
+                
+                // 删除按钮
+                Button(action: { showingDeleteAlert = true }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                        .font(.system(size: 16))
+                }
+                .padding(.leading, 8)
+            }
+            
+            Divider()
+            
+            // 详情
+            ForEach(Array(asset.details.keys), id: \.self) { key in
+                HStack {
+                    Text(key)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    Text(asset.details[key] ?? "")
+                        .font(.system(size: 13, weight: .medium))
+                }
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(14)
+        .alert("删除资产", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                onDelete()
+            }
+        } message: {
+            Text("确定要删除资产「\(asset.name)」吗？此操作不可恢复。")
+        }
+    }
+    
+    private func formatBalance(_ balance: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: balance)) ?? "0"
+    }
+}
+
+// MARK: - 遗嘱模块行（支持删除）
+struct WillModuleRow: View {
+    let module: WillModule
+    let onTap: () -> Void
+    let onDelete: () -> Void
+    
+    @State private var showingDeleteAlert = false
+    
+    var body: some View {
+        HStack(spacing: 14) {
+            Text(module.type.icon)
+                .font(.system(size: 20))
+                .frame(width: 44, height: 44)
+                .background(Color(hex: module.type.color).opacity(0.12))
+                .cornerRadius(10)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(module.title)
+                    .font(.system(size: 16, weight: .medium))
+                
+                Text(module.subtitle.isEmpty ? module.type.subtitle : module.subtitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            if module.isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Color(hex: "34C759"))
+                    .font(.system(size: 22))
+            } else {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+            }
+            
+            // 删除按钮
+            Button(action: { showingDeleteAlert = true }) {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                    .font(.system(size: 16))
+            }
+            .padding(.leading, 8)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(14)
+        .onTapGesture(perform: onTap)
+        .alert("删除嘱托", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                onDelete()
+            }
+        } message: {
+            Text("确定要删除嘱托「\(module.title)」吗？此操作不可恢复。")
+        }
     }
 }
 

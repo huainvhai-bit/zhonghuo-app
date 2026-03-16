@@ -302,6 +302,10 @@ struct EditProfileModal: View {
                 
                 Section {
                     Button(action: {
+                        print("🔵 开始保存用户信息...")
+                        print("   userManager.isLoggedIn (保存前): \(userManager.isLoggedIn)")
+                        print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
+                        
                         if !name.isEmpty && !phone.isEmpty {
                             if var user = userManager.currentUser {
                                 user.name = name
@@ -310,6 +314,9 @@ struct EditProfileModal: View {
                                 // 先更新 currentUser，再保存
                                 userManager.currentUser = user
                                 let saveSuccess = userManager.saveUser(user)
+                                
+                                print("   saveUser 返回：\(saveSuccess)")
+                                print("   userManager.isLoggedIn (保存后): \(userManager.isLoggedIn)")
                                 
                                 if saveSuccess {
                                     // 确保登录状态保持

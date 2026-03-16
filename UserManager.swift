@@ -304,7 +304,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return currentUser?.emergencyContacts.count ?? 0
     }
     
-    private func loadUser() {
+    func loadUser() {
         if let user = loadUserFromFile() {
             self.currentUser = user
             self.isLoggedIn = true

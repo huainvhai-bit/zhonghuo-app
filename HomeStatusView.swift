@@ -60,7 +60,13 @@ struct HomeStatusView: View {
                 }
             }
             .onReceive(timer) { _ in
-                updateStatus()
+                // 每秒递减倒计时
+                if secondsRemaining > 0 {
+                    secondsRemaining -= 1
+                } else {
+                    // 倒计时结束，检查是否需要签到
+                    updateStatus()
+                }
             }
             .onAppear {
                 print("🟢 首页 onAppear - 触发自动签到")
