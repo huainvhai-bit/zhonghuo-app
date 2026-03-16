@@ -324,7 +324,19 @@ struct AuthView: View {
         print("  name: \(name)")
         print("  phone: \(phone)")
         print("  verify_code: \(verifyCode)")
+        print("  DataManager.baseURL: \(DataManager.baseURL)")
         print("  DataManager.apiURL: \(DataManager.apiURL)")
+        print("  DataManager.isBackendOnline: \(DataManager.shared.isBackendOnline)")
+        
+        // 测试网络连通性
+        do {
+            let testURL = URL(string: "\(DataManager.baseURL)/api/config.php")!
+            let (testData, testResponse) = try await URLSession.shared.data(from: testURL)
+            print("✅ 网络连通性测试成功")
+            print("  响应：\(testResponse)")
+        } catch {
+            print("❌ 网络连通性测试失败：\(error)")
+        }
         
         do {
             // 等待 API 初始化完成
