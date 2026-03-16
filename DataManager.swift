@@ -10,6 +10,11 @@ import Foundation
 class DataManager: ObservableObject {
     static let shared = DataManager()
     
+    // MARK: - 后端 API 配置
+    // ⚠️ 请修改为实际的服务器 IP 地址
+    static let baseURL = "http://192.168.1.100"  // 替换为你的服务器 IP
+    static let apiURL = "\(baseURL)/api"
+    
     @Published var capsules: [TimeCapsule] = []
     @Published var willModules: [WillModule] = []
     @Published var assets: [Asset] = []
