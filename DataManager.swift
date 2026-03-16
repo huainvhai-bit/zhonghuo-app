@@ -252,7 +252,41 @@ class DataManager: ObservableObject {
         if let data = try? Data(contentsOf: path) {
             return (try? JSONDecoder().decode([Asset].self, from: data)) ?? []
         }
-        return []
+        // 如果文件不存在，返回默认模板
+        return getDefaultAssets()
+    }
+    
+    /// 获取默认资产模板
+    func getDefaultAssets() -> [Asset] {
+        return Asset.AssetType.allCases.map { assetType in
+            Asset(
+                id: UUID().uuidString,
+                type: assetType,
+                name: assetType.rawValue,
+                institution: "",
+                balance: 0,
+                accountNumber: "",
+                details: [:],
+                createdAt: Date()
+            )
+        }
+    }
+    
+    /// 初始化默认资产模板（如果为空）
+    func initializeDefaultAssets() {
+        if assets.isEmpty {
+            assets = getDefaultAssets()
+            saveAssetsToFile()
+            print("✅ 已初始化默认资产模板")
+        }
+    }
+    
+    func saveAssetsToFile() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(assets) {
+            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("assets.json"))
+        }
     }
     
     func loadWitnessesFromFile() -> [Witness] {

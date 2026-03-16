@@ -41,6 +41,9 @@ struct WillAssetsView: View {
                 if dataManager.willModules.isEmpty {
                     dataManager.initializeDefaultWillModules()
                 }
+                if dataManager.assets.isEmpty {
+                    dataManager.initializeDefaultAssets()
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {

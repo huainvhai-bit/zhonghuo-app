@@ -306,13 +306,21 @@ struct EditProfileModal: View {
                             if var user = userManager.currentUser {
                                 user.name = name
                                 user.phone = phone
-                                userManager.currentUser = user
-                                userManager.saveUser(user)
                                 
-                                // 确保登录状态保持
-                                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                                // 先更新 currentUser，再保存
+                                userManager.currentUser = user
+                                let saveSuccess = userManager.saveUser(user)
+                                
+                                if saveSuccess {
+                                    // 确保登录状态保持
+                                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                                    UserDefaults.standard.set(user.id, forKey: "userId")
+                                    print("✅ 用户信息已保存，登录状态保持")
+                                    dismiss()
+                                } else {
+                                    print("❌ 保存用户失败")
+                                }
                             }
-                            dismiss()
                         }
                     }) {
                         Text("保存")
@@ -375,6 +383,23 @@ struct EmergencyContactModal: View {
                                 relationship: relationship
                             )
                             dataManager.saveSettingsToFile()
+                            
+                            // 同步到 UserManager 的 currentUser
+                            if var user = userManager.currentUser {
+                                user.emergencyContacts.append(User.EmergencyContact(
+                                    id: witness.id,
+                                    name: witness.name,
+                                    phone: witness.phone,
+                                    relationship: witness.role
+                                ))
+                                userManager.currentUser = user
+                                userManager.saveUser(user)
+                                
+                                // 确保登录状态保持
+                                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                            }
+                            
+                            print("✅ 紧急联系人已保存，登录状态保持")
                             dismiss()
                         }
                     }) {

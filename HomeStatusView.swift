@@ -64,6 +64,15 @@ struct HomeStatusView: View {
             }
             .onAppear {
                 print("🟢 首页 onAppear - 触发自动签到")
+                
+                // 初始化倒计时（如果没有签到记录，显示默认 48 小时）
+                if dataManager.lastCheckInDate == nil {
+                    let defaultHours = dataManager.settings.checkInInterval.hours
+                    secondsRemaining = Double(defaultHours) * 3600
+                    isSafe = true
+                    print("⏰ 初始化默认倒计时：\(defaultHours)小时")
+                }
+                
                 handleAutoCheckIn()
             }
             .onChange(of: scenePhase) { newPhase in

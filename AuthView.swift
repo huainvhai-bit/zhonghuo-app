@@ -217,14 +217,22 @@ struct AuthView: View {
         // 调用后端 API 发送验证码
         Task {
             do {
+                print("🔵 开始获取验证码...")
+                print("   DataManager.baseURL: \(DataManager.baseURL)")
+                print("   DataManager.apiURL: \(DataManager.apiURL)")
+                print("   isBackendOnline: \(DataManager.shared.isBackendOnline)")
+                
                 // 确保 API 已就绪
                 try await DataManager.shared.checkAPIReady()
                 
                 guard !DataManager.apiURL.isEmpty else {
+                    print("❌ API URL 未初始化")
                     throw NSError(domain: "API URL not initialized", code: -1)
                 }
                 
                 let url = URL(string: "\(DataManager.apiURL)/sms.php")!
+                print("🌐 请求 URL: \(url)")
+                
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -235,14 +243,20 @@ struct AuthView: View {
                 ]
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
+                print("📡 发送请求...")
                 let (data, response) = try await URLSession.shared.data(for: request)
+                
+                print("📥 收到响应")
                 
                 guard let httpResponse = response as? HTTPURLResponse,
                       (200...299).contains(httpResponse.statusCode) else {
-                    throw NSError(domain: "Server error", code: -1)
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    print("❌ HTTP 错误：\(statusCode)")
+                    throw NSError(domain: "Server error", code: statusCode)
                 }
                 
                 let result = try JSONDecoder().decode(SMSResponse.self, from: data)
+                print("✅ JSON 解析成功：success=\(result.success)")
                 
                 await MainActor.run {
                     if result.success {
@@ -262,6 +276,7 @@ struct AuthView: View {
                     }
                 }
             } catch {
+                print("❌ 错误：\(error.localizedDescription)")
                 await MainActor.run {
                     errorMessage = "网络错误：\(error.localizedDescription)"
                     showingError = true
@@ -388,26 +403,33 @@ struct AuthView: View {
             
             print("  HTTP 状态码：\(httpResponse.statusCode)")
             
-            // 检查是否是验证码错误（后端返回特定错误码）
+            // 检查验证码错误（HTTP 400/500）
             if httpResponse.statusCode == 400 || httpResponse.statusCode == 500 {
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("  响应内容：\(responseString)")
+                    
                     // 尝试解析错误信息
-                    if let errorData = try? JSONDecoder().decode(AuthResponse.self, from: data) {
-                        if errorData.error?.contains("验证码") == true {
+                    if let errorJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        let errorCode = errorJSON["code"] as? String ?? ""
+                        let errorMsg = errorJSON["error"] as? String ?? ""
+                        print("  错误码：\(errorCode)")
+                        print("  错误信息：\(errorMsg)")
+                        
+                        // 根据错误码判断
+                        if errorCode == "INVALID_CODE" || errorMsg.contains("验证码") {
                             await MainActor.run {
                                 errorMessage = "验证码错误或已过期"
                                 showingError = true
                                 countdown = 0 // 允许重新获取
                             }
                             return
-                        } else if errorData.error?.contains("手机号") == true {
+                        } else if errorMsg.contains("手机号") {
                             await MainActor.run {
                                 errorMessage = "手机号格式不正确"
                                 showingError = true
                             }
                             return
-                        } else if errorData.error?.contains("用户名") == true {
+                        } else if errorMsg.contains("用户名") || errorMsg.contains("姓名") {
                             await MainActor.run {
                                 errorMessage = "用户名不能为空"
                                 showingError = true
@@ -416,6 +438,7 @@ struct AuthView: View {
                         }
                     }
                 }
+                
                 // 其他服务器错误
                 await MainActor.run {
                     errorMessage = "服务器错误，请稍后重试"
@@ -533,19 +556,27 @@ struct AuthView: View {
             
             print("  HTTP 状态码：\(httpResponse.statusCode)")
             
-            // 检查验证码错误
+            // 检查验证码错误（HTTP 400/500）
             if httpResponse.statusCode == 400 || httpResponse.statusCode == 500 {
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("  响应内容：\(responseString)")
-                    if let errorData = try? JSONDecoder().decode(AuthResponse.self, from: data) {
-                        if errorData.error?.contains("验证码") == true {
+                    
+                    // 尝试解析错误信息
+                    if let errorJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        let errorCode = errorJSON["code"] as? String ?? ""
+                        let errorMsg = errorJSON["error"] as? String ?? ""
+                        print("  错误码：\(errorCode)")
+                        print("  错误信息：\(errorMsg)")
+                        
+                        // 根据错误码判断
+                        if errorCode == "INVALID_CODE" || errorMsg.contains("验证码") {
                             await MainActor.run {
                                 errorMessage = "验证码错误或已过期"
                                 showingError = true
                                 countdown = 0 // 允许重新获取
                             }
                             return
-                        } else if errorData.error?.contains("手机号") == true {
+                        } else if errorMsg.contains("手机号") {
                             await MainActor.run {
                                 errorMessage = "手机号格式不正确"
                                 showingError = true
@@ -554,6 +585,7 @@ struct AuthView: View {
                         }
                     }
                 }
+                
                 // 其他服务器错误
                 await MainActor.run {
                     errorMessage = "服务器错误，请稍后重试"
