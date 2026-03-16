@@ -11,13 +11,22 @@ class DataManager: ObservableObject {
     static let shared = DataManager()
     
     // MARK: - 后端 API 配置（动态获取）
-    // 默认配置（首次启动时使用）
-    static var baseURL: String = "http://8.136.41.211:3395"  // 生产服务器
-    static var apiURL: String = "\(baseURL)/api"
+    // 默认配置（仅用于首次启动，之后从服务器动态获取）
+    static var baseURL: String = ""  // 空值表示等待动态获取
+    static var apiURL: String = ""
     
     // 从服务器动态获取的配置
     @Published var serverConfig: ServerConfig?
     @Published var isBackendOnline = false
+    
+    // 短信配置（从后端获取）
+    @Published var smsConfig: SMSConfig?
+    
+    struct SMSConfig: Codable {
+        let enabled: Bool
+        let provider: String
+        let isDevelopment: Bool
+    }
     
     @Published var capsules: [TimeCapsule] = []
     @Published var willModules: [WillModule] = []
@@ -27,9 +36,10 @@ class DataManager: ObservableObject {
     @Published var settings: UserSettings
     
     // MARK: - API 配置管理
-    /// 从服务器获取 API 配置
-    func fetchServerConfig(baseURL: String) async throws {
-        let configURL = "\(baseURL)/api/config.php"
+    /// 从服务器获取 API 配置（深度绑定，自动适配服务器地址）
+    func fetchServerConfig(fallbackBaseURL: String) async throws {
+        // 先尝试使用 fallbackBaseURL 获取配置
+        let configURL = "\(fallbackBaseURL)/api/config.php"
         guard let url = URL(string: configURL) else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
@@ -46,26 +56,51 @@ class DataManager: ObservableObject {
         if config.success, let configData = config.data {
             DispatchQueue.main.async {
                 self.serverConfig = ServerConfig(success: true, data: configData, error: nil)
+                // 使用后端返回的动态地址（深度绑定）
                 DataManager.baseURL = configData.endpoints.base
                 DataManager.apiURL = configData.endpoints.api
+                
+                // 解析短信配置
+                if let smsData = configData.sms {
+                    self.smsConfig = try? JSONDecoder().decode(SMSConfig.self, from: JSONSerialization.data(withJSONObject: smsData))
+                }
+                
                 self.isBackendOnline = true
                 print("✅ 后端配置获取成功：\(DataManager.apiURL)")
+                print("📱 短信模式：\(self.smsConfig?.isDevelopment ?? true ? "测试" : "生产")")
             }
         } else {
             throw NSError(domain: config.error ?? "Unknown error", code: -1)
         }
     }
     
-    /// 初始化 API 配置（先尝试默认地址，失败则使用本地模式）
+    /// 初始化 API 配置（从 AppStorage 获取上次使用的地址，或尝试常见地址）
     func initializeAPIConfig() {
         Task {
-            do {
-                try await fetchServerConfig(baseURL: DataManager.baseURL)
-            } catch {
-                DispatchQueue.main.async {
-                    self.isBackendOnline = false
-                    print("⚠️ 后端离线，使用本地模式：\(error)")
+            // 尝试从 AppStorage 获取上次使用的服务器地址
+            let savedBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? ""
+            
+            // 尝试顺序：保存的地址 > 常见地址
+            let candidates = savedBaseURL.isEmpty
+                ? ["http://8.136.41.211:3395", "http://localhost:3395", "http://127.0.0.1:3395"]
+                : [savedBaseURL]
+            
+            for baseURL in candidates {
+                do {
+                    try await fetchServerConfig(fallbackBaseURL: baseURL)
+                    // 成功后保存地址供下次使用
+                    UserDefaults.standard.set(DataManager.baseURL, forKey: "lastUsedBaseURL")
+                    return
+                } catch {
+                    print("⚠️ 尝试地址失败：\(baseURL) - \(error)")
+                    continue
                 }
+            }
+            
+            // 所有尝试都失败
+            DispatchQueue.main.async {
+                self.isBackendOnline = false
+                print("⚠️ 后端离线，使用本地模式")
             }
         }
     }

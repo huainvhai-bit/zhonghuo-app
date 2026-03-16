@@ -19,6 +19,7 @@ struct ServerConfig: Codable {
         let endpoints: Endpoints
         let features: Features
         let limits: Limits
+        let sms: SMSConfig?  // 短信配置
         
         struct Endpoints: Codable {
             let base: String
@@ -38,6 +39,12 @@ struct ServerConfig: Codable {
             let maxUploadSize: Int
             let maxCapsules: Int
             let maxWillModules: Int
+        }
+        
+        struct SMSConfig: Codable {
+            let enabled: Bool
+            let provider: String
+            let isDevelopment: Bool
         }
     }
 }

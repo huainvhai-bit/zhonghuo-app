@@ -25,6 +25,7 @@ struct AuthView: View {
         let code: String?
         let error: String?
         let expiresIn: Int?
+        let debug: String?
     }
     
     // MARK: - API 响应模型
@@ -231,9 +232,10 @@ struct AuthView: View {
                 
                 await MainActor.run {
                     if result.success {
-                        // 开发环境显示验证码（用于测试）
+                        // 根据后端返回决定是否显示验证码
+                        // 后端在测试模式下会返回 code，生产模式不返回
                         if let code = result.code {
-                            errorMessage = "验证码：\(code)（开发环境）"
+                            errorMessage = "验证码：\(code)（测试模式）"
                             showingError = true
                         } else {
                             errorMessage = "验证码已发送到手机"

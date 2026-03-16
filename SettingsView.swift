@@ -14,7 +14,7 @@ struct SettingsView: View {
     @State private var showingEditProfile = false
     @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
-    @AppStorage("customServerURL") private var customServerURL = "http://8.136.41.211:3395"
+    @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     
     var body: some View {
@@ -426,7 +426,7 @@ struct EmergencyContactModal: View {
 // MARK: - 服务器配置弹窗
 struct ServerConfigModal: View {
     @Environment(\.dismiss) var dismiss
-    @AppStorage("customServerURL") private var customServerURL = "http://8.136.41.211:3395"
+    @AppStorage("customServerURL") private var customServerURL = ""
     @State private var tempURL = ""
     @State private var isTesting = false
     @State private var testResult = ""
@@ -435,9 +435,13 @@ struct ServerConfigModal: View {
         NavigationView {
             Form {
                 Section(header: Text("服务器地址")) {
-                    TextField("http://8.136.41.211:3395", text: $tempURL)
+                    TextField("自动获取（推荐）", text: $tempURL)
                         .keyboardType(.URL)
                         .autocapitalization(.none)
+                    
+                    Text("留空表示自动从后端获取，深度绑定当前服务器地址")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     
                     Text("修改后需要重启 App 生效")
                         .font(.caption)
