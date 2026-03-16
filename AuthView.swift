@@ -197,14 +197,6 @@ struct AuthView: View {
             return
         }
         
-        // 检查后端是否在线
-        if DataManager.apiURL.isEmpty {
-            errorMessage = "正在连接服务器，请稍候..."
-            showingError = true
-            countdown = 0
-            return
-        }
-        
         // 开始倒计时
         countdown = 60
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -218,7 +210,7 @@ struct AuthView: View {
         // 调用后端 API 发送验证码
         Task {
             do {
-                // 等待 API 初始化完成
+                // 确保 API 已就绪
                 try await DataManager.shared.checkAPIReady()
                 
                 guard !DataManager.apiURL.isEmpty else {

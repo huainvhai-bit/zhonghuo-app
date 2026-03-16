@@ -83,15 +83,25 @@ class DataManager: ObservableObject {
         }
     }
     
-    /// 初始化 API 配置
+    /// 初始化 API 配置（同步版本 - 立即设置默认值）
     func initializeAPIConfig() {
+        // 立即设置默认值，确保 API 立即可用
+        DataManager.baseURL = "http://8.136.41.211:3395"
+        DataManager.apiURL = "http://8.136.41.211:3395/api"
+        self.isBackendOnline = true
+        
+        print("🔵 API 已初始化（默认地址）")
+        print("   Base URL: \(DataManager.baseURL)")
+        print("   API URL: \(DataManager.apiURL)")
+        
+        // 异步尝试获取最新配置
         Task {
-            await initializeAPIConfigAsync()
+            await refreshAPIConfig()
         }
     }
     
-    /// 异步初始化 API 配置
-    func initializeAPIConfigAsync() async {
+    /// 异步刷新 API 配置（后台静默更新）
+    func refreshAPIConfig() async {
         // 尝试顺序：保存的地址 > 默认地址
         let candidates = [
             UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "",
@@ -101,7 +111,7 @@ class DataManager: ObservableObject {
         for baseURL in candidates {
             do {
                 try await fetchServerConfig(from: baseURL)
-                print("✅ 使用地址：\(DataManager.baseURL)")
+                print("✅ 后端配置刷新成功：\(DataManager.baseURL)")
                 return
             } catch {
                 print("⚠️ 尝试地址失败：\(baseURL) - \(error.localizedDescription)")
@@ -109,41 +119,24 @@ class DataManager: ObservableObject {
             }
         }
         
-        // 所有尝试都失败
-        await MainActor.run {
-            self.isBackendOnline = false
-            print("⚠️ 后端离线，使用本地模式")
-        }
+        // 所有尝试都失败，保持默认值
+        print("⚠️ 后端配置刷新失败，使用默认地址")
     }
     
-    /// 检查 API 是否已初始化
+    /// 检查 API 是否已初始化（立即可用）
     func checkAPIReady() async throws {
         // 如果已初始化，直接返回
         if !DataManager.apiURL.isEmpty && isBackendOnline {
             return
         }
         
-        // 如果后端离线，使用保存的地址或默认地址
-        if !isBackendOnline {
-            let savedURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "http://8.136.41.211:3395"
-            DataManager.baseURL = savedURL
-            DataManager.apiURL = "\(savedURL)/api"
-            print("⚠️ 使用备用地址：\(DataManager.apiURL)")
-            return
-        }
-        
-        // 等待初始化（最多 5 秒）
-        var attempts = 0
-        while DataManager.apiURL.isEmpty && attempts < 50 {
-            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            attempts += 1
-        }
-        
+        // 如果未初始化，使用默认地址
         if DataManager.apiURL.isEmpty {
-            // 超时后使用默认地址
             DataManager.baseURL = "http://8.136.41.211:3395"
             DataManager.apiURL = "http://8.136.41.211:3395/api"
-            print("⚠️ 初始化超时，使用默认地址：\(DataManager.apiURL)")
+            self.isBackendOnline = true
+            print("⚠️ API 未初始化，使用默认地址：\(DataManager.apiURL)")
+            return
         }
     }
     
