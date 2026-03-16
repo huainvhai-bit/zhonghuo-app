@@ -388,6 +388,52 @@ class DataManager: ObservableObject {
         saveAssetsToFile()
     }
     
+    func updateAsset(_ asset: Asset) {
+        if let index = assets.firstIndex(where: { $0.id == asset.id }) {
+            assets[index] = asset
+            saveAssetsToFile()
+            // TODO: 同步到服务器
+            Task {
+                await syncAssetToServer(asset)
+            }
+        }
+    }
+    
+    // MARK: - 服务器同步
+    
+    /// 同步资产到服务器
+    func syncAssetToServer(_ asset: Asset) async {
+        guard !DataManager.apiURL.isEmpty else { return }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?resource=asset&action=update")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let body: [String: Any] = [
+            "id": asset.id,
+            "type": asset.type.rawValue,
+            "name": asset.name,
+            "institution": asset.institution,
+            "balance": asset.balance,
+            "account_number": asset.accountNumber,
+            "details": asset.details
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                print("✅ 资产已同步到服务器：\(asset.name)")
+            }
+        } catch {
+            print("❌ 资产同步失败：\(error)")
+        }
+    }
+    
     func updateWillModule(_ module: WillModule) {
         if let index = willModules.firstIndex(where: { $0.id == module.id }) {
             willModules[index] = module

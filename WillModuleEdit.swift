@@ -274,10 +274,12 @@ struct TemplateModal: View {
     }
 }
 
-// MARK: - 添加资产弹窗
+// MARK: - 添加/编辑资产弹窗
 struct AddAssetModal: View {
     @ObservedObject var dataManager: DataManager
     @Environment(\.dismiss) var dismiss
+    var asset: Asset? // nil 表示新增，非 nil 表示编辑
+    
     @State private var selectedType: Asset.AssetType = .bank
     @State private var name = ""
     @State private var institution = ""
@@ -337,7 +339,7 @@ struct AddAssetModal: View {
                     }
                 }
             }
-            .navigationTitle("添加资产")
+            .navigationTitle(asset == nil ? "添加资产" : "编辑资产")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -345,21 +347,45 @@ struct AddAssetModal: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("添加") {
-                        let asset = Asset(
-                            id: UUID().uuidString,
-                            type: selectedType,
-                            name: name,
-                            institution: institution,
-                            balance: balance,
-                            accountNumber: accountNumber,
-                            details: details,
-                            createdAt: Date()
-                        )
-                        dataManager.addAsset(asset)
+                    Button(asset == nil ? "添加" : "保存") {
+                        if let existingAsset = asset {
+                            // 编辑模式：更新现有资产
+                            var updatedAsset = existingAsset
+                            updatedAsset.type = selectedType
+                            updatedAsset.name = name
+                            updatedAsset.institution = institution
+                            updatedAsset.balance = balance
+                            updatedAsset.accountNumber = accountNumber
+                            updatedAsset.details = details
+                            dataManager.updateAsset(updatedAsset)
+                        } else {
+                            // 新增模式：创建新资产
+                            let newAsset = Asset(
+                                id: UUID().uuidString,
+                                type: selectedType,
+                                name: name,
+                                institution: institution,
+                                balance: balance,
+                                accountNumber: accountNumber,
+                                details: details,
+                                createdAt: Date()
+                            )
+                            dataManager.addAsset(newAsset)
+                        }
                         dismiss()
                     }
                     .disabled(name.isEmpty || institution.isEmpty)
+                }
+            }
+            .onAppear {
+                // 如果是编辑模式，加载现有数据
+                if let existingAsset = asset {
+                    selectedType = existingAsset.type
+                    name = existingAsset.name
+                    institution = existingAsset.institution
+                    balanceText = String(format: "%.2f", existingAsset.balance)
+                    accountNumber = existingAsset.accountNumber
+                    details = existingAsset.details
                 }
             }
         }

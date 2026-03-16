@@ -214,19 +214,6 @@ struct SettingsView: View {
                         Text("编辑资料")
                     }
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: "6366F1"))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.white)
-                    .cornerRadius(20)
-                }
-                
-                Button(action: { showingEmergencyContact = true }) {
-                    HStack {
-                        Image(systemName: "person.crop.circle.badge.exclamationmark")
-                        Text("紧急联系人")
-                    }
-                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
@@ -296,8 +283,14 @@ struct EditProfileModal: View {
                 }
                 
                 Section(header: Text("手机号")) {
-                    TextField("请输入手机号", text: $phone)
-                        .keyboardType(.phonePad)
+                    HStack {
+                        Text(phone)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("不可修改")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 Section {
@@ -306,10 +299,10 @@ struct EditProfileModal: View {
                         print("   userManager.isLoggedIn (保存前): \(userManager.isLoggedIn)")
                         print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
                         
-                        if !name.isEmpty && !phone.isEmpty {
+                        if !name.isEmpty {
                             if var user = userManager.currentUser {
                                 user.name = name
-                                user.phone = phone
+                                // phone 不可修改
                                 
                                 // 先更新 currentUser，再保存
                                 userManager.currentUser = user
@@ -333,7 +326,7 @@ struct EditProfileModal: View {
                         Text("保存")
                             .frame(maxWidth: .infinity)
                     }
-                    .disabled(name.isEmpty || phone.isEmpty)
+                    .disabled(name.isEmpty)
                 }
             }
             .navigationTitle("编辑资料")
@@ -346,6 +339,7 @@ struct EditProfileModal: View {
             .onAppear {
                 name = userManager.currentUser?.name ?? ""
                 phone = userManager.currentUser?.phone ?? ""
+                print("🔵 编辑资料：name=\(name), phone=\(phone)")
             }
         }
     }

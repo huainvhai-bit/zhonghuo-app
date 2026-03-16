@@ -13,6 +13,7 @@ struct WillAssetsView: View {
     @State private var showingAddAssetModal = false
     @State private var showingTemplateModal = false
     @State private var editingModule: WillModule? = nil
+    @State private var editingAsset: Asset? = nil
     @State private var showingPDFExport = false
     @State private var pdfExportSuccess = false
     
@@ -66,13 +67,16 @@ struct WillAssetsView: View {
                 }
             }
             .sheet(isPresented: $showingAddAssetModal) {
-                AddAssetModal(dataManager: dataManager)
+                AddAssetModal(dataManager: dataManager, asset: nil)
             }
             .sheet(isPresented: $showingTemplateModal) {
                 TemplateModal(dataManager: dataManager)
             }
             .sheet(item: $editingModule) { module in
                 EditWillModuleModal(dataManager: dataManager, module: module)
+            }
+            .sheet(item: $editingAsset) { asset in
+                AddAssetModal(dataManager: dataManager, asset: asset)
             }
             .sheet(isPresented: $showingPDFExport) {
                 PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, onSuccess: {
@@ -190,6 +194,8 @@ struct WillAssetsView: View {
             ForEach(dataManager.assets) { asset in
                 AssetRow(asset: asset, onDelete: {
                     dataManager.deleteAsset(asset)
+                }, onEdit: {
+                    editingAsset = asset
                 })
             }
             .onDelete { atOffsets in
@@ -207,6 +213,20 @@ struct WillAssetsView: View {
                 .padding(.vertical, 14)
                 .background(Color(hex: "6366F1"))
                 .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            
+            // 使用模板按钮
+            Button(action: { showingTemplateModal = true }) {
+                HStack {
+                    Image(systemName: "folder.badge.plus")
+                    Text("使用资产模板")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color(hex: "6366F1").opacity(0.1))
+                .foregroundColor(Color(hex: "6366F1"))
                 .cornerRadius(12)
             }
         }
@@ -392,10 +412,11 @@ struct AssetCard: View {
     }
 }
 
-// MARK: - 资产行（支持删除）
+// MARK: - 资产行（支持编辑和删除）
 struct AssetRow: View {
     let asset: Asset
     let onDelete: () -> Void
+    let onEdit: () -> Void
     
     @State private var showingDeleteAlert = false
     
@@ -424,13 +445,21 @@ struct AssetRow: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(Color(hex: "6366F1"))
                 
+                // 编辑按钮
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .foregroundColor(Color(hex: "6366F1"))
+                        .font(.system(size: 16))
+                }
+                .padding(.leading, 8)
+                
                 // 删除按钮
                 Button(action: { showingDeleteAlert = true }) {
                     Image(systemName: "trash")
                         .foregroundColor(.red)
                         .font(.system(size: 16))
                 }
-                .padding(.leading, 8)
+                .padding(.leading, 4)
             }
             
             Divider()
