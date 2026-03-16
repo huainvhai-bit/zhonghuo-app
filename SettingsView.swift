@@ -274,6 +274,10 @@ struct EditProfileModal: View {
     @Environment(\.dismiss) var dismiss
     @State private var name = ""
     @State private var phone = ""
+    @State private var ethnicity = ""
+    @State private var birthday = Date()
+    @State private var idCard = ""
+    @State private var address = ""
     
     var body: some View {
         NavigationView {
@@ -284,13 +288,28 @@ struct EditProfileModal: View {
                 
                 Section(header: Text("手机号")) {
                     HStack {
-                        Text(phone)
+                        Image(systemName: "phone.fill")
                             .foregroundColor(.secondary)
+                            .frame(width: 20)
+                        Text(phone)
+                            .foregroundColor(.primary)
                         Spacer()
                         Text("不可修改")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
+                }
+                
+                Section(header: Text("身份信息")) {
+                    TextField("民族", text: $ethnicity)
+                    
+                    DatePicker("出生日期", selection: $birthday, displayedComponents: .date)
+                    
+                    TextField("身份证号码", text: $idCard)
+                        .textInputAutocapitalization(.characters)
+                    
+                    TextField("住址", text: $address)
+                        .lineLimit(2)
                 }
                 
                 Section {
@@ -303,6 +322,10 @@ struct EditProfileModal: View {
                             if var user = userManager.currentUser {
                                 user.name = name
                                 // phone 不可修改
+                                user.ethnicity = ethnicity
+                                user.birthday = birthday
+                                user.idCard = idCard
+                                user.address = address
                                 
                                 // 先更新 currentUser，再保存
                                 userManager.currentUser = user
@@ -337,9 +360,15 @@ struct EditProfileModal: View {
                 }
             }
             .onAppear {
-                name = userManager.currentUser?.name ?? ""
-                phone = userManager.currentUser?.phone ?? ""
-                print("🔵 编辑资料：name=\(name), phone=\(phone)")
+                if let user = userManager.currentUser {
+                    name = user.name ?? ""
+                    phone = user.phone ?? ""
+                    ethnicity = user.ethnicity ?? ""
+                    birthday = user.birthday ?? Date()
+                    idCard = user.idCard ?? ""
+                    address = user.address ?? ""
+                    print("🔵 编辑资料：name=\(name), phone=\(phone)")
+                }
             }
         }
     }

@@ -206,27 +206,13 @@ struct WillAssetsView: View {
             Button(action: { showingAddAssetModal = true }) {
                 HStack {
                     Text("+")
-                    Text("添加金融资产")
+                    Text("添加资产")
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(Color(hex: "6366F1"))
                 .foregroundColor(.white)
-                .cornerRadius(12)
-            }
-            
-            // 使用模板按钮
-            Button(action: { showingTemplateModal = true }) {
-                HStack {
-                    Image(systemName: "folder.badge.plus")
-                    Text("使用资产模板")
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color(hex: "6366F1").opacity(0.1))
-                .foregroundColor(Color(hex: "6366F1"))
                 .cornerRadius(12)
             }
         }

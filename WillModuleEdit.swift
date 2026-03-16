@@ -320,12 +320,33 @@ struct AddAssetModal: View {
                             get: { details["开户行"] ?? "" },
                             set: { details["开户行"] = $0 }
                         ))
+                        TextField("账号后 4 位", text: Binding(
+                            get: { details["bank_account"] ?? "" },
+                            set: { details["bank_account"] = $0 }
+                        ))
                     case .stock:
-                        TextField("持仓", text: Binding(
-                            get: { details["持仓"] ?? "" },
-                            set: { details["持仓"] = $0 }
+                        TextField("券商", text: Binding(
+                            get: { details["券商"] ?? "" },
+                            set: { details["券商"] = $0 }
+                        ))
+                        TextField("资金账号", text: Binding(
+                            get: { details["资金账号"] ?? "" },
+                            set: { details["资金账号"] = $0 }
+                        ))
+                    case .fund:
+                        TextField("基金公司", text: Binding(
+                            get: { details["基金公司"] ?? "" },
+                            set: { details["基金公司"] = $0 }
+                        ))
+                        TextField("基金代码", text: Binding(
+                            get: { details["基金代码"] ?? "" },
+                            set: { details["基金代码"] = $0 }
                         ))
                     case .insurance:
+                        TextField("保险公司", text: Binding(
+                            get: { details["保险公司"] ?? "" },
+                            set: { details["保险公司"] = $0 }
+                        ))
                         TextField("保单号", text: Binding(
                             get: { details["保单号"] ?? "" },
                             set: { details["保单号"] = $0 }
@@ -334,8 +355,54 @@ struct AddAssetModal: View {
                             get: { details["受益人"] ?? "" },
                             set: { details["受益人"] = $0 }
                         ))
-                    default:
-                        EmptyView()
+                    case .cash:
+                        TextField("存放位置", text: Binding(
+                            get: { details["存放位置"] ?? "" },
+                            set: { details["存放位置"] = $0 }
+                        ))
+                        TextField("备注", text: Binding(
+                            get: { details["备注"] ?? "" },
+                            set: { details["备注"] = $0 }
+                        ))
+                    case .property:
+                        TextField("房产地址", text: Binding(
+                            get: { details["地址"] ?? "" },
+                            set: { details["地址"] = $0 }
+                        ))
+                        TextField("房产证号", text: Binding(
+                            get: { details["房产证号"] ?? "" },
+                            set: { details["房产证号"] = $0 }
+                        ))
+                        TextField("面积（㎡）", text: Binding(
+                            get: { details["面积"] ?? "" },
+                            set: { details["面积"] = $0 }
+                        ))
+                    case .gameAccount:
+                        TextField("游戏名称", text: Binding(
+                            get: { details["游戏名称"] ?? "" },
+                            set: { details["游戏名称"] = $0 }
+                        ))
+                        TextField("账号/ID", text: Binding(
+                            get: { details["账号"] ?? "" },
+                            set: { details["账号"] = $0 }
+                        ))
+                        TextField("服务器/区服", text: Binding(
+                            get: { details["服务器"] ?? "" },
+                            set: { details["服务器"] = $0 }
+                        ))
+                    case .crypto:
+                        TextField("币种", text: Binding(
+                            get: { details["币种"] ?? "" },
+                            set: { details["币种"] = $0 }
+                        ))
+                        TextField("钱包地址", text: Binding(
+                            get: { details["钱包地址"] ?? "" },
+                            set: { details["钱包地址"] = $0 }
+                        ))
+                        TextField("交易所", text: Binding(
+                            get: { details["交易所"] ?? "" },
+                            set: { details["交易所"] = $0 }
+                        ))
                     }
                 }
             }

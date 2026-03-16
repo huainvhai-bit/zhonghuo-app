@@ -162,6 +162,10 @@ struct Asset: Identifiable, Codable {
         case stock = "股票投资"
         case fund = "基金理财"
         case insurance = "保险"
+        case cash = "现金"
+        case property = "房产"
+        case gameAccount = "游戏账号"
+        case crypto = "虚拟币"
         
         var icon: String {
             switch self {
@@ -169,6 +173,10 @@ struct Asset: Identifiable, Codable {
             case .stock: return "📈"
             case .fund: return "💰"
             case .insurance: return "🛡️"
+            case .cash: return "💵"
+            case .property: return "🏠"
+            case .gameAccount: return "🎮"
+            case .crypto: return "₿"
             }
         }
         
@@ -178,6 +186,10 @@ struct Asset: Identifiable, Codable {
             case .stock: return "FF3B30"
             case .fund: return "AF52DE"
             case .insurance: return "007AFF"
+            case .cash: return "34C759"
+            case .property: return "FF9500"
+            case .gameAccount: return "BF5AF2"
+            case .crypto: return "FFD60A"
             }
         }
     }
@@ -286,6 +298,12 @@ struct User: Codable, Identifiable {
     var notificationsEnabled: Bool
     var cloudSyncEnabled: Bool
     var lastCheckInDate: Date?
+    
+    // 新增身份信息字段
+    var ethnicity: String?  // 民族
+    var birthday: Date?     // 出生日期
+    var idCard: String?     // 身份证号码
+    var address: String?    // 住址
     
     struct EmergencyContact: Codable, Identifiable {
         var id: String = UUID().uuidString
