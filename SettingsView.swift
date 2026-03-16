@@ -236,6 +236,33 @@ struct SettingsView: View {
                 }
             }
             
+            // 服务器设置
+            Section(header: Text("服务器设置")) {
+                HStack {
+                    Image(systemName: "server.rack")
+                        .foregroundColor(dataManager.isBackendOnline ? .green : .orange)
+                        .frame(width: 30)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("后端服务")
+                            .font(.system(size: 16))
+                        
+                        Text(dataManager.isBackendOnline ? 
+                             "已连接：\(DataManager.baseURL)" : 
+                             "离线模式（仅本地存储）")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: { showingServerConfig = true }) {
+                        Text("配置")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                }
+            }
+            
             // 退出登录按钮
             Button(action: logout) {
                 HStack {

@@ -47,7 +47,9 @@ struct ContentView: View {
     }
     
     private func checkEmergencyContacts() {
-        if userManager.needsEmergencyContactCheck {
+        // 只有紧急联系人数量少于 2 人时才提醒
+        if let user = userManager.currentUser,
+           user.emergencyContacts.count < 2 {
             showingEmergencyContactAlert = true
         }
     }
@@ -94,34 +96,6 @@ struct ContentView: View {
             if selectedTab == 0 {
                 AIRobotView()
             }
-            
-            // 服务器状态指示器
-            VStack {
-                HStack {
-                    Spacer()
-                    VStack {
-                        HStack {
-                            Image(systemName: dataManager.isBackendOnline ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                                .foregroundColor(dataManager.isBackendOnline ? .green : .orange)
-                            Text(dataManager.isBackendOnline ? "云端" : "本地")
-                                .font(.caption2)
-                                .foregroundColor(.white)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(12)
-                        .onTapGesture {
-                            showingServerConfig = true
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding()
-                }
-                Spacer()
-            }
-            .allowsHitTesting(false)
             
             // 服务器配置弹窗
             if showingServerConfig {

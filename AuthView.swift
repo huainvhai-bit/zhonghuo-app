@@ -92,15 +92,18 @@ struct AuthView: View {
                     }
                     
                     Button(action: handleSubmit) {
-                        Text(isRegistering ? "注册" : "登录")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "AF52DE"))
-                            .cornerRadius(12)
+                        HStack {
+                            Image(systemName: isRegistering && !showingVerifyCode ? "arrow.right.circle.fill" : "checkmark.circle.fill")
+                            Text(isRegistering && !showingVerifyCode ? "先获取验证码" : (isRegistering ? "注册" : "登录"))
+                        }
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "AF52DE"))
+                        .cornerRadius(12)
                     }
-                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || verifyCode.isEmpty) : phone.isEmpty)
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || !showingVerifyCode || verifyCode.isEmpty) : phone.isEmpty)
                 }
                 .padding(.horizontal, 30)
                 
