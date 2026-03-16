@@ -11,12 +11,15 @@ struct AuthView: View {
     @StateObject private var userManager = UserManager.shared
     @State private var name = ""
     @State private var phone = ""
+    @State private var password = ""
     @State private var verifyCode = ""
     @State private var isRegistering = true
+    @State private var loginType: String = "password" // "password" or "verify_code"
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var countdown = 0
     @State private var timer: Timer?
+    @State private var showingResetPassword = false
     
     // MARK: - 短信验证码响应模型
     struct SMSResponse: Codable {
@@ -34,11 +37,21 @@ struct AuthView: View {
         let message: String?
         let error: String?
         let data: AuthData?
+        let code: String?  // 错误码
         
         struct AuthData: Codable {
             let token: String
             let user_id: String
             let is_new: Bool
+            let user: UserData?
+        }
+        
+        struct UserData: Codable {
+            let id: String
+            let name: String
+            let phone: String
+            let check_in_interval: Int?
+            let last_check_in_date: String?
         }
     }
     
@@ -79,10 +92,60 @@ struct AuthView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                     
-                    // 验证码区域
-                    if countdown > 0 || verifyCode.isEmpty == false {
-                        // 验证码输入框 + 重新获取按钮
-                        HStack {
+                    if isRegistering {
+                        // 注册时：密码输入框
+                        SecureField("设置密码（6 位以上）", text: $password)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        
+                        // 验证码输入框
+                        TextField("验证码", text: $verifyCode)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .onChange(of: verifyCode) { newValue in
+                                if newValue.count > 6 {
+                                    verifyCode = String(newValue.prefix(6))
+                                }
+                            }
+                        
+                        // 获取验证码按钮
+                        Button(action: sendVerifyCode) {
+                            HStack {
+                                Image(systemName: "message.fill")
+                                Text(countdown > 0 ? "\(countdown) 秒后重新获取" : "获取验证码")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .disabled(countdown > 0 || phone.isEmpty)
+                    } else {
+                        // 登录时：切换登录方式
+                        Picker("登录方式", selection: $loginType) {
+                            Text("密码登录").tag("password")
+                            Text("验证码登录").tag("verify_code")
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                        
+                        if loginType == "password" {
+                            // 密码登录
+                            SecureField("密码", text: $password)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            
+                            // 找回密码
+                            Button(action: { showingResetPassword = true }) {
+                                HStack {
+                                    Spacer()
+                                    Text("忘记密码？")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color(hex: "AF52DE"))
+                                }
+                            }
+                        } else {
+                            // 验证码登录
                             TextField("验证码", text: $verifyCode)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.numberPad)
@@ -93,31 +156,19 @@ struct AuthView: View {
                                 }
                             
                             Button(action: sendVerifyCode) {
-                                Text(countdown > 0 ? "\(countdown)秒" : "重新获取")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
-                                    .cornerRadius(8)
+                                HStack {
+                                    Image(systemName: "message.fill")
+                                    Text(countdown > 0 ? "\(countdown) 秒后重新获取" : "获取验证码")
+                                }
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                                .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
+                                .cornerRadius(12)
                             }
                             .disabled(countdown > 0 || phone.isEmpty)
                         }
-                    } else {
-                        // 获取验证码按钮
-                        Button(action: sendVerifyCode) {
-                            HStack {
-                                Image(systemName: "message.fill")
-                                Text("获取验证码")
-                            }
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(hex: "AF52DE"))
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity)
-                            .background(Color(hex: "AF52DE").opacity(0.1))
-                            .cornerRadius(12)
-                        }
-                        .disabled(phone.isEmpty)
                     }
                     
                     // 注册/登录按钮
@@ -130,7 +181,7 @@ struct AuthView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || verifyCode.isEmpty) : (phone.isEmpty || verifyCode.isEmpty))
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty || verifyCode.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty)))
                 }
                 .padding(.horizontal, 30)
                 
@@ -307,6 +358,12 @@ struct AuthView: View {
                 return
             }
             
+            if password.isEmpty || password.count < 6 {
+                errorMessage = "密码至少 6 位"
+                showingError = true
+                return
+            }
+            
             if verifyCode.isEmpty {
                 errorMessage = "请输入验证码"
                 showingError = true
@@ -325,10 +382,18 @@ struct AuthView: View {
                 return
             }
             
-            if verifyCode.isEmpty {
-                errorMessage = "请输入验证码"
-                showingError = true
-                return
+            if loginType == "password" {
+                if password.isEmpty {
+                    errorMessage = "请输入密码"
+                    showingError = true
+                    return
+                }
+            } else {
+                if verifyCode.isEmpty {
+                    errorMessage = "请输入验证码"
+                    showingError = true
+                    return
+                }
             }
             
             // 调用后端 API 登录
@@ -384,6 +449,7 @@ struct AuthView: View {
                 "action": "register",
                 "name": name,
                 "phone": phone,
+                "password": password,
                 "verify_code": verifyCode
             ]
             
@@ -519,7 +585,9 @@ struct AuthView: View {
     private func loginWithAPI() async {
         print("🔵 开始登录流程...")
         print("  phone: \(phone)")
-        print("  verify_code: \(verifyCode)")
+        print("  loginType: \(loginType)")
+        print("  password: \(loginType == "password" ? "******" : "N/A")")
+        print("  verify_code: \(loginType == "verify_code" ? verifyCode : "N/A")")
         
         do {
             // 等待 API 初始化完成
@@ -543,11 +611,17 @@ struct AuthView: View {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             
-            let body: [String: Any] = [
+            var body: [String: Any] = [
                 "action": "login",
                 "phone": phone,
-                "verify_code": verifyCode
+                "login_type": loginType
             ]
+            
+            if loginType == "password" {
+                body["password"] = password
+            } else {
+                body["verify_code"] = verifyCode
+            }
             
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             print("📡 发送请求...")
@@ -642,6 +716,162 @@ struct AuthView: View {
                 showingError = true
             }
         }
+    }
+    
+    // MARK: - 找回密码
+    private func resetPasswordWithAPI() async {
+        print("🔵 开始密码重置流程...")
+        print("  phone: \(phone)")
+        print("  verify_code: \(verifyCode)")
+        
+        do {
+            try await DataManager.shared.checkAPIReady()
+            guard !DataManager.apiURL.isEmpty else {
+                throw NSError(domain: "API URL not initialized", code: -1)
+            }
+            
+            let urlString = "\(DataManager.apiURL)/users.php"
+            guard let url = URL(string: urlString) else {
+                throw NSError(domain: "Invalid URL", code: -1)
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let body: [String: Any] = [
+                "action": "reset_password",
+                "phone": phone,
+                "verify_code": verifyCode,
+                "new_password": password
+            ]
+            
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NSError(domain: "Invalid response type", code: -1)
+            }
+            
+            if (200...299).contains(httpResponse.statusCode) {
+                await MainActor.run {
+                    showingResetPassword = false
+                    errorMessage = "密码重置成功，请登录"
+                    showingError = true
+                    loginType = "password"
+                }
+            } else {
+                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+            }
+            
+        } catch {
+            print("❌ 密码重置失败：\(error)")
+            await MainActor.run {
+                errorMessage = "密码重置失败：\(error.localizedDescription)"
+                showingError = true
+            }
+        }
+    }
+}
+
+// MARK: - 找回密码弹窗
+struct ResetPasswordModal: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var phone = ""
+    @State private var verifyCode = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var countdown = 0
+    @State private var showingError = false
+    @State private var errorMessage = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("找回密码")
+                    .font(.system(size: 24, weight: .bold))
+                    .padding(.top)
+                
+                Text("通过手机号和验证码重置密码")
+                    .foregroundColor(.secondary)
+                
+                TextField("手机号", text: $phone)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .keyboardType(.phonePad)
+                
+                HStack {
+                    TextField("验证码", text: $verifyCode)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.numberPad)
+                    
+                    Button(action: sendVerifyCode) {
+                        Text(countdown > 0 ? "\(countdown) 秒" : "获取验证码")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .disabled(countdown > 0 || phone.isEmpty)
+                }
+                
+                SecureField("新密码", text: $newPassword)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                SecureField("确认密码", text: $confirmPassword)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                Button(action: resetPassword) {
+                    Text("重置密码")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "AF52DE"))
+                        .cornerRadius(12)
+                }
+                .disabled(phone.isEmpty || verifyCode.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty || newPassword != confirmPassword)
+                
+                Spacer()
+            }
+            .padding(30)
+            .navigationTitle("找回密码")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { dismiss() }
+                }
+            }
+            .alert("错误", isPresented: $showingError) {
+                Button("确定", role: .cancel) {}
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func sendVerifyCode() {
+        guard !phone.isEmpty else { return }
+        countdown = 60
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            countdown -= 1
+            if countdown <= 0 {
+                timer.invalidate()
+            }
+        }
+    }
+    
+    private func resetPassword() {
+        if newPassword != confirmPassword {
+            errorMessage = "两次输入的密码不一致"
+            showingError = true
+            return
+        }
+        
+        if newPassword.count < 6 {
+            errorMessage = "密码至少 6 位"
+            showingError = true
+            return
+        }
+        
+        // TODO: 调用 API
+        print("重置密码：phone=\(phone), new_password=\(newPassword)")
     }
 }
 
