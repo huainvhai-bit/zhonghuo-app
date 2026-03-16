@@ -15,9 +15,7 @@
 		A1000003 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* HomeStatusView.swift */; };
 		A1000004 /* TimeCapsuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* TimeCapsuleView.swift */; };
 		A1000005 /* WillAssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* WillAssetsView.swift */; };
-		A1000006 /* SimplifiedAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* SimplifiedAIView.swift */; };
 		A1000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* SettingsView.swift */; };
-		A1000008 /* AIRobotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* AIRobotView.swift */; };
 		A1000009 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* Colors.swift */; };
 		A100000A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000A /* Models.swift */; };
 		A100000B /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000B /* DataManager.swift */; };
@@ -47,9 +45,7 @@
 		A2000003 /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
 		A2000004 /* TimeCapsuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeCapsuleView.swift; sourceTree = SOURCE_ROOT; };
 		A2000005 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = SOURCE_ROOT; };
-		A2000006 /* SimplifiedAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimplifiedAIView.swift; sourceTree = SOURCE_ROOT; };
 		A2000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = SOURCE_ROOT; };
-		A2000008 /* AIRobotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRobotView.swift; sourceTree = SOURCE_ROOT; };
 		A2000009 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = SOURCE_ROOT; };
 		A200000A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = SOURCE_ROOT; };
 		A200000B /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = SOURCE_ROOT; };
@@ -83,9 +79,7 @@
 				A2000003 /* HomeStatusView.swift */,
 				A2000004 /* TimeCapsuleView.swift */,
 				A2000005 /* WillAssetsView.swift */,
-				A2000006 /* SimplifiedAIView.swift */,
 				A2000007 /* SettingsView.swift */,
-				A2000008 /* AIRobotView.swift */,
 				A2000009 /* Colors.swift */,
 				A200000A /* Models.swift */,
 				A200000B /* DataManager.swift */,
@@ -179,12 +173,10 @@
 				A1000003 /* HomeStatusView.swift in Sources */,
 				A1000004 /* TimeCapsuleView.swift in Sources */,
 				A1000005 /* WillAssetsView.swift in Sources */,
-				A1000006 /* SimplifiedAIView.swift in Sources */,
 				3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */,
 				3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */,
 				3366C40A2F66D49800129FF3 /* AuthView.swift in Sources */,
 				A1000007 /* SettingsView.swift in Sources */,
-				A1000008 /* AIRobotView.swift in Sources */,
 				A1000009 /* Colors.swift in Sources */,
 				A100000A /* Models.swift in Sources */,
 				A100000B /* DataManager.swift in Sources */,

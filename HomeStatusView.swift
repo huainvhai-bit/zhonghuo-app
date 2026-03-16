@@ -97,11 +97,15 @@ struct HomeStatusView: View {
         print("   - elapsed: \(elapsed)s")
         print("   - elapsed >= interval: \(elapsed >= intervalSeconds)")
         
-        // 强制签到：无论是否超时，每次都重置倒计时
-        print("✅ 执行自动签到（强制重置）")
-        let result = userManager.recordCheckIn()
-        print("   - recordCheckIn 结果：\(result)")
-        dataManager.lastCheckInDate = Date()
+        // 只有在需要签到时才执行
+        if elapsed >= intervalSeconds {
+            print("✅ 需要签到，执行自动签到")
+            let result = userManager.recordCheckIn()
+            print("   - recordCheckIn 结果：\(result)")
+            dataManager.lastCheckInDate = Date()
+        } else {
+            print("⏰ 未到签到时间，跳过")
+        }
         
         // 立即更新状态并安排提醒
         updateStatus()

@@ -212,7 +212,39 @@ class DataManager: ObservableObject {
         if let data = try? Data(contentsOf: path) {
             return (try? JSONDecoder().decode([WillModule].self, from: data)) ?? []
         }
-        return []
+        // 如果文件不存在，返回默认模板
+        return getDefaultWillModules()
+    }
+    
+    func saveWillModulesToFile() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(willModules) {
+            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("willModules.json"))
+        }
+    }
+    
+    /// 获取默认遗嘱模板
+    func getDefaultWillModules() -> [WillModule] {
+        return WillModule.WillType.allCases.map { willType in
+            WillModule(
+                id: UUID().uuidString,
+                type: willType,
+                title: willType.rawValue,
+                subtitle: willType.subtitle,
+                content: "",
+                isCompleted: false
+            )
+        }
+    }
+    
+    /// 初始化默认遗嘱模板（如果为空）
+    func initializeDefaultWillModules() {
+        if willModules.isEmpty {
+            willModules = getDefaultWillModules()
+            saveWillModulesToFile()
+            print("✅ 已初始化默认遗嘱模板")
+        }
     }
     
     func loadAssetsFromFile() -> [Asset] {

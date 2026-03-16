@@ -14,7 +14,6 @@ struct ContentView: View {
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var showingEmergencyContactAlert = false
-    @State private var showingServerConfig = false
     
     var body: some View {
         Group {
@@ -91,7 +90,7 @@ struct ContentView: View {
                     }
                     .tag(2)
                 
-                SettingsView(showingServerConfig: $showingServerConfig)
+                SettingsView()
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("我的")
@@ -100,20 +99,6 @@ struct ContentView: View {
             }
             .accentColor(Color(hex: "AF52DE"))
             
-            // 悬浮 AI 机器人 - 仅在首页显示
-            if selectedTab == 0 {
-                AIRobotView()
-            }
-            
-            // 服务器配置弹窗
-            if showingServerConfig {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture { showingServerConfig = false }
-                
-                ServerConfigModal()
-                    .transition(.scale)
-            }
         }
     }
 }

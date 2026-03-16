@@ -401,10 +401,27 @@ struct AuthView: View {
                                 countdown = 0 // 允许重新获取
                             }
                             return
+                        } else if errorData.error?.contains("手机号") == true {
+                            await MainActor.run {
+                                errorMessage = "手机号格式不正确"
+                                showingError = true
+                            }
+                            return
+                        } else if errorData.error?.contains("用户名") == true {
+                            await MainActor.run {
+                                errorMessage = "用户名不能为空"
+                                showingError = true
+                            }
+                            return
                         }
                     }
                 }
-                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+                // 其他服务器错误
+                await MainActor.run {
+                    errorMessage = "服务器错误，请稍后重试"
+                    showingError = true
+                }
+                return
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {
@@ -528,10 +545,21 @@ struct AuthView: View {
                                 countdown = 0 // 允许重新获取
                             }
                             return
+                        } else if errorData.error?.contains("手机号") == true {
+                            await MainActor.run {
+                                errorMessage = "手机号格式不正确"
+                                showingError = true
+                            }
+                            return
                         }
                     }
                 }
-                throw NSError(domain: "Server error", code: httpResponse.statusCode)
+                // 其他服务器错误
+                await MainActor.run {
+                    errorMessage = "服务器错误，请稍后重试"
+                    showingError = true
+                }
+                return
             }
             
             guard (200...299).contains(httpResponse.statusCode) else {

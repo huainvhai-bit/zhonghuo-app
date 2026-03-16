@@ -36,6 +36,12 @@ struct WillAssetsView: View {
             .background(Color(hex: "F2F2F7"))
             .navigationTitle("嘱托与资产")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // 初始化默认模板（如果为空）
+                if dataManager.willModules.isEmpty {
+                    dataManager.initializeDefaultWillModules()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
@@ -113,6 +119,31 @@ struct WillAssetsView: View {
                 WillModuleCard(module: module, onTap: {
                     editingModule = module
                 })
+            }
+            
+            // 新增嘱托按钮
+            Button(action: {
+                // 创建新的空白模块（使用 otherInstructions 类型）
+                let newModule = WillModule(
+                    id: UUID().uuidString,
+                    type: .otherInstructions,
+                    title: "自定义嘱托",
+                    subtitle: "添加您想交代的事",
+                    content: "",
+                    isCompleted: false
+                )
+                editingModule = newModule
+            }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("新增自定义嘱托")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color(hex: "6366F1").opacity(0.1))
+                .foregroundColor(Color(hex: "6366F1"))
+                .cornerRadius(12)
             }
             
             // 法律提示

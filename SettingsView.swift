@@ -10,7 +10,6 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
-    @Binding var showingServerConfig: Bool
     @State private var showingEditProfile = false
     @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
@@ -236,33 +235,6 @@ struct SettingsView: View {
                 }
             }
             
-            // 服务器设置
-            Section(header: Text("服务器设置")) {
-                HStack {
-                    Image(systemName: "server.rack")
-                        .foregroundColor(dataManager.isBackendOnline ? .green : .orange)
-                        .frame(width: 30)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("后端服务")
-                            .font(.system(size: 16))
-                        
-                        Text(dataManager.isBackendOnline ? 
-                             "已连接：\(DataManager.baseURL)" : 
-                             "离线模式（仅本地存储）")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: { showingServerConfig = true }) {
-                        Text("配置")
-                            .font(.system(size: 14, weight: .medium))
-                    }
-                }
-            }
-            
             // 退出登录按钮
             Button(action: logout) {
                 HStack {
@@ -336,6 +308,9 @@ struct EditProfileModal: View {
                                 user.phone = phone
                                 userManager.currentUser = user
                                 userManager.saveUser(user)
+                                
+                                // 确保登录状态保持
+                                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                             }
                             dismiss()
                         }
@@ -533,5 +508,5 @@ struct ServerConfigModal: View {
 }
 
 #Preview {
-    SettingsView(showingServerConfig: .constant(false))
+    SettingsView()
 }
