@@ -77,31 +77,56 @@ class DataManager: ObservableObject {
     /// 初始化 API 配置（从 AppStorage 获取上次使用的地址，或尝试常见地址）
     func initializeAPIConfig() {
         Task {
-            // 尝试从 AppStorage 获取上次使用的服务器地址
-            let savedBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? ""
-            
-            // 尝试顺序：保存的地址 > 常见地址
-            let candidates = savedBaseURL.isEmpty
-                ? ["http://8.136.41.211:3395", "http://localhost:3395", "http://127.0.0.1:3395"]
-                : [savedBaseURL]
-            
-            for baseURL in candidates {
-                do {
-                    try await fetchServerConfig(fallbackBaseURL: baseURL)
-                    // 成功后保存地址供下次使用
-                    UserDefaults.standard.set(DataManager.baseURL, forKey: "lastUsedBaseURL")
-                    return
-                } catch {
-                    print("⚠️ 尝试地址失败：\(baseURL) - \(error)")
-                    continue
-                }
+            await initializeAPIConfigAsync()
+        }
+    }
+    
+    /// 异步初始化 API 配置
+    func initializeAPIConfigAsync() async {
+        // 尝试从 AppStorage 获取上次使用的服务器地址
+        let savedBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? ""
+        
+        // 尝试顺序：保存的地址 > 常见地址
+        let candidates = savedBaseURL.isEmpty
+            ? ["http://8.136.41.211:3395", "http://localhost:3395", "http://127.0.0.1:3395"]
+            : [savedBaseURL]
+        
+        for baseURL in candidates {
+            do {
+                try await fetchServerConfig(fallbackBaseURL: baseURL)
+                // 成功后保存地址供下次使用
+                UserDefaults.standard.set(DataManager.baseURL, forKey: "lastUsedBaseURL")
+                print("✅ 使用地址：\(DataManager.baseURL)")
+                return
+            } catch {
+                print("⚠️ 尝试地址失败：\(baseURL) - \(error)")
+                continue
             }
-            
-            // 所有尝试都失败
-            DispatchQueue.main.async {
-                self.isBackendOnline = false
-                print("⚠️ 后端离线，使用本地模式")
-            }
+        }
+        
+        // 所有尝试都失败
+        await MainActor.run {
+            self.isBackendOnline = false
+            print("⚠️ 后端离线，使用本地模式")
+        }
+    }
+    
+    /// 检查 API 是否已初始化（用于注册/登录前检查）
+    func checkAPIReady() async throws {
+        // 如果已初始化，直接返回
+        if !DataManager.apiURL.isEmpty && isBackendOnline {
+            return
+        }
+        
+        // 等待初始化
+        var attempts = 0
+        while DataManager.apiURL.isEmpty && attempts < 30 {
+            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            attempts += 1
+        }
+        
+        if DataManager.apiURL.isEmpty {
+            throw NSError(domain: "API initialization timeout", code: -1)
         }
     }
     
