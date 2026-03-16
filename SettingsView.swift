@@ -119,68 +119,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // 调试信息
-                Section(header: Text("调试")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("登录状态:")
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text(userManager.isLoggedIn ? "✅ 已登录" : "❌ 未登录")
-                                .foregroundColor(userManager.isLoggedIn ? .green : .red)
-                        }
-                        
-                        HStack {
-                            Text("当前签到间隔:")
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text(userManager.checkInInterval.rawValue)
-                                .foregroundColor(.indigo)
-                        }
-                        
-                        HStack {
-                            Text("用户文件:")
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            let docsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
-                            let userFileURL = URL(fileURLWithPath: docsPath).appendingPathComponent("user.json")
-                            let exists = FileManager.default.fileExists(atPath: userFileURL.path)
-                            Text(exists ? "✅ 存在" : "❌ 不存在")
-                                .foregroundColor(exists ? .green : .red)
-                        }
-                        
-                        if let user = userManager.currentUser {
-                            HStack {
-                                Text("用户签到间隔:")
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(user.checkInInterval.rawValue)
-                                    .foregroundColor(.indigo)
-                            }
-                        }
-                    }
-                    .font(.system(size: 13))
-                }
-                
-                // 数据存储
-                Section(header: Text("存储")) {
-                    HStack {
-                        Image(systemName: "iphone")
-                            .foregroundColor(Color(hex: "6366F1"))
-                            .frame(width: 30)
-                        
-                        Text("本地存储")
-                            .font(.system(size: 16))
-                        
-                        Spacer()
-                        
-                        Text("安全加密")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 8)
-                }
-                
                 // 关于
                 Section(header: Text("关于")) {
                     HStack {
