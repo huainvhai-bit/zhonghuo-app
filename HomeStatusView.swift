@@ -65,15 +65,11 @@ struct HomeStatusView: View {
             .onAppear {
                 print("🟢 首页 onAppear - 触发自动签到")
                 
-                // 初始化倒计时（如果没有签到记录，显示默认 48 小时）
-                if dataManager.lastCheckInDate == nil {
-                    let defaultHours = dataManager.settings.checkInInterval.hours
-                    secondsRemaining = Double(defaultHours) * 3600
-                    isSafe = true
-                    print("⏰ 初始化默认倒计时：\(defaultHours)小时")
-                }
-                
+                // 先执行自动签到（如果需要）
                 handleAutoCheckIn()
+                
+                // 然后更新倒计时显示
+                updateStatus()
             }
             .onChange(of: scenePhase) { newPhase in
                 if newPhase == .active {
@@ -95,29 +91,34 @@ struct HomeStatusView: View {
         }
         
         let now = Date()
-        let lastCheckIn = userManager.lastCheckInDate ?? Date.distantPast
+        let lastCheckIn = userManager.lastCheckInDate
         let intervalSeconds = userManager.checkInInterval.hours * 3600
-        let elapsed = now.timeIntervalSince(lastCheckIn)
         
-        print("⏰ 检查自动签到：")
-        print("   - 当前时间：\(now)")
-        print("   - lastCheckIn: \(lastCheckIn)")
-        print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue))")
-        print("   - elapsed: \(elapsed)s")
-        print("   - elapsed >= interval: \(elapsed >= intervalSeconds)")
+        // 如果没有签到记录，或者距离上次签到已超过间隔时间，则执行签到
+        let needsCheckIn: Bool
+        if lastCheckIn == nil {
+            needsCheckIn = true
+            print("⏰ 首次签到：没有签到记录")
+        } else {
+            let elapsed = now.timeIntervalSince(lastCheckIn!)
+            needsCheckIn = elapsed >= intervalSeconds
+            print("⏰ 检查自动签到：")
+            print("   - 当前时间：\(now)")
+            print("   - lastCheckIn: \(lastCheckIn!)")
+            print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue))")
+            print("   - elapsed: \(elapsed)s")
+            print("   - needsCheckIn: \(needsCheckIn)")
+        }
         
-        // 只有在需要签到时才执行
-        if elapsed >= intervalSeconds {
-            print("✅ 需要签到，执行自动签到")
+        if needsCheckIn {
+            print("✅ 执行自动签到")
             let result = userManager.recordCheckIn()
             print("   - recordCheckIn 结果：\(result)")
-            dataManager.lastCheckInDate = Date()
+            // 更新 DataManager 的 lastCheckInDate
+            dataManager.lastCheckInDate = userManager.lastCheckInDate
         } else {
             print("⏰ 未到签到时间，跳过")
         }
-        
-        // 立即更新状态并安排提醒
-        updateStatus()
     }
     
     private func updateStatus() {
@@ -135,10 +136,13 @@ struct HomeStatusView: View {
     }
     
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        guard let lastCheckIn = dataManager.lastCheckInDate else {
-            return (false, 0)
-        }
         let hours = dataManager.settings.checkInInterval.hours
+        
+        // 如果没有签到记录，返回完整的签到间隔时间
+        guard let lastCheckIn = dataManager.lastCheckInDate else {
+            return (true, Double(hours))
+        }
+        
         let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
         let remaining = hours - elapsed
         return (remaining > 0, max(0, remaining))

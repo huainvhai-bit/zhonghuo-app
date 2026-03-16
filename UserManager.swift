@@ -334,8 +334,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let data = try JSONEncoder().encode(user)
             try data.write(to: userFileURL)
             self.currentUser = user
+            self.isLoggedIn = true  // 确保登录状态保持
             self.checkEmergencyContacts()  // 保存后重新检查
+            
+            // 同步到 UserDefaults
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+            UserDefaults.standard.set(user.id, forKey: "userId")
+            
             print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
+            print("   isLoggedIn: \(self.isLoggedIn)")
             return true
         } catch {
             print("❌ 保存用户失败：\(error)")
