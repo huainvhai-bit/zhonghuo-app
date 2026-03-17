@@ -274,17 +274,15 @@ struct AuthView: View {
         Task {
             do {
                 print("🔵 开始获取验证码...")
-                print("   DataManager.baseURL: \(DataManager.baseURL)")
-                print("   DataManager.apiURL: \(DataManager.apiURL)")
-                print("   isBackendOnline: \(DataManager.shared.isBackendOnline)")
                 
-                // 确保 API 已就绪
-                try await DataManager.shared.checkAPIReady()
-                
-                guard !DataManager.apiURL.isEmpty else {
-                    print("❌ API URL 未初始化")
-                    throw NSError(domain: "API URL not initialized", code: -1)
+                // 确保使用正确的 API 地址
+                if DataManager.apiURL.isEmpty {
+                    DataManager.baseURL = "http://8.136.41.211:3395"
+                    DataManager.apiURL = "http://8.136.41.211:3395/api"
+                    print("⚠️ API URL 未初始化，使用默认地址")
                 }
+                
+                print("   API URL: \(DataManager.apiURL)")
                 
                 let url = URL(string: "\(DataManager.apiURL)/sms.php")!
                 print("🌐 请求 URL: \(url)")
@@ -300,19 +298,43 @@ struct AuthView: View {
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
                 print("📡 发送请求...")
-                let (data, response) = try await URLSession.shared.data(for: request)
+                print("   请求体：\(body)")
+                
+                // 添加超时配置
+                let config = URLSessionConfiguration.default
+                config.timeoutIntervalForRequest = 10
+                config.timeoutIntervalForResource = 30
+                let session = URLSession(configuration: config)
+                
+                let (data, response) = try await session.data(for: request)
                 
                 print("📥 收到响应")
+                print("   响应类型：\(type(of: response))")
                 
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    print("❌ HTTP 错误：\(statusCode)")
-                    throw NSError(domain: "Server error", code: statusCode)
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    print("❌ 响应类型错误")
+                    throw NSError(domain: "Invalid response type", code: -1)
                 }
                 
-                let result = try JSONDecoder().decode(SMSResponse.self, from: data)
-                print("✅ JSON 解析成功：success=\(result.success)")
+                print("   HTTP 状态码：\(httpResponse.statusCode)")
+                print("   响应数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
+                
+                // 检查 HTTP 错误
+                if !(200...299).contains(httpResponse.statusCode) {
+                    print("❌ HTTP 错误：\(httpResponse.statusCode)")
+                    throw NSError(domain: "Server error", code: httpResponse.statusCode)
+                }
+                
+                // 尝试解析 JSON
+                let result: SMSResponse
+                do {
+                    result = try JSONDecoder().decode(SMSResponse.self, from: data)
+                    print("✅ JSON 解析成功：success=\(result.success)")
+                } catch {
+                    print("❌ JSON 解析失败：\(error)")
+                    print("   原始数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
+                    throw error
+                }
                 
                 await MainActor.run {
                     if result.success {
