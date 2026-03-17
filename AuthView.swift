@@ -496,45 +496,57 @@ struct AuthView: View {
             
             print("  HTTP 状态码：\(httpResponse.statusCode)")
             
-            // 检查验证码错误（HTTP 400/500）
+            // 先打印原始响应内容（用于调试）
+            let rawResponse = String(data: data, encoding: .utf8) ?? "无法解析"
+            print("  原始响应：\(rawResponse)")
+            
+            // 检查错误响应（HTTP 400/500）
             if httpResponse.statusCode == 400 || httpResponse.statusCode == 500 {
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("  响应内容：\(responseString)")
+                // 尝试解析错误信息
+                if let errorJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let errorCode = errorJSON["code"] as? String ?? ""
+                    let errorMsg = errorJSON["error"] as? String ?? ""
+                    print("  错误码：\(errorCode)")
+                    print("  错误信息：\(errorMsg)")
                     
-                    // 尝试解析错误信息
-                    if let errorJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        let errorCode = errorJSON["code"] as? String ?? ""
-                        let errorMsg = errorJSON["error"] as? String ?? ""
-                        print("  错误码：\(errorCode)")
-                        print("  错误信息：\(errorMsg)")
-                        
-                        // 根据错误码判断
-                        if errorCode == "INVALID_CODE" || errorMsg.contains("验证码") {
-                            await MainActor.run {
-                                errorMessage = "验证码错误或已过期"
-                                showingError = true
-                                countdown = 0 // 允许重新获取
-                            }
-                            return
-                        } else if errorMsg.contains("手机号") {
-                            await MainActor.run {
-                                errorMessage = "手机号格式不正确"
-                                showingError = true
-                            }
-                            return
-                        } else if errorMsg.contains("用户名") || errorMsg.contains("姓名") {
-                            await MainActor.run {
-                                errorMessage = "用户名不能为空"
-                                showingError = true
-                            }
-                            return
+                    // 根据错误码判断
+                    if errorCode == "INVALID_CODE" || errorMsg.contains("验证码") {
+                        await MainActor.run {
+                            errorMessage = "验证码错误或已过期"
+                            showingError = true
+                            countdown = 0
                         }
+                        return
+                    } else if errorMsg.contains("手机号") {
+                        await MainActor.run {
+                            errorMessage = "手机号格式不正确"
+                            showingError = true
+                        }
+                        return
+                    } else if errorMsg.contains("用户名") || errorMsg.contains("姓名") {
+                        await MainActor.run {
+                            errorMessage = "用户名不能为空"
+                            showingError = true
+                        }
+                        return
+                    } else if errorMsg.contains("数据库") || errorCode == "DB_ERROR" {
+                        await MainActor.run {
+                            errorMessage = "数据库连接失败，请稍后重试"
+                            showingError = true
+                        }
+                        return
+                    } else if errorMsg.contains("已注册") || errorCode == "PHONE_EXISTS" {
+                        await MainActor.run {
+                            errorMessage = "该手机号已注册"
+                            showingError = true
+                        }
+                        return
                     }
                 }
                 
-                // 其他服务器错误
+                // 无法解析或其他错误
                 await MainActor.run {
-                    errorMessage = "服务器错误，请稍后重试"
+                    errorMessage = "服务器错误：\(httpResponse.statusCode)\n\(rawResponse)"
                     showingError = true
                 }
                 return
