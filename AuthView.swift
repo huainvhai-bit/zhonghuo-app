@@ -181,8 +181,8 @@ struct AuthView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    // 验证码可选（开发模式）
-                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty)))
+                    // 验证码必填
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty || verifyCode.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty)))
                 }
                 .padding(.horizontal, 30)
                 
@@ -365,12 +365,12 @@ struct AuthView: View {
                 return
             }
             
-            // 验证码可选（开发模式）
-            // if verifyCode.isEmpty {
-            //     errorMessage = "请输入验证码"
-            //     showingError = true
-            //     return
-            // }
+            // 验证码必填（确保手机号是本人的）
+            if verifyCode.isEmpty {
+                errorMessage = "请输入验证码"
+                showingError = true
+                return
+            }
             
             // 调用后端 API 注册
             Task {
@@ -590,8 +590,20 @@ struct AuthView: View {
         print("  loginType: \(loginType)")
         print("  password: \(loginType == "password" ? "******" : "N/A")")
         print("  verify_code: \(loginType == "verify_code" ? verifyCode : "N/A")")
+        print("  DataManager.baseURL: \(DataManager.baseURL)")
+        print("  DataManager.apiURL: \(DataManager.apiURL)")
+        print("  DataManager.isBackendOnline: \(DataManager.shared.isBackendOnline)")
         
         do {
+            // 测试网络连通性
+            do {
+                let testURL = URL(string: "\(DataManager.baseURL)/api/config.php")!
+                let (testData, _) = try await URLSession.shared.data(from: testURL)
+                print("✅ 网络连通性测试成功")
+            } catch {
+                print("❌ 网络连通性测试失败：\(error)")
+            }
+            
             // 等待 API 初始化完成
             try await DataManager.shared.checkAPIReady()
             print("✅ API 已就绪")

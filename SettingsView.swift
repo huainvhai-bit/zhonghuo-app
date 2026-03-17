@@ -265,7 +265,18 @@ struct SettingsView: View {
     
     // MARK: - 退出登录
     private func logout() {
+        print("🔴 退出登录")
+        
+        // 清除所有用户数据
         userManager.logout()
+        
+        // 清除 UserDefaults
+        UserDefaults.standard.removeObject(forKey: "userToken")
+        UserDefaults.standard.removeObject(forKey: "userId")
+        UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+        UserDefaults.standard.synchronize()
+        
+        print("✅ 退出登录完成")
     }
 }
 

@@ -197,9 +197,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    @MainActor
     func logout() {
+        print("🔴 UserManager.logout() 被调用")
         self.currentUser = nil
         self.isLoggedIn = false
+        print("   currentUser: \(self.currentUser ?? nil)")
+        print("   isLoggedIn: \(self.isLoggedIn)")
     }
     
     func addEmergencyContact(name: String, phone: String, relationship: String) -> Result<User.EmergencyContact, Error> {
