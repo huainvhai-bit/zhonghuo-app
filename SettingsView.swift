@@ -139,6 +139,22 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 8)
                 }
+                
+                // 退出登录（放在最底部）
+                Section {
+                    Button(action: logout) {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .foregroundColor(.red)
+                            Text("退出登录")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.red)
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
             }
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
@@ -220,20 +236,6 @@ struct SettingsView: View {
                     .background(Color.white.opacity(0.2))
                     .cornerRadius(20)
                 }
-            }
-            
-            // 退出登录按钮
-            Button(action: logout) {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("退出登录")
-                }
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity)
-                .background(Color.white.opacity(0.15))
-                .cornerRadius(12)
             }
         }
         .padding(20)

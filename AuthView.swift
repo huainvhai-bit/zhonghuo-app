@@ -181,7 +181,8 @@ struct AuthView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty || verifyCode.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty)))
+                    // 验证码可选（开发模式）
+                    .disabled(isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty)))
                 }
                 .padding(.horizontal, 30)
                 
@@ -364,11 +365,12 @@ struct AuthView: View {
                 return
             }
             
-            if verifyCode.isEmpty {
-                errorMessage = "请输入验证码"
-                showingError = true
-                return
-            }
+            // 验证码可选（开发模式）
+            // if verifyCode.isEmpty {
+            //     errorMessage = "请输入验证码"
+            //     showingError = true
+            //     return
+            // }
             
             // 调用后端 API 注册
             Task {
