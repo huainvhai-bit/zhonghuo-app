@@ -101,24 +101,8 @@ struct SettingsView: View {
                         Menu {
                             ForEach(CheckInInterval.allCases, id: \.self) { interval in
                                 Button(interval.rawValue) {
-                                    // 检查用户是否登录
-                                    if userManager.currentUser == nil {
-                                        print("❌ 用户未登录，无法修改签到间隔")
-                                        return
-                                    }
-                                    
-                                    // 保存到 UserManager（会自动保存到 user.json）
-                                    let result = userManager.updateCheckInInterval(interval)
-                                    
-                                    // 同步到 DataManager
-                                    DataManager.shared.settings.checkInInterval = interval
-                                    
-                                    // 根据结果处理
-                                    switch result {
-                                    case .success:
-                                        print("✅ 签到间隔保存成功：\(interval.rawValue)")
-                                    case .failure(let error):
-                                        print("❌ 签到间隔保存失败：\(error)")
+                                    Task {
+                                        await updateCheckInInterval(interval)
                                     }
                                 }
                             }
@@ -292,6 +276,93 @@ struct SettingsView: View {
         UserDefaults.standard.synchronize()
         
         print("✅ 退出登录完成")
+    }
+    
+    // MARK: - 更新签到间隔
+    private func updateCheckInInterval(_ interval: CheckInInterval) async {
+        print("🔵 开始更新签到间隔：\(interval.rawValue)")
+        
+        // 检查用户是否登录
+        guard let userId = UserDefaults.standard.string(forKey: "userId"),
+              let user = userManager.currentUser else {
+            print("❌ 用户未登录")
+            await MainActor.run {
+                errorMessage = "请先登录"
+                showingError = true
+            }
+            return
+        }
+        
+        do {
+            // 1. 本地更新
+            userManager.checkInInterval = interval
+            userManager.currentUser?.checkInInterval = interval
+            DataManager.shared.settings.checkInInterval = interval
+            
+            // 2. 保存到本地文件
+            let saveResult = userManager.updateCheckInInterval(interval)
+            if case .failure(let error) = saveResult {
+                print("❌ 本地保存失败：\(error)")
+            }
+            
+            // 3. 同步到服务器
+            try await syncCheckInIntervalToServer(userId: userId, interval: interval)
+            
+            print("✅ 签到间隔更新成功：\(interval.rawValue)")
+            
+        } catch {
+            print("❌ 签到间隔更新失败：\(error)")
+            await MainActor.run {
+                errorMessage = "更新失败：\(error.localizedDescription)"
+                showingError = true
+            }
+        }
+    }
+    
+    private func syncCheckInIntervalToServer(userId: String, interval: CheckInInterval) async throws {
+        guard !DataManager.apiURL.isEmpty else {
+            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "API 未初始化"])
+        }
+        
+        let url = URL(string: "\(DataManager.apiURL)/admin.php?action=update_checkin_interval")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // 添加 token
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let body: [String: Any] = [
+            "user_id": userId,
+            "check_in_interval": interval.hours
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw NSError(domain: "Server", code: -1)
+        }
+        
+        let result = try JSONDecoder().decode(ServerResponse.self, from: data)
+        if !result.success {
+            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: result.error ?? "更新失败"])
+        }
+        
+        print("✅ 服务器同步成功")
+    }
+    
+    // MARK: - 错误提示
+    @State private var showingError = false
+    @State private var errorMessage = ""
+    
+    struct ServerResponse: Codable {
+        let success: Bool
+        let message: String?
+        let error: String?
     }
 }
 
