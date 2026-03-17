@@ -1,0 +1,61 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+    
+    - name: List available simulators
+      run: xcrun simctl list devices available
+    
+    - name: Clean DerivedData
+      run: rm -rf ~/Library/Developer/Xcode/DerivedData/终活-*
+    
+    - name: Build
+      run: |
+        xcodebuild -scheme 终活 \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          -configuration Debug \
+          clean build \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+    
+    - name: Install to Simulator
+      run: |
+        # 找到构建的 app 路径
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "终活.app" -type d | head -1)
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ 未找到构建的 app"
+          exit 1
+        fi
+        echo "✅ 找到 app: $APP_PATH"
+        
+        # 安装到模拟器
+        xcrun simctl install "iPhone 15" "$APP_PATH"
+        echo "✅ 已安装到 iPhone 15 模拟器"
+    
+    - name: Launch Simulator
+      run: |
+        xcrun simctl launch "iPhone 15" com.zhonghuo.app || true
+        echo "✅ 已启动 App（如果模拟器可用）"
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ZhonghuoApp
+        path: ~/Library/Developer/Xcode/DerivedData/终活-*/Build/Products/Debug-iphonesimulator/终活.app
+        retention-days: 7
