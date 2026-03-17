@@ -47,7 +47,7 @@ struct AuthView: View {
         }
         
         struct UserData: Codable {
-            let id: String
+            let id: String?  // 登录时可能不返回，使用 user_id 代替
             let name: String
             let phone: String
             let check_in_interval: Int?
@@ -583,6 +583,12 @@ struct AuthView: View {
     
     // MARK: - API 登录
     private func loginWithAPI() async {
+        // 调试：显示登录弹窗确认函数被调用
+        await MainActor.run {
+            errorMessage = "🔵 登录函数已调用！手机号：\(phone)"
+            showingError = true
+        }
+        
         print("🔵 开始登录流程...")
         print("  phone: \(phone)")
         print("  loginType: \(loginType)")
@@ -716,7 +722,7 @@ struct AuthView: View {
                     // 🔵 关键修复：创建或更新用户数据
                     if let userData = data.user {
                         var user = User(
-                            id: userData.id,
+                            id: userData.id ?? data.user_id,  // 如果 user.id 为空，使用 user_id
                             name: userData.name,
                             phone: userData.phone,
                             createdAt: Date(),
