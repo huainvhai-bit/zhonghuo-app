@@ -101,10 +101,25 @@ struct SettingsView: View {
                         Menu {
                             ForEach(CheckInInterval.allCases, id: \.self) { interval in
                                 Button(interval.rawValue) {
+                                    // 检查用户是否登录
+                                    if userManager.currentUser == nil {
+                                        print("❌ 用户未登录，无法修改签到间隔")
+                                        return
+                                    }
+                                    
                                     // 保存到 UserManager（会自动保存到 user.json）
-                                    _ = userManager.updateCheckInInterval(interval)
+                                    let result = userManager.updateCheckInInterval(interval)
+                                    
                                     // 同步到 DataManager
                                     DataManager.shared.settings.checkInInterval = interval
+                                    
+                                    // 根据结果处理
+                                    switch result {
+                                    case .success:
+                                        print("✅ 签到间隔保存成功：\(interval.rawValue)")
+                                    case .failure(let error):
+                                        print("❌ 签到间隔保存失败：\(error)")
+                                    }
                                 }
                             }
                         } label: {
