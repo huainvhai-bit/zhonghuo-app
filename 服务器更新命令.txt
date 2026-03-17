@@ -1,0 +1,6 @@
+#!/bin/bash
+# 在服务器上执行这 3 行命令即可
+
+cd /www/wwwroot/zhonghuo.cn
+git pull origin main
+ls -lh api/users.php
