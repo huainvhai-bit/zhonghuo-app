@@ -176,7 +176,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    func recordCheckIn() -> Result<Void, Error> {
+    func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
         guard var user = currentUser else {
             return .failure(Error.userNotLoggedIn)
         }
@@ -190,11 +190,69 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("📍 签到位置：\(locationStr)")
         }
         
+        print("✅ 记录签到：\(isAuto ? "自动" : "手动")")
+        
         if saveUser(user) {
+            // 同步到服务器
+            Task {
+                await syncCheckInToServer(isAuto: isAuto)
+            }
             return .success(())
         } else {
             return .failure(Error.saveFailed)
         }
+    }
+    
+    // 同步签到到服务器
+    @MainActor
+    private func syncCheckInToServer(isAuto: Bool) async {
+        guard let userId = currentUser?.id,
+              let token = UserDefaults.standard.string(forKey: "userToken"),
+              !DataManager.apiURL.isEmpty else {
+            print("❌ 签到同步：缺少必要参数")
+            return
+        }
+        
+        let url = URL(string: "\(DataManager.apiURL)/checkin.php")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        var body: [String: Any] = [
+            "user_id": userId,
+            "is_auto": isAuto
+        ]
+        
+        // 添加位置信息（如果有）
+        if let location = locationManager.location {
+            body["location_lat"] = location.coordinate.latitude
+            body["location_lng"] = location.coordinate.longitude
+        }
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode) {
+                if let json = try? JSONDecoder().decode(ServerResponse.self, from: data),
+                   json.success {
+                    print("✅ 签到同步成功")
+                } else {
+                    print("⚠️ 签到同步返回失败")
+                }
+            }
+        } catch {
+            print("❌ 签到同步失败：\(error)")
+        }
+    }
+    
+    struct ServerResponse: Codable {
+        let success: Bool
+        let message: String?
+        let error: String?
     }
     
     @MainActor
