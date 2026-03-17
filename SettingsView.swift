@@ -305,11 +305,8 @@ struct EditProfileModal: View {
                             .foregroundColor(.secondary)
                             .frame(width: 20)
                         Text(phone)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.gray)
                         Spacer()
-                        Text("不可修改")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
                     }
                 }
                 

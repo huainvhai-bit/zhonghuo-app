@@ -512,7 +512,23 @@ struct CapsulePreviewRow: View {
     
     private func formatSendDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "MM 月 dd 日 HH:mm"
+        return formatter.string(from: date)
+    }
+    
+    // 中文日期格式化
+    private func formatChineseDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy 年 MM 月 dd 日"
+        return formatter.string(from: date)
+    }
+    
+    private func formatChineseDateTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
         return formatter.string(from: date)
     }
 }

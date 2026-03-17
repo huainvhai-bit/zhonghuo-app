@@ -160,7 +160,8 @@ struct PDFExportSheet: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd_HHmm"
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy 年 MM 月 dd 日_HHmm"
         return formatter.string(from: date)
     }
 }

@@ -296,6 +296,7 @@ struct CapsuleCard: View {
     
     private func formatSendDate(_ date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
         return formatter.string(from: date)
     }
