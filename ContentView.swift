@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  终活
 //
-//  主界面 - 4 个 Tab + 首页悬浮机器人
+//  主界面 - 4 个 Tab
 //
 
 import SwiftUI

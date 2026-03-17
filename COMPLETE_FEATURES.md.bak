@@ -138,6 +138,33 @@
 
 ---
 
+### 🤖 AI 助手 (AIRobotView.swift)
+- **悬浮机器人**
+  - 右下角悬浮按钮
+  - 圆形渐变背景（紫蓝渐变）
+  - 火花图标
+  - 阴影效果
+
+- **拖拽功能**
+  - 自由拖动
+  - 松手后自动贴边（左/右）
+  - 边界限制
+
+- **对话界面**
+  - 点击展开
+  - 消息列表
+  - 输入框
+  - 发送按钮
+  - 模拟 AI 回复
+
+- **功能说明**
+  - 遗嘱撰写指导
+  - 资产整理协助
+  - 法律咨询
+  - 事务清单
+  - 时光胶囊协助
+
+---
 
 ### ⚙️ 我的 (SettingsView.swift)
 - **个人信息**
@@ -277,7 +304,7 @@
 ### 渐变效果
 - 签到卡片：绿色渐变
 - 进度条：紫蓝渐变
-
+- AI 机器人：紫蓝渐变
 
 ---
 
@@ -286,7 +313,7 @@
 ```
 终活/
 ├── ZhonghuoApp.swift          # 应用入口
-├── ContentView.swift          # 主界面（4 个 Tab）
+├── ContentView.swift          # 主界面（5 个 Tab）
 ├── Colors.swift               # 颜色定义
 ├── Models.swift               # 数据模型
 ├── DataManager.swift          # 数据管理
@@ -299,11 +326,9 @@
 ├── TimeCapsuleView.swift      # 时光胶囊
 ├── WillAssetsView.swift       # 嘱托与资产
 ├── WillModuleEdit.swift       # 遗嘱编辑 + 模板
-├── WillPreviewView.swift      # 遗嘱预览
-├── HelpPolicyView.swift       # 使用说明和隐私政策
-├── EmergencyContactsView.swift # 紧急联系人和见证人
+├── SimplifiedAIView.swift     # AI 助手页面
 ├── SettingsView.swift         # 设置页面
-└── AuthView.swift             # 注册登录
+└── AIRobotView.swift          # 悬浮机器人
 ```
 
 ---
@@ -373,7 +398,7 @@
 2. **创建胶囊**：时光胶囊 Tab → 右上角 + 号
 3. **编辑遗嘱**：嘱托与资产 → 我的嘱托 → 点击模块
 4. **添加资产**：嘱托与资产 → 资产管理 → 添加金融资产
-5. **紧急联系人**：我的 Tab → 紧急联系人
+5. **AI 对话**：点击右下角悬浮机器人
 
 ---
 
@@ -394,7 +419,7 @@
 - ✅ UI 完全按照 HTML 预览
 - ✅ 增删改查完整实现
 - ✅ 数据持久化
-- ✅ 紧急联系人和见证人管理
+- ✅ 悬浮 AI 机器人
 - ✅ 模板系统
 - ✅ 进度跟踪
 - ✅ 错误处理
