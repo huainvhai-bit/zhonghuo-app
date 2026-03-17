@@ -617,12 +617,6 @@ struct AuthView: View {
     
     // MARK: - API 登录
     private func loginWithAPI() async {
-        // 调试：显示登录弹窗确认函数被调用
-        await MainActor.run {
-            errorMessage = "🔵 登录函数已调用！手机号：\(phone)"
-            showingError = true
-        }
-        
         print("🔵 开始登录流程...")
         print("  phone: \(phone)")
         print("  loginType: \(loginType)")
