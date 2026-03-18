@@ -757,10 +757,16 @@ struct AuthView: View {
             }
             
             // 先打印原始响应
-            if let responseString = String(data: data, encoding: .utf8) {
-                print("📄 原始响应：\(responseString)")
-            } else {
-                print("❌ 无法将响应解码为字符串")
+            let responseString = String(data: data, encoding: .utf8) ?? "无法解码"
+            print("📄 原始响应：\(responseString)")
+            
+            // 🔴 调试用：显示原始响应
+            if responseString.count < 500 {
+                await MainActor.run {
+                    errorMessage = "调试信息：\(responseString)"
+                    showingError = true
+                }
+                return
             }
             
             // 尝试解析 JSON
