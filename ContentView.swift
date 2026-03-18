@@ -18,15 +18,18 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            // 双重检查：userManager.isLoggedIn 或 UserDefaults
-            let isActuallyLoggedIn = userManager.isLoggedIn || UserDefaults.standard.bool(forKey: "isLoggedIn")
-            
-            if !isActuallyLoggedIn {
-                AuthView()
-            } else if isFirstLaunch {
+            // ✅ 先检查是否首次启动（引导页面）
+            if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
-                mainTabView
+                // 再检查登录状态
+                let isActuallyLoggedIn = userManager.isLoggedIn || UserDefaults.standard.bool(forKey: "isLoggedIn")
+                
+                if isActuallyLoggedIn {
+                    mainTabView
+                } else {
+                    AuthView()
+                }
             }
         }
         .onAppear {
