@@ -51,10 +51,10 @@ struct ContentView: View {
             
             checkEmergencyContacts()
             
-            // 🎯 每次打开 App 检查签到状态（不自动重置，只检查）
+            // 🎯 每次打开 App 自动签到（重置倒计时，证明用户安全）
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                print("⏰ 检查签到状态...")
-                checkSignInStatus()
+                print("⏰ 执行自动签到...")
+                autoSignIn()
             }
             
             // 如果用户自定义了服务器地址，使用自定义地址（用于特殊场景）
@@ -68,9 +68,9 @@ struct ContentView: View {
             
             if newPhase == .active {
                 print("🟢 App 进入前台状态")
-                // 🎯 从后台进入前台时检查签到状态
+                // 🎯 从后台进入前台也自动签到（重置倒计时，证明用户安全）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    checkSignInStatus()
+                    autoSignIn()
                 }
             }
         }
@@ -108,8 +108,8 @@ struct ContentView: View {
         try? content.write(to: logFile, atomically: true, encoding: .utf8)
     }
     
-    private func checkSignInStatus() {
-        let logMsg = "🔵 checkSignInStatus() 检查签到状态"
+    private func autoSignIn() {
+        let logMsg = "🔵 autoSignIn() 自动签到"
         writeLogToFile(logMsg)
         print(logMsg)
         
@@ -118,14 +118,14 @@ struct ContentView: View {
             print("🔄 用户数据未加载，先加载用户...")
             userManager.loadUser()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                userManager.checkSignInStatus()
+                userManager.performAutoSignIn()
             }
         } else {
-            let logMsg2 = "✅ 用户数据已存在，检查签到状态"
+            let logMsg2 = "✅ 用户数据已存在，执行自动签到"
             writeLogToFile(logMsg2)
             print(logMsg2)
             
-            userManager.checkSignInStatus()
+            userManager.performAutoSignIn()
         }
     }
     

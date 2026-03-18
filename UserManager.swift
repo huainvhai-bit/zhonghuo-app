@@ -156,7 +156,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
-    func checkSignInStatus() {
+    func performAutoSignIn() {
         let logPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("checkin_log.txt")
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
@@ -168,10 +168,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print(msg)
         }
         
-        writeLog("🔵 ====== 检查签到状态 ======")
+        writeLog("🔵 ====== 自动签到（打开 App） ======")
         
         guard let user = currentUser else {
-            writeLog("❌ 检查失败：currentUser 为 nil")
+            writeLog("❌ 自动签到失败：currentUser 为 nil")
             return
         }
         
@@ -188,19 +188,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         writeLog("📊 距离上次签到：\(String(format: "%.1f", timeSinceLastCheckIn / 3600)) 小时")
         writeLog("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
         
-        // 检查是否已过期（需要通知紧急联系人）
-        if timeSinceLastCheckIn >= requiredInterval {
-            writeLog("⚠️ 签到已过期！需要通知紧急联系人")
-            notifyEmergencyContactsIfNeeded()
-        } else if hoursRemaining <= 12 {
-            writeLog("⚠️ 剩余时间少于 12 小时，推送签到提醒")
-            scheduleCheckInReminder(hoursRemaining: hoursRemaining)
+        // 🎯 核心逻辑：打开 App 自动重置倒计时（证明用户安全）
+        writeLog("🔄 自动重置签到倒计时（证明用户安全）...")
+        let result = recordCheckIn(isAuto: true)
+        if case .success = result {
+            writeLog("✅ 自动签到成功！倒计时已重置")
         } else {
-            writeLog("✅ 签到状态正常")
+            writeLog("❌ 自动签到失败：\(result)")
         }
-        
-        // ❌ 不自动重置！只有用户手动签到时才重置
-        writeLog("ℹ️ 倒计时持续运行中（不自动重置）")
     }
     
     @MainActor
@@ -216,17 +211,31 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print(msg)
         }
         
-        writeLog("🔵 ====== 手动签到 ======")
+        writeLog("🔵 ====== 自动签到（打开 App） ======")
         
         guard let user = currentUser else {
-            writeLog("❌ 签到失败：currentUser 为 nil")
+            writeLog("❌ 自动签到失败：currentUser 为 nil")
             return
         }
         
-        writeLog("🔄 重置签到倒计时...")
-        let result = recordCheckIn(isAuto: false)
+        let now = Date()
+        let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
+        let intervalHours = user.checkInInterval.hours
+        let requiredInterval = intervalHours * 3600
+        let timeSinceLastCheckIn = now.timeIntervalSince(lastCheckIn)
+        let hoursRemaining = (requiredInterval - timeSinceLastCheckIn) / 3600
+        
+        writeLog("👤 当前用户：\(user.name)")
+        writeLog("📅 上次签到：\(user.lastCheckInDate?.formatted() ?? "从未签到")")
+        writeLog("⏰ 签到间隔：\(intervalHours) 小时")
+        writeLog("📊 距离上次签到：\(String(format: "%.1f", timeSinceLastCheckIn / 3600)) 小时")
+        writeLog("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
+        
+        // 🎯 核心逻辑：打开 App 自动重置倒计时（证明用户安全）
+        writeLog("🔄 自动重置签到倒计时（证明用户安全）...")
+        let result = recordCheckIn(isAuto: true)
         if case .success = result {
-            writeLog("✅ 签到成功！倒计时已重置")
+            writeLog("✅ 自动签到成功！倒计时已重置")
         } else {
             print("❌ 自动签到失败：\(result)")
         }
