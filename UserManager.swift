@@ -156,23 +156,41 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // Bug 2: 自动签到
     func performAutoCheckIn() {
-        guard let user = currentUser else { return }
+        print("🔵 自动签到检查开始...")
+        
+        guard let user = currentUser else {
+            print("❌ 自动签到失败：currentUser 为 nil")
+            return
+        }
+        
+        print("👤 当前用户：\(user.name)")
+        print("📅 上次签到：\(user.lastCheckInDate?.description ?? "从未签到")")
+        print("⏰ 签到间隔：\(user.checkInInterval.hours) 小时")
         
         let now = Date()
         let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
         let intervalHours = user.checkInInterval.hours
+        let timeSinceLastCheckIn = now.timeIntervalSince(lastCheckIn)
+        let requiredInterval = intervalHours * 3600
+        
+        print("📊 距离上次签到：\(Int(timeSinceLastCheckIn / 3600)) 小时")
+        print("📊 需要间隔：\(intervalHours) 小时")
         
         // 检查是否到了签到时间
-        if now.timeIntervalSince(lastCheckIn) >= intervalHours * 3600 {
+        if timeSinceLastCheckIn >= requiredInterval {
+            print("✅ 满足签到条件，执行自动签到...")
             // 执行签到
-            let result = recordCheckIn()
+            let result = recordCheckIn(isAuto: true)
             if case .success = result {
-                print("✅ 自动签到成功")
+                print("✅ 自动签到成功！")
+            } else {
+                print("❌ 自动签到失败：\(result)")
             }
         } else {
-            let remaining = intervalHours * 3600 - now.timeIntervalSince(lastCheckIn)
+            let remaining = requiredInterval - timeSinceLastCheckIn
             let hours = Int(remaining / 3600)
-            print("⏰ 距离下次签到还有 \(hours) 小时")
+            let minutes = Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)
+            print("⏰ 距离下次签到还有 \(hours) 小时 \(minutes) 分钟")
         }
     }
     

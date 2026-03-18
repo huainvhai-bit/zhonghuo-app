@@ -50,7 +50,12 @@ struct ContentView: View {
             }
             
             checkEmergencyContacts()
-            autoCheckIn()
+            
+            // 延迟执行自动签到，确保用户数据已加载
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("⏰ 执行自动签到检查...")
+                autoCheckIn()
+            }
             
             // 如果用户自定义了服务器地址，使用自定义地址（用于特殊场景）
             if !customServerURL.isEmpty {
