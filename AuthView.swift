@@ -648,6 +648,13 @@ struct AuthView: View {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            
+            // 🔵 网络诊断信息
+            print("🔍 网络诊断:")
+            print("  URL: \(url)")
+            print("  Method: POST")
+            print("  Headers: Content-Type=application/json, Accept=application/json")
             
             var body: [String: Any] = [
                 "action": "login",
@@ -850,6 +857,28 @@ struct AuthView: View {
                 print("  错误域：\(error._domain)")
                 print("  错误码：\(error._code)")
                 print("  错误描述：\(error.localizedDescription)")
+                
+                // 🔵 详细网络错误诊断
+                if error._domain == "NSURLErrorDomain" {
+                    print("🔍 网络错误详细诊断:")
+                    print("  错误码：\(error._code)")
+                    switch error._code {
+                    case -1001:
+                        print("  → 请求超时 (Timeout)")
+                    case -1003:
+                        print("  → 找不到服务器 (Server not found)")
+                    case -1004:
+                        print("  → 无法连接到服务器 (Cannot connect to server)")
+                    case -1005:
+                        print("  → 网络已断开 (Network disconnected)")
+                    case -1009:
+                        print("  → 没有网络连接 (No internet connection)")
+                    case -1011:
+                        print("  → 请求被服务器拒绝 (Request blocked by server)")
+                    default:
+                        print("  → 其他网络错误")
+                    }
+                }
                 
                 await MainActor.run {
                     errorMessage = "响应格式错误：\(error.localizedDescription)\n\n原始响应：\n\(responseString)"
