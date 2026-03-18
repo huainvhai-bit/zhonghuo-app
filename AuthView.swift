@@ -373,14 +373,29 @@ struct AuthView: View {
             
             if success {
                 await handleAuthSuccess(json)
-                errorMessage = "注册成功！"
+                errorMessage = "✅ 注册成功！"
                 showingError = true
             } else {
-                errorMessage = json["error"] as? String ?? "注册失败"
+                // 根据错误码显示友好提示
+                let errorCode = json["code"] as? String ?? ""
+                let error = json["error"] as? String ?? "注册失败"
+                
+                switch errorCode {
+                case "PHONE_EXISTS":
+                    errorMessage = "❌ 该手机号已注册，请直接登录"
+                case "INVALID_NAME":
+                    errorMessage = "❌ 姓名不能为空"
+                case "INVALID_PHONE":
+                    errorMessage = "❌ 手机号格式不正确"
+                case "INVALID_PASSWORD":
+                    errorMessage = "❌ 密码至少 6 位"
+                default:
+                    errorMessage = "❌ \(error)"
+                }
                 showingError = true
             }
         } catch {
-            errorMessage = "注册失败：\(error.localizedDescription)"
+            errorMessage = "❌ 注册失败：\(error.localizedDescription)"
             showingError = true
         }
     }
@@ -390,8 +405,6 @@ struct AuthView: View {
             // 🔵 登录时才初始化 API
             DataManager.shared.initializeAPIConfig()
             print("🔵 登录请求 - API 已初始化")
-            print("   Base URL: \(DataManager.baseURL)")
-            print("   API URL: \(DataManager.apiURL)")
             
             var body: [String: Any] = [
                 "action": "login",
@@ -418,11 +431,28 @@ struct AuthView: View {
                     hideKeyboard()
                 }
             } else {
-                errorMessage = json["error"] as? String ?? "登录失败"
+                // 根据错误码显示友好提示
+                let errorCode = json["code"] as? String ?? ""
+                let error = json["error"] as? String ?? "登录失败"
+                
+                switch errorCode {
+                case "USER_NOT_FOUND":
+                    errorMessage = "❌ 账号不存在，请先注册"
+                case "INVALID_PASSWORD":
+                    errorMessage = "❌ 密码错误"
+                case "INVALID_VERIFY_CODE":
+                    errorMessage = "❌ 验证码错误或已过期"
+                case "INVALID_PHONE":
+                    errorMessage = "❌ 手机号格式不正确"
+                case "INVALID_CODE":
+                    errorMessage = "❌ 验证码错误"
+                default:
+                    errorMessage = "❌ \(error)"
+                }
                 showingError = true
             }
         } catch {
-            errorMessage = "登录失败：\(error.localizedDescription)"
+            errorMessage = "❌ 登录失败：\(error.localizedDescription)"
             showingError = true
         }
     }
