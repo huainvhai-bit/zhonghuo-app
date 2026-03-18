@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AuthView: View {
-    @EnvironmentObject var userManager: UserManager
+    @StateObject private var userManager = UserManager.shared
     @State private var name = ""
     @State private var phone = ""
     @State private var password = ""
@@ -379,12 +379,10 @@ struct AuthView: View {
             
             if success {
                 await handleAuthSuccess(json)
-                // 延迟显示成功提示，让 UI 有时间更新
-                try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 秒延迟
+                // 延迟一下让状态更新
+                try? await Task.sleep(nanoseconds: 500_000_000)
                 await MainActor.run {
-                    errorMessage = "登录成功！即将跳转..."
-                    showingError = true
-                    // 关闭键盘
+                    // 不显示 alert，直接通过状态变化让 ContentView 切换
                     hideKeyboard()
                 }
             } else {
