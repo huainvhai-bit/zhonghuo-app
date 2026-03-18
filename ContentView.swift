@@ -14,6 +14,7 @@ struct ContentView: View {
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var showingEmergencyContactAlert = false
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         Group {
@@ -29,7 +30,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            print("🟢 ContentView onAppear")
+            print("🟢 ====== ContentView onAppear ======")
             print("   userManager.isLoggedIn: \(userManager.isLoggedIn)")
             print("   UserDefaults isLoggedIn: \(UserDefaults.standard.bool(forKey: "isLoggedIn"))")
             print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
@@ -51,9 +52,9 @@ struct ContentView: View {
             
             checkEmergencyContacts()
             
-            // 🎯 每次打开 App 自动签到（延迟 0.3 秒确保用户数据加载）
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                print("⏰ 执行自动签到...")
+            // 🎯 每次打开 App 自动签到（延迟 0.5 秒确保用户数据加载）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("⏰ 延迟执行自动签到...")
                 autoCheckIn()
             }
             
@@ -63,10 +64,16 @@ struct ContentView: View {
                 DataManager.apiURL = "\(customServerURL)/api"
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            print("🟡 App 从后台进入前台")
-            // 🎯 从后台进入前台时也自动签到
-            autoCheckIn()
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            print("🟡 ====== scenePhase 变化：\(oldPhase) → \(newPhase) ======")
+            
+            if newPhase == .active {
+                print("🟢 App 进入前台状态")
+                // 🎯 从后台进入前台时也自动签到
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    autoCheckIn()
+                }
+            }
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
@@ -87,8 +94,23 @@ struct ContentView: View {
     }
     
     private func autoCheckIn() {
-        // Bug 2: 每次打开 App 自动签到
-        userManager.performAutoCheckIn()
+        print("🔵 autoCheckIn() 被调用")
+        print("   isLoggedIn: \(userManager.isLoggedIn)")
+        print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
+        
+        // 确保用户数据已加载
+        if userManager.currentUser == nil {
+            print("🔄 用户数据未加载，先加载用户...")
+            userManager.loadUser()
+            // 延迟 0.5 秒再执行签到
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("⏰ 延迟执行自动签到...")
+                userManager.performAutoCheckIn()
+            }
+        } else {
+            print("✅ 用户数据已存在，直接执行签到")
+            userManager.performAutoCheckIn()
+        }
     }
     
     private var mainTabView: some View {
