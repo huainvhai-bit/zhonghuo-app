@@ -601,4 +601,145 @@ class DataManager: ObservableObject {
         }
         return nil
     }
+    
+    // MARK: - 遗嘱同步到服务器
+    
+    /// 批量同步遗嘱到服务器
+    func batchSyncWills() async -> (total: Int, created: Int, updated: Int)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // 转换为后端格式
+        let willsData = willModules.map { module in
+            [
+                "id": module.id,
+                "type": module.type.rawValue,
+                "title": module.title,
+                "subtitle": module.subtitle,
+                "content": module.content,
+                "is_completed": module.isCompleted
+            ] as [String : Any]
+        }
+        
+        let body: [String: Any] = ["wills": willsData]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let data = result?["data"] as? [String: Any] {
+                    let total = data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            }
+        } catch {
+            print("❌ 遗嘱同步失败：\(error)")
+        }
+        return nil
+    }
+    
+    // MARK: - 紧急联系人同步
+    
+    /// 批量同步紧急联系人到服务器
+    func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/users.php?action=sync_emergency_contacts")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // 需要从 currentUser 获取紧急联系人
+        guard let user = currentUser else { return nil }
+        
+        let contactsData = user.emergencyContacts.map { contact in
+            [
+                "id": contact.id,
+                "name": contact.name,
+                "relationship": contact.relationship,
+                "phone": contact.phone
+            ] as [String : Any]
+        }
+        
+        let body: [String: Any] = ["contacts": contactsData]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let data = result?["data"] as? [String: Any] {
+                    let total = data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 紧急联系人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            }
+        } catch {
+            print("❌ 紧急联系人同步失败：\(error)")
+        }
+        return nil
+    }
+    
+    // MARK: - 见证人同步
+    
+    /// 批量同步见证人到服务器
+    func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
+        guard !DataManager.apiURL.isEmpty else { return nil }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=sync_witnesses")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let witnessesData = witnesses.map { witness in
+            [
+                "id": witness.id,
+                "name": witness.name,
+                "relationship": witness.relationship,
+                "phone": witness.phone,
+                "id_number": witness.idNumber,
+                "notes": witness.notes,
+                "is_confirmed": witness.isConfirmed
+            ] as [String : Any]
+        }
+        
+        let body: [String: Any] = ["witnesses": witnessesData]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                if let data = result?["data"] as? [String: Any] {
+                    let total = data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 见证人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            }
+        } catch {
+            print("❌ 见证人同步失败：\(error)")
+        }
+        return nil
+    }
 }
