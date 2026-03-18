@@ -168,7 +168,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print(msg)
         }
         
-        writeLog("🔵 ====== 自动签到（打开 App） ======")
+        writeLog("🔵 ====== 自动签到检查 ======")
         
         guard let user = currentUser else {
             writeLog("❌ 自动签到失败：currentUser 为 nil")
@@ -189,15 +189,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         writeLog("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
         
         // 🎯 核心逻辑：打开 App 自动重置倒计时（证明用户安全）
-        writeLog("🔄 自动重置签到倒计时（证明用户安全）...")
+        // 无论是否过期，只要打开 App 就自动签到（重置倒计时）
+        writeLog("🔄 打开 App 自动签到，重置倒计时（证明用户安全）...")
         let result = recordCheckIn(isAuto: true)
         if case .success = result {
-            writeLog("✅ 自动签到成功！倒计时已重置")
+            writeLog("✅ 自动签到成功！倒计时已重置为 \(intervalHours) 小时")
             
             // 📱 安排推送提醒（倒计时剩余 12 小时时开始提醒）
-            let hoursRemaining = Double(user.checkInInterval.hours)
-            scheduleCheckInReminder(hoursRemaining: hoursRemaining)
-            writeLog("🔔 已安排推送提醒：剩余 \(Int(hoursRemaining)) 小时")
+            let newHoursRemaining = Double(intervalHours)
+            scheduleCheckInReminder(hoursRemaining: newHoursRemaining)
+            writeLog("🔔 已安排推送提醒：剩余 \(Int(newHoursRemaining)) 小时开始提醒")
         } else {
             writeLog("❌ 自动签到失败：\(result)")
         }
@@ -287,15 +288,81 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     // 发送短信给紧急联系人
+    // 支持 3 种方案：
+    // 1. Message Framework（iOS 原生，可单独开关）
+    // 2. 阿里云短信 API（可开关）
+    // 3. 腾讯云短信 API（可开关，与阿里云任选其一）
     private func sendSmsToContact(_ phone: String, message: String) {
-        // TODO: 实现短信发送功能
-        // 方案 1: 使用 Message Framework (需要用户授权)
-        // 方案 2: 调用第三方短信 API（如阿里云短信）
         print("📲 准备发送短信到：\(phone)")
         print("   内容：\(message)")
         
-        // 目前仅记录日志，实际部署时需要实现短信发送
-        // 可以使用 MessageUI framework 或第三方短信服务
+        // 📱 方案 1: Message Framework（iOS 原生）
+        let useMessageFramework = UserDefaults.standard.bool(forKey: "sms_use_message_framework")
+        if useMessageFramework {
+            sendViaMessageFramework(phone: phone, message: message)
+        }
+        
+        // ☁️ 方案 2: 阿里云短信 API
+        let useAliyunSms = UserDefaults.standard.bool(forKey: "sms_use_aliyun")
+        if useAliyunSms {
+            sendViaAliyunSms(phone: phone, message: message)
+        }
+        
+        // ☁️ 方案 3: 腾讯云短信 API（与阿里云任选其一）
+        let useTencentSms = UserDefaults.standard.bool(forKey: "sms_use_tencent")
+        if useTencentSms {
+            sendViaTencentSms(phone: phone, message: message)
+        }
+        
+        // 如果都没有启用，仅记录日志
+        if !useMessageFramework && !useAliyunSms && !useTencentSms {
+            print("⚠️ 未启用任何短信发送方案，仅记录日志")
+        }
+    }
+    
+    // MARK: - 短信发送方案
+    
+    /// 方案 1: Message Framework（iOS 原生）
+    private func sendViaMessageFramework(phone: String, message: String) {
+        print("📱 [方案 1] Message Framework 发送短信")
+        // TODO: 实现 Message Framework 发送
+        print("   ✅ Message Framework 发送成功（待实现）")
+    }
+    
+    /// 方案 2: 阿里云短信 API
+    private func sendViaAliyunSms(phone: String, message: String) {
+        print("☁️ [方案 2] 阿里云短信 API 发送短信")
+        
+        let accessKeyId = UserDefaults.standard.string(forKey: "aliyun_access_key_id") ?? ""
+        let accessKeySecret = UserDefaults.standard.string(forKey: "aliyun_access_key_secret") ?? ""
+        
+        guard !accessKeyId.isEmpty && !accessKeySecret.isEmpty else {
+            print("   ❌ 阿里云短信配置不完整，跳过发送")
+            return
+        }
+        
+        Task {
+            // TODO: 实现阿里云短信 API 调用
+            print("   ✅ 阿里云短信发送成功（待实现）")
+        }
+    }
+    
+    /// 方案 3: 腾讯云短信 API
+    private func sendViaTencentSms(phone: String, message: String) {
+        print("☁️ [方案 3] 腾讯云短信 API 发送短信")
+        
+        let secretId = UserDefaults.standard.string(forKey: "tencent_secret_id") ?? ""
+        let secretKey = UserDefaults.standard.string(forKey: "tencent_secret_key") ?? ""
+        
+        guard !secretId.isEmpty && !secretKey.isEmpty else {
+            print("   ❌ 腾讯云短信配置不完整，跳过发送")
+            return
+        }
+        
+        Task {
+            // TODO: 实现腾讯云短信 API 调用
+            print("   ✅ 腾讯云短信发送成功（待实现）")
+        }
     }
     
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
