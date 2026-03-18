@@ -760,12 +760,95 @@ struct AuthView: View {
             let responseString = String(data: data, encoding: .utf8) ?? "无法解码"
             print("📄 原始响应：\(responseString)")
             
-            // 🔴 调试用：显示原始响应（无论多长都显示）
-            await MainActor.run {
-                errorMessage = "📄 后端响应:\n\(responseString)"
-                showingError = true
+            // 🔵 配置 JSONDecoder 使用下划线命名（匹配后端）
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            
+            // 尝试解析 JSON
+            do {
+                let result = try decoder.decode(AuthResponse.self, from: data)
+                print("✅ JSON 解析成功")
+                print("  success: \(result.success)")
+                print("  message: \(result.message ?? "nil")")
+                
+                await MainActor.run {
+                    if result.success, let data = result.data {
+                        // 保存 token 到 UserDefaults
+                        UserDefaults.standard.set(data.token, forKey: "userToken")
+                        UserDefaults.standard.set(data.user_id, forKey: "userId")
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        
+                        // 更新 UserManager 状态
+                        userManager.isLoggedIn = true
+                        
+                        // 🔵 关键修复：创建或更新用户数据
+                        if let userData = data.user {
+                            var user = User(
+                                id: userData.id ?? data.user_id,
+                                name: userData.name,
+                                phone: userData.phone,
+                                createdAt: Date(),
+                                emergencyContacts: [],
+                                checkInInterval: .twoDays,
+                                notificationsEnabled: true,
+                                cloudSyncEnabled: false
+                            )
+                            // 更新签到间隔（后端返回的是小时数）
+                            if let hours = userData.check_in_interval {
+                                let interval: CheckInInterval
+                                switch hours {
+                                case 24: interval = .oneDay
+                                case 48: interval = .twoDays
+                                case 72: interval = .threeDays
+                                case 96: interval = .fourDays
+                                case 120: interval = .fiveDays
+                                case 144: interval = .sixDays
+                                case 168: interval = .sevenDays
+                                default: interval = .twoDays
+                                }
+                                user.checkInInterval = interval
+                                userManager.checkInInterval = interval
+                            }
+                            userManager.currentUser = user
+                            _ = userManager.saveUser(user)
+                            print("✅ 用户数据已加载：\(user.name)")
+                        } else {
+                            // 如果后端没有返回用户详细信息，创建基本用户
+                            var user = User(
+                                id: data.user_id,
+                                name: "用户",
+                                phone: phone,
+                                createdAt: Date(),
+                                emergencyContacts: [],
+                                checkInInterval: .twoDays,
+                                notificationsEnabled: true,
+                                cloudSyncEnabled: false
+                            )
+                            userManager.currentUser = user
+                            _ = userManager.saveUser(user)
+                            print("✅ 创建基本用户数据")
+                        }
+                        
+                        errorMessage = "登录成功！"
+                        showingError = true
+                    } else {
+                        errorMessage = result.error ?? "登录失败"
+                        showingError = true
+                    }
+                }
+                
+            } catch {
+                print("❌ JSON 解析失败！")
+                print("  错误：\(error)")
+                print("  错误域：\(error._domain)")
+                print("  错误码：\(error._code)")
+                print("  错误描述：\(error.localizedDescription)")
+                
+                await MainActor.run {
+                    errorMessage = "响应格式错误：\(error.localizedDescription)\n\n原始响应：\n\(responseString)"
+                    showingError = true
+                }
             }
-            return
             
             // 尝试解析 JSON
             do {
