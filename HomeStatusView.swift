@@ -77,12 +77,13 @@ struct HomeStatusView: View {
                 // 然后更新倒计时显示
                 updateStatus()
             }
-            .onChange(of: scenePhase) { newPhase in
-                if newPhase == .active {
-                    print("🟢 场景变为 active - 触发自动签到")
-                    handleAutoCheckIn()
-                }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoCheckIn"))) { _ in
+                print("🔔 收到自动签到通知（从后台进入前台）")
+                handleAutoCheckIn()
+                updateStatus()
             }
+            // 🔴 不在这里处理 scenePhase！
+            // ContentView 已经统一处理了，避免重复调用
             .sheet(isPresented: $showingWitnessSheet) {
                 WitnessView()
             }
