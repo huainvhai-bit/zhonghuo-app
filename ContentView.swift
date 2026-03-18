@@ -33,10 +33,27 @@ struct ContentView: View {
             // 🔴 登录前不执行任何操作！
             // 所有 API 调用必须在用户成功登录后才执行
             print("🟢 ContentView onAppear - 等待用户登录")
+            
+            // ✅ 用户已登录时，执行自动签到
+            if userManager.isLoggedIn && userManager.currentUser != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task {
+                        await userManager.performAutoSignIn()
+                    }
+                }
+            }
         }
         .onChange(of: scenePhase) { newPhase in
-            // 🔴 登录前不执行任何操作！
             print("🟡 scenePhase 变化：\(newPhase)")
+            
+            // ✅ 从后台进入前台时，执行自动签到
+            if newPhase == .active && userManager.isLoggedIn && userManager.currentUser != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    Task {
+                        await userManager.performAutoSignIn()
+                    }
+                }
+            }
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}

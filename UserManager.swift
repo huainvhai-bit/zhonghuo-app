@@ -193,6 +193,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let result = recordCheckIn(isAuto: true)
         if case .success = result {
             writeLog("✅ 自动签到成功！倒计时已重置")
+            
+            // 📱 安排推送提醒（倒计时剩余 12 小时时开始提醒）
+            let hoursRemaining = Double(user.checkInInterval.hours)
+            scheduleCheckInReminder(hoursRemaining: hoursRemaining)
+            writeLog("🔔 已安排推送提醒：剩余 \(Int(hoursRemaining)) 小时")
         } else {
             writeLog("❌ 自动签到失败：\(result)")
         }
@@ -248,11 +253,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("🔔 推送提醒：\(message)")
         
-        // 使用本地通知
+        // 📱 使用本地通知（倒计时剩余 12 小时时开始提醒，每 1 小时推送一次）
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: hoursRemaining)
     }
     
-    // 通知紧急联系人
+    // 通知紧急联系人（倒计时结束时）
     private func notifyEmergencyContactsIfNeeded() {
         guard let user = currentUser,
               !user.emergencyContacts.isEmpty else {
@@ -260,13 +265,37 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        print("🚨 签到已过期，准备通知 \(user.emergencyContacts.count) 位紧急联系人")
+        let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
+        let intervalHours = user.checkInInterval.hours
+        let timeSinceLastCheckIn = Date().timeIntervalSince(lastCheckIn)
+        let hoursOverdue = (timeSinceLastCheckIn - (Double(intervalHours) * 3600)) / 3600
+        
+        // 只有超过签到间隔才通知
+        guard hoursOverdue > 0 else {
+            return
+        }
+        
+        print("🚨 签到已过期 \(String(format: "%.1f", hoursOverdue)) 小时，准备通知 \(user.emergencyContacts.count) 位紧急联系人")
         
         for contact in user.emergencyContacts {
             print("📱 通知紧急联系人：\(contact.name) (\(contact.phone))")
-            // TODO: 发送短信通知
-            // 这里调用短信 API 通知紧急联系人
+            
+            // 📲 发送短信通知（使用 Message Framework）
+            let message = "【终活 App】\(user.name) 已超过 \(String(format: "%.0f", hoursOverdue)) 小时未签到，请您关注其安全状况。"
+            sendSmsToContact(contact.phone, message: message)
         }
+    }
+    
+    // 发送短信给紧急联系人
+    private func sendSmsToContact(_ phone: String, message: String) {
+        // TODO: 实现短信发送功能
+        // 方案 1: 使用 Message Framework (需要用户授权)
+        // 方案 2: 调用第三方短信 API（如阿里云短信）
+        print("📲 准备发送短信到：\(phone)")
+        print("   内容：\(message)")
+        
+        // 目前仅记录日志，实际部署时需要实现短信发送
+        // 可以使用 MessageUI framework 或第三方短信服务
     }
     
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
@@ -290,6 +319,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             Task {
                 await syncCheckInToServer(isAuto: isAuto)
             }
+            
+            // 🚨 检查是否需要通知紧急联系人（如果之前已过期）
+            notifyEmergencyContactsIfNeeded()
+            
             return .success(())
         } else {
             return .failure(Error.saveFailed)

@@ -29,16 +29,19 @@ class NotificationManager: ObservableObject {
     }
     
     // MARK: - 签到提醒
-    /// 当倒计时低于 12 小时时，每 3 小时推送一次签到提醒
+    /// 当倒计时低于 12 小时时，每 1 小时推送一次签到提醒（后台可配置）
     /// 如果倒计时很短（<1 小时），则立即提醒
-    func scheduleCheckInReminders(hoursRemaining: Double) {
+    func scheduleCheckInReminders(hoursRemaining: Double, reminderIntervalHours: Double = 1.0) {
         print("🔔 检查是否需要安排签到提醒：hoursRemaining=\(hoursRemaining)小时")
         
         // 取消所有现有提醒
         cancelAllCheckInReminders()
         
-        // 只有低于 12 小时才需要提醒
-        guard hoursRemaining < 12 else {
+        // 📱 后台可配置：倒计时剩余多少小时开始提醒（默认 12 小时）
+        let reminderThresholdHours: Double = 12.0
+        
+        // 只有低于阈值才需要提醒
+        guard hoursRemaining < reminderThresholdHours else {
             print("⏰ 倒计时还有 \(hoursRemaining) 小时，不需要提醒")
             return
         }
@@ -51,12 +54,13 @@ class NotificationManager: ObservableObject {
             return
         }
         
-        // 计算需要推送几次提醒（每 3 小时一次）
-        let reminderCount = max(1, Int(hoursRemaining / 3) + 1)
-        print("📅 需要安排 \(reminderCount) 次提醒")
+        // 📱 后台可配置：推送频率（默认每 1 小时一次）
+        let intervalHours = reminderIntervalHours
+        let reminderCount = max(1, Int(hoursRemaining / intervalHours) + 1)
+        print("📅 需要安排 \(reminderCount) 次提醒（每 \(intervalHours) 小时一次）")
         
         for i in 0..<reminderCount {
-            let hoursFromNow = Double(i) * 3
+            let hoursFromNow = Double(i) * intervalHours
             let triggerTime = Date().addingTimeInterval(hoursFromNow * 3600)
             
             print("   - 提醒 \(i+1): \(hoursFromNow) 小时后 (\(triggerTime))")
