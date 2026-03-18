@@ -96,6 +96,76 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    // MARK: - 位置上传
+    func uploadLocation() {
+        guard let user = currentUser else { return }
+        guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
+            print("⚠️ 定位未授权，跳过位置上传")
+            return
+        }
+        
+        locationManager.requestLocation()
+    }
+    
+    private func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        guard let user = currentUser else { return }
+        
+        let latitude = location.coordinate.latitude
+        let longitude = location.coordinate.longitude
+        
+        // 逆地理编码获取地址
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            var address = ""
+            if let placemark = placemarks?.first {
+                var parts: [String] = []
+                if let name = placemark.name { parts.append(name) }
+                if let locality = placemark.locality { parts.append(locality) }
+                if let administrativeArea = placemark.administrativeArea { parts.append(administrativeArea) }
+                if let country = placemark.country { parts.append(country) }
+                address = parts.joined(separator: " ")
+            }
+            
+            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address)
+        }
+    }
+    
+    private func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("❌ 定位失败：\(error)")
+    }
+    
+    private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
+        guard let apiURL = URL(string: "\(type(of: self).apiURL)/location.php") else { return }
+        
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "action": "upload",
+            "user_id": userId,
+            "latitude": latitude,
+            "longitude": longitude,
+            "address": address
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ 位置上传失败：\(error)")
+                return
+            }
+            
+            if let data = data,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let success = json["success"] as? Bool, success {
+                print("✅ 位置上传成功：\(latitude), \(longitude)")
+            }
+        }.resume()
+    }
+    
     // MARK: - 用户注册
     func register(name: String, phone: String) -> Result<User, Error> {
         if !isValidPhone(phone) {

@@ -125,6 +125,9 @@ struct HomeStatusView: View {
         dataManager.lastCheckInDate = userManager.lastCheckInDate
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
+        
+        // 📍 签到成功后上传位置
+        userManager.uploadLocation()
     }
     
     private func updateStatus() {
