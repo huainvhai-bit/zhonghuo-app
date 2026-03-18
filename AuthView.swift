@@ -50,7 +50,7 @@ struct AuthView: View {
             let id: String?  // 登录时可能不返回，使用 user_id 代替
             let name: String
             let phone: String
-            let check_in_interval: Int?
+            let check_in_interval: String?  // 🔴 后端返回字符串 "48"，不是 Int
             let last_check_in_date: String?
         }
     }
@@ -807,8 +807,8 @@ struct AuthView: View {
                                 notificationsEnabled: true,
                                 cloudSyncEnabled: false
                             )
-                            // 更新签到间隔（后端返回的是小时数）
-                            if let hours = userData.check_in_interval {
+                            // 更新签到间隔（后端返回的是字符串 "48"，需要转换为 Int）
+                            if let hoursString = userData.check_in_interval, let hours = Int(hoursString) {
                                 let interval: CheckInInterval
                                 switch hours {
                                 case 24: interval = .oneDay
