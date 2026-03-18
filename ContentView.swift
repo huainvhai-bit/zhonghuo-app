@@ -64,8 +64,8 @@ struct ContentView: View {
                 DataManager.apiURL = "\(customServerURL)/api"
             }
         }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            print("🟡 ====== scenePhase 变化：\(oldPhase) → \(newPhase) ======")
+        .onChange(of: scenePhase) { newPhase in
+            print("🟡 ====== scenePhase 变化：\(newPhase) ======")
             
             if newPhase == .active {
                 print("🟢 App 进入前台状态")
