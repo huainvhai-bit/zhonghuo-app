@@ -746,13 +746,32 @@ struct AuthView: View {
                 throw NSError(domain: "Server error", code: httpResponse.statusCode)
             }
             
-            let result = try JSONDecoder().decode(AuthResponse.self, from: data)
-            print("✅ JSON 解析成功")
-            print("  success: \(result.success)")
-            print("  message: \(result.message ?? "nil")")
+            // 检查数据是否为空
+            if data.isEmpty {
+                print("❌ 响应数据为空！")
+                await MainActor.run {
+                    errorMessage = "服务器返回空响应，请检查后端配置"
+                    showingError = true
+                }
+                return
+            }
             
-            await MainActor.run {
-                if result.success, let data = result.data {
+            // 先打印原始响应
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📄 原始响应：\(responseString)")
+            } else {
+                print("❌ 无法将响应解码为字符串")
+            }
+            
+            // 尝试解析 JSON
+            do {
+                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+                print("✅ JSON 解析成功")
+                print("  success: \(result.success)")
+                print("  message: \(result.message ?? "nil")")
+                
+                await MainActor.run {
+                    if result.success, let data = result.data {
                     // 保存 token 到 UserDefaults
                     UserDefaults.standard.set(data.token, forKey: "userToken")
                     UserDefaults.standard.set(data.user_id, forKey: "userId")
@@ -813,6 +832,19 @@ struct AuthView: View {
                     showingError = true
                 } else {
                     errorMessage = result.error ?? "登录失败"
+                    showingError = true
+                }
+            }
+            
+            } catch {
+                print("❌ JSON 解析失败！")
+                print("  错误：\(error)")
+                print("  错误域：\(error._domain)")
+                print("  错误码：\(error._code)")
+                print("  错误描述：\(error.localizedDescription)")
+                
+                await MainActor.run {
+                    errorMessage = "响应格式错误：\(error.localizedDescription)"
                     showingError = true
                 }
             }
