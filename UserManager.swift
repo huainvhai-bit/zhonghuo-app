@@ -154,43 +154,77 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return .success(user)
     }
     
-    // Bug 2: 自动签到
+    // MARK: - 自动签到（每次打开 App 自动重置倒计时）
+    @MainActor
     func performAutoCheckIn() {
-        print("🔵 自动签到检查开始...")
+        print("🔵 ====== 自动签到检查 ======")
         
         guard let user = currentUser else {
             print("❌ 自动签到失败：currentUser 为 nil")
             return
         }
         
-        print("👤 当前用户：\(user.name)")
-        print("📅 上次签到：\(user.lastCheckInDate?.description ?? "从未签到")")
-        print("⏰ 签到间隔：\(user.checkInInterval.hours) 小时")
-        
         let now = Date()
         let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
         let intervalHours = user.checkInInterval.hours
-        let timeSinceLastCheckIn = now.timeIntervalSince(lastCheckIn)
         let requiredInterval = intervalHours * 3600
+        let timeSinceLastCheckIn = now.timeIntervalSince(lastCheckIn)
+        let hoursRemaining = (requiredInterval - timeSinceLastCheckIn) / 3600
         
-        print("📊 距离上次签到：\(Int(timeSinceLastCheckIn / 3600)) 小时")
-        print("📊 需要间隔：\(intervalHours) 小时")
+        print("👤 当前用户：\(user.name)")
+        print("📅 上次签到：\(user.lastCheckInDate?.formatted() ?? "从未签到")")
+        print("⏰ 签到间隔：\(intervalHours) 小时")
+        print("📊 距离上次签到：\(String(format: "%.1f", timeSinceLastCheckIn / 3600)) 小时")
+        print("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
         
-        // 检查是否到了签到时间
+        // 检查是否已过期（需要通知紧急联系人）
         if timeSinceLastCheckIn >= requiredInterval {
-            print("✅ 满足签到条件，执行自动签到...")
-            // 执行签到
-            let result = recordCheckIn(isAuto: true)
-            if case .success = result {
-                print("✅ 自动签到成功！")
-            } else {
-                print("❌ 自动签到失败：\(result)")
-            }
+            print("⚠️ 签到已过期！需要通知紧急联系人")
+            // 这里触发通知紧急联系人的逻辑
+            notifyEmergencyContactsIfNeeded()
+        } else if hoursRemaining <= 12 {
+            // 剩余时间少于 12 小时，需要推送提醒
+            print("⚠️ 剩余时间少于 12 小时，推送签到提醒")
+            scheduleCheckInReminder(hoursRemaining: hoursRemaining)
         } else {
-            let remaining = requiredInterval - timeSinceLastCheckIn
-            let hours = Int(remaining / 3600)
-            let minutes = Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)
-            print("⏰ 距离下次签到还有 \(hours) 小时 \(minutes) 分钟")
+            print("✅ 签到状态正常")
+        }
+        
+        // 🎯 核心：每次打开 App 自动重置签到倒计时
+        print("🔄 自动重置签到倒计时...")
+        let result = recordCheckIn(isAuto: true)
+        if case .success = result {
+            print("✅ 自动签到成功！倒计时已重置")
+        } else {
+            print("❌ 自动签到失败：\(result)")
+        }
+    }
+    
+    // 推送签到提醒
+    private func scheduleCheckInReminder(hoursRemaining: Double) {
+        let hoursLeft = Int(hoursRemaining)
+        let message = "您的签到还剩 \(hoursLeft) 小时，请及时签到"
+        
+        print("🔔 推送提醒：\(message)")
+        
+        // 使用本地通知
+        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: hoursRemaining)
+    }
+    
+    // 通知紧急联系人
+    private func notifyEmergencyContactsIfNeeded() {
+        guard let user = currentUser,
+              !user.emergencyContacts.isEmpty else {
+            print("❌ 没有紧急联系人，无法通知")
+            return
+        }
+        
+        print("🚨 签到已过期，准备通知 \(user.emergencyContacts.count) 位紧急联系人")
+        
+        for contact in user.emergencyContacts {
+            print("📱 通知紧急联系人：\(contact.name) (\(contact.phone))")
+            // TODO: 发送短信通知
+            // 这里调用短信 API 通知紧急联系人
         }
     }
     

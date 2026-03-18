@@ -51,9 +51,9 @@ struct ContentView: View {
             
             checkEmergencyContacts()
             
-            // 延迟执行自动签到，确保用户数据已加载
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                print("⏰ 执行自动签到检查...")
+            // 🎯 每次打开 App 自动签到（延迟 0.3 秒确保用户数据加载）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("⏰ 执行自动签到...")
                 autoCheckIn()
             }
             
@@ -62,6 +62,11 @@ struct ContentView: View {
                 DataManager.baseURL = customServerURL
                 DataManager.apiURL = "\(customServerURL)/api"
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            print("🟡 App 从后台进入前台")
+            // 🎯 从后台进入前台时也自动签到
+            autoCheckIn()
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
