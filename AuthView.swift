@@ -664,8 +664,14 @@ struct AuthView: View {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             print("📡 发送请求...")
             
+            // 创建带超时配置的 session
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 30  // 请求超时 30 秒
+            config.timeoutIntervalForResource = 60 // 资源超时 60 秒
+            let session = URLSession(configuration: config)
+            
             print("📡 请求已发送，等待响应...")
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             
             print("✅ 收到响应")
             print("  响应类型：\(type(of: response))")
