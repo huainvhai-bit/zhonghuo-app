@@ -561,6 +561,10 @@ struct AuthView: View {
             let success = userManager.saveUser(user)
             print("✅ 用户数据已保存：\(success)")
             
+            // 🎯 登录成功后立即执行自动签到（重置倒计时）
+            print("⏰ 登录成功，执行自动签到...")
+            await userManager.performAutoSignIn()
+            
             print("🎉 登录流程完成！")
         } else {
             print("❌ 错误：user 数据为空")
