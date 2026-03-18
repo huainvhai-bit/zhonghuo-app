@@ -138,12 +138,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
         guard let apiURL = URL(string: "\(type(of: self).apiURL)/location.php") else { return }
         
+        // 获取 token
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        if token.isEmpty {
+            print("⚠️ 无 token，跳过位置上传")
+            return
+        }
+        
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = [
             "action": "upload",
+            "token": token,
             "user_id": userId,
             "latitude": latitude,
             "longitude": longitude,
@@ -158,10 +166,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 return
             }
             
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 位置上传响应状态码：\(httpResponse.statusCode)")
+            }
+            
             if let data = data,
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let success = json["success"] as? Bool, success {
-                print("✅ 位置上传成功：\(latitude), \(longitude)")
+               let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 位置上传响应：\(jsonString)")
+                
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success {
+                    print("✅ 位置上传成功：\(latitude), \(longitude)")
+                } else if let message = json["message"] as? String {
+                    print("⚠️ 位置上传返回：\(message)")
+                }
             }
         }.resume()
     }
