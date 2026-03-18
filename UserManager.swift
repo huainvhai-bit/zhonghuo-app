@@ -455,6 +455,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.isLoggedIn = false
         self.lastCheckInDate = nil
         self.checkInInterval = .twoDays  // 重置为默认值
+        
+        // 🗑️ 删除本地用户文件
+        do {
+            if fileManager.fileExists(atPath: userFileURL.path) {
+                try fileManager.removeItem(at: userFileURL)
+                print("   ✅ 已删除用户文件：user.json")
+            }
+        } catch {
+            print("   ❌ 删除用户文件失败：\(error)")
+        }
+        
         print("   currentUser: nil")
         print("   isLoggedIn: \(self.isLoggedIn)")
         print("   lastCheckInDate: nil")
