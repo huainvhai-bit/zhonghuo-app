@@ -289,6 +289,14 @@ class DataManager: ObservableObject {
         }
     }
     
+    func saveWitnessesToFile() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(witnesses) {
+            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("witnesses.json"))
+        }
+    }
+    
     func loadWitnessesFromFile() -> [Witness] {
         let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("witnesses.json")
         if let data = try? Data(contentsOf: path) {
@@ -357,6 +365,7 @@ class DataManager: ObservableObject {
     func updateWitness(_ witness: Witness) {
         if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
             witnesses[index] = witness
+            saveWitnessesToFile()
         }
     }
     

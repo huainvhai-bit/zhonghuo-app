@@ -14,6 +14,7 @@ struct ContentView: View {
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var showingEmergencyContactAlert = false
+    @AppStorage("hasShownEmergencyContactAlert") private var hasShownEmergencyContactAlert = false
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -78,10 +79,12 @@ struct ContentView: View {
     }
     
     private func checkEmergencyContacts() {
-        // 只有紧急联系人数量少于 2 人时才提醒
+        // 只有紧急联系人数量少于 2 人时才提醒，且只提示一次
         if let user = userManager.currentUser,
-           user.emergencyContacts.count < 2 {
+           user.emergencyContacts.count < 2,
+           !hasShownEmergencyContactAlert {
             showingEmergencyContactAlert = true
+            hasShownEmergencyContactAlert = true
         }
     }
     
