@@ -123,8 +123,19 @@ struct ContentView: View {
                 userManager.performAutoCheckIn()
             }
         } else {
-            print("✅ 用户数据已存在，直接执行签到")
+            let logMsg2 = "✅ 用户数据已存在，直接执行签到"
+            writeLogToFile(logMsg2)
+            print(logMsg2)
+            
+            let logMsg3 = "📞 调用 userManager.performAutoCheckIn()"
+            writeLogToFile(logMsg3)
+            print(logMsg3)
+            
             userManager.performAutoCheckIn()
+            
+            let logMsg4 = "📞 performAutoCheckIn 调用完成"
+            writeLogToFile(logMsg4)
+            print(logMsg4)
         }
     }
     
