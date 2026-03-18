@@ -118,16 +118,38 @@ struct HomeStatusView: View {
         
         // 执行自动签到
         print("✅ 执行自动签到")
-        let result = userManager.recordCheckIn()
+        let result = userManager.recordCheckIn(isAuto: true)
         print("   - recordCheckIn 结果：\(result)")
         
         // 更新 DataManager 的 lastCheckInDate
         dataManager.lastCheckInDate = userManager.lastCheckInDate
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
+    }
+    
+    private func handleManualCheckIn() {
+        let userManager = UserManager.shared
+        guard userManager.isLoggedIn else {
+            print("⚠️ 手动签到：用户未登录")
+            return
+        }
         
-        // 📍 签到成功后上传位置
-        userManager.uploadLocation()
+        print("👆 用户点击手动签到")
+        let result = userManager.recordCheckIn(isAuto: false)
+        
+        if result.isSuccess {
+            print("✅ 手动签到成功！")
+            dataManager.lastCheckInDate = userManager.lastCheckInDate
+            updateStatus()
+            
+            // 显示成功提示
+            showCheckInAnimation = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                showCheckInAnimation = false
+            }
+        } else {
+            print("❌ 手动签到失败")
+        }
     }
     
     private func updateStatus() {
@@ -186,13 +208,23 @@ struct HomeStatusView: View {
                 .foregroundColor(.white)
                 .monospacedDigit()
             
-            Text("✅ 自动签到中")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.2))
+            // 手动签到按钮
+            Button(action: {
+                handleManualCheckIn()
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "hand.thumbsup.fill")
+                    Text("立即签到")
+                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color(hex: "34C759"))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.white)
                 .cornerRadius(20)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(26)
         .background(

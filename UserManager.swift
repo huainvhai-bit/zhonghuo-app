@@ -478,6 +478,26 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             // 同步到服务器
             Task {
                 await syncCheckInToServer(isAuto: isAuto)
+                
+                // 📍 签到成功后上传位置（无论自动还是手动）
+                print("📍 签到成功，开始上传位置...")
+                self.uploadLocation()
+                
+                // 🔄 签到成功后同步所有数据
+                print("🔄 签到成功，开始同步数据...")
+                if let result = await DataManager.shared.batchSyncCapsules() {
+                    print("✅ 胶囊同步完成：\(result)")
+                }
+                if let result = await DataManager.shared.batchSyncWills() {
+                    print("✅ 遗嘱同步完成：\(result)")
+                }
+                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                    print("✅ 紧急联系人同步完成：\(result)")
+                }
+                if let result = await DataManager.shared.batchSyncWitnesses() {
+                    print("✅ 见证人同步完成：\(result)")
+                }
+                print("🎉 所有数据同步完成！")
             }
             
             // 🚨 检查是否需要通知紧急联系人（如果之前已过期）
