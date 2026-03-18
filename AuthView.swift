@@ -760,14 +760,12 @@ struct AuthView: View {
             let responseString = String(data: data, encoding: .utf8) ?? "无法解码"
             print("📄 原始响应：\(responseString)")
             
-            // 🔴 调试用：显示原始响应
-            if responseString.count < 500 {
-                await MainActor.run {
-                    errorMessage = "调试信息：\(responseString)"
-                    showingError = true
-                }
-                return
+            // 🔴 调试用：显示原始响应（无论多长都显示）
+            await MainActor.run {
+                errorMessage = "📄 后端响应:\n\(responseString)"
+                showingError = true
             }
+            return
             
             // 尝试解析 JSON
             do {
