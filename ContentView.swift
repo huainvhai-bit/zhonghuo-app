@@ -22,10 +22,8 @@ struct ContentView: View {
             if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
-                // 再检查登录状态
-                let isActuallyLoggedIn = userManager.isLoggedIn || UserDefaults.standard.bool(forKey: "isLoggedIn")
-                
-                if isActuallyLoggedIn {
+                // 再检查登录状态（只依赖 UserManager，不使用 UserDefaults 双重检查）
+                if userManager.isLoggedIn {
                     mainTabView
                 } else {
                     AuthView()
