@@ -617,11 +617,14 @@ struct AuthView: View {
     
     // MARK: - API 登录
     private func loginWithAPI() async {
-        print("🔵 开始登录流程...")
+        print("🔵 ========== 登录流程开始 ==========")
         print("  phone: \(phone)")
         print("  loginType: \(loginType)")
         print("  password: \(loginType == "password" ? "******" : "N/A")")
         print("  verify_code: \(loginType == "verify_code" ? verifyCode : "N/A")")
+        print("  DataManager.apiURL: \(DataManager.apiURL)")
+        print("  DataManager.isBackendOnline: \(DataManager.shared.isBackendOnline)")
+        print("🔵 ===================================")
         
         do {
             // 等待 API 初始化完成
@@ -660,10 +663,18 @@ struct AuthView: View {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             print("📡 发送请求...")
             
+            print("📡 请求已发送，等待响应...")
             let (data, response) = try await URLSession.shared.data(for: request)
             
+            print("✅ 收到响应")
+            print("  响应类型：\(type(of: response))")
+            print("  数据大小：\(data.count) bytes")
+            
             guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ 响应不是 HTTPURLResponse")
+                print("❌ 响应不是 HTTPURLResponse，类型：\(type(of: response))")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("  响应内容：\(responseString)")
+                }
                 await MainActor.run {
                     errorMessage = "网络响应异常，请检查网络连接"
                     showingError = true
@@ -672,6 +683,9 @@ struct AuthView: View {
             }
             
             print("  HTTP 状态码：\(httpResponse.statusCode)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("  原始响应：\(responseString)")
+            }
             
             // 检查 404 错误（服务器找不到文件）
             if httpResponse.statusCode == 404 {
