@@ -292,8 +292,9 @@ struct AuthView: View {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
                 let body: [String: Any] = [
+                    "action": "send",
                     "phone": phone,
-                    "action": isRegistering ? "register" : "login"
+                    "type": isRegistering ? "register" : "login"
                 ]
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
