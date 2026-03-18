@@ -138,20 +138,6 @@ struct AuthView: View {
                         }
                     }
                     
-                    // 测试 API 连接
-                    Button(action: testAPIConnection) {
-                        HStack {
-                            Image(systemName: "network")
-                            Text("测试 API 连接")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .foregroundColor(.gray)
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
-                    }
-                    
                     // 注册/登录按钮
                     Button(action: handleSubmit) {
                         HStack {
@@ -208,63 +194,12 @@ struct AuthView: View {
             .onAppear {
                 timer?.invalidate()
                 timer = nil
-                // 确保 API 已初始化
-                DataManager.shared.initializeAPIConfig()
-                print("🔵 AuthView onAppear - API 初始化完成")
-                print("   Base URL: \(DataManager.baseURL)")
-                print("   API URL: \(DataManager.apiURL)")
+                // 🔴 登录前不初始化 API，等到登录时再初始化
             }
         }
     }
     
     // MARK: - Actions
-    
-    private func testAPIConnection() {
-        print("🧪 开始测试 API 连接...")
-        print("   Base URL: \(DataManager.baseURL)")
-        print("   API URL: \(DataManager.apiURL)")
-        
-        Task {
-            do {
-                // 测试配置 API
-                let configURL = "\(DataManager.baseURL)/api/config.php"
-                guard let url = URL(string: configURL) else {
-                    await MainActor.run {
-                        errorMessage = "URL 无效：\(configURL)"
-                        showingError = true
-                    }
-                    return
-                }
-                
-                let (data, response) = try await URLSession.shared.data(from: url)
-                
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    await MainActor.run {
-                        errorMessage = "响应类型错误"
-                        showingError = true
-                    }
-                    return
-                }
-                
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                
-                await MainActor.run {
-                    if httpResponse.statusCode == 200, let success = json?["success"] as? Bool, success {
-                        errorMessage = "✅ API 连接成功！\n服务器：\(DataManager.baseURL)"
-                        showingError = true
-                    } else {
-                        errorMessage = "❌ API 返回错误\n状态码：\(httpResponse.statusCode)\n响应：\(json?["error"] ?? "未知")"
-                        showingError = true
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "❌ 连接失败\n\(error.localizedDescription)"
-                    showingError = true
-                }
-            }
-        }
-    }
     
     private func sendVerifyCode() {
         guard !phone.isEmpty else {
@@ -421,6 +356,10 @@ struct AuthView: View {
     
     private func register() async {
         do {
+            // 🔵 注册时才初始化 API
+            DataManager.shared.initializeAPIConfig()
+            print("🔵 注册请求 - API 已初始化")
+            
             let body: [String: Any] = [
                 "action": "register",
                 "name": name,
@@ -448,6 +387,12 @@ struct AuthView: View {
     
     private func login() async {
         do {
+            // 🔵 登录时才初始化 API
+            DataManager.shared.initializeAPIConfig()
+            print("🔵 登录请求 - API 已初始化")
+            print("   Base URL: \(DataManager.baseURL)")
+            print("   API URL: \(DataManager.apiURL)")
+            
             var body: [String: Any] = [
                 "action": "login",
                 "phone": phone,

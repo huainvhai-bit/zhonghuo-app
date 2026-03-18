@@ -30,59 +30,13 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            let logMsg = "🟢 ====== ContentView onAppear ======\n   userManager.isLoggedIn: \(userManager.isLoggedIn)\n   currentUser: \(userManager.currentUser?.name ?? "nil")"
-            writeLogToFile(logMsg)
-            print(logMsg)
-            
-            // 确保 API 配置已初始化（立即可用）
-            DataManager.shared.initializeAPIConfig()
-            
-            // 强制同步登录状态
-            if UserDefaults.standard.bool(forKey: "isLoggedIn") {
-                userManager.isLoggedIn = true
-                print("✅ 从 UserDefaults 恢复登录状态")
-            }
-            
-            // 如果没有 currentUser 但有 isLoggedIn，尝试重新加载
-            if userManager.isLoggedIn && userManager.currentUser == nil {
-                userManager.loadUser()
-                print("🔄 重新加载用户数据")
-            }
-            
-            checkEmergencyContacts()
-            
-            // 🎯 每次打开 App 自动签到（重置倒计时，证明用户安全）
-            // 只有用户已登录且 currentUser 存在时才执行
-            if userManager.isLoggedIn && userManager.currentUser != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    print("⏰ 执行自动签到...")
-                    autoSignIn()
-                }
-            } else {
-                print("⏭️  用户未登录或数据未加载，跳过自动签到")
-            }
-            
-            // 如果用户自定义了服务器地址，使用自定义地址（用于特殊场景）
-            if !customServerURL.isEmpty {
-                DataManager.baseURL = customServerURL
-                DataManager.apiURL = "\(customServerURL)/api"
-            }
+            // 🔴 登录前不执行任何操作！
+            // 所有 API 调用必须在用户成功登录后才执行
+            print("🟢 ContentView onAppear - 等待用户登录")
         }
         .onChange(of: scenePhase) { newPhase in
-            print("🟡 ====== scenePhase 变化：\(newPhase) ======")
-            
-            if newPhase == .active {
-                print("🟢 App 进入前台状态")
-                // 🎯 从后台进入前台也自动签到（重置倒计时，证明用户安全）
-                // 只有用户已登录且 currentUser 存在时才执行
-                if userManager.isLoggedIn && userManager.currentUser != nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        autoSignIn()
-                    }
-                } else {
-                    print("⏭️  用户未登录或数据未加载，跳过自动签到")
-                }
-            }
+            // 🔴 登录前不执行任何操作！
+            print("🟡 scenePhase 变化：\(newPhase)")
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
