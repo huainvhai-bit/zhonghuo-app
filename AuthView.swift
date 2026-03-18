@@ -54,20 +54,23 @@ struct AuthView: View {
                     
                     // 手机号输入
                     TextField("手机号码", text: $phone)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textFieldStyle(CustomTextFieldStyle())
                         .keyboardType(.phonePad)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
+                        .font(.system(size: 18, weight: .medium))  // ✅ 加大字号，方便老年人
                     
                     if isRegistering {
                         // 注册时：密码输入框
                         SecureField("设置密码（6 位以上）", text: $password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))  // ✅ 加大字号
                         
                         // 验证码输入框
                         TextField("验证码", text: $verifyCode)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(CustomTextFieldStyle())
                             .keyboardType(.numberPad)
+                            .font(.system(size: 18, weight: .medium))  // ✅ 加大字号
                             .onChange(of: verifyCode) { newValue in
                                 if newValue.count > 6 {
                                     verifyCode = String(newValue.prefix(6))
@@ -100,22 +103,24 @@ struct AuthView: View {
                         if loginType == "password" {
                             // 密码登录
                             SecureField("密码", text: $password)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .font(.system(size: 18, weight: .medium))  // ✅ 加大字号
                             
                             // 找回密码
                             Button(action: { showingResetPassword = true }) {
                                 HStack {
                                     Spacer()
                                     Text("忘记密码？")
-                                        .font(.system(size: 14))
+                                        .font(.system(size: 16))  // ✅ 加大字号
                                         .foregroundColor(Color(hex: "AF52DE"))
                                 }
                             }
                         } else {
                             // 验证码登录
                             TextField("验证码", text: $verifyCode)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .textFieldStyle(CustomTextFieldStyle())
                                 .keyboardType(.numberPad)
+                                .font(.system(size: 18, weight: .medium))  // ✅ 加大字号
                                 .onChange(of: verifyCode) { newValue in
                                     if newValue.count > 6 {
                                         verifyCode = String(newValue.prefix(6))
@@ -628,4 +633,20 @@ struct ResetPasswordView: View {
 #Preview {
     AuthView()
         .environmentObject(UserManager.shared)
+}
+
+// MARK: - 自定义输入框样式（适合老年人）
+struct CustomTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(14)  // ✅ 增加内边距
+            .background(Color.white)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray.opacity(0.4), lineWidth: 1.5)  // ✅ 加深边框
+            )
+            .foregroundColor(Color.black.opacity(0.9))  // ✅ 加深文字颜色
+            .font(.system(size: 18, weight: .medium))  // ✅ 加大字号
+    }
 }
