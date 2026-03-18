@@ -47,9 +47,10 @@ struct AuthView: View {
                 VStack(spacing: 20) {
                     if isRegistering {
                         TextField("姓名", text: $name)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .textFieldStyle(CustomTextFieldStyle())
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))  // ✅ 加大字号，方便老年人
                     }
                     
                     // 手机号输入
