@@ -194,6 +194,11 @@ struct AuthView: View {
             .onAppear {
                 timer?.invalidate()
                 timer = nil
+                // 确保 API 已初始化
+                DataManager.shared.initializeAPIConfig()
+                print("🔵 AuthView onAppear - API 初始化完成")
+                print("   Base URL: \(DataManager.baseURL)")
+                print("   API URL: \(DataManager.apiURL)")
             }
         }
     }
