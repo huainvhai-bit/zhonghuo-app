@@ -40,6 +40,9 @@ struct ContentView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     Task {
                         await userManager.performAutoSignIn()
+                        
+                        // ✅ 检查紧急联系人数量（只有<2 人才提示）
+                        checkEmergencyContacts()
                     }
                 }
             }

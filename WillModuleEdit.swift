@@ -55,11 +55,7 @@ struct EditWillModuleModal: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("保存") {
-                        var updated = module
-                        updated.content = content
-                        updated.isCompleted = isCompleted
-                        dataManager.updateWillModule(updated)
-                        dismiss()
+                        saveModule()
                     }
                 }
             }
@@ -67,11 +63,23 @@ struct EditWillModuleModal: View {
                 ForEach(getTemplatesForModule(module), id: \.title) { template in
                     Button(template.title) {
                         content = template.content
+                        // ✅ 填写内容后自动标记为完成
+                        isCompleted = !content.isEmpty
                     }
                 }
                 Button("取消", role: .cancel) {}
             }
         }
+    }
+    
+    // ✅ 保存时根据内容自动判断是否完成
+    private func saveModule() {
+        var updated = module
+        updated.content = content
+        // 内容不为空时自动标记为完成
+        updated.isCompleted = !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        dataManager.updateWillModule(updated)
+        dismiss()
     }
     
     private func getTemplatesForModule(_ module: WillModule) -> [(title: String, content: String)] {
