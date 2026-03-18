@@ -1,14 +1,25 @@
 #!/bin/bash
 
-# 终活 App 日志查看脚本
-# 实时查看模拟器的控制台输出
-
-echo "📱 终活 App 日志查看器"
+echo "🔍 正在查看终活 App 日志..."
+echo ""
+echo "请按以下步骤操作："
+echo ""
+echo "1️⃣ 打开 Xcode"
+echo "2️⃣ 打开项目：/Users/lishimin/Documents/zhonghuo-app"
+echo "3️⃣ 点击 ▶️ 运行按钮（或按 Cmd+R）"
+echo "4️⃣ 看 Xcode 底部的控制台窗口"
+echo ""
+echo "如果看不到控制台，按：Cmd + Shift + Y"
+echo ""
 echo "======================================"
 echo ""
-echo "正在连接到 iPhone 17 Pro 模拟器..."
-echo "按 Ctrl+C 停止"
+echo "或者在终端运行以下命令查看实时日志："
 echo ""
-
-# 使用 log 命令查看 iOS 模拟器日志
-log stream --predicate 'processImagePath contains "终活"' --info --debug 2>/dev/null | grep -E "登录 | 网络|login|network|error|请求 | 响应 |🔵|🔍|❌|✅"
+echo "log stream --predicate 'processImagePath contains \"com.zhonghuo\"' --style compact"
+echo ""
+echo "======================================"
+echo ""
+echo "现在尝试打开 App..."
+xcrun simctl launch "iPhone 17 Pro" com.zhonghuo.app
+echo ""
+echo "✅ App 已启动！请查看 Xcode 控制台或上面的日志输出"

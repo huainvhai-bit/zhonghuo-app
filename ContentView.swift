@@ -30,10 +30,9 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            print("🟢 ====== ContentView onAppear ======")
-            print("   userManager.isLoggedIn: \(userManager.isLoggedIn)")
-            print("   UserDefaults isLoggedIn: \(UserDefaults.standard.bool(forKey: "isLoggedIn"))")
-            print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
+            let logMsg = "🟢 ====== ContentView onAppear ======\n   userManager.isLoggedIn: \(userManager.isLoggedIn)\n   currentUser: \(userManager.currentUser?.name ?? "nil")"
+            writeLogToFile(logMsg)
+            print(logMsg)
             
             // 确保 API 配置已初始化（立即可用）
             DataManager.shared.initializeAPIConfig()
@@ -93,10 +92,26 @@ struct ContentView: View {
         }
     }
     
+    private func writeLogToFile(_ message: String) {
+        let fileManager = FileManager.default
+        let docsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let logFile = docsPath.appendingPathComponent("checkin_log.txt")
+        
+        var content = ""
+        if fileManager.fileExists(atPath: logFile.path) {
+            content = (try? String(contentsOf: logFile)) ?? ""
+        }
+        
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+        content += "\n[\(timestamp)] \(message)"
+        
+        try? content.write(to: logFile, atomically: true, encoding: .utf8)
+    }
+    
     private func autoCheckIn() {
-        print("🔵 autoCheckIn() 被调用")
-        print("   isLoggedIn: \(userManager.isLoggedIn)")
-        print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
+        let logMsg = "🔵 autoCheckIn() 被调用\n   isLoggedIn: \(userManager.isLoggedIn)\n   currentUser: \(userManager.currentUser?.name ?? "nil")"
+        writeLogToFile(logMsg)
+        print(logMsg)
         
         // 确保用户数据已加载
         if userManager.currentUser == nil {
