@@ -359,12 +359,22 @@ struct AuthView: View {
     
     private func apiRequest(action: String, body: [String: Any]) async throws -> [String: Any] {
         try await DataManager.shared.checkAPIReady()
+        
+        print("🔍 ====== API 请求调试 ======")
+        print("   action: \(action)")
+        print("   DataManager.baseURL: \(DataManager.baseURL)")
+        print("   DataManager.apiURL: \(DataManager.apiURL)")
+        print("   请求 URL: \(DataManager.apiURL)/users.php")
+        print("   请求 Body: \(body)")
+        
         guard !DataManager.apiURL.isEmpty else {
+            print("❌ API 未初始化")
             throw NSError(domain: "API 未初始化", code: -1)
         }
         
         let urlString = "\(DataManager.apiURL)/users.php"
         guard let url = URL(string: urlString) else {
+            print("❌ URL 无效：\(urlString)")
             throw NSError(domain: "URL 无效", code: -1)
         }
         
@@ -374,6 +384,8 @@ struct AuthView: View {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
+        print("📤 发送请求...")
+        
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
@@ -382,13 +394,22 @@ struct AuthView: View {
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ 响应类型错误：\(type(of: response))")
             throw NSError(domain: "响应类型错误", code: -1)
         }
         
+        print("📥 收到响应:")
+        print("   状态码：\(httpResponse.statusCode)")
+        print("   URL: \(httpResponse.url?.absoluteString ?? "nil")")
+        
         if !(200...299).contains(httpResponse.statusCode) {
             let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
+            print("❌ HTTP 错误：\(httpResponse.statusCode)")
+            print("   响应内容：\(responseString.prefix(200))")
             throw NSError(domain: "HTTP 错误：\(httpResponse.statusCode) - \(responseString)", code: httpResponse.statusCode)
         }
+        
+        print("✅ 请求成功")
         
         // 使用 JSONSerialization 解析（更灵活，不要求严格类型匹配）
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
