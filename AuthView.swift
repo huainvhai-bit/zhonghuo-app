@@ -2,7 +2,7 @@
 //  AuthView.swift
 //  终活
 //
-//  Created on 2026-03-18.
+//  用户注册和登录界面
 //
 
 import SwiftUI
@@ -13,184 +13,293 @@ struct AuthView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var verifyCode = ""
-    @State private var loginType = "password" // password | verify_code
+    @State private var loginType: String = "password" // "password" or "verify_code"
     @State private var isRegistering = false
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var countdown = 0
-    @State private var isSendingCode = false
+    @State private var timer: Timer?
+    @State private var showingResetPassword = false
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
-            Form {
-                if isRegistering {
-                    Section("注册信息") {
-                        TextField("用户名", text: $name)
-                        TextField("手机号", text: $phone)
-                            .keyboardType(.phonePad)
-                        SecureField("密码", text: $password)
+            VStack(spacing: 30) {
+                // Logo
+                VStack(spacing: 12) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(Color(hex: "AF52DE"))
+                    
+                    Text("终活")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(Color(hex: "AF52DE"))
+                    
+                    Text("让生命更有尊严，让告别更有温度")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                .padding(.top, 60)
+                
+                Spacer()
+                
+                // 表单
+                VStack(spacing: 20) {
+                    if isRegistering {
+                        TextField("姓名", text: $name)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
                     }
-                } else {
-                    Section("登录信息") {
-                        TextField("手机号", text: $phone)
-                            .keyboardType(.phonePad)
+                    
+                    // 手机号输入
+                    TextField("手机号码", text: $phone)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.phonePad)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                    
+                    if isRegistering {
+                        // 注册时：密码输入框
+                        SecureField("设置密码（6 位以上）", text: $password)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                         
+                        // 验证码输入框
+                        TextField("验证码", text: $verifyCode)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .onChange(of: verifyCode) { newValue in
+                                if newValue.count > 6 {
+                                    verifyCode = String(newValue.prefix(6))
+                                }
+                            }
+                        
+                        // 获取验证码按钮
+                        Button(action: sendVerifyCode) {
+                            HStack {
+                                Image(systemName: "message.fill")
+                                Text(countdown > 0 ? "\(countdown) 秒后重新获取" : "获取验证码")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity)
+                            .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                        .disabled(countdown > 0 || phone.isEmpty)
+                    } else {
+                        // 登录时：切换登录方式
                         Picker("登录方式", selection: $loginType) {
                             Text("密码登录").tag("password")
                             Text("验证码登录").tag("verify_code")
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
                         
                         if loginType == "password" {
+                            // 密码登录
                             SecureField("密码", text: $password)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            
+                            // 找回密码
+                            Button(action: { showingResetPassword = true }) {
+                                HStack {
+                                    Spacer()
+                                    Text("忘记密码？")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color(hex: "AF52DE"))
+                                }
+                            }
                         } else {
-                            HStack {
-                                TextField("验证码", text: $verifyCode)
-                                    .keyboardType(.numberPad)
-                                
-                                Button(action: {
-                                    Task {
-                                        await sendVerifyCode()
-                                    }
-                                }) {
-                                    if isSendingCode {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                    } else if countdown > 0 {
-                                        Text("\(countdown)秒")
-                                            .foregroundColor(.gray)
-                                    } else {
-                                        Text("获取验证码")
+                            // 验证码登录
+                            TextField("验证码", text: $verifyCode)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.numberPad)
+                                .onChange(of: verifyCode) { newValue in
+                                    if newValue.count > 6 {
+                                        verifyCode = String(newValue.prefix(6))
                                     }
                                 }
-                                .disabled(isSendingCode || countdown > 0 || phone.isEmpty)
+                            
+                            Button(action: sendVerifyCode) {
+                                HStack {
+                                    Image(systemName: "message.fill")
+                                    Text(countdown > 0 ? "\(countdown) 秒后重新获取" : "获取验证码")
+                                }
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                                .background(countdown > 0 ? Color.gray.opacity(0.1) : Color(hex: "AF52DE").opacity(0.1))
+                                .cornerRadius(12)
                             }
+                            .disabled(countdown > 0 || phone.isEmpty)
                         }
+                    }
+                    
+                    // 注册/登录按钮
+                    Button(action: handleSubmit) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            }
+                            Text(isRegistering ? "注册" : "登录")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(isLoading ? Color.gray : Color(hex: "AF52DE"))
+                        .cornerRadius(12)
+                    }
+                    .disabled(isLoading || (isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty || verifyCode.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty))))
+                }
+                .padding(.horizontal, 30)
+                
+                // 切换注册/登录
+                HStack {
+                    Text(isRegistering ? "已有账号？" : "没有账号？")
+                        .foregroundColor(.gray)
+                    
+                    Button(action: {
+                        withAnimation {
+                            isRegistering.toggle()
+                            verifyCode = ""
+                            countdown = 0
+                            timer?.invalidate()
+                            timer = nil
+                        }
+                    }) {
+                        Text(isRegistering ? "去登录" : "去注册")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(hex: "AF52DE"))
                     }
                 }
                 
-                Section {
-                    Button(isRegistering ? "注册" : "登录") {
-                        Task {
-                            if isRegistering {
-                                await registerWithAPI()
-                            } else {
-                                await loginWithAPI()
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    Button(isRegistering ? "已有账号？去登录" : "没有账号？去注册") {
-                        isRegistering.toggle()
-                        resetForm()
-                    }
-                }
+                Spacer()
             }
-            .navigationTitle(isRegistering ? "注册" : "登录")
+            .navigationTitle("")
+            .navigationBarHidden(true)
             .alert("提示", isPresented: $showingError) {
                 Button("确定", role: .cancel) {}
             } message: {
                 Text(errorMessage)
             }
+            .sheet(isPresented: $showingResetPassword) {
+                ResetPasswordView()
+            }
             .onAppear {
-                resetForm()
+                timer?.invalidate()
+                timer = nil
             }
         }
     }
     
-    private func resetForm() {
-        name = ""
-        phone = ""
-        password = ""
-        verifyCode = ""
-        countdown = 0
-    }
+    // MARK: - Actions
     
-    // MARK: - 发送验证码
-    private func sendVerifyCode() async {
+    private func sendVerifyCode() {
         guard !phone.isEmpty else {
             errorMessage = "请输入手机号"
             showingError = true
             return
         }
         
-        isSendingCode = true
-        
-        do {
-            try await DataManager.shared.checkAPIReady()
-            guard !DataManager.apiURL.isEmpty else {
-                throw NSError(domain: "API URL not initialized", code: -1)
-            }
-            
-            let urlString = "\(DataManager.apiURL)/sms.php"
-            guard let url = URL(string: urlString) else {
-                throw NSError(domain: "Invalid URL", code: -1)
-            }
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            
-            let body: [String: Any] = [
-                "action": "send",
-                "phone": phone,
-                "type": isRegistering ? "register" : "login"
-            ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 30
-            config.timeoutIntervalForResource = 60
-            let session = URLSession(configuration: config)
-            
-            let (data, response) = try await session.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NSError(domain: "Invalid response type", code: -1)
-            }
-            
-            if !(200...299).contains(httpResponse.statusCode) {
-                let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
-                throw NSError(domain: "HTTP Error \(httpResponse.statusCode): \(responseString)", code: httpResponse.statusCode)
-            }
-            
-            let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let success = jsonResponse?["success"] as? Bool ?? false
-            
-            if success {
-                countdown = 60
-                errorMessage = "验证码已发送（测试：123456）"
-                showingError = true
-                
-                // 倒计时
-                while countdown > 0 {
-                    try await Task.sleep(nanoseconds: 1_000_000_000)
-                    countdown -= 1
-                }
-            } else {
-                errorMessage = jsonResponse?["error"] as? String ?? "发送失败"
-                showingError = true
-            }
-            
-        } catch {
-            errorMessage = "发送失败：\(error.localizedDescription)"
+        // 验证手机号格式
+        let phoneRegex = "^1[3-9]\\d{9}$"
+        let phoneTest = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
+        if !phoneTest.evaluate(with: phone) {
+            errorMessage = "请输入正确的手机号"
             showingError = true
+            return
         }
         
-        isSendingCode = false
+        countdown = 60
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            countdown -= 1
+            if countdown <= 0 {
+                timer.invalidate()
+            }
+        }
+        
+        // 显示测试验证码提示
+        errorMessage = "开发环境：验证码固定为 123456"
+        showingError = true
     }
     
-    // MARK: - 统一 API 请求处理
-    private func authRequest(action: String, body: [String: Any]) async throws -> AuthResponse {
+    private func handleSubmit() {
+        // 验证输入
+        if isRegistering {
+            if name.isEmpty {
+                errorMessage = "请输入姓名"
+                showingError = true
+                return
+            }
+            if phone.isEmpty {
+                errorMessage = "请输入手机号"
+                showingError = true
+                return
+            }
+            if password.isEmpty || password.count < 6 {
+                errorMessage = "密码至少 6 位"
+                showingError = true
+                return
+            }
+            if verifyCode.isEmpty {
+                errorMessage = "请输入验证码"
+                showingError = true
+                return
+            }
+        } else {
+            if phone.isEmpty {
+                errorMessage = "请输入手机号"
+                showingError = true
+                return
+            }
+            if loginType == "password" {
+                if password.isEmpty {
+                    errorMessage = "请输入密码"
+                    showingError = true
+                    return
+                }
+            } else {
+                if verifyCode.isEmpty {
+                    errorMessage = "请输入验证码"
+                    showingError = true
+                    return
+                }
+            }
+        }
+        
+        // 执行登录/注册
+        isLoading = true
+        if isRegistering {
+            Task {
+                await register()
+                isLoading = false
+            }
+        } else {
+            Task {
+                await login()
+                isLoading = false
+            }
+        }
+    }
+    
+    // MARK: - API 请求
+    
+    private func apiRequest(action: String, body: [String: Any]) async throws -> [String: Any] {
         try await DataManager.shared.checkAPIReady()
         guard !DataManager.apiURL.isEmpty else {
-            throw NSError(domain: "API URL not initialized", code: -1)
+            throw NSError(domain: "API 未初始化", code: -1)
         }
         
         let urlString = "\(DataManager.apiURL)/users.php"
         guard let url = URL(string: urlString) else {
-            throw NSError(domain: "Invalid URL", code: -1)
+            throw NSError(domain: "URL 无效", code: -1)
         }
         
         var request = URLRequest(url: url)
@@ -207,42 +316,23 @@ struct AuthView: View {
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw NSError(domain: "Invalid response type", code: -1)
+            throw NSError(domain: "响应类型错误", code: -1)
         }
         
         if !(200...299).contains(httpResponse.statusCode) {
             let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
-            throw NSError(domain: "HTTP Error \(httpResponse.statusCode): \(responseString)", code: httpResponse.statusCode)
+            throw NSError(domain: "HTTP 错误：\(httpResponse.statusCode) - \(responseString)", code: httpResponse.statusCode)
         }
         
-        // 使用 JSONSerialization 解析（更灵活）
+        // 使用 JSONSerialization 解析（更灵活，不要求严格类型匹配）
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw NSError(domain: "Invalid JSON format", code: -1)
+            throw NSError(domain: "JSON 解析失败", code: -1)
         }
         
-        return AuthResponse(json: json)
+        return json
     }
     
-    // MARK: - 注册
-    private func registerWithAPI() async {
-        guard !name.isEmpty else {
-            errorMessage = "请输入用户名"
-            showingError = true
-            return
-        }
-        
-        guard !phone.isEmpty else {
-            errorMessage = "请输入手机号"
-            showingError = true
-            return
-        }
-        
-        guard !password.isEmpty else {
-            errorMessage = "请输入密码"
-            showingError = true
-            return
-        }
-        
+    private func register() async {
         do {
             let body: [String: Any] = [
                 "action": "register",
@@ -251,14 +341,16 @@ struct AuthView: View {
                 "password": password
             ]
             
-            let result = try await authRequest(action: "register", body: body)
+            let json = try await apiRequest(action: "register", body: body)
             
-            if result.success {
-                await handleAuthSuccess(result)
+            let success = json["success"] as? Bool ?? false
+            
+            if success {
+                await handleAuthSuccess(json)
                 errorMessage = "注册成功！"
                 showingError = true
             } else {
-                errorMessage = result.error ?? "注册失败"
+                errorMessage = json["error"] as? String ?? "注册失败"
                 showingError = true
             }
         } catch {
@@ -267,14 +359,7 @@ struct AuthView: View {
         }
     }
     
-    // MARK: - 登录
-    private func loginWithAPI() async {
-        guard !phone.isEmpty else {
-            errorMessage = "请输入手机号"
-            showingError = true
-            return
-        }
-        
+    private func login() async {
         do {
             var body: [String: Any] = [
                 "action": "login",
@@ -288,14 +373,16 @@ struct AuthView: View {
                 body["verify_code"] = verifyCode
             }
             
-            let result = try await authRequest(action: "login", body: body)
+            let json = try await apiRequest(action: "login", body: body)
             
-            if result.success {
-                await handleAuthSuccess(result)
+            let success = json["success"] as? Bool ?? false
+            
+            if success {
+                await handleAuthSuccess(json)
                 errorMessage = "登录成功！"
                 showingError = true
             } else {
-                errorMessage = result.error ?? "登录失败"
+                errorMessage = json["error"] as? String ?? "登录失败"
                 showingError = true
             }
         } catch {
@@ -304,24 +391,29 @@ struct AuthView: View {
         }
     }
     
-    // MARK: - 处理认证成功
-    private func handleAuthSuccess(_ result: AuthResponse) async {
-        guard let data = result.data else { return }
+    private func handleAuthSuccess(_ json: [String: Any]) async {
+        guard let data = json["data"] as? [String: Any] else { return }
+        
+        let token = data["token"] as? String ?? ""
+        let userId = data["user_id"] as? String ?? ""
         
         // 保存 token
-        UserDefaults.standard.set(data.token, forKey: "userToken")
-        UserDefaults.standard.set(data.user_id, forKey: "userId")
+        UserDefaults.standard.set(token, forKey: "userToken")
+        UserDefaults.standard.set(userId, forKey: "userId")
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         
         // 更新 UserManager
         userManager.isLoggedIn = true
         
         // 创建用户数据
-        if let userData = data.user {
+        if let userDict = data["user"] as? [String: Any] {
+            let name = userDict["name"] as? String ?? "用户"
+            let phone = userDict["phone"] as? String ?? self.phone
+            
             var user = User(
-                id: userData.id ?? data.user_id,
-                name: userData.name,
-                phone: userData.phone,
+                id: userDict["id"] as? String ?? userId,
+                name: name,
+                phone: phone,
                 createdAt: Date(),
                 emergencyContacts: [],
                 checkInInterval: .twoDays,
@@ -330,7 +422,7 @@ struct AuthView: View {
             )
             
             // 处理签到间隔（可能是 String 或 Int）
-            if let intervalValue = userData.check_in_interval {
+            if let intervalValue = userDict["check_in_interval"] {
                 let hours: Int
                 if let intVal = intervalValue as? Int {
                     hours = intVal
@@ -359,58 +451,57 @@ struct AuthView: View {
     }
 }
 
-// MARK: - 统一的响应模型
-struct AuthResponse {
-    let success: Bool
-    let message: String?
-    let error: String?
-    let data: AuthData?
+// MARK: - ResetPasswordView
+
+struct ResetPasswordView: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var phone = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var showingError = false
+    @State private var errorMessage = ""
     
-    init(json: [String: Any]) {
-        self.success = json["success"] as? Bool ?? false
-        self.message = json["message"] as? String
-        self.error = json["error"] as? String
-        
-        if let dataDict = json["data"] as? [String: Any] {
-            self.data = AuthData(dict: dataDict)
-        } else {
-            self.data = nil
-        }
-    }
-    
-    struct AuthData {
-        let token: String
-        let user_id: String
-        let is_new: Bool?
-        let user: UserData?
-        
-        init(dict: [String: Any]) {
-            self.token = dict["token"] as? String ?? ""
-            self.user_id = dict["user_id"] as? String ?? ""
-            self.is_new = dict["is_new"] as? Bool
-            
-            if let userDict = dict["user"] as? [String: Any] {
-                self.user = UserData(dict: userDict)
-            } else {
-                self.user = nil
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("找回密码") {
+                    TextField("手机号", text: $phone)
+                        .keyboardType(.phonePad)
+                    
+                    SecureField("新密码", text: $newPassword)
+                    
+                    SecureField("确认密码", text: $confirmPassword)
+                    
+                    Button("重置密码") {
+                        Task {
+                            await resetPassword()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .disabled(phone.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty)
+                }
+            }
+            .navigationTitle("找回密码")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("提示", isPresented: $showingError) {
+                Button("确定", role: .cancel) {}
+            } message: {
+                Text(errorMessage)
             }
         }
     }
     
-    struct UserData {
-        let id: String?
-        let name: String
-        let phone: String
-        let check_in_interval: Any?  // 可能是 String 或 Int
-        let last_check_in_date: String?
-        
-        init(dict: [String: Any]) {
-            self.id = dict["id"] as? String
-            self.name = dict["name"] as? String ?? ""
-            self.phone = dict["phone"] as? String ?? ""
-            self.check_in_interval = dict["check_in_interval"]  // Any? 兼容两种类型
-            self.last_check_in_date = dict["last_check_in_date"] as? String
-        }
+    private func resetPassword() async {
+        // TODO: 实现重置密码 API
+        errorMessage = "功能开发中..."
+        showingError = true
     }
 }
 
