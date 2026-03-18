@@ -339,11 +339,20 @@ struct AuthView: View {
         print("   状态码：\(httpResponse.statusCode)")
         print("   URL: \(httpResponse.url?.absoluteString ?? "nil")")
         
+        // 即使 HTTP 状态码不是 2xx，也尝试解析 JSON 获取错误信息
+        let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
+        print("📥 响应内容：\(responseString.prefix(200))")
+        
+        // 尝试解析 JSON（即使是错误响应）
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            // 成功解析 JSON，返回给调用者处理错误
+            return json
+        }
+        
+        // 无法解析 JSON，抛出原始错误
         if !(200...299).contains(httpResponse.statusCode) {
-            let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
             print("❌ HTTP 错误：\(httpResponse.statusCode)")
-            print("   响应内容：\(responseString.prefix(200))")
-            throw NSError(domain: "HTTP 错误：\(httpResponse.statusCode) - \(responseString)", code: httpResponse.statusCode)
+            throw NSError(domain: "HTTP 错误：\(httpResponse.statusCode)", code: httpResponse.statusCode)
         }
         
         print("✅ 请求成功")
