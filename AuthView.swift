@@ -379,8 +379,14 @@ struct AuthView: View {
             
             if success {
                 await handleAuthSuccess(json)
-                errorMessage = "登录成功！"
-                showingError = true
+                // 延迟显示成功提示，让 UI 有时间更新
+                try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 秒延迟
+                await MainActor.run {
+                    errorMessage = "登录成功！即将跳转..."
+                    showingError = true
+                    // 关闭键盘
+                    hideKeyboard()
+                }
             } else {
                 errorMessage = json["error"] as? String ?? "登录失败"
                 showingError = true
@@ -392,21 +398,33 @@ struct AuthView: View {
     }
     
     private func handleAuthSuccess(_ json: [String: Any]) async {
-        guard let data = json["data"] as? [String: Any] else { return }
+        print("🔵 登录成功，开始处理用户数据...")
+        
+        guard let data = json["data"] as? [String: Any] else {
+            print("❌ 错误：data 为空")
+            return
+        }
         
         let token = data["token"] as? String ?? ""
         let userId = data["user_id"] as? String ?? ""
+        
+        print("🔑 Token: \(token.prefix(20))...")
+        print("👤 User ID: \(userId)")
         
         // 保存 token
         UserDefaults.standard.set(token, forKey: "userToken")
         UserDefaults.standard.set(userId, forKey: "userId")
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        print("✅ Token 已保存")
         
         // 更新 UserManager
         userManager.isLoggedIn = true
+        print("✅ UserManager.isLoggedIn = true")
         
         // 创建用户数据
         if let userDict = data["user"] as? [String: Any] {
+            print("📝 用户数据：\(userDict)")
+            
             let name = userDict["name"] as? String ?? "用户"
             let phone = userDict["phone"] as? String ?? self.phone
             
@@ -420,9 +438,12 @@ struct AuthView: View {
                 notificationsEnabled: true,
                 cloudSyncEnabled: false
             )
+            print("✅ User 对象已创建：\(user.name)")
             
             // 处理签到间隔（可能是 String 或 Int）
             if let intervalValue = userDict["check_in_interval"] {
+                print("📊 签到间隔原始值：\(intervalValue) (类型：\(type(of: intervalValue)))")
+                
                 let hours: Int
                 if let intVal = intervalValue as? Int {
                     hours = intVal
@@ -431,6 +452,8 @@ struct AuthView: View {
                 } else {
                     hours = 48
                 }
+                
+                print("⏰ 签到间隔：\(hours) 小时")
                 
                 switch hours {
                 case 24: user.checkInInterval = .oneDay
@@ -443,15 +466,32 @@ struct AuthView: View {
                 default: user.checkInInterval = .twoDays
                 }
                 userManager.checkInInterval = user.checkInInterval
+                print("✅ 签到间隔已设置：\(user.checkInInterval)")
             }
             
+            print("💾 准备保存用户数据...")
             userManager.currentUser = user
-            _ = userManager.saveUser(user)
+            print("✅ UserManager.currentUser 已设置")
+            
+            let success = userManager.saveUser(user)
+            print("✅ 用户数据已保存：\(success)")
+            
+            print("🎉 登录流程完成！")
+        } else {
+            print("❌ 错误：user 数据为空")
         }
     }
 }
 
 // MARK: - ResetPasswordView
+
+// MARK: - Helper Extensions
+
+extension AuthView {
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
 
 struct ResetPasswordView: View {
     @Environment(\.dismiss) var dismiss
