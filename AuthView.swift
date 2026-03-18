@@ -183,10 +183,12 @@ struct AuthView: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
-            .alert("提示", isPresented: $showingError) {
-                Button("确定", role: .cancel) {}
-            } message: {
-                Text(errorMessage)
+            .alert(isPresented: $showingError) {
+                Alert(
+                    title: Text(""),  // 空标题，更简洁
+                    message: Text(errorMessage),
+                    dismissButton: .default(Text("好的"))
+                )
             }
             .sheet(isPresented: $showingResetPassword) {
                 ResetPasswordView()
@@ -376,21 +378,20 @@ struct AuthView: View {
                 errorMessage = "✅ 注册成功！"
                 showingError = true
             } else {
-                // 根据错误码显示友好提示
+                // 根据错误码显示友好提示（不显示错误编码）
                 let errorCode = json["code"] as? String ?? ""
-                let error = json["error"] as? String ?? "注册失败"
                 
                 switch errorCode {
                 case "PHONE_EXISTS":
-                    errorMessage = "❌ 该手机号已注册，请直接登录"
+                    errorMessage = "该手机号已注册，请直接登录"
                 case "INVALID_NAME":
-                    errorMessage = "❌ 姓名不能为空"
+                    errorMessage = "姓名不能为空"
                 case "INVALID_PHONE":
-                    errorMessage = "❌ 手机号格式不正确"
+                    errorMessage = "手机号格式不正确"
                 case "INVALID_PASSWORD":
-                    errorMessage = "❌ 密码至少 6 位"
+                    errorMessage = "密码至少 6 位"
                 default:
-                    errorMessage = "❌ \(error)"
+                    errorMessage = json["error"] as? String ?? "注册失败"
                 }
                 showingError = true
             }
@@ -431,23 +432,20 @@ struct AuthView: View {
                     hideKeyboard()
                 }
             } else {
-                // 根据错误码显示友好提示
+                // 根据错误码显示友好提示（不显示错误编码）
                 let errorCode = json["code"] as? String ?? ""
-                let error = json["error"] as? String ?? "登录失败"
                 
                 switch errorCode {
                 case "USER_NOT_FOUND":
-                    errorMessage = "❌ 账号不存在，请先注册"
+                    errorMessage = "账号不存在，请先注册"
                 case "INVALID_PASSWORD":
-                    errorMessage = "❌ 密码错误"
-                case "INVALID_VERIFY_CODE":
-                    errorMessage = "❌ 验证码错误或已过期"
+                    errorMessage = "密码错误"
+                case "INVALID_VERIFY_CODE", "INVALID_CODE":
+                    errorMessage = "验证码错误或已过期"
                 case "INVALID_PHONE":
-                    errorMessage = "❌ 手机号格式不正确"
-                case "INVALID_CODE":
-                    errorMessage = "❌ 验证码错误"
+                    errorMessage = "手机号格式不正确"
                 default:
-                    errorMessage = "❌ \(error)"
+                    errorMessage = json["error"] as? String ?? "登录失败"
                 }
                 showingError = true
             }
@@ -594,10 +592,12 @@ struct ResetPasswordView: View {
                     }
                 }
             }
-            .alert("提示", isPresented: $showingError) {
-                Button("确定", role: .cancel) {}
-            } message: {
-                Text(errorMessage)
+            .alert(isPresented: $showingError) {
+                Alert(
+                    title: Text(""),
+                    message: Text(errorMessage),
+                    dismissButton: .default(Text("好的"))
+                )
             }
         }
     }
