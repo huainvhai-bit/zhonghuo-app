@@ -51,10 +51,10 @@ struct ContentView: View {
             
             checkEmergencyContacts()
             
-            // 🎯 每次打开 App 自动签到（延迟 0.5 秒确保用户数据加载）
+            // 🎯 每次打开 App 检查签到状态（不自动重置，只检查）
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                print("⏰ 延迟执行自动签到...")
-                autoCheckIn()
+                print("⏰ 检查签到状态...")
+                checkSignInStatus()
             }
             
             // 如果用户自定义了服务器地址，使用自定义地址（用于特殊场景）
@@ -68,9 +68,9 @@ struct ContentView: View {
             
             if newPhase == .active {
                 print("🟢 App 进入前台状态")
-                // 🎯 从后台进入前台时也自动签到
+                // 🎯 从后台进入前台时检查签到状态
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    autoCheckIn()
+                    checkSignInStatus()
                 }
             }
         }
@@ -108,8 +108,8 @@ struct ContentView: View {
         try? content.write(to: logFile, atomically: true, encoding: .utf8)
     }
     
-    private func autoCheckIn() {
-        let logMsg = "🔵 autoCheckIn() 被调用\n   isLoggedIn: \(userManager.isLoggedIn)\n   currentUser: \(userManager.currentUser?.name ?? "nil")"
+    private func checkSignInStatus() {
+        let logMsg = "🔵 checkSignInStatus() 检查签到状态"
         writeLogToFile(logMsg)
         print(logMsg)
         
@@ -117,25 +117,15 @@ struct ContentView: View {
         if userManager.currentUser == nil {
             print("🔄 用户数据未加载，先加载用户...")
             userManager.loadUser()
-            // 延迟 0.5 秒再执行签到
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                print("⏰ 延迟执行自动签到...")
-                userManager.performAutoCheckIn()
+                userManager.checkSignInStatus()
             }
         } else {
-            let logMsg2 = "✅ 用户数据已存在，直接执行签到"
+            let logMsg2 = "✅ 用户数据已存在，检查签到状态"
             writeLogToFile(logMsg2)
             print(logMsg2)
             
-            let logMsg3 = "📞 调用 userManager.performAutoCheckIn()"
-            writeLogToFile(logMsg3)
-            print(logMsg3)
-            
-            userManager.performAutoCheckIn()
-            
-            let logMsg4 = "📞 performAutoCheckIn 调用完成"
-            writeLogToFile(logMsg4)
-            print(logMsg4)
+            userManager.checkSignInStatus()
         }
     }
     

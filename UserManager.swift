@@ -156,7 +156,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
-    func performAutoCheckIn() {
+    func checkSignInStatus() {
         let logPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("checkin_log.txt")
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
@@ -168,10 +168,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print(msg)
         }
         
-        writeLog("🔵 ====== 自动签到检查 ======")
+        writeLog("🔵 ====== 检查签到状态 ======")
         
         guard let user = currentUser else {
-            writeLog("❌ 自动签到失败：currentUser 为 nil")
+            writeLog("❌ 检查失败：currentUser 为 nil")
             return
         }
         
@@ -199,11 +199,34 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             writeLog("✅ 签到状态正常")
         }
         
-        // 🎯 核心：每次打开 App 自动重置签到倒计时
-        writeLog("🔄 自动重置签到倒计时...")
-        let result = recordCheckIn(isAuto: true)
+        // ❌ 不自动重置！只有用户手动签到时才重置
+        writeLog("ℹ️ 倒计时持续运行中（不自动重置）")
+    }
+    
+    @MainActor
+    func performAutoCheckIn() {
+        let logPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("checkin_log.txt")
+        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+        
+        func writeLog(_ msg: String) {
+            var content = (try? String(contentsOf: logPath)) ?? ""
+            content += "\n[\(timestamp)] \(msg)"
+            try? content.write(to: logPath, atomically: true, encoding: .utf8)
+            print(msg)
+        }
+        
+        writeLog("🔵 ====== 手动签到 ======")
+        
+        guard let user = currentUser else {
+            writeLog("❌ 签到失败：currentUser 为 nil")
+            return
+        }
+        
+        writeLog("🔄 重置签到倒计时...")
+        let result = recordCheckIn(isAuto: false)
         if case .success = result {
-            writeLog("✅ 自动签到成功！倒计时已重置")
+            writeLog("✅ 签到成功！倒计时已重置")
         } else {
             print("❌ 自动签到失败：\(result)")
         }

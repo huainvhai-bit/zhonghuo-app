@@ -29,11 +29,13 @@ if [ -n "$LOG_FILE" ]; then
     if grep -q "isLoggedIn: true" "$LOG_FILE"; then
         echo "✅ 用户已登录"
         
-        # 检查是否签到成功
-        if grep -q "自动签到成功" "$LOG_FILE"; then
-            echo "✅ 自动签到成功！"
-        else
-            echo "⚠️  自动签到未执行（可能还未到签到时间）"
+        # 检查签到状态
+        if grep -q "签到已过期" "$LOG_FILE"; then
+            echo "⚠️  签到已过期！需要通知紧急联系人"
+        elif grep -q "剩余时间少于 12 小时" "$LOG_FILE"; then
+            echo "⚠️  需要推送签到提醒"
+        elif grep -q "签到状态正常" "$LOG_FILE"; then
+            echo "✅ 签到状态正常（倒计时持续运行）"
         fi
     else
         echo "❌ 用户未登录"
