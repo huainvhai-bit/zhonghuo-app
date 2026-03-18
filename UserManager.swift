@@ -136,7 +136,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
-        guard let apiURL = URL(string: "\(type(of: self).apiURL)/location.php") else { return }
+        guard let apiURL = URL(string: "\(UserManager.apiURL)/api/location.php") else {
+            print("⚠️ 位置上传失败：API URL 无效")
+            return
+        }
         
         // 获取 token
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
@@ -144,6 +147,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("⚠️ 无 token，跳过位置上传")
             return
         }
+        
+        print("📍 准备上传位置：\(latitude), \(longitude)")
         
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"

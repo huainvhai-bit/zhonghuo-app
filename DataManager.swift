@@ -564,25 +564,38 @@ class DataManager: ObservableObject {
     
     /// 批量同步胶囊到服务器
     func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else { return nil }
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 胶囊同步失败：API URL 为空")
+            return nil
+        }
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 胶囊同步失败：无 token")
+            return nil
+        }
+        
+        guard !capsules.isEmpty else {
+            print("ℹ️ 胶囊同步：无数据需要同步")
+            return (0, 0, 0)
+        }
+        
+        print("🔄 开始同步胶囊：共 \(capsules.count) 个")
         
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/capsules.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         // 转换为后端格式
+        let formatter = ISO8601DateFormatter()
         let capsulesData = capsules.map { capsule in
             var data: [String: Any] = [
                 "id": capsule.id,
                 "title": capsule.title,
                 "content": capsule.content,
-                "type": capsule.type.rawValue,
-                "send_date": ISO8601DateFormatter().string(from: capsule.sendDate),
-                "is_sent": capsule.isSent
+                "media_type": capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
+                "open_at": formatter.string(from: capsule.sendDate),
+                "is_opened": capsule.isSent ? 1 : 0
             ]
             if !capsule.mediaURL.isEmpty {
                 data["media_url"] = capsule.mediaURL
@@ -590,19 +603,34 @@ class DataManager: ObservableObject {
             return data
         }
         
-        let body: [String: Any] = ["capsules": capsulesData]
+        let body: [String: Any] = ["capsules": capsulesData, "token": token]
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("📤 胶囊同步请求：\(capsules.count) 个胶囊")
+            
             let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 胶囊同步响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 胶囊同步响应：\(jsonString)")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
                 let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let data = result?["data"] as? [String: Any] {
-                    let total = data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
+                if let success = result?["success"] as? Bool, success {
+                    if let data = result?["data"] as? [String: Any] {
+                        let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
+                        let created = data["created"] as? Int ?? 0
+                        let updated = data["updated"] as? Int ?? 0
+                        print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        return (total, created, updated)
+                    }
+                } else if let message = result?["message"] as? String {
+                    print("⚠️ 胶囊同步返回：\(message)")
                 }
             }
         } catch {
@@ -615,15 +643,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步遗嘱到服务器
     func batchSyncWills() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else { return nil }
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 遗嘱同步失败：API URL 为空")
+            return nil
+        }
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 遗嘱同步失败：无 token")
+            return nil
+        }
+        
+        guard !willModules.isEmpty else {
+            print("ℹ️ 遗嘱同步：无数据需要同步")
+            return (0, 0, 0)
+        }
+        
+        print("🔄 开始同步遗嘱：共 \(willModules.count) 个模块")
         
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         // 转换为后端格式
         let willsData = willModules.map { module in
@@ -633,23 +673,38 @@ class DataManager: ObservableObject {
                 "title": module.title,
                 "subtitle": module.subtitle,
                 "content": module.content,
-                "is_completed": module.isCompleted
+                "is_completed": module.isCompleted ? 1 : 0
             ] as [String : Any]
         }
         
-        let body: [String: Any] = ["wills": willsData]
+        let body: [String: Any] = ["wills": willsData, "token": token]
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("📤 遗嘱同步请求：\(willModules.count) 个模块")
+            
             let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 遗嘱同步响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 遗嘱同步响应：\(jsonString)")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
                 let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let data = result?["data"] as? [String: Any] {
-                    let total = data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
+                if let success = result?["success"] as? Bool, success {
+                    if let data = result?["data"] as? [String: Any] {
+                        let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
+                        let created = data["created"] as? Int ?? 0
+                        let updated = data["updated"] as? Int ?? 0
+                        print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        return (total, created, updated)
+                    }
+                } else if let message = result?["message"] as? String {
+                    print("⚠️ 遗嘱同步返回：\(message)")
                 }
             }
         } catch {
@@ -662,18 +717,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步紧急联系人到服务器
     func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else { return nil }
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/users.php?action=sync_emergency_contacts")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 紧急联系人同步失败：API URL 为空")
+            return nil
         }
         
-        // 需要从 currentUser 获取紧急联系人
-        guard let user = currentUser else { return nil }
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 紧急联系人同步失败：无 token")
+            return nil
+        }
+        
+        guard let user = currentUser, !user.emergencyContacts.isEmpty else {
+            print("ℹ️ 紧急联系人同步：无数据需要同步")
+            return (0, 0, 0)
+        }
+        
+        print("🔄 开始同步紧急联系人：共 \(user.emergencyContacts.count) 个")
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/emergency_contacts.php?action=batch_sync")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         let contactsData = user.emergencyContacts.map { contact in
             [
@@ -684,19 +748,32 @@ class DataManager: ObservableObject {
             ] as [String : Any]
         }
         
-        let body: [String: Any] = ["contacts": contactsData]
+        let body: [String: Any] = ["contacts": contactsData, "token": token]
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("📤 紧急联系人同步请求：\(user.emergencyContacts.count) 个联系人")
+            
             let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 紧急联系人同步响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 紧急联系人同步响应：\(jsonString)")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
                 let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let data = result?["data"] as? [String: Any] {
-                    let total = data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 紧急联系人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
+                if let success = result?["success"] as? Bool, success {
+                    if let data = result?["data"] as? [String: Any] {
+                        let total = data["synced"] as? Int ?? 0
+                        let created = data["created"] as? Int ?? 0
+                        let updated = data["updated"] as? Int ?? 0
+                        print("✅ 紧急联系人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        return (total, created, updated)
+                    }
                 }
             }
         } catch {
@@ -709,15 +786,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步见证人到服务器
     func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else { return nil }
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 见证人同步失败：API URL 为空")
+            return nil
+        }
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 见证人同步失败：无 token")
+            return nil
+        }
+        
+        guard !witnesses.isEmpty else {
+            print("ℹ️ 见证人同步：无数据需要同步")
+            return (0, 0, 0)
+        }
+        
+        print("🔄 开始同步见证人：共 \(witnesses.count) 个")
         
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=sync_witnesses")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         let witnessesData = witnesses.map { witness in
             [
@@ -725,25 +814,38 @@ class DataManager: ObservableObject {
                 "name": witness.name,
                 "relationship": witness.relationship,
                 "phone": witness.phone,
-                "id_number": witness.idNumber,
-                "notes": witness.notes,
-                "is_confirmed": witness.isConfirmed
+                "id_number": witness.idNumber ?? "",
+                "notes": witness.notes ?? "",
+                "is_confirmed": witness.isConfirmed ? 1 : 0
             ] as [String : Any]
         }
         
-        let body: [String: Any] = ["witnesses": witnessesData]
+        let body: [String: Any] = ["witnesses": witnessesData, "token": token]
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            print("📤 见证人同步请求：\(witnesses.count) 个见证人")
+            
             let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 见证人同步响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 见证人同步响应：\(jsonString)")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
                 let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let data = result?["data"] as? [String: Any] {
-                    let total = data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 见证人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
+                if let success = result?["success"] as? Bool, success {
+                    if let data = result?["data"] as? [String: Any] {
+                        let total = data["synced"] as? Int ?? 0
+                        let created = data["created"] as? Int ?? 0
+                        let updated = data["updated"] as? Int ?? 0
+                        print("✅ 见证人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        return (total, created, updated)
+                    }
                 }
             }
         } catch {
