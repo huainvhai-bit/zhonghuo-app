@@ -100,31 +100,30 @@ struct HomeStatusView: View {
         let lastCheckIn = userManager.lastCheckInDate
         let intervalSeconds = userManager.checkInInterval.hours * 3600
         
-        // 如果没有签到记录，或者距离上次签到已超过间隔时间，则执行签到
-        let needsCheckIn: Bool
+        // 🎯 核心逻辑：每次打开 App 都自动签到（重置倒计时，证明用户安全）
+        // 不管是否过期，只要打开 App 就签到
+        print("🔄 打开 App 自动签到（重置倒计时，证明用户安全）")
+        print("   - 当前时间：\(now)")
+        print("   - lastCheckIn: \(lastCheckIn ?? Date.distantPast)")
+        print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue) 小时)")
+        
         if lastCheckIn == nil {
-            needsCheckIn = true
             print("⏰ 首次签到：没有签到记录")
         } else {
             let elapsed = now.timeIntervalSince(lastCheckIn!)
-            needsCheckIn = elapsed >= intervalSeconds
-            print("⏰ 检查自动签到：")
-            print("   - 当前时间：\(now)")
-            print("   - lastCheckIn: \(lastCheckIn!)")
-            print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue))")
-            print("   - elapsed: \(elapsed)s")
-            print("   - needsCheckIn: \(needsCheckIn)")
+            let hoursElapsed = elapsed / 3600
+            print("   - 距离上次签到：\(String(format: "%.1f", hoursElapsed)) 小时")
         }
         
-        if needsCheckIn {
-            print("✅ 执行自动签到")
-            let result = userManager.recordCheckIn()
-            print("   - recordCheckIn 结果：\(result)")
-            // 更新 DataManager 的 lastCheckInDate
-            dataManager.lastCheckInDate = userManager.lastCheckInDate
-        } else {
-            print("⏰ 未到签到时间，跳过")
-        }
+        // 执行自动签到
+        print("✅ 执行自动签到")
+        let result = userManager.recordCheckIn()
+        print("   - recordCheckIn 结果：\(result)")
+        
+        // 更新 DataManager 的 lastCheckInDate
+        dataManager.lastCheckInDate = userManager.lastCheckInDate
+        
+        print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
     }
     
     private func updateStatus() {
