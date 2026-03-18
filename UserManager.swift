@@ -453,8 +453,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("🔴 UserManager.logout() 被调用")
         self.currentUser = nil
         self.isLoggedIn = false
-        print("   currentUser: \(self.currentUser ?? nil)")
+        self.lastCheckInDate = nil
+        self.checkInInterval = .twoDays  // 重置为默认值
+        print("   currentUser: nil")
         print("   isLoggedIn: \(self.isLoggedIn)")
+        print("   lastCheckInDate: nil")
+        print("✅ 退出登录完成，所有状态已清除")
     }
     
     func addEmergencyContact(name: String, phone: String, relationship: String) -> Result<User.EmergencyContact, Error> {

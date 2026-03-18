@@ -273,6 +273,7 @@ struct SettingsView: View {
         UserDefaults.standard.removeObject(forKey: "userToken")
         UserDefaults.standard.removeObject(forKey: "userId")
         UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+        UserDefaults.standard.removeObject(forKey: "isFirstLaunch")  // ✅ 重置首次启动标记
         UserDefaults.standard.synchronize()
         
         print("✅ 退出登录完成")

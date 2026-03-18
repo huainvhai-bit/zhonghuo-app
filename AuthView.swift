@@ -366,6 +366,13 @@ struct AuthView: View {
     }
     
     private func register() async {
+        // ✅ 验证手机号长度（必须 11 位）
+        if phone.count != 11 {
+            errorMessage = "手机号必须是 11 位"
+            showingError = true
+            return
+        }
+        
         do {
             // 🔵 注册时才初始化 API
             DataManager.shared.initializeAPIConfig()
