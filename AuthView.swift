@@ -556,15 +556,18 @@ struct AuthView: View {
             let success = userManager.saveUser(user)
             print("✅ 用户数据已保存：\(success)")
             
-            // 🎯 登录成功后立即执行自动签到（重置倒计时）
+            // 🎯 登录成功后立即执行自动签到（重置倒计时，上传数据）
             print("⏰ 登录成功，执行自动签到...")
             await userManager.performAutoSignIn()
             
+            // 🎯 强制执行一次签到（确保上传位置和数据）
+            print("📍 登录成功后强制签到并上传数据...")
+            let checkInResult = userManager.recordCheckIn(isAuto: true)
+            print("   - 签到结果：\(checkInResult)")
+            
             // 🎯 从服务器下载所有数据
             print("📥 开始从服务器下载数据...")
-            Task.detached {
-                await DataManager.shared.downloadAllData()
-            }
+            await DataManager.shared.downloadAllData()
             
             print("🎉 登录流程完成！")
         } else {
