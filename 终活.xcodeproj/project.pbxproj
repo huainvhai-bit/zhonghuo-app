@@ -116,7 +116,9 @@
 			buildConfigurationList = A5000001 /* Build configuration list for PBXNativeTarget "终活" */;
 			buildPhases = (
 				A7000000 /* Sources */,
+				A7B4E810 /* Frameworks */,
 				A7000001 /* Resources */,
+				A7C9DEBA /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -161,6 +163,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+
+		A7C9DEBA /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -198,6 +212,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+
+		A7B4E810 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
