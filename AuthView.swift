@@ -560,30 +560,10 @@ struct AuthView: View {
             print("⏰ 登录成功，执行自动签到...")
             await userManager.performAutoSignIn()
             
-            // 🎯 同步所有数据到服务器
-            print("🔄 开始同步数据到服务器...")
+            // 🎯 从服务器下载所有数据
+            print("📥 开始从服务器下载数据...")
             Task.detached {
-                // 同步胶囊
-                if let result = await DataManager.shared.batchSyncCapsules() {
-                    print("✅ 胶囊同步完成：\(result)")
-                }
-                
-                // 同步遗嘱
-                if let result = await DataManager.shared.batchSyncWills() {
-                    print("✅ 遗嘱同步完成：\(result)")
-                }
-                
-                // 同步紧急联系人
-                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                    print("✅ 紧急联系人同步完成：\(result)")
-                }
-                
-                // 同步见证人
-                if let result = await DataManager.shared.batchSyncWitnesses() {
-                    print("✅ 见证人同步完成：\(result)")
-                }
-                
-                print("🎉 所有数据同步完成！")
+                await DataManager.shared.downloadAllData()
             }
             
             print("🎉 登录流程完成！")

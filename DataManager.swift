@@ -289,6 +289,14 @@ class DataManager: ObservableObject {
         }
     }
     
+    func saveCapsulesToFile() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(capsules) {
+            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json"))
+        }
+    }
+    
     func saveWitnessesToFile() {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
@@ -780,6 +788,258 @@ class DataManager: ObservableObject {
             print("❌ 紧急联系人同步失败：\(error)")
         }
         return nil
+    }
+    
+    // MARK: - 从服务器下载数据
+    
+    /// 从服务器下载所有数据
+    func downloadAllData() async {
+        print("📥 ====== 开始从服务器下载数据 ======")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 下载失败：无 token")
+            return
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 下载失败：API URL 为空")
+            return
+        }
+        
+        await downloadCapsules()
+        await downloadWills()
+        await downloadEmergencyContacts()
+        await downloadWitnesses()
+        
+        print("🎉 所有数据下载完成！")
+        print("📥 ====== 下载完成 ======")
+    }
+    
+    /// 从服务器下载胶囊
+    func downloadCapsules() async {
+        print("📦 下载胶囊数据...")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 胶囊下载失败：无 token")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/capsules.php?action=list&token=\(token)")!)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success,
+                   let capsulesData = json["data"] as? [[String: Any]] {
+                    
+                    let formatter = ISO8601DateFormatter()
+                    var downloaded: [TimeCapsule] = []
+                    
+                    for item in capsulesData {
+                        guard let id = item["id"] as? String,
+                              let title = item["title"] as? String,
+                              let content = item["content"] as? String,
+                              let openAtStr = item["open_at"] as? String,
+                              let openAt = formatter.date(from: openAtStr) else {
+                            continue
+                        }
+                        
+                        let mediaType = item["media_type"] as? String ?? "text"
+                        let mediaUrl = item["media_url"] as? String ?? ""
+                        let isSent = (item["is_opened"] as? Int ?? 0) == 1
+                        
+                        let capsule = TimeCapsule(
+                            id: id,
+                            title: title,
+                            content: content,
+                            type: TimeCapsule.CapsuleType(rawValue: mediaType) ?? .text,
+                            mediaURL: mediaUrl,
+                            sendDate: openAt,
+                            isSent: isSent,
+                            createdAt: Date()
+                        )
+                        downloaded.append(capsule)
+                    }
+                    
+                    await MainActor.run {
+                        self.capsules = downloaded
+                        saveCapsulesToFile()
+                    }
+                    
+                    print("✅ 胶囊下载成功：\(downloaded.count) 个")
+                }
+            }
+        } catch {
+            print("❌ 胶囊下载失败：\(error)")
+        }
+    }
+    
+    /// 从服务器下载遗嘱
+    func downloadWills() async {
+        print("📝 下载遗嘱数据...")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 遗嘱下载失败：无 token")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=list&token=\(token)")!)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success,
+                   let willsData = json["data"] as? [[String: Any]] {
+                    
+                    var downloaded: [WillModule] = []
+                    
+                    for item in willsData {
+                        guard let id = item["id"] as? String,
+                              let typeStr = item["type"] as? String,
+                              let title = item["title"] as? String else {
+                            continue
+                        }
+                        
+                        // 将字符串转换为 WillType 枚举
+                        let willType = WillModule.WillType(rawValue: typeStr) ?? .otherInstructions
+                        
+                        let will = WillModule(
+                            id: id,
+                            type: willType,
+                            title: title,
+                            subtitle: item["subtitle"] as? String ?? "",
+                            content: item["content"] as? String ?? "",
+                            isCompleted: (item["is_completed"] as? Int ?? 0) == 1
+                        )
+                        downloaded.append(will)
+                    }
+                    
+                    await MainActor.run {
+                        self.willModules = downloaded
+                        saveWillModulesToFile()
+                    }
+                    
+                    print("✅ 遗嘱下载成功：\(downloaded.count) 个")
+                }
+            }
+        } catch {
+            print("❌ 遗嘱下载失败：\(error)")
+        }
+    }
+    
+    /// 从服务器下载紧急联系人
+    func downloadEmergencyContacts() async {
+        print("👥 下载紧急联系人...")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 紧急联系人下载失败：无 token")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/emergency_contacts.php?action=list&token=\(token)")!)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success,
+                   let contactsData = json["data"] as? [[String: Any]] {
+                    
+                    var downloaded: [User.EmergencyContact] = []
+                    
+                    for item in contactsData {
+                        guard let id = item["id"] as? String,
+                              let name = item["name"] as? String,
+                              let phone = item["phone"] as? String else {
+                            continue
+                        }
+                        
+                        let contact = User.EmergencyContact(
+                            id: id,
+                            name: name,
+                            phone: phone,
+                            relationship: item["relationship"] as? String ?? ""
+                        )
+                        downloaded.append(contact)
+                    }
+                    
+                    await MainActor.run {
+                        // 更新当前用户的紧急联系人
+                        if var user = UserManager.shared.currentUser {
+                            user.emergencyContacts = downloaded
+                            UserManager.shared.currentUser = user
+                            _ = UserManager.shared.saveUser(user)
+                        }
+                    }
+                    
+                    print("✅ 紧急联系人下载成功：\(downloaded.count) 个")
+                }
+            }
+        } catch {
+            print("❌ 紧急联系人下载失败：\(error)")
+        }
+    }
+    
+    /// 从服务器下载见证人
+    func downloadWitnesses() async {
+        print("👤 下载见证人...")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 见证人下载失败：无 token")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=list_witnesses&token=\(token)")!)
+        request.httpMethod = "GET"
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success,
+                   let witnessesData = json["data"] as? [[String: Any]] {
+                    
+                    var downloaded: [Witness] = []
+                    
+                    for item in witnessesData {
+                        guard let id = item["id"] as? String,
+                              let name = item["name"] as? String else {
+                            continue
+                        }
+                        
+                        let witness = Witness(
+                            id: id,
+                            name: name,
+                            role: item["relationship"] as? String ?? "",
+                            phone: item["phone"] as? String ?? "",
+                            isConfirmed: (item["is_confirmed"] as? Int ?? 0) == 1,
+                            order: 0,
+                            idNumber: item["id_number"] as? String ?? "",
+                            notes: item["notes"] as? String ?? ""
+                        )
+                        downloaded.append(witness)
+                    }
+                    
+                    await MainActor.run {
+                        self.witnesses = downloaded
+                        saveWitnessesToFile()
+                    }
+                    
+                    print("✅ 见证人下载成功：\(downloaded.count) 个")
+                }
+            }
+        } catch {
+            print("❌ 见证人下载失败：\(error)")
+        }
     }
     
     // MARK: - 见证人同步
