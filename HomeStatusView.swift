@@ -19,6 +19,7 @@ struct HomeStatusView: View {
     @State private var navigateToWitness = false
     @State private var showingWitnessSheet = false
     @State private var showingEmergencyContactAlert = false
+    @State private var showingEmergencyContactsSheet = false  // 紧急联系人弹窗
     
     var body: some View {
         NavigationView {
@@ -75,7 +76,7 @@ struct HomeStatusView: View {
                                 
                                 Button("去添加") {
                                     showingEmergencyContactAlert = false
-                                    showingWitnessSheet = true
+                                    showingEmergencyContactsSheet = true  // 跳转到紧急联系人页面
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
@@ -147,6 +148,9 @@ struct HomeStatusView: View {
             // ContentView 已经统一处理了，避免重复调用
             .sheet(isPresented: $showingWitnessSheet) {
                 WitnessView()
+            }
+            .sheet(isPresented: $showingEmergencyContactsSheet) {
+                EmergencyContactsView()
             }
         }
     }

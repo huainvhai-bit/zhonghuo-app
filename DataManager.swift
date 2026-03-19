@@ -1504,7 +1504,7 @@ class DataManager: ObservableObject {
     func loadSystemConfig() async {
         print("📥 加载系统配置...")
         
-        guard let url = URL(string: "\(apiURL)/settings.php") else {
+        guard let url = URL(string: "\(DataManager.apiURL)/settings.php") else {
             print("⚠️ 配置加载失败：URL 无效")
             return
         }
