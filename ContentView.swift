@@ -51,16 +51,18 @@ struct ContentView: View {
         .onChange(of: scenePhase) { newPhase in
             print("🟡 scenePhase 变化：\(newPhase)")
             
-            // ✅ 从后台进入前台时，执行自动签到
+            // ✅ 从后台进入前台时，执行自动签到（每次进入前台都签到）
             if newPhase == .active && userManager.isLoggedIn && userManager.currentUser != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     // 如果在首页，触发 HomeStatusView 的 handleAutoCheckIn
                     if selectedTab == 0 {
                         print("🟢 从后台进入前台（首页）- 触发自动签到")
+                        print("📍 位置和数据将自动上传到服务器")
                         NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoCheckIn"), object: nil)
                     } else {
                         // 在其他页面，直接调用 UserManager
                         print("🟢 从后台进入前台（其他页面）- 触发自动签到")
+                        print("📍 位置和数据将自动上传到服务器")
                         Task {
                             await userManager.performAutoSignIn()
                         }

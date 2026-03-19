@@ -71,7 +71,7 @@ struct HomeStatusView: View {
             .onAppear {
                 print("🟢 首页 onAppear - 触发自动签到")
                 
-                // 先执行自动签到（如果需要）
+                // 🎯 打开 App 自动签到（每次打开都签到，重置倒计时）
                 handleAutoCheckIn()
                 
                 // 然后更新倒计时显示
@@ -116,7 +116,7 @@ struct HomeStatusView: View {
             print("   - 距离上次签到：\(String(format: "%.1f", hoursElapsed)) 小时")
         }
         
-        // 执行自动签到
+        // ✅ 执行自动签到（isAuto: true 会自动上传位置和数据）
         print("✅ 执行自动签到")
         let result = userManager.recordCheckIn(isAuto: true)
         print("   - recordCheckIn 结果：\(result)")
@@ -125,32 +125,10 @@ struct HomeStatusView: View {
         dataManager.lastCheckInDate = userManager.lastCheckInDate
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
+        print("📍 位置和数据已自动上传到服务器")
     }
     
-    private func handleManualCheckIn() {
-        let userManager = UserManager.shared
-        guard userManager.isLoggedIn else {
-            print("⚠️ 手动签到：用户未登录")
-            return
-        }
-        
-        print("👆 用户点击手动签到")
-        let result = userManager.recordCheckIn(isAuto: false)
-        
-        if case .success = result {
-            print("✅ 手动签到成功！")
-            dataManager.lastCheckInDate = userManager.lastCheckInDate
-            updateStatus()
-            
-            // 显示成功提示
-            showCheckInAnimation = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showCheckInAnimation = false
-            }
-        } else {
-            print("❌ 手动签到失败")
-        }
-    }
+    // 🚫 已移除手动签到功能 - 只保留自动签到
     
     private func updateStatus() {
         // 确保使用最新的签到间隔
@@ -208,23 +186,7 @@ struct HomeStatusView: View {
                 .foregroundColor(.white)
                 .monospacedDigit()
             
-            // 手动签到按钮
-            Button(action: {
-                handleManualCheckIn()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "hand.thumbsup.fill")
-                    Text("立即签到")
-                }
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(hex: "34C759"))
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Color.white)
-                .cornerRadius(20)
-                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            }
-            .buttonStyle(PlainButtonStyle())
+            // 🚫 已移除手动签到按钮 - 打开 App 自动签到
         }
         .padding(26)
         .background(
