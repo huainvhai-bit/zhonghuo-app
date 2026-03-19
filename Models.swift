@@ -240,6 +240,7 @@ struct Witness: Identifiable, Codable {
     var notes: String = ""
     var confirmedAt: Date?
     var createdAt: Date = Date()
+    var deletedAt: Date? = nil  // 删除标记
     
     // 兼容 relationship 字段（别名）
     var relationship: String {
@@ -352,5 +353,6 @@ struct UserSettings: Codable {
         var relationship: String
         var isConfirmed: Bool = false
         var createdAt: Date = Date()
+        var deletedAt: Date? = nil  // 删除标记
     }
 }

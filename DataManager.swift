@@ -1051,13 +1051,19 @@ class DataManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let contactsData = user.emergencyContacts.map { contact in
-            [
+        let formatter = ISO8601DateFormatter()
+        let contactsData = user.emergencyContacts.map { contact -> [String: Any] in
+            var data: [String: Any] = [
                 "id": contact.id,
                 "name": contact.name,
                 "relationship": contact.relationship,
                 "phone": contact.phone
-            ] as [String : Any]
+            ]
+            // 如果有 deletedAt 字段，标记为删除
+            if let deletedAt = contact.deletedAt {
+                data["deleted_at"] = formatter.string(from: deletedAt)
+            }
+            return data
         }
         
         let body: [String: Any] = ["contacts": contactsData, "token": token]
@@ -1436,8 +1442,9 @@ class DataManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let witnessesData = witnesses.map { witness in
-            [
+        let formatter = ISO8601DateFormatter()
+        let witnessesData = witnesses.map { witness -> [String: Any] in
+            var data: [String: Any] = [
                 "id": witness.id,
                 "name": witness.name,
                 "relationship": witness.relationship,
@@ -1445,7 +1452,12 @@ class DataManager: ObservableObject {
                 "id_number": witness.idNumber ?? "",
                 "notes": witness.notes ?? "",
                 "is_confirmed": witness.isConfirmed ? 1 : 0
-            ] as [String : Any]
+            ]
+            // 如果有 deletedAt 字段，标记为删除
+            if let deletedAt = witness.deletedAt {
+                data["deleted_at"] = formatter.string(from: deletedAt)
+            }
+            return data
         }
         
         let body: [String: Any] = ["witnesses": witnessesData, "token": token]
