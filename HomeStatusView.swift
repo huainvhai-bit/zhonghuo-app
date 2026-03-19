@@ -18,6 +18,7 @@ struct HomeStatusView: View {
     @State private var navigateToTimeCapsule = false
     @State private var navigateToWitness = false
     @State private var showingWitnessSheet = false
+    @State private var showingEmergencyContactAlert = false
     
     var body: some View {
         NavigationView {
@@ -44,6 +45,54 @@ struct HomeStatusView: View {
                     EmptyView()
                 }
                 .opacity(0)
+                
+                // 👥 紧急联系人不足提示
+                if showingEmergencyContactAlert {
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                            
+                            Text("紧急联系人不足")
+                                .font(.headline)
+                            
+                            Text("为了您的安全，请至少添加 2 位紧急联系人。\n在紧急情况下，他们可以及时联系到您的家人朋友。")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            HStack(spacing: 12) {
+                                Button("稍后再说") {
+                                    showingEmergencyContactAlert = false
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color.gray.opacity(0.2))
+                                .foregroundColor(.primary)
+                                .cornerRadius(10)
+                                
+                                Button("去添加") {
+                                    showingEmergencyContactAlert = false
+                                    showingWitnessSheet = true
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "6366F1"))
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(24)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(radius: 20)
+                        .padding(40)
+                    }
+                    .transition(.opacity)
+                    .animation(.easeInOut, value: showingEmergencyContactAlert)
+                }
             }
             .navigationTitle("终活")
             .navigationBarTitleDisplayMode(.inline)
@@ -74,9 +123,12 @@ struct HomeStatusView: View {
                 // 🎯 打开 App 自动签到（每次打开都签到，重置倒计时）
                 handleAutoCheckIn()
                 
-                // 🆕 打开 App 强制上传数据（独立于签到）
+                // 📤 打开 App 强制上传数据（独立于签到）
                 print("📤 打开 App 强制上传数据（胶囊、遗嘱、位置等）")
                 forceUploadDataOnAppOpen()
+                
+                // 👥 检查紧急联系人数量（低于 2 人提示）
+                checkEmergencyContactsCount()
                 
                 // 然后更新倒计时显示
                 updateStatus()
@@ -130,6 +182,22 @@ struct HomeStatusView: View {
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
         print("📍 位置和数据已自动上传到服务器")
+    }
+    
+    /// 👥 检查紧急联系人数量（低于 2 人提示）
+    private func checkEmergencyContactsCount() {
+        guard let user = UserManager.shared.currentUser else {
+            print("⚠️ 无法检查紧急联系人：无用户数据")
+            return
+        }
+        
+        let contactCount = user.emergencyContacts.count
+        print("👥 检查紧急联系人数量：\(contactCount) 人")
+        
+        if contactCount < 2 {
+            print("⚠️ 紧急联系人不足 2 人，显示提示")
+            showingEmergencyContactAlert = true
+        }
     }
     
     /// 🆕 打开 App 时智能同步数据（双向同步：本地↔云端）
@@ -251,6 +319,11 @@ struct HomeStatusView: View {
                 .font(.system(size: 52, weight: .bold, design: .monospaced))
                 .foregroundColor(.white)
                 .monospacedDigit()
+            
+            // ✅ 提示文字：打开 App 即可自动签到
+            Text("打开 App 即可自动签到")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.9))
             
             // 🚫 已移除手动签到按钮 - 打开 App 自动签到
         }
