@@ -9,6 +9,8 @@ import Foundation
 import Combine
 import CoreLocation
 
+// SyncManager 在同一模块中，无需额外 import
+
 class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = UserManager()
     
@@ -654,6 +656,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if saveUser(user) {
             print("📞 紧急联系人已添加到本地，准备同步到服务器...")
             
+            // 异步同步到服务器
             Task {
                 if let result = await DataManager.shared.batchSyncEmergencyContacts() {
                     print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
@@ -696,6 +699,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if saveUser(user) {
             print("📞 紧急联系人已更新到本地，准备同步到服务器...")
             
+            // 异步同步到服务器
             Task {
                 if let result = await DataManager.shared.batchSyncEmergencyContacts() {
                     print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")

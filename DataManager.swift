@@ -367,6 +367,7 @@ class DataManager: ObservableObject {
         saveWitnessesToFile()
         print("👥 见证人已添加到本地，准备同步到服务器...")
         
+        // 异步同步到服务器
         Task {
             if let result = await batchSyncWitnesses() {
                 print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
@@ -388,6 +389,7 @@ class DataManager: ObservableObject {
             saveWitnessesToFile()
             print("👥 见证人已更新到本地，准备同步到服务器...")
             
+            // 异步同步到服务器
             Task {
                 if let result = await batchSyncWitnesses() {
                     print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
@@ -480,11 +482,8 @@ class DataManager: ObservableObject {
             print("📊 当前 willModules.count: \(willModules.count)")
             print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
             
-            let token = UserDefaults.standard.string(forKey: "userToken")
-            print("🔑 检查 Token: \(token?.prefix(20) ?? "nil")...")
-            
+            // 异步同步到服务器
             Task {
-                print("🔄 开始执行 batchSyncWills()...")
                 if let result = await batchSyncWills() {
                     print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 } else {
@@ -699,6 +698,8 @@ class DataManager: ObservableObject {
                         let created = data["created"] as? Int ?? 0
                         let updated = data["updated"] as? Int ?? 0
                         print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        
+                        
                         return (total, created, updated)
                     }
                 } else if let message = result?["message"] as? String {
@@ -707,6 +708,7 @@ class DataManager: ObservableObject {
             }
         } catch {
             print("❌ 胶囊同步失败：\(error)")
+            
         }
         return nil
     }
@@ -788,6 +790,7 @@ class DataManager: ObservableObject {
             }
         } catch {
             print("❌ 遗嘱同步失败：\(error)")
+            
         }
         return nil
     }
@@ -851,12 +854,15 @@ class DataManager: ObservableObject {
                         let created = data["created"] as? Int ?? 0
                         let updated = data["updated"] as? Int ?? 0
                         print("✅ 紧急联系人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        
+                        
                         return (total, created, updated)
                     }
                 }
             }
         } catch {
             print("❌ 紧急联系人同步失败：\(error)")
+            
         }
         return nil
     }
@@ -1222,12 +1228,15 @@ class DataManager: ObservableObject {
                         let created = data["created"] as? Int ?? 0
                         let updated = data["updated"] as? Int ?? 0
                         print("✅ 见证人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                        
+                        
                         return (total, created, updated)
                     }
                 }
             }
         } catch {
             print("❌ 见证人同步失败：\(error)")
+            
         }
         return nil
     }
