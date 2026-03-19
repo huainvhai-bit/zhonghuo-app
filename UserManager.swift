@@ -98,12 +98,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 位置上传
     func uploadLocation() {
-        guard let user = currentUser else { return }
-        guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
-            print("⚠️ 定位未授权，跳过位置上传")
+        print("🔵 ====== uploadLocation 开始 ======")
+        print("   - currentUser: \(currentUser?.name ?? "nil")")
+        print("   - locationAuthStatus: \(locationAuthStatus)")
+        
+        guard let user = currentUser else {
+            print("❌ uploadLocation 失败：currentUser 为 nil")
             return
         }
         
+        guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
+            print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
+            print("💡 请在模拟器设置中允许定位权限")
+            return
+        }
+        
+        print("📍 开始请求位置...")
         locationManager.requestLocation()
     }
     
@@ -460,7 +470,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
+        print("🔵 ====== recordCheckIn 开始 ======")
+        print("   - isAuto: \(isAuto)")
+        print("   - currentUser: \(currentUser?.name ?? "nil")")
+        print("   - isLoggedIn: \(isLoggedIn)")
+        print("   - API URL: \(DataManager.apiURL)")
+        print("   - Token: \(UserDefaults.standard.string(forKey: "userToken") ?? "nil")")
+        
         guard var user = currentUser else {
+            print("❌ recordCheckIn 失败：currentUser 为 nil")
             return .failure(Error.userNotLoggedIn)
         }
         
@@ -471,34 +489,58 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 记录签到位置
         if let locationStr = getCurrentLocation() {
             print("📍 签到位置：\(locationStr)")
+        } else {
+            print("⚠️ 无位置信息（可能未授权定位）")
         }
         
         print("✅ 记录签到：\(isAuto ? "自动" : "手动")")
         
         if saveUser(user) {
+            print("✅ 用户数据已保存到本地")
+            
             // 同步到服务器
             Task {
+                print("🔄 开始异步同步任务...")
+                
+                // 1. 同步签到记录
+                print("📝 1. 同步签到记录...")
                 await syncCheckInToServer(isAuto: isAuto)
                 
-                // 📍 签到成功后上传位置（无论自动还是手动）
-                print("📍 签到成功，开始上传位置...")
+                // 2. 签到成功后上传位置（无论自动还是手动）
+                print("📍 2. 上传位置...")
                 self.uploadLocation()
                 
-                // 🔄 签到成功后同步所有数据
-                print("🔄 签到成功，开始同步数据...")
+                // 3. 签到成功后同步所有数据
+                print("📦 3. 同步胶囊数据...")
                 if let result = await DataManager.shared.batchSyncCapsules() {
                     print("✅ 胶囊同步完成：\(result)")
+                } else {
+                    print("❌ 胶囊同步失败或无数据")
                 }
+                
+                print("📦 4. 同步遗嘱数据...")
                 if let result = await DataManager.shared.batchSyncWills() {
                     print("✅ 遗嘱同步完成：\(result)")
+                } else {
+                    print("❌ 遗嘱同步失败或无数据")
                 }
+                
+                print("📦 5. 同步紧急联系人...")
                 if let result = await DataManager.shared.batchSyncEmergencyContacts() {
                     print("✅ 紧急联系人同步完成：\(result)")
+                } else {
+                    print("❌ 紧急联系人同步失败或无数据")
                 }
+                
+                print("📦 6. 同步见证人...")
                 if let result = await DataManager.shared.batchSyncWitnesses() {
                     print("✅ 见证人同步完成：\(result)")
+                } else {
+                    print("❌ 见证人同步失败或无数据")
                 }
-                print("🎉 所有数据同步完成！")
+                
+                print("🎉 所有同步任务完成！")
+                print("🔵 ====== recordCheckIn 结束 ======")
             }
             
             // 🚨 检查是否需要通知紧急联系人（如果之前已过期）
@@ -506,6 +548,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             
             return .success(())
         } else {
+            print("❌ 保存用户数据失败")
             return .failure(Error.saveFailed)
         }
     }
