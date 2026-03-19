@@ -572,6 +572,11 @@ class DataManager: ObservableObject {
     
     /// 批量同步胶囊到服务器
     func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
+        print("📦 ====== batchSyncCapsules 开始 ======")
+        print("   - API URL: \(DataManager.apiURL)")
+        print("   - Token: \(UserDefaults.standard.string(forKey: "userToken") ?? "nil")")
+        print("   - 本地胶囊数：\(capsules.count)")
+        
         guard !DataManager.apiURL.isEmpty else {
             print("⚠️ 胶囊同步失败：API URL 为空")
             return nil
@@ -583,7 +588,7 @@ class DataManager: ObservableObject {
         }
         
         guard !capsules.isEmpty else {
-            print("ℹ️ 胶囊同步：无数据需要同步")
+            print("ℹ️ 胶囊同步：无数据需要同步（capsules 数组为空）")
             return (0, 0, 0)
         }
         

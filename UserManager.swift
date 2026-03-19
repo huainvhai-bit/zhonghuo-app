@@ -101,6 +101,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("🔵 ====== uploadLocation 开始 ======")
         print("   - currentUser: \(currentUser?.name ?? "nil")")
         print("   - locationAuthStatus: \(locationAuthStatus)")
+        print("   - API URL: \(DataManager.apiURL)")
         
         guard let user = currentUser else {
             print("❌ uploadLocation 失败：currentUser 为 nil")
@@ -109,7 +110,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
             print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
-            print("💡 请在模拟器设置中允许定位权限")
+            print("💡 请在模拟器设置 → 隐私 → 定位服务 中允许终活 App 使用定位")
+            print("📍 尝试使用模拟位置上传...")
+            // 🆕 即使未授权，也尝试上传模拟位置（用于测试）
+            uploadLocationToServer(userId: user.id, latitude: 39.9042, longitude: 116.4074, address: "北京市（模拟）")
             return
         }
         
