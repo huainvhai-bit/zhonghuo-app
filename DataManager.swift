@@ -170,6 +170,69 @@ class DataManager: ObservableObject {
         loadAllData()
     }
     
+    // MARK: - 网络检查
+    
+    /// 检查网络连通性
+    func checkNetworkConnectivity() async -> Bool {
+        guard let url = URL(string: "http://8.136.41.211:3395/api/check-config.php") else {
+            return false
+        }
+        
+        do {
+            let (_, response) = try await URLSession.shared.data(from: url)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+            return (200...299).contains(httpResponse.statusCode)
+        } catch {
+            print("❌ 网络检查失败：\(error)")
+            return false
+        }
+    }
+    
+    // MARK: - Token 验证
+    
+    /// 检查 Token 是否过期
+    func isTokenExpired(_ token: String) -> Bool {
+        // JWT 格式：header.payload.signature
+        let components = token.split(separator: ".")
+        guard components.count == 3 else {
+            print("⚠️ Token 格式错误")
+            return true
+        }
+        
+        // 解析 payload (base64url 编码)
+        let payloadString = String(components[1])
+        
+        // base64url 解码
+        var base64 = payloadString
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        
+        // 添加 padding
+        while base64.count % 4 != 0 {
+            base64 += "="
+        }
+        
+        guard let payloadData = Data(base64Encoded: base64),
+              let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let exp = payload["exp"] as? TimeInterval else {
+            print("⚠️ 无法解析 Token payload")
+            return true  // 无法解析时认为已过期
+        }
+        
+        let expiryDate = Date(timeIntervalSince1970: exp)
+        let isExpired = expiryDate < Date()
+        
+        if isExpired {
+            print("⚠️ Token 已过期：\(expiryDate)")
+        } else {
+            print("✅ Token 有效，过期时间：\(expiryDate)")
+        }
+        
+        return isExpired
+    }
+    
     // MARK: - 数据加载
     
     func loadAllData() {
@@ -632,16 +695,29 @@ class DataManager: ObservableObject {
     func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
         print("📦 ====== batchSyncCapsules 开始 ======")
         print("   - API URL: \(DataManager.apiURL)")
-        print("   - Token: \(UserDefaults.standard.string(forKey: "userToken") ?? "nil")")
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        print("   - Token: \(token.prefix(30))...")
+        print("   - Token 长度：\(token.count)")
         print("   - 本地胶囊数：\(capsules.count)")
         
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 胶囊同步失败：API URL 为空")
+        // ✅ 检查 Token 是否有效
+        if token.isEmpty {
+            print("⚠️ 胶囊同步失败：无 token（用户未登录）")
             return nil
         }
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 胶囊同步失败：无 token")
+        // ✅ 检查 Token 是否过期
+        if isTokenExpired(token) {
+            print("⚠️ 胶囊同步失败：Token 已过期，请重新登录")
+            // 清除过期 Token
+            UserDefaults.standard.removeObject(forKey: "userToken")
+            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+            return nil
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 胶囊同步失败：API URL 为空")
             return nil
         }
         
@@ -682,33 +758,81 @@ class DataManager: ObservableObject {
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 胶囊同步响应状态码：\(httpResponse.statusCode)")
+            // ✅ 验证响应
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 胶囊同步失败：响应不是 HTTPURLResponse")
+                return nil
             }
+            
+            print("📡 胶囊同步响应状态码：\(httpResponse.statusCode)")
             
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("📄 胶囊同步响应：\(jsonString)")
             }
             
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let success = result?["success"] as? Bool, success {
-                    if let data = result?["data"] as? [String: Any] {
-                        let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
-                        let created = data["created"] as? Int ?? 0
-                        let updated = data["updated"] as? Int ?? 0
-                        print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                        
-                        
-                        return (total, created, updated)
-                    }
-                } else if let message = result?["message"] as? String {
+            // ✅ 处理不同状态码
+            switch httpResponse.statusCode {
+            case 200...299:
+                break
+            case 401:
+                print("❌ 胶囊同步失败：401 未授权（Token 无效或过期）")
+                UserDefaults.standard.removeObject(forKey: "userToken")
+                UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+                return nil
+            case 403:
+                print("❌ 胶囊同步失败：403 权限不足")
+                return nil
+            case 404:
+                print("❌ 胶囊同步失败：404 API 不存在")
+                return nil
+            case 500...599:
+                print("❌ 胶囊同步失败：\(httpResponse.statusCode) 服务器错误")
+                return nil
+            default:
+                print("❌ 胶囊同步失败：未知状态码 \(httpResponse.statusCode)")
+                return nil
+            }
+            
+            // ✅ 解析响应
+            guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                print("❌ 胶囊同步失败：无法解析响应 JSON")
+                return nil
+            }
+            
+            if let success = result["success"] as? Bool, success {
+                if let data = result["data"] as? [String: Any] {
+                    let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            } else {
+                if let error = result["error"] as? [String: Any] {
+                    let code = error["code"] as? String ?? "UNKNOWN"
+                    let message = error["message"] as? String ?? "未知错误"
+                    print("❌ 胶囊同步失败：[\(code)] \(message)")
+                } else if let message = result["message"] as? String {
                     print("⚠️ 胶囊同步返回：\(message)")
                 }
+                return nil
             }
+        } catch let urlError as URLError {
+            print("❌ 胶囊同步失败：网络错误 - \(urlError.localizedDescription)")
+            switch urlError.code {
+            case .notConnectedToInternet:
+                print("💡 建议：检查网络连接")
+            case .timedOut:
+                print("💡 建议：检查服务器是否响应")
+            case .cannotFindHost:
+                print("💡 建议：检查 API URL 是否正确")
+            default:
+                break
+            }
+            return nil
         } catch {
             print("❌ 胶囊同步失败：\(error)")
-            
+            print("📋 错误类型：\(type(of: error))")
         }
         return nil
     }
@@ -717,13 +841,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步遗嘱到服务器
     func batchSyncWills() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 遗嘱同步失败：API URL 为空")
+        print("📜 ====== batchSyncWills 开始 ======")
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        print("   - Token: \(token.prefix(30))...")
+        
+        // ✅ 检查 Token 是否有效
+        if token.isEmpty {
+            print("⚠️ 遗嘱同步失败：无 token（用户未登录）")
             return nil
         }
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 遗嘱同步失败：无 token")
+        // ✅ 检查 Token 是否过期
+        if isTokenExpired(token) {
+            print("⚠️ 遗嘱同步失败：Token 已过期，请重新登录")
+            UserDefaults.standard.removeObject(forKey: "userToken")
+            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+            return nil
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 遗嘱同步失败：API URL 为空")
             return nil
         }
         
@@ -766,31 +904,68 @@ class DataManager: ObservableObject {
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 遗嘱同步响应状态码：\(httpResponse.statusCode)")
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 遗嘱同步失败：响应不是 HTTPURLResponse")
+                return nil
             }
+            
+            print("📡 遗嘱同步响应状态码：\(httpResponse.statusCode)")
             
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("📄 遗嘱同步响应：\(jsonString)")
             }
             
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let success = result?["success"] as? Bool, success {
-                    if let data = result?["data"] as? [String: Any] {
-                        let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
-                        let created = data["created"] as? Int ?? 0
-                        let updated = data["updated"] as? Int ?? 0
-                        print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                        return (total, created, updated)
-                    }
-                } else if let message = result?["message"] as? String {
+            switch httpResponse.statusCode {
+            case 200...299:
+                break
+            case 401:
+                print("❌ 遗嘱同步失败：401 未授权（Token 无效或过期）")
+                UserDefaults.standard.removeObject(forKey: "userToken")
+                UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+                return nil
+            case 403:
+                print("❌ 遗嘱同步失败：403 权限不足")
+                return nil
+            case 404:
+                print("❌ 遗嘱同步失败：404 API 不存在")
+                return nil
+            case 500...599:
+                print("❌ 遗嘱同步失败：\(httpResponse.statusCode) 服务器错误")
+                return nil
+            default:
+                print("❌ 遗嘱同步失败：未知状态码 \(httpResponse.statusCode)")
+                return nil
+            }
+            
+            guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                print("❌ 遗嘱同步失败：无法解析响应 JSON")
+                return nil
+            }
+            
+            if let success = result["success"] as? Bool, success {
+                if let data = result["data"] as? [String: Any] {
+                    let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
+                    let created = data["created"] as? Int ?? 0
+                    let updated = data["updated"] as? Int ?? 0
+                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
+                    return (total, created, updated)
+                }
+            } else {
+                if let error = result["error"] as? [String: Any] {
+                    let code = error["code"] as? String ?? "UNKNOWN"
+                    let message = error["message"] as? String ?? "未知错误"
+                    print("❌ 遗嘱同步失败：[\(code)] \(message)")
+                } else if let message = result["message"] as? String {
                     print("⚠️ 遗嘱同步返回：\(message)")
                 }
+                return nil
             }
+        } catch let urlError as URLError {
+            print("❌ 遗嘱同步失败：网络错误 - \(urlError.localizedDescription)")
+            return nil
         } catch {
             print("❌ 遗嘱同步失败：\(error)")
-            
+            print("📋 错误类型：\(type(of: error))")
         }
         return nil
     }
@@ -799,13 +974,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步紧急联系人到服务器
     func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 紧急联系人同步失败：API URL 为空")
+        print("📞 ====== batchSyncEmergencyContacts 开始 ======")
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        print("   - Token: \(token.prefix(30))...")
+        
+        // ✅ 检查 Token 是否有效
+        if token.isEmpty {
+            print("⚠️ 紧急联系人同步失败：无 token（用户未登录）")
             return nil
         }
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 紧急联系人同步失败：无 token")
+        // ✅ 检查 Token 是否过期
+        if isTokenExpired(token) {
+            print("⚠️ 紧急联系人同步失败：Token 已过期，请重新登录")
+            UserDefaults.standard.removeObject(forKey: "userToken")
+            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+            return nil
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 紧急联系人同步失败：API URL 为空")
             return nil
         }
         
@@ -1170,13 +1359,27 @@ class DataManager: ObservableObject {
     
     /// 批量同步见证人到服务器
     func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 见证人同步失败：API URL 为空")
+        print("👥 ====== batchSyncWitnesses 开始 ======")
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        print("   - Token: \(token.prefix(30))...")
+        
+        // ✅ 检查 Token 是否有效
+        if token.isEmpty {
+            print("⚠️ 见证人同步失败：无 token（用户未登录）")
             return nil
         }
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 见证人同步失败：无 token")
+        // ✅ 检查 Token 是否过期
+        if isTokenExpired(token) {
+            print("⚠️ 见证人同步失败：Token 已过期，请重新登录")
+            UserDefaults.standard.removeObject(forKey: "userToken")
+            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+            return nil
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 见证人同步失败：API URL 为空")
             return nil
         }
         
