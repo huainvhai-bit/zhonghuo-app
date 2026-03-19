@@ -107,7 +107,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestLocation()
     }
     
-    private func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         guard let user = currentUser else { return }
         
@@ -131,12 +131,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    private func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: any Swift.Error) {
         print("❌ 定位失败：\(error)")
     }
     
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
-        guard let apiURL = URL(string: "\(UserManager.apiURL)/api/location.php") else {
+        guard let apiURL = URL(string: "\(DataManager.apiURL)/api/location.php") else {
             print("⚠️ 位置上传失败：API URL 无效")
             return
         }
@@ -179,10 +179,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                let jsonString = String(data: data, encoding: .utf8) {
                 print("📄 位置上传响应：\(jsonString)")
                 
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success {
+                if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = jsonObj["success"] as? Bool, success {
                     print("✅ 位置上传成功：\(latitude), \(longitude)")
-                } else if let message = json["message"] as? String {
+                } else if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let message = jsonObj["message"] as? String {
                     print("⚠️ 位置上传返回：\(message)")
                 }
             }

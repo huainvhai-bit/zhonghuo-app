@@ -137,7 +137,7 @@ struct HomeStatusView: View {
         print("👆 用户点击手动签到")
         let result = userManager.recordCheckIn(isAuto: false)
         
-        if result.isSuccess {
+        if case .success = result {
             print("✅ 手动签到成功！")
             dataManager.lastCheckInDate = userManager.lastCheckInDate
             updateStatus()
