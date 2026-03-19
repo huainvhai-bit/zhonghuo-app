@@ -477,8 +477,14 @@ class DataManager: ObservableObject {
             willModules[index] = module
             saveWillModulesToFile()
             print("📜 遗嘱模块已更新到本地，准备同步到服务器...")
+            print("📊 当前 willModules.count: \(willModules.count)")
+            print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
+            
+            let token = UserDefaults.standard.string(forKey: "userToken")
+            print("🔑 检查 Token: \(token?.prefix(20) ?? "nil")...")
             
             Task {
+                print("🔄 开始执行 batchSyncWills()...")
                 if let result = await batchSyncWills() {
                     print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 } else {
@@ -725,11 +731,16 @@ class DataManager: ObservableObject {
         }
         
         print("🔄 开始同步遗嘱：共 \(willModules.count) 个模块")
+        print("🌐 API URL: \(DataManager.apiURL)")
+        print("🔑 Token 长度：\(token.count)")
         
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        print("📍 请求 URL: \(request.url?.absoluteString ?? "nil")")
+        print("📋 Headers: Content-Type=\(request.value(forHTTPHeaderField: "Content-Type") ?? "nil"), Authorization=\(request.value(forHTTPHeaderField: "Authorization")?.prefix(30) ?? "nil")...")
         
         // 转换为后端格式
         let willsData = willModules.map { module in
@@ -747,7 +758,9 @@ class DataManager: ObservableObject {
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let bodyString = String(data: request.httpBody!, encoding: .utf8) ?? "无法解析"
             print("📤 遗嘱同步请求：\(willModules.count) 个模块")
+            print("📦 请求体：\(bodyString.prefix(200))...")
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
