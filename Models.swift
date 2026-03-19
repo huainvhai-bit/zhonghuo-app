@@ -357,3 +357,38 @@ struct UserSettings: Codable {
         var deletedAt: Date? = nil  // 删除标记
     }
 }
+
+// MARK: - 系统配置（后端可配置）
+struct SystemConfig: Codable {
+    /// 签到提醒：倒计时剩余多少小时开始推送（默认 12 小时）
+    var checkinReminderThresholdHours: Double = 12.0
+    
+    /// 签到提醒：推送间隔时间（小时）（默认 2 小时）
+    var checkinReminderIntervalHours: Double = 2.0
+    
+    /// 紧急联系人：最少数量要求（默认 2 人）
+    var minimumEmergencyContacts: Int = 2
+    
+    /// 签到间隔时间（小时）（默认 48 小时）
+    var checkinIntervalHours: Double = 48.0
+    
+    /// 最新版本号
+    var appVersionLatest: String = "2.0.0"
+    
+    /// 强制更新最低版本
+    var appVersionForceUpdate: String = "1.0.0"
+    
+    /// 维护模式开关
+    var appMaintenanceMode: Bool = false
+    
+    /// 维护模式提示信息
+    var appMaintenanceMessage: String = "系统维护中，请稍后再试"
+}
+
+// MARK: - 配置 API 响应
+struct ConfigResponse: Codable {
+    let status: String
+    let data: SystemConfig
+    let timestamp: TimeInterval?
+    let message: String?
+}

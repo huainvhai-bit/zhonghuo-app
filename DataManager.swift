@@ -27,6 +27,7 @@ class DataManager: ObservableObject {
     @Published var witnesses: [Witness] = []
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
+    @Published var systemConfig: SystemConfig = SystemConfig()  // 系统配置
     
     // MARK: - API 配置管理
     
@@ -1495,5 +1496,47 @@ class DataManager: ObservableObject {
             
         }
         return nil
+    }
+    
+    // MARK: - 系统配置
+    
+    /// 加载系统配置（后端可配置）
+    func loadSystemConfig() async {
+        print("📥 加载系统配置...")
+        
+        guard let url = URL(string: "\(apiURL)/settings.php") else {
+            print("⚠️ 配置加载失败：URL 无效")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                print("⚠️ 配置加载失败：HTTP 错误")
+                return
+            }
+            
+            let result = try JSONDecoder().decode(ConfigResponse.self, from: data)
+            
+            if result.status == "success" {
+                systemConfig = result.data
+                print("✅ 系统配置加载成功")
+                print("   - 签到提醒阈值：\(systemConfig.checkinReminderThresholdHours) 小时")
+                print("   - 签到提醒间隔：\(systemConfig.checkinReminderIntervalHours) 小时")
+                print("   - 最少紧急联系人：\(systemConfig.minimumEmergencyContacts) 人")
+            } else {
+                print("⚠️ 配置加载失败：\(result.message ?? "未知错误")")
+            }
+        } catch {
+            print("❌ 配置加载失败：\(error)")
+            // 使用默认配置
+            print("⚠️ 使用默认配置")
+        }
     }
 }

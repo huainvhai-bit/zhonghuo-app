@@ -120,6 +120,11 @@ struct HomeStatusView: View {
             .onAppear {
                 print("🟢 首页 onAppear - 触发自动签到")
                 
+                // 📥 加载系统配置（后端可配置）
+                Task {
+                    await DataManager.shared.loadSystemConfig()
+                }
+                
                 // 🎯 打开 App 自动签到（每次打开都签到，重置倒计时）
                 handleAutoCheckIn()
                 
@@ -127,7 +132,7 @@ struct HomeStatusView: View {
                 print("📤 打开 App 强制上传数据（胶囊、遗嘱、位置等）")
                 forceUploadDataOnAppOpen()
                 
-                // 👥 检查紧急联系人数量（低于 2 人提示）
+                // 👥 检查紧急联系人数量（使用后端配置）
                 checkEmergencyContactsCount()
                 
                 // 然后更新倒计时显示
@@ -184,18 +189,20 @@ struct HomeStatusView: View {
         print("📍 位置和数据已自动上传到服务器")
     }
     
-    /// 👥 检查紧急联系人数量（低于 2 人提示）
+    /// 👥 检查紧急联系人数量（低于配置数量提示）
     private func checkEmergencyContactsCount() {
         guard let user = UserManager.shared.currentUser else {
             print("⚠️ 无法检查紧急联系人：无用户数据")
             return
         }
         
+        // 📱 优先使用后端配置，其次使用默认值
+        let minimumContacts = dataManager.systemConfig.minimumEmergencyContacts
         let contactCount = user.emergencyContacts.count
-        print("👥 检查紧急联系人数量：\(contactCount) 人")
+        print("👥 检查紧急联系人数量：\(contactCount) 人（要求：\(minimumContacts) 人）")
         
-        if contactCount < 2 {
-            print("⚠️ 紧急联系人不足 2 人，显示提示")
+        if contactCount < minimumContacts {
+            print("⚠️ 紧急联系人不足 \(minimumContacts) 人，显示提示")
             showingEmergencyContactAlert = true
         }
     }
@@ -274,7 +281,7 @@ struct HomeStatusView: View {
         secondsRemaining = status.hoursRemaining * 3600
         print("🔄 updateStatus: secondsRemaining=\(secondsRemaining), isSafe=\(isSafe)")
         
-        // 安排签到提醒（低于 12 小时时每 3 小时提醒一次）
+        // 📱 安排签到提醒（使用后端配置的阈值和间隔）
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
     }
     
