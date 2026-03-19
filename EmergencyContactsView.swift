@@ -116,6 +116,18 @@ struct EmergencyContactsView: View {
     private func deleteEmergencyContact(_ contact: User.EmergencyContact) {
         userManager.currentUser?.emergencyContacts.removeAll { $0.id == contact.id }
         userManager.saveUser(userManager.currentUser!)
+        
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.postContactChanged()
+        
+        print("📞 紧急联系人已删除，准备同步到服务器...")
+        Task {
+            if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 紧急联系人同步失败（可能无网络或未登录）")
+            }
+        }
     }
     
     // MARK: - 见证人进度卡片

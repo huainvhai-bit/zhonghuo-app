@@ -84,6 +84,7 @@ struct TimeCapsule: Identifiable, Codable {
     var sendDate: Date
     var isSent: Bool
     var createdAt: Date
+    var deletedAt: Date? = nil  // 删除标记
     
     enum CapsuleType: String, Codable {
         case text = "文字"

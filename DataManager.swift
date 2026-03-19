@@ -446,7 +446,19 @@ class DataManager: ObservableObject {
     func deleteWitness(_ witness: Witness) {
         witnesses.removeAll { $0.id == witness.id }
         saveWitnessesToFile()
-        // TODO: 同步删除到服务器
+        print("👥 见证人已删除，准备同步到服务器...")
+        
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.postWitnessChanged()
+        
+        // 异步同步到服务器
+        Task {
+            if let result = await batchSyncWitnesses() {
+                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 见证人同步失败（可能无网络或未登录）")
+            }
+        }
     }
     
     func updateWitness(_ witness: Witness) {
@@ -748,9 +760,9 @@ class DataManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        // 转换为后端格式
+        // 转换为后端格式（支持删除标记）
         let formatter = ISO8601DateFormatter()
-        let capsulesData = capsules.map { capsule in
+        let capsulesData = capsules.map { capsule -> [String: Any] in
             var data: [String: Any] = [
                 "id": capsule.id,
                 "title": capsule.title,
@@ -761,6 +773,10 @@ class DataManager: ObservableObject {
             ]
             if !capsule.mediaURL.isEmpty {
                 data["media_url"] = capsule.mediaURL
+            }
+            // 如果有 deletedAt 字段，标记为删除
+            if let deletedAt = capsule.deletedAt {
+                data["deleted_at"] = formatter.string(from: deletedAt)
             }
             return data
         }
