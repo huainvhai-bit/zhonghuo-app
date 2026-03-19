@@ -333,6 +333,7 @@ struct User: Codable, Identifiable {
         var relationship: String
         var isConfirmed: Bool = false
         var createdAt: Date = Date()
+        var deletedAt: Date? = nil  // 删除标记
     }
 }
 
