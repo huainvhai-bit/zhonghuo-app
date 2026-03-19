@@ -755,8 +755,18 @@ class DataManager: ObservableObject {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             print("📤 胶囊同步请求：\(capsules.count) 个胶囊")
+            print("🌐 请求 URL: \(request.url?.absoluteString ?? "nil")")
+            print("📋 请求方法：\(request.httpMethod ?? "nil")")
+            print("🔑 请求头 - Content-Type: \(request.value(forHTTPHeaderField: "Content-Type") ?? "nil")")
+            print("🔑 请求头 - Authorization: \(request.value(forHTTPHeaderField: "Authorization")?.prefix(50) ?? "nil")...")
             
+            if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
+                print("📦 请求体：\(bodyString.prefix(500))...")
+            }
+            
+            print("⏳ 开始发送请求...")
             let (data, response) = try await URLSession.shared.data(for: request)
+            print("✅ 请求完成，收到响应")
             
             // ✅ 验证响应
             guard let httpResponse = response as? HTTPURLResponse else {
