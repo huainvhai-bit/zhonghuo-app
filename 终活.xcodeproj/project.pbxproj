@@ -126,6 +126,7 @@
 			);
 			name = "终活";
 			productName = "终活";
+			productReference = A2000012 /* 终活.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
