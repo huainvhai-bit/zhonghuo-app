@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
-   version = "1.7">
+   LastUpgradeVersion = "1600"
+   version = "1.8">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A6000000"
-               BuildableName = "&#x7ec8;&#x6d3b;"
+               BuildableName = "&#x7ec8;&#x6d3b;.app"
                BlueprintName = "&#x7ec8;&#x6d3b;"
                ReferencedContainer = "container:&#x7ec8;&#x6d3b;.xcodeproj">
             </BuildableReference>
@@ -38,16 +38,18 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      allowLocationSimulation = "YES">
-      <MacroExpansion>
+      allowLocationSimulation = "YES"
+      disableMallocStackLogging = "NO">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A6000000"
-            BuildableName = "&#x7ec8;&#x6d3b;"
+            BuildableName = "&#x7ec8;&#x6d3b;.app"
             BlueprintName = "&#x7ec8;&#x6d3b;"
             ReferencedContainer = "container:&#x7ec8;&#x6d3b;.xcodeproj">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -60,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A6000000"
-            BuildableName = "&#x7ec8;&#x6d3b;"
+            BuildableName = "&#x7ec8;&#x6d3b;.app"
             BlueprintName = "&#x7ec8;&#x6d3b;"
             ReferencedContainer = "container:&#x7ec8;&#x6d3b;.xcodeproj">
          </BuildableReference>

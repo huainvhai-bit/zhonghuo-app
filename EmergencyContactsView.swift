@@ -43,10 +43,8 @@ struct EmergencyContactsView: View {
         .sheet(isPresented: $showingAddWitness) {
             AddWitnessModal(isPresented: $showingAddWitness)
         }
-        .sheet(isPresented: $showingEditWitness) {
-            if let witness = selectedWitness {
-                EditWitnessModal(isPresented: $showingEditWitness, witness: witness)
-            }
+        .sheet(item: $selectedWitness) { witness in
+            EditWitnessModal(witness: witness)
         }
     }
     
@@ -95,10 +93,8 @@ struct EmergencyContactsView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
-        .sheet(isPresented: $showingEditContact) {
-            if let contact = selectedContact {
-                EditEmergencyContactModal(contact: contact, isPresented: $showingEditContact)
-            }
+        .sheet(item: $selectedContact) { contact in
+            EditEmergencyContactModal(contact: contact, isPresented: $showingEditContact)
         }
     }
     

@@ -432,7 +432,6 @@ struct AddWitnessModal: View {
 struct EditWitnessModal: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var dataManager = DataManager.shared
-    @Binding var isPresented: Bool
     let witness: Witness
     
     @State private var name = ""
@@ -471,7 +470,7 @@ struct EditWitnessModal: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("取消") {
-                        isPresented = false
+                        dismiss()
                     }
                 }
                 
@@ -505,7 +504,7 @@ struct EditWitnessModal: View {
         updatedWitness.confirmedAt = isConfirmed ? (witness.confirmedAt ?? Date()) : nil
         
         dataManager.updateWitness(updatedWitness)
-        isPresented = false
+        dismiss()
     }
 }
 
