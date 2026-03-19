@@ -556,18 +556,40 @@ struct AuthView: View {
             let success = userManager.saveUser(user)
             print("✅ 用户数据已保存：\(success)")
             
-            // 🎯 登录成功后立即执行自动签到（重置倒计时，上传数据）
+            // 🎯 登录成功后立即执行自动签到（重置倒计时）
             print("⏰ 登录成功，执行自动签到...")
             await userManager.performAutoSignIn()
-            
-            // 🎯 强制执行一次签到（确保上传位置和数据）
-            print("📍 登录成功后强制签到并上传数据...")
-            let checkInResult = userManager.recordCheckIn(isAuto: true)
-            print("   - 签到结果：\(checkInResult)")
             
             // 🎯 从服务器下载所有数据
             print("📥 开始从服务器下载数据...")
             await DataManager.shared.downloadAllData()
+            
+            // 🆕 登录后强制上传数据（独立于签到）
+            print("📤 登录后强制上传数据...")
+            Task {
+                // 上传位置
+                userManager.uploadLocation()
+                
+                // 同步胶囊
+                if let result = await DataManager.shared.batchSyncCapsules() {
+                    print("✅ 胶囊同步完成：\(result)")
+                }
+                
+                // 同步遗嘱
+                if let result = await DataManager.shared.batchSyncWills() {
+                    print("✅ 遗嘱同步完成：\(result)")
+                }
+                
+                // 同步紧急联系人
+                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                    print("✅ 紧急联系人同步完成：\(result)")
+                }
+                
+                // 同步见证人
+                if let result = await DataManager.shared.batchSyncWitnesses() {
+                    print("✅ 见证人同步完成：\(result)")
+                }
+            }
             
             print("🎉 登录流程完成！")
         } else {

@@ -74,6 +74,10 @@ struct HomeStatusView: View {
                 // 🎯 打开 App 自动签到（每次打开都签到，重置倒计时）
                 handleAutoCheckIn()
                 
+                // 🆕 打开 App 强制上传数据（独立于签到）
+                print("📤 打开 App 强制上传数据（胶囊、遗嘱、位置等）")
+                forceUploadDataOnAppOpen()
+                
                 // 然后更新倒计时显示
                 updateStatus()
             }
@@ -126,6 +130,59 @@ struct HomeStatusView: View {
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
         print("📍 位置和数据已自动上传到服务器")
+    }
+    
+    /// 🆕 打开 App 时强制上传数据（独立于签到）
+    private func forceUploadDataOnAppOpen() {
+        print("🚀 ====== 打开 App 强制上传数据 ======")
+        
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ 上传失败：无 token")
+            return
+        }
+        
+        Task {
+            // 1. 上传位置信息
+            print("📍 1. 上传位置信息...")
+            await uploadLocation()
+            
+            // 2. 同步胶囊数据
+            print("📦 2. 同步胶囊数据...")
+            if let result = await DataManager.shared.batchSyncCapsules() {
+                print("✅ 胶囊同步完成：\(result)")
+            }
+            
+            // 3. 同步遗嘱数据
+            print("📝 3. 同步遗嘱数据...")
+            if let result = await DataManager.shared.batchSyncWills() {
+                print("✅ 遗嘱同步完成：\(result)")
+            }
+            
+            // 4. 同步紧急联系人
+            print("👥 4. 同步紧急联系人...")
+            if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                print("✅ 紧急联系人同步完成：\(result)")
+            }
+            
+            // 5. 同步见证人
+            print("👤 5. 同步见证人...")
+            if let result = await DataManager.shared.batchSyncWitnesses() {
+                print("✅ 见证人同步完成：\(result)")
+            }
+            
+            print("🎉 所有数据上传完成！")
+            print("🚀 ====== 上传完成 ======")
+        }
+    }
+    
+    /// 上传位置信息
+    private func uploadLocation() async {
+        guard let user = UserManager.shared.currentUser else {
+            print("⚠️ 位置上传失败：无用户数据")
+            return
+        }
+        
+        UserManager.shared.uploadLocation()
     }
     
     // 🚫 已移除手动签到功能 - 只保留自动签到
