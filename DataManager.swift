@@ -792,9 +792,10 @@ class DataManager: ObservableObject {
     
     // MARK: - 从服务器下载数据
     
-    /// 从服务器下载所有数据
+    /// 从服务器下载所有数据（智能合并：本地 + 云端）
     func downloadAllData() async {
         print("📥 ====== 开始从服务器下载数据 ======")
+        print("🎯 下载策略：智能合并本地和云端数据")
         
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
             print("⚠️ 下载失败：无 token")
@@ -812,6 +813,7 @@ class DataManager: ObservableObject {
         await downloadWitnesses()
         
         print("🎉 所有数据下载完成！")
+        print("📊 本地数据已更新")
         print("📥 ====== 下载完成 ======")
     }
     
@@ -865,11 +867,26 @@ class DataManager: ObservableObject {
                     }
                     
                     await MainActor.run {
-                        self.capsules = downloaded
+                        // 🎯 智能合并：本地 + 云端，去重
+                        var mergedCapsules = self.capsules
+                        for newCapsule in downloaded {
+                            if let index = mergedCapsules.firstIndex(where: { $0.id == newCapsule.id }) {
+                                // 本地已有，更新时间新的优先
+                                if newCapsule.createdAt > mergedCapsules[index].createdAt {
+                                    mergedCapsules[index] = newCapsule
+                                    print("🔄 更新胶囊：\(newCapsule.title)")
+                                }
+                            } else {
+                                // 本地没有，添加
+                                mergedCapsules.append(newCapsule)
+                                print("➕ 新增胶囊：\(newCapsule.title)")
+                            }
+                        }
+                        self.capsules = mergedCapsules
                         saveCapsulesToFile()
                     }
                     
-                    print("✅ 胶囊下载成功：\(downloaded.count) 个")
+                    print("✅ 胶囊下载成功：\(downloaded.count) 个，合并后共 \(self.capsules.count) 个")
                 }
             }
         } catch {

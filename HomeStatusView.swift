@@ -132,46 +132,55 @@ struct HomeStatusView: View {
         print("📍 位置和数据已自动上传到服务器")
     }
     
-    /// 🆕 打开 App 时强制上传数据（独立于签到）
+    /// 🆕 打开 App 时智能同步数据（双向同步：本地↔云端）
     private func forceUploadDataOnAppOpen() {
-        print("🚀 ====== 打开 App 强制上传数据 ======")
+        print("🔄 ====== 打开 App 智能同步数据 ======")
+        print("🎯 同步策略：比对本地和云端，保持数据一致")
         
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 上传失败：无 token")
+            print("⚠️ 同步失败：无 token")
             return
         }
         
         Task {
-            // 1. 上传位置信息
-            print("📍 1. 上传位置信息...")
+            // 🎯 第一步：从云端下载数据（新设备或获取其他设备的数据）
+            print("📥 1. 从云端下载数据...")
+            await DataManager.shared.downloadAllData()
+            
+            // 🎯 第二步：上传本地新数据到云端
+            print("📤 2. 上传本地新数据到云端...")
+            
+            // 上传位置信息
+            print("📍 上传位置信息...")
             await uploadLocation()
             
-            // 2. 同步胶囊数据
-            print("📦 2. 同步胶囊数据...")
+            // 同步胶囊数据（本地→云端）
+            print("📦 同步胶囊数据...")
             if let result = await DataManager.shared.batchSyncCapsules() {
                 print("✅ 胶囊同步完成：\(result)")
             }
             
-            // 3. 同步遗嘱数据
-            print("📝 3. 同步遗嘱数据...")
+            // 同步遗嘱数据（本地→云端）
+            print("📝 同步遗嘱数据...")
             if let result = await DataManager.shared.batchSyncWills() {
                 print("✅ 遗嘱同步完成：\(result)")
             }
             
-            // 4. 同步紧急联系人
-            print("👥 4. 同步紧急联系人...")
+            // 同步紧急联系人（本地→云端）
+            print("👥 同步紧急联系人...")
             if let result = await DataManager.shared.batchSyncEmergencyContacts() {
                 print("✅ 紧急联系人同步完成：\(result)")
             }
             
-            // 5. 同步见证人
-            print("👤 5. 同步见证人...")
+            // 同步见证人（本地→云端）
+            print("👤 同步见证人...")
             if let result = await DataManager.shared.batchSyncWitnesses() {
                 print("✅ 见证人同步完成：\(result)")
             }
             
-            print("🎉 所有数据上传完成！")
-            print("🚀 ====== 上传完成 ======")
+            print("🎉 所有数据同步完成！")
+            print("📊 本地和云端数据已保持一致")
+            print("🔄 ====== 同步完成 ======")
         }
     }
     

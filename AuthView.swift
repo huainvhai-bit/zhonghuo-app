@@ -560,35 +560,46 @@ struct AuthView: View {
             print("⏰ 登录成功，执行自动签到...")
             await userManager.performAutoSignIn()
             
-            // 🎯 从服务器下载所有数据
-            print("📥 开始从服务器下载数据...")
-            await DataManager.shared.downloadAllData()
-            
-            // 🆕 登录后强制上传数据（独立于签到）
-            print("📤 登录后强制上传数据...")
+            // 🆕 登录后智能同步数据（双向同步：云端→本地，本地→云端）
+            print("🔄 登录后智能同步数据...")
             Task {
+                // 第一步：从云端下载数据（新设备或获取其他设备的数据）
+                print("📥 1. 从云端下载数据...")
+                await DataManager.shared.downloadAllData()
+                
+                // 第二步：上传本地新数据到云端
+                print("📤 2. 上传本地新数据到云端...")
+                
                 // 上传位置
+                print("📍 上传位置...")
                 userManager.uploadLocation()
                 
                 // 同步胶囊
+                print("📦 同步胶囊...")
                 if let result = await DataManager.shared.batchSyncCapsules() {
                     print("✅ 胶囊同步完成：\(result)")
                 }
                 
                 // 同步遗嘱
+                print("📝 同步遗嘱...")
                 if let result = await DataManager.shared.batchSyncWills() {
                     print("✅ 遗嘱同步完成：\(result)")
                 }
                 
                 // 同步紧急联系人
+                print("👥 同步紧急联系人...")
                 if let result = await DataManager.shared.batchSyncEmergencyContacts() {
                     print("✅ 紧急联系人同步完成：\(result)")
                 }
                 
                 // 同步见证人
+                print("👤 同步见证人...")
                 if let result = await DataManager.shared.batchSyncWitnesses() {
                     print("✅ 见证人同步完成：\(result)")
                 }
+                
+                print("🎉 登录同步完成！")
+                print("📊 本地和云端数据已保持一致")
             }
             
             print("🎉 登录流程完成！")
