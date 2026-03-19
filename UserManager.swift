@@ -652,6 +652,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.currentUser = user
         
         if saveUser(user) {
+            print("📞 紧急联系人已添加到本地，准备同步到服务器...")
+            
+            Task {
+                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                    print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 紧急联系人同步失败（可能无网络或未登录）")
+                }
+            }
+            
             return .success(contact)
         } else {
             return .failure(Error.saveFailed)
@@ -667,6 +677,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.currentUser = user
         
         if saveUser(user) {
+            // TODO: 同步删除到服务器
             return .success(())
         } else {
             return .failure(Error.saveFailed)
@@ -683,6 +694,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.currentUser = user
         
         if saveUser(user) {
+            print("📞 紧急联系人已更新到本地，准备同步到服务器...")
+            
+            Task {
+                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                    print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 紧急联系人同步失败（可能无网络或未登录）")
+                }
+            }
+            
             return .success(())
         } else {
             return .failure(Error.saveFailed)

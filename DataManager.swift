@@ -364,16 +364,37 @@ class DataManager: ObservableObject {
     // MARK: - 见证人管理
     func addWitness(_ witness: Witness) {
         witnesses.append(witness)
+        saveWitnessesToFile()
+        print("👥 见证人已添加到本地，准备同步到服务器...")
+        
+        Task {
+            if let result = await batchSyncWitnesses() {
+                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 见证人同步失败（可能无网络或未登录）")
+            }
+        }
     }
     
     func deleteWitness(_ witness: Witness) {
         witnesses.removeAll { $0.id == witness.id }
+        saveWitnessesToFile()
+        // TODO: 同步删除到服务器
     }
     
     func updateWitness(_ witness: Witness) {
         if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
             witnesses[index] = witness
             saveWitnessesToFile()
+            print("👥 见证人已更新到本地，准备同步到服务器...")
+            
+            Task {
+                if let result = await batchSyncWitnesses() {
+                    print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 见证人同步失败（可能无网络或未登录）")
+                }
+            }
         }
     }
     
@@ -455,12 +476,22 @@ class DataManager: ObservableObject {
         if let index = willModules.firstIndex(where: { $0.id == module.id }) {
             willModules[index] = module
             saveWillModulesToFile()
+            print("📜 遗嘱模块已更新到本地，准备同步到服务器...")
+            
+            Task {
+                if let result = await batchSyncWills() {
+                    print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
+                }
+            }
         }
     }
     
     func deleteWillModule(_ module: WillModule) {
         willModules.removeAll { $0.id == module.id }
         saveWillModulesToFile()
+        // TODO: 同步删除到服务器
     }
     
     func getWillProgress() -> Double {
@@ -489,11 +520,33 @@ class DataManager: ObservableObject {
     
     func addCapsule(_ capsule: TimeCapsule) {
         capsules.append(capsule)
+        saveCapsulesToFile()
+        print("📦 胶囊已添加到本地，准备同步到服务器...")
+        
+        // 异步同步到服务器
+        Task {
+            if let result = await batchSyncCapsules() {
+                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+            }
+        }
     }
     
     func updateCapsule(_ capsule: TimeCapsule) {
         if let index = capsules.firstIndex(where: { $0.id == capsule.id }) {
             capsules[index] = capsule
+            saveCapsulesToFile()
+            print("📦 胶囊已更新到本地，准备同步到服务器...")
+            
+            // 异步同步到服务器
+            Task {
+                if let result = await batchSyncCapsules() {
+                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+                }
+            }
         }
     }
     
