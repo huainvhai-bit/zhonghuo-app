@@ -41,7 +41,7 @@ struct EmergencyContactsView: View {
             AddEmergencyContactModal()
         }
         .sheet(isPresented: $showingAddWitness) {
-            AddWitnessModal(isPresented: $showingAddWitness)
+            AddWitnessModal()
         }
         .sheet(item: $selectedWitness) { witness in
             EditWitnessModal(witness: witness)

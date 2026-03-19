@@ -48,12 +48,10 @@ struct WitnessView: View {
             }
         }
         .sheet(isPresented: $showingAddModal) {
-            AddWitnessModal(isPresented: $showingAddModal)
+            AddWitnessModal()
         }
-        .sheet(isPresented: $showingEditModal) {
-            if let witness = selectedWitness {
-                EditWitnessModal(isPresented: $showingEditModal, witness: witness)
-            }
+        .sheet(item: $selectedWitness) { witness in
+            EditWitnessModal(witness: witness)
         }
     }
     
@@ -344,7 +342,6 @@ struct WitnessCard: View {
 struct AddWitnessModal: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var dataManager = DataManager.shared
-    @Binding var isPresented: Bool
     
     @State private var name = ""
     @State private var relationship = ""
@@ -398,7 +395,7 @@ struct AddWitnessModal: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("取消") {
-                        isPresented = false
+                        dismiss()
                     }
                 }
                 
@@ -424,7 +421,7 @@ struct AddWitnessModal: View {
         )
         
         dataManager.addWitness(witness)
-        isPresented = false
+        dismiss()
     }
 }
 
