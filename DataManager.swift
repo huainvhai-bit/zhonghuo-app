@@ -996,11 +996,21 @@ class DataManager: ObservableObject {
                     }
                     
                     await MainActor.run {
-                        self.willModules = downloaded
+                        // 🎯 智能合并：保留本地有但服务器没有的数据（可能还没同步）
+                        var merged = downloaded
+                        
+                        // 添加本地有但服务器没有的模块
+                        for localModule in willModules {
+                            if !downloaded.contains(where: { $0.id == localModule.id }) {
+                                merged.append(localModule)
+                                print("📝 保留本地遗嘱模块（未同步到服务器）：\(localModule.title)")
+                            }
+                        }
+                        
+                        self.willModules = merged
                         saveWillModulesToFile()
+                        print("✅ 遗嘱下载成功：服务器 \(downloaded.count) 个 + 本地 \(willModules.count - downloaded.count) 个 = 合并 \(merged.count) 个")
                     }
-                    
-                    print("✅ 遗嘱下载成功：\(downloaded.count) 个")
                 }
             }
         } catch {
@@ -1047,15 +1057,26 @@ class DataManager: ObservableObject {
                     }
                     
                     await MainActor.run {
-                        // 更新当前用户的紧急联系人
-                        if var user = UserManager.shared.currentUser {
-                            user.emergencyContacts = downloaded
-                            UserManager.shared.currentUser = user
-                            _ = UserManager.shared.saveUser(user)
+                        // 🎯 智能合并：保留本地有但服务器没有的数据
+                        var merged = downloaded
+                        
+                        if let user = UserManager.shared.currentUser {
+                            for localContact in user.emergencyContacts {
+                                if !downloaded.contains(where: { $0.id == localContact.id }) {
+                                    merged.append(localContact)
+                                    print("📞 保留本地紧急联系人（未同步到服务器）：\(localContact.name)")
+                                }
+                            }
+                            
+                            // 更新当前用户的紧急联系人
+                            var updatedUser = user
+                            updatedUser.emergencyContacts = merged
+                            UserManager.shared.currentUser = updatedUser
+                            _ = UserManager.shared.saveUser(updatedUser)
+                            
+                            print("✅ 紧急联系人下载成功：服务器 \(downloaded.count) 个 + 本地 \(user.emergencyContacts.count - downloaded.count) 个 = 合并 \(merged.count) 个")
                         }
                     }
-                    
-                    print("✅ 紧急联系人下载成功：\(downloaded.count) 个")
                 }
             }
         } catch {
@@ -1105,11 +1126,20 @@ class DataManager: ObservableObject {
                     }
                     
                     await MainActor.run {
-                        self.witnesses = downloaded
+                        // 🎯 智能合并：保留本地有但服务器没有的数据
+                        var merged = downloaded
+                        
+                        for localWitness in witnesses {
+                            if !downloaded.contains(where: { $0.id == localWitness.id }) {
+                                merged.append(localWitness)
+                                print("👥 保留本地见证人（未同步到服务器）：\(localWitness.name)")
+                            }
+                        }
+                        
+                        self.witnesses = merged
                         saveWitnessesToFile()
+                        print("✅ 见证人下载成功：服务器 \(downloaded.count) 个 + 本地 \(witnesses.count - downloaded.count) 个 = 合并 \(merged.count) 个")
                     }
-                    
-                    print("✅ 见证人下载成功：\(downloaded.count) 个")
                 }
             }
         } catch {
