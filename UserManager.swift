@@ -146,8 +146,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
-        guard let apiURL = URL(string: "\(DataManager.apiURL)/api/location.php") else {
+        guard let apiURL = URL(string: "\(DataManager.apiURL)/location.php") else {
             print("⚠️ 位置上传失败：API URL 无效")
+            print("   URL: \(DataManager.apiURL)/location.php")
             return
         }
         
