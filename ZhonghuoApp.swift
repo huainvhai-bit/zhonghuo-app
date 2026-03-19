@@ -17,6 +17,8 @@ struct ZhonghuoApp: App {
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 print("🟢 App 进入前台 - ZhonghuoApp")
+                // 触发实时同步
+                RealTimeSyncManager.shared.appDidBecomeActive()
             }
         }
     }

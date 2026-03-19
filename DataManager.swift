@@ -430,6 +430,9 @@ class DataManager: ObservableObject {
         saveWitnessesToFile()
         print("👥 见证人已添加到本地，准备同步到服务器...")
         
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.postWitnessChanged()
+        
         // 异步同步到服务器
         Task {
             if let result = await batchSyncWitnesses() {
@@ -451,6 +454,9 @@ class DataManager: ObservableObject {
             witnesses[index] = witness
             saveWitnessesToFile()
             print("👥 见证人已更新到本地，准备同步到服务器...")
+            
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.postWitnessChanged()
             
             // 异步同步到服务器
             Task {
@@ -545,6 +551,9 @@ class DataManager: ObservableObject {
             print("📊 当前 willModules.count: \(willModules.count)")
             print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
             
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.postWillChanged()
+            
             // 异步同步到服务器
             Task {
                 if let result = await batchSyncWills() {
@@ -591,6 +600,9 @@ class DataManager: ObservableObject {
         saveCapsulesToFile()
         print("📦 胶囊已添加到本地，准备同步到服务器...")
         
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.postCapsuleChanged()
+        
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
@@ -606,6 +618,9 @@ class DataManager: ObservableObject {
             capsules[index] = capsule
             saveCapsulesToFile()
             print("📦 胶囊已更新到本地，准备同步到服务器...")
+            
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.postCapsuleChanged()
             
             // 异步同步到服务器
             Task {

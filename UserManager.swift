@@ -260,6 +260,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("✅ 用户登录成功：\(user.name), 手机号：\(user.phone), 签到间隔：\(user.checkInInterval.rawValue)")
         
+        // 触发实时同步
+        Task {
+            await RealTimeSyncManager.shared.userDidLogin()
+        }
+        
         self.checkEmergencyContacts()
         startUpdatingLocation()
         return .success(user)
@@ -656,6 +661,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if saveUser(user) {
             print("📞 紧急联系人已添加到本地，准备同步到服务器...")
             
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.postContactChanged()
+            
             // 异步同步到服务器
             Task {
                 if let result = await DataManager.shared.batchSyncEmergencyContacts() {
@@ -698,6 +706,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         if saveUser(user) {
             print("📞 紧急联系人已更新到本地，准备同步到服务器...")
+            
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.postContactChanged()
             
             // 异步同步到服务器
             Task {
