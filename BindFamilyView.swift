@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
-import Vision
 
 struct BindFamilyView: View {
     @Environment(\.dismiss) private var dismiss
