@@ -37,8 +37,10 @@ struct FamilyGuardView: View {
             .navigationTitle("家人守护")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
-                loadFamilyList()
-                generateInviteCode()
+                Task {
+                    await loadFamilyListAsync()
+                    await generateInviteCode()
+                }
             }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {
@@ -50,13 +52,17 @@ struct FamilyGuardView: View {
                     inviteCode: $inviteCode,
                     qrImage: $qrImage,
                     onRefresh: {
-                        generateInviteCode()
+                        Task {
+                            await generateInviteCode()
+                        }
                     }
                 )
                 .onAppear {
                     // 打开页面时确保有邀请码
                     if inviteCode.isEmpty {
-                        generateInviteCode()
+                        Task {
+                            await generateInviteCode()
+                        }
                     }
                 }
             }
@@ -381,7 +387,7 @@ struct FamilyGuardView: View {
     }
     
     @MainActor
-    private func generateInviteCode() {
+    private func generateInviteCode() async {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         guard !token.isEmpty else {
             print("❌ Token 为空")
@@ -392,34 +398,35 @@ struct FamilyGuardView: View {
             return
         }
         
-        Task {
-            do {
-                print("🔵 开始获取邀请码...")
-                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
-                var request = URLRequest(url: url)
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                
-                let (data, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("📊 HTTP 状态码：\(httpResponse.statusCode)")
-                }
-                
-                let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
-                
-                print("✅ 响应：success=\(result.success), message=\(result.message ?? "nil")")
-                
-                if result.success, let inviteCode = result.data?.invite_code {
-                    print("✅ 邀请码：\(inviteCode)")
-                    self.inviteCode = inviteCode
-                    self.qrImage = generateQRCode(from: inviteCode)
-                    print("✅ 二维码生成完成")
-                } else {
-                    print("❌ 邀请码生成失败：\(result.message ?? "未知错误")")
-                }
-            } catch {
-                print("❌ 生成邀请码失败：\(error)")
+        do {
+            print("🔵 开始获取邀请码...")
+            print("📍 API URL: \(DataManager.apiURL)")
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📊 HTTP 状态码：\(httpResponse.statusCode)")
+                print("📄 响应数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
             }
+            
+            let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+            
+            print("✅ 响应：success=\(result.success), message=\(result.message ?? "nil")")
+            
+            if result.success, let inviteCode = result.data?.invite_code {
+                print("✅ 邀请码：\(inviteCode)")
+                self.inviteCode = inviteCode
+                self.qrImage = generateQRCode(from: inviteCode)
+                print("✅ 二维码生成完成")
+            } else {
+                print("❌ 邀请码生成失败：\(result.message ?? "未知错误")")
+            }
+        } catch {
+            print("❌ 生成邀请码失败：\(error)")
+            print("❌ 错误详情：\(error.localizedDescription)")
         }
     }
     
