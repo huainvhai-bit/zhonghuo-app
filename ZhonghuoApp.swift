@@ -311,13 +311,27 @@ class RealTimeSyncManager: ObservableObject {
         }
     }
     
+    // 同步间隔控制（5 分钟内不重复全量同步）
+    private var lastFullSyncTime: Date?
+    private let syncInterval: TimeInterval = 300  // 5 分钟
+    
+    func shouldSync() -> Bool {
+        guard let lastSync = lastFullSyncTime else { return true }
+        return Date().timeIntervalSince(lastSync) > syncInterval
+    }
+    
     func syncAllData() async throws {
+        guard shouldSync() else {
+            print("⏭️ 跳过全量同步（5 分钟内已同步）")
+            return
+        }
         print("🔄 全量同步")
+        lastFullSyncTime = Date()
     }
     
     func appDidBecomeActive() {
-        print("🟢 App 进入前台，触发同步")
-        Task { await syncNow() }
+        // 不自动触发同步，避免频繁请求
+        // print("🟢 App 进入前台，触发同步")  // 删除日志
     }
     
     func syncNow() async { await triggerSync(type: .full) }

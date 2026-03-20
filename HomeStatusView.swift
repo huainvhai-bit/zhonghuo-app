@@ -119,19 +119,13 @@ struct HomeStatusView: View {
                 }
             }
             .onAppear {
-                print("🟢 首页 onAppear - 触发自动签到")
-                
                 // 📥 加载系统配置（后端可配置）
                 Task {
                     await DataManager.shared.loadSystemConfig()
                 }
                 
-                // 🎯 打开 App 自动签到（每次打开都签到，重置倒计时）
-                handleAutoCheckIn()
-                
-                // 📤 打开 App 强制上传数据（独立于签到）
-                print("📤 打开 App 强制上传数据（胶囊、遗嘱、位置等）")
-                forceUploadDataOnAppOpen()
+                // 🎯 打开 App 自动签到（已在 ContentView 触发，这里不再重复）
+                // handleAutoCheckIn()  // ❌ 删除，避免重复签到
                 
                 // 👥 检查紧急联系人数量（使用后端配置）
                 checkEmergencyContactsCount()
