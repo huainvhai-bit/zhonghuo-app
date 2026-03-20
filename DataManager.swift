@@ -60,8 +60,9 @@ class DataManager: ObservableObject {
             self.serverConfig = config
             
             // 使用后端返回的地址（无条件相信）
-            DataManager.baseURL = configData.endpoints.base
-            DataManager.apiURL = configData.endpoints.api
+            // 新架构：baseURL 和 apiURL 相同，所有 API 通过 api.php 统一入口
+            DataManager.baseURL = baseURL
+            DataManager.apiURL = baseURL  // 与 baseURL 相同
             
             // 解析短信配置
             if let smsData = configData.sms {
@@ -88,7 +89,7 @@ class DataManager: ObservableObject {
     func initializeAPIConfig() {
         // 立即设置默认值，确保 API 立即可用
         DataManager.baseURL = "http://8.136.41.211:3395"
-        DataManager.apiURL = "http://8.136.41.211:3395/api"
+        DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
         self.isBackendOnline = true
         
         print("🔵 API 已初始化（默认地址）")
@@ -134,7 +135,7 @@ class DataManager: ObservableObject {
         // 如果未初始化，使用默认地址
         if DataManager.apiURL.isEmpty {
             DataManager.baseURL = "http://8.136.41.211:3395"
-            DataManager.apiURL = "http://8.136.41.211:3395/api"
+            DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
             self.isBackendOnline = true
             print("⚠️ API 未初始化，使用默认地址：\(DataManager.apiURL)")
             return
