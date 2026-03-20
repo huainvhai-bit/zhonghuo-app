@@ -793,52 +793,6 @@ struct ServerConfigModal: View {
     
     // MARK: - 辅助方法
     
-    /// 电池图标
-    private var batteryIcon: String {
-        let level = deviceMonitor.batteryLevel
-        if deviceMonitor.batteryState == .charging {
-            return "battery.100.bolt"
-        } else if level >= 0.75 {
-            return "battery.100"
-        } else if level >= 0.5 {
-            return "battery.75"
-        } else if level >= 0.25 {
-            return "battery.50"
-        } else if level > 0 {
-            return "battery.25"
-        } else {
-            return "battery.0"
-        }
-    }
-    
-    /// 电池颜色
-    private var batteryColor: Color {
-        let level = deviceMonitor.batteryLevel
-        if deviceMonitor.batteryState == .charging {
-            return .green
-        } else if level >= 0.5 {
-            return .green
-        } else if level >= 0.2 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
-    
-    /// 电量状态背景色
-    private var batteryStateColor: Color {
-        switch deviceMonitor.batteryState {
-        case .charging:
-            return Color.green.opacity(0.15)
-        case .full:
-            return Color.blue.opacity(0.15)
-        case .unplugged:
-            return Color.gray.opacity(0.15)
-        default:
-            return Color.gray.opacity(0.15)
-        }
-    }
-    
     /// 格式化更新时间
     private func formatUpdateTime(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()

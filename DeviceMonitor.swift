@@ -203,7 +203,7 @@ class DeviceMonitor: ObservableObject {
     }
     
     /// 更新电量信息
-    private func updateBatteryInfo() {
+    func updateBatteryInfo() {
         DispatchQueue.main.async {
             self.batteryLevel = self.device.batteryLevel
             self.batteryState = self.device.batteryState
