@@ -74,10 +74,10 @@ struct ContentView: View {
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
             Button("立即设置") {
-                selectedTab = 3
+                selectedTab = 3  // 跳转到家人守护
             }
         } message: {
-            Text("为了您的安全，请至少设置 2 位紧急联系人。")
+            Text("为了您的安全，请至少设置 2 位紧急联系人。添加家人守护会自动同步到紧急联系人。")
         }
         .sheet(isPresented: $showingFamilyGuard) {
             FamilyGuardView()
@@ -158,12 +158,19 @@ struct ContentView: View {
                     }
                     .tag(2)
                 
+                FamilyGuardView()
+                    .tabItem {
+                        Image(systemName: "person.2.fill")
+                        Text("家人守护")
+                    }
+                    .tag(3)
+                
                 SettingsView()
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("我的")
                     }
-                    .tag(3)
+                    .tag(4)
             }
             .accentColor(Color(hex: "AF52DE"))
             

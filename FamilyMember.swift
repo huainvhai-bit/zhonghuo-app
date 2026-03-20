@@ -14,6 +14,7 @@ struct FamilyMember: Identifiable, Codable {
     var name: String         // 姓名
     var phone: String        // 电话
     var avatar: String       // 头像 URL
+    var relationship: String // 关系（配偶、父母等）
     var status: Status       // 关系状态
     var statusText: String   // 状态文本
     var createdAt: Date      // 创建时间
@@ -33,6 +34,11 @@ struct FamilyMember: Identifiable, Codable {
             case .removed: return "已解除"
             }
         }
+    }
+    
+    /// 是否已确认
+    var isConfirmed: Bool {
+        return status == .accepted
     }
 }
 

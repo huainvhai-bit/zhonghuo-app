@@ -195,6 +195,8 @@ struct BindFamilyView: View {
                     let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
                     
                     if result.status == "success" {
+                        // 绑定成功后，自动添加到紧急联系人
+                        await addEmergencyContactIfNeeded()
                         showingSuccess = true
                         return
                     } else {
@@ -249,6 +251,57 @@ struct BindFamilyView: View {
         }
         
         return ""
+    }
+    
+    @MainActor
+    private func addEmergencyContactIfNeeded() async {
+        // 绑定成功后，获取家人信息并添加到紧急联系人
+        guard !DataManager.apiURL.isEmpty else {
+            return
+        }
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        guard !token.isEmpty else {
+            return
+        }
+        
+        do {
+            // 获取家人列表
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+            
+            if result.status == "success", let familyList = result.data?.list, !familyList.isEmpty {
+                // 获取最后一个绑定的家人
+                let lastMember = familyList.last!
+                
+                // 添加到紧急联系人
+                let emergencyURL = URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=add")!
+                var emergencyRequest = URLRequest(url: emergencyURL)
+                emergencyRequest.httpMethod = "POST"
+                emergencyRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                emergencyRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let body: [String: Any] = [
+                    "name": lastMember.name,
+                    "phone": lastMember.phone,
+                    "relationship": lastMember.relationship.isEmpty ? "家人" : lastMember.relationship
+                ]
+                emergencyRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+                
+                let (emergencyData, _) = try await URLSession.shared.data(for: emergencyRequest)
+                let emergencyResult = try JSONDecoder().decode(EmergencyContactAddResponse.self, from: emergencyData)
+                
+                if emergencyResult.status == "success" {
+                    print("✅ 紧急联系人自动添加成功：\(lastMember.name)")
+                }
+            }
+        } catch {
+            print("❌ 紧急联系人自动添加失败：\(error)")
+        }
     }
 }
 

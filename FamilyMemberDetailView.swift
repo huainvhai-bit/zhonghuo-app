@@ -363,6 +363,7 @@ struct DeviceInfoRow: View {
         name: "张三",
         phone: "138****0000",
         avatar: "",
+        relationship: "配偶",
         status: .accepted,
         statusText: "已绑定",
         createdAt: Date(),
