@@ -384,23 +384,9 @@ struct AddCapsuleModal: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("创建") {
-                        var capsuleContent = content
-                        if selectedType == .audio, let url = recordedAudioURL {
-                            capsuleContent = url.absoluteString
-                        } else if selectedType == .video, let url = recordedVideoURL {
-                            capsuleContent = url.absoluteString
+                        Task {
+                            await createCapsule()
                         }
-                        let capsule = TimeCapsule(
-                            id: UUID().uuidString,
-                            title: title,
-                            content: capsuleContent,
-                            type: selectedType,
-                            sendDate: sendDate,
-                            isSent: false,
-                            createdAt: Date()
-                        )
-                        dataManager.addCapsule(capsule)
-                        dismiss()
                     }
                     .disabled(title.isEmpty || (selectedType != .text && recordedAudioURL == nil && recordedVideoURL == nil))
                 }
@@ -412,6 +398,59 @@ struct AddCapsuleModal: View {
                 )
             }
         }
+    }
+    
+    // 🎬 创建胶囊（支持媒体文件持久化和上传）
+    @MainActor
+    private func createCapsule() async {
+        print("🎬 开始创建胶囊...")
+        
+        var capsuleContent = content
+        var mediaURL: String? = nil
+        
+        // 📁 处理媒体文件（音频/视频）
+        if selectedType != .text {
+            let mediaFileURL = selectedType == .audio ? recordedAudioURL : recordedVideoURL
+            
+            if let tempURL = mediaFileURL {
+                print("📁 处理媒体文件：\(tempURL)")
+                
+                // 1. 移动到持久化目录
+                if let permanentURL = await DataManager.shared.persistMediaFile(tempURL) {
+                    print("✅ 媒体文件已持久化：\(permanentURL)")
+                    capsuleContent = permanentURL.absoluteString
+                    
+                    // 2. 上传到服务器（如果已登录）
+                    if UserDefaults.standard.string(forKey: "userToken") != nil {
+                        print("☁️ 上传媒体文件到服务器...")
+                        if let serverURL = await DataManager.shared.uploadMediaToServer(permanentURL, type: selectedType) {
+                            print("✅ 媒体文件已上传：\(serverURL)")
+                            mediaURL = serverURL
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 3. 创建胶囊
+        var capsule = TimeCapsule(
+            id: UUID().uuidString,
+            title: title,
+            content: capsuleContent,
+            type: selectedType,
+            sendDate: sendDate,
+            isSent: false,
+            createdAt: Date()
+        )
+        
+        // 4. 保存服务器 URL（如果有）
+        if let serverURL = mediaURL {
+            capsule.mediaServerURL = serverURL
+        }
+        
+        dataManager.addCapsule(capsule)
+        print("✅ 胶囊创建成功：\(capsule.title)")
+        dismiss()
     }
 }
 

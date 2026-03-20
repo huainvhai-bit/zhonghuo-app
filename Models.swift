@@ -80,7 +80,9 @@ struct TimeCapsule: Identifiable, Codable {
     var title: String
     var content: String
     var type: CapsuleType
-    var mediaURL: String = ""
+    var mediaURL: String = ""          // 本地媒体文件 URL
+    var mediaServerURL: String = ""    // 服务器媒体文件 URL
+    var mediaDuration: Double = 0      // 媒体时长（秒）
     var sendDate: Date
     var isSent: Bool
     var createdAt: Date

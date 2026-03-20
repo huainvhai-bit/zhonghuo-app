@@ -1498,6 +1498,125 @@ class DataManager: ObservableObject {
         return nil
     }
     
+    // MARK: - 媒体文件管理
+    
+    /// 持久化媒体文件（从临时目录移动到 Documents）
+    func persistMediaFile(_ tempURL: URL) async -> URL? {
+        print("📁 ====== persistMediaFile 开始 ======")
+        
+        do {
+            // 获取 Documents 目录
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let capsulesDir = documentsPath.appendingPathComponent("capsules", isDirectory: true)
+            
+            // 创建目录（如果不存在）
+            if !FileManager.default.fileExists(atPath: capsulesDir.path) {
+                try FileManager.default.createDirectory(at: capsulesDir, withIntermediateDirectories: true)
+                print("📁 创建目录：\(capsulesDir.path)")
+            }
+            
+            // 生成新文件名（使用时间戳 + UUID）
+            let fileExtension = tempURL.pathExtension
+            let newFileName = "\(Int(Date().timeIntervalSince1970))_\(UUID().uuidString).\(fileExtension)"
+            let permanentURL = capsulesDir.appendingPathComponent(newFileName)
+            
+            // 移动文件
+            try FileManager.default.moveItem(at: tempURL, to: permanentURL)
+            print("✅ 媒体文件已持久化：\(permanentURL.path)")
+            
+            // 获取文件大小
+            let attributes = try FileManager.default.attributesOfItem(atPath: permanentURL.path)
+            let fileSize = attributes[FileAttributeKey.size] as? UInt64 ?? 0
+            let fileSizeMB = String(format: "%.2f", Double(fileSize) / 1024 / 1024)
+            print("📊 文件大小：\(fileSizeMB) MB")
+            
+            return permanentURL
+            
+        } catch {
+            print("❌ 媒体文件持久化失败：\(error)")
+            return nil
+        }
+    }
+    
+    /// 上传媒体文件到服务器
+    func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
+        print("☁️ ====== uploadMediaToServer 开始 ======")
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 上传失败：API URL 为空")
+            return nil
+        }
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        if token.isEmpty {
+            print("⚠️ 上传失败：无 token")
+            return nil
+        }
+        
+        // 创建上传请求
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        // 构建 multipart/form-data
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        
+        // 添加文件
+        do {
+            let fileData = try Data(contentsOf: fileURL)
+            let filename = fileURL.lastPathComponent
+            let mimetype = type == .audio ? "audio/mp4" : "video/mp4"
+            
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: \(mimetype)\r\n\r\n".data(using: .utf8)!)
+            body.append(fileData)
+            body.append("\r\n".data(using: .utf8)!)
+            
+            // 添加类型参数
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"type\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(type == .audio ? "audio" : "video")\r\n".data(using: .utf8)!)
+            
+            // 添加 token
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"token\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(token)\r\n".data(using: .utf8)!)
+            
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            
+            request.httpBody = body
+            
+            let fileSizeMB = String(format: "%.2f", Double(fileData.count) / 1024 / 1024)
+            print("📤 上传文件：\(filename) (\(fileSizeMB) MB)")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 上传响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 上传响应：\(jsonString)")
+                
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let result = json["status"] as? String, result == "success",
+                   let fileURL = json["url"] as? String {
+                    print("✅ 上传成功：\(fileURL)")
+                    return fileURL
+                }
+            }
+            
+        } catch {
+            print("❌ 上传失败：\(error)")
+        }
+        
+        return nil
+    }
+    
     // MARK: - 系统配置
     
     /// 加载系统配置（后端可配置）
