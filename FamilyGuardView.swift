@@ -53,6 +53,12 @@ struct FamilyGuardView: View {
                         generateInviteCode()
                     }
                 )
+                .onAppear {
+                    // 打开页面时确保有邀请码
+                    if inviteCode.isEmpty {
+                        generateInviteCode()
+                    }
+                }
             }
             .sheet(isPresented: $showingScanner) {
                 QRCodeScannerView(
