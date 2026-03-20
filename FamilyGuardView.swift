@@ -45,7 +45,13 @@ struct FamilyGuardView: View {
                 })
             }
             .sheet(isPresented: $showingShareQR) {
-                ShareQRView(inviteCode: inviteCode, qrImage: qrImage)
+                ShareQRView(
+                    inviteCode: inviteCode,
+                    qrImage: qrImage,
+                    onRefresh: {
+                        generateInviteCode()
+                    }
+                )
             }
             .refreshable {
                 await loadFamilyListAsync()
@@ -56,40 +62,80 @@ struct FamilyGuardView: View {
     // MARK: - 空状态
     private var emptyState: some View {
         ScrollView {
-            VStack(spacing: 30) {
-                Spacer(minLength: 40)
-                
-                // 1. 扫码关联家人
-                actionCard(
-                    icon: "qrcode.viewfinder",
-                    iconColor: Color(hex: "6366F1"),
-                    title: "扫码关联家人",
-                    subtitle: "扫描家人的邀请码，快速绑定关系",
-                    buttonTitle: "开始扫码",
-                    buttonColor: Color(hex: "6366F1")
-                ) {
-                    showingBindFamily = true
+            VStack(spacing: 20) {
+                // 操作卡片区
+                VStack(spacing: 16) {
+                    // 1. 扫码关联家人
+                    actionCard(
+                        icon: "qrcode.viewfinder",
+                        iconColor: Color(hex: "6366F1"),
+                        title: "扫码关联家人",
+                        subtitle: "扫描家人的邀请码，快速绑定关系",
+                        buttonTitle: "开始扫码",
+                        buttonColor: Color(hex: "6366F1")
+                    ) {
+                        showingBindFamily = true
+                    }
+                    
+                    // 2. 分享我的二维码
+                    actionCard(
+                        icon: "qrcode",
+                        iconColor: Color(hex: "AF52DE"),
+                        title: "分享我的二维码",
+                        subtitle: "家人扫描下方二维码绑定你",
+                        buttonTitle: "查看二维码",
+                        buttonColor: Color(hex: "AF52DE")
+                    ) {
+                        showingShareQR = true
+                    }
+                    
+                    // 3. 手动输入邀请码
+                    manualInputSection
                 }
                 
-                // 2. 分享我的二维码
-                actionCard(
-                    icon: "qrcode",
-                    iconColor: Color(hex: "AF52DE"),
-                    title: "分享我的二维码",
-                    subtitle: "家人扫描下方二维码绑定你",
-                    buttonTitle: "查看二维码",
-                    buttonColor: Color(hex: "AF52DE")
-                ) {
-                    showingShareQR = true
-                }
-                
-                // 3. 手动输入邀请码
-                manualInputSection
-                
-                Spacer()
+                // 空状态提示卡片
+                emptyFamilyCard
             }
             .padding()
         }
+    }
+    
+    // MARK: - 空家人卡片
+    private var emptyFamilyCard: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "10B981").opacity(0.5))
+                
+                Text("已关联的家人")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.system(size: 50))
+                    .foregroundColor(.secondary.opacity(0.5))
+                
+                Text("暂时还没有绑定家人")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+                
+                Text("使用上方功能绑定家人，互相关爱守护")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - 家人列表视图
@@ -415,13 +461,15 @@ struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
     let inviteCode: String
     let qrImage: UIImage?
+    let onRefresh: () -> Void
+    
+    @State private var isRefreshing = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
-                Spacer()
-                
-                VStack(spacing: 16) {
+            VStack(spacing: 24) {
+                // 标题
+                VStack(spacing: 8) {
                     Text("分享我的邀请码")
                         .font(.system(size: 22, weight: .bold))
                     
@@ -429,6 +477,7 @@ struct ShareQRView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
+                .padding(.top, 20)
                 
                 // 二维码
                 ZStack {
@@ -443,9 +492,26 @@ struct ShareQRView: View {
                             .resizable()
                             .frame(width: 220, height: 220)
                     } else {
-                        ProgressView()
+                        VStack(spacing: 12) {
+                            ProgressView()
+                            Text("生成中...")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
+                
+                // 刷新按钮
+                Button(action: refreshQRCode) {
+                    HStack {
+                        Image(systemName: isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
+                            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                        Text("刷新二维码")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(hex: "AF52DE"))
+                }
+                .disabled(isRefreshing)
                 
                 // 邀请码
                 VStack(spacing: 8) {
@@ -453,7 +519,7 @@ struct ShareQRView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                     
-                    Text(inviteCode)
+                    Text(inviteCode.isEmpty ? "生成中..." : inviteCode)
                         .font(.system(size: 32, weight: .bold, design: .monospaced))
                         .foregroundColor(Color(hex: "AF52DE"))
                         .textSelection(.enabled)
@@ -462,11 +528,19 @@ struct ShareQRView: View {
                 .background(Color(hex: "AF52DE").opacity(0.1))
                 .cornerRadius(12)
                 
+                // 提示文字
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 12))
+                    Text("可手动输入邀请码绑定")
+                        .font(.system(size: 13))
+                }
+                .foregroundColor(.secondary)
+                
                 Spacer()
                 
-                Button(action: {
-                    UIPasteboard.general.string = inviteCode
-                }) {
+                // 复制按钮
+                Button(action: copyInviteCode) {
                     HStack {
                         Image(systemName: "doc.on.doc")
                         Text("复制邀请码")
@@ -479,7 +553,7 @@ struct ShareQRView: View {
                     .cornerRadius(12)
                 }
                 .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.bottom, 30)
             }
             .padding()
             .navigationTitle("分享邀请码")
@@ -492,6 +566,18 @@ struct ShareQRView: View {
                 }
             }
         }
+    }
+    
+    private func refreshQRCode() {
+        isRefreshing = true
+        onRefresh()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            isRefreshing = false
+        }
+    }
+    
+    private func copyInviteCode() {
+        UIPasteboard.general.string = inviteCode
     }
 }
 
