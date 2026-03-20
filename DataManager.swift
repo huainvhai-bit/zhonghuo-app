@@ -1502,41 +1502,43 @@ class DataManager: ObservableObject {
     
     /// 加载系统配置（后端可配置）
     func loadSystemConfig() async {
-        print("📥 加载系统配置...")
+        print("⚙️ ====== loadSystemConfig 开始 ======")
         
-        guard let url = URL(string: "\(DataManager.apiURL)/settings.php") else {
-            print("⚠️ 配置加载失败：URL 无效")
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 系统配置加载失败：API URL 为空")
             return
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let url = URL(string: "\(DataManager.apiURL)/api/config.php")!
+            print("📡 请求系统配置：\(url)")
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                print("⚠️ 配置加载失败：HTTP 错误")
-                return
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 系统配置响应状态码：\(httpResponse.statusCode)")
             }
             
-            let result = try JSONDecoder().decode(ConfigResponse.self, from: data)
-            
-            if result.status == "success" {
-                systemConfig = result.data
-                print("✅ 系统配置加载成功")
-                print("   - 签到提醒阈值：\(systemConfig.checkinReminderThresholdHours) 小时")
-                print("   - 签到提醒间隔：\(systemConfig.checkinReminderIntervalHours) 小时")
-                print("   - 最少紧急联系人：\(systemConfig.minimumEmergencyContacts) 人")
-            } else {
-                print("⚠️ 配置加载失败：\(result.message ?? "未知错误")")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 系统配置响应：\(jsonString)")
+                
+                let result = try JSONDecoder().decode(ConfigResponse.self, from: data)
+                
+                if result.status == "success" {
+                    systemConfig = result.data
+                    print("✅ 系统配置加载成功")
+                    print("   - 签到提醒阈值：\(systemConfig.checkinReminderThresholdHours) 小时")
+                    print("   - 签到提醒间隔：\(systemConfig.checkinReminderIntervalHours) 小时")
+                    print("   - 离线超时阈值：\(systemConfig.offlineTimeoutHours) 小时")
+                    print("   - 签到间隔：\(systemConfig.checkinIntervalHours) 小时")
+                } else {
+                    print("⚠️ 系统配置加载失败：\(result.message ?? "未知错误")")
+                }
             }
         } catch {
-            print("❌ 配置加载失败：\(error)")
+            print("❌ 系统配置加载失败：\(error)")
             // 使用默认配置
-            print("⚠️ 使用默认配置")
+            print("ℹ️ 使用默认系统配置")
         }
     }
 }

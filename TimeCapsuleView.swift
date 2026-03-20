@@ -191,15 +191,15 @@ struct StatItem: View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(color)
+                .foregroundColor(.white)  // ✅ 图标改为白色
             
             Text(value)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundColor(.white)  // ✅ 数字改为白色
             
             Text(label)
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.85))  // ✅ 文字改为白色
         }
         .frame(maxWidth: .infinity)
     }
