@@ -176,15 +176,15 @@ class DeviceMonitor: ObservableObject {
     /// 更新步数
     func updateStepCount() {
         // 模拟器不支持 CMPedometer，暂时返回 0
-        // 真机上取消以下注释
         #if targetEnvironment(simulator)
         self.stepCount = 0
         self.lastUpdateTime = Date()
         #else
+        // 真机上使用 pedometer 实例
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
         
-        CMPedometer.queryPedometerData(from: startOfDay, to: now) { [weak self] pedometerData, error in
+        pedometer.queryPedometerData(from: startOfDay, to: now) { [weak self] pedometerData, error in
             guard let self = self else { return }
             
             if let error = error {
