@@ -139,9 +139,12 @@ struct BindFamilyView: View {
             } message: {
                 Text("绑定成功，等待对方接受邀请")
             }
+            // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
+            /*
             .sheet(isPresented: $showingScanner) {
                 CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
             }
+            */
         }
     }
     
@@ -209,6 +212,8 @@ struct BindFamilyView: View {
         isBinding = false
     }
     
+    // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
+    /*
     private func handleScan(result: Result<ScanResult, ScanError>) {
         switch result {
         case .success(let result):
@@ -227,6 +232,7 @@ struct BindFamilyView: View {
             showingScanner = false
         }
     }
+    */
     
     private func extractInviteCode(from string: String) -> String {
         // 尝试从 URL 中提取 code 参数
