@@ -15,6 +15,7 @@ struct FamilyGuardView: View {
     @State private var isLoading = false
     @State private var showingBindFamily = false
     @State private var showingShareQR = false
+    @State private var showingScanner = false
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var inviteCode = ""
@@ -46,10 +47,29 @@ struct FamilyGuardView: View {
             }
             .sheet(isPresented: $showingShareQR) {
                 ShareQRView(
-                    inviteCode: inviteCode,
-                    qrImage: qrImage,
+                    inviteCode: $inviteCode,
+                    qrImage: $qrImage,
                     onRefresh: {
                         generateInviteCode()
+                    }
+                )
+            }
+            .sheet(isPresented: $showingScanner) {
+                QRCodeScannerView(
+                    onCodeScanned: { code in
+                        showingScanner = false
+                        let cleaned = extractInviteCode(from: code)
+                        if !cleaned.isEmpty {
+                            Task {
+                                await bindInviteCode(cleaned)
+                            }
+                        } else {
+                            errorMessage = "无效的二维码"
+                            showingError = true
+                        }
+                    },
+                    onCancel: {
+                        showingScanner = false
                     }
                 )
             }
@@ -354,23 +374,42 @@ struct FamilyGuardView: View {
         isLoading = false
     }
     
+    @MainActor
     private func generateInviteCode() {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else { return }
-        guard !DataManager.apiURL.isEmpty else { return }
+        guard !token.isEmpty else {
+            print("❌ Token 为空")
+            return
+        }
+        guard !DataManager.apiURL.isEmpty else {
+            print("❌ API URL 为空")
+            return
+        }
         
         Task {
             do {
+                print("🔵 开始获取邀请码...")
                 let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
                 var request = URLRequest(url: url)
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 
-                let (data, _) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("📊 HTTP 状态码：\(httpResponse.statusCode)")
+                }
+                
                 let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
                 
+                print("✅ 响应：success=\(result.success), message=\(result.message ?? "nil")")
+                
                 if result.success, let inviteCode = result.data?.invite_code {
+                    print("✅ 邀请码：\(inviteCode)")
                     self.inviteCode = inviteCode
                     self.qrImage = generateQRCode(from: inviteCode)
+                    print("✅ 二维码生成完成")
+                } else {
+                    print("❌ 邀请码生成失败：\(result.message ?? "未知错误")")
                 }
             } catch {
                 print("❌ 生成邀请码失败：\(error)")
@@ -394,6 +433,23 @@ struct FamilyGuardView: View {
         return UIImage(cgImage: cgImage)
     }
     
+    private func extractInviteCode(from string: String) -> String {
+        // 尝试从 URL 中提取 code 参数
+        if let url = URL(string: string),
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+            return code.uppercased().replacingOccurrences(of: "-", with: "")
+        }
+        
+        // 直接是 6 位邀请码
+        let cleaned = string.uppercased().replacingOccurrences(of: "-", with: "")
+        if cleaned.count == 6 {
+            return cleaned
+        }
+        
+        return ""
+    }
+    
     private func bindManualInviteCode() {
         guard manualInviteCode.count == 6 else { return }
         
@@ -401,6 +457,54 @@ struct FamilyGuardView: View {
         Task {
             await bindManualInviteCodeAsync()
         }
+    }
+    
+    @MainActor
+    private func bindInviteCode(_ inviteCode: String) async {
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        guard !token.isEmpty else {
+            errorMessage = "请先登录"
+            showingError = true
+            return
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            errorMessage = "API 未初始化"
+            showingError = true
+            return
+        }
+        
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let body: [String: String] = ["invite_code": inviteCode]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if (200...299).contains(httpResponse.statusCode) {
+                    let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+                    
+                    if result.success {
+                        await loadFamilyListAsync()
+                        return
+                    } else {
+                        errorMessage = result.message ?? "绑定失败"
+                    }
+                } else {
+                    errorMessage = "网络错误：\(httpResponse.statusCode)"
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        showingError = true
     }
     
     @MainActor
@@ -459,8 +563,8 @@ struct FamilyGuardView: View {
 // MARK: - 分享二维码视图
 struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
-    let inviteCode: String
-    let qrImage: UIImage?
+    @Binding var inviteCode: String
+    @Binding var qrImage: UIImage?
     let onRefresh: () -> Void
     
     @State private var isRefreshing = false
@@ -494,7 +598,7 @@ struct ShareQRView: View {
                     } else {
                         VStack(spacing: 12) {
                             ProgressView()
-                            Text("生成中...")
+                            Text("正在生成...")
                                 .font(.system(size: 14))
                                 .foregroundColor(.secondary)
                         }
@@ -519,10 +623,16 @@ struct ShareQRView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                     
-                    Text(inviteCode.isEmpty ? "生成中..." : inviteCode)
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
-                        .foregroundColor(Color(hex: "AF52DE"))
-                        .textSelection(.enabled)
+                    if inviteCode.isEmpty {
+                        Text("正在获取...")
+                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text(inviteCode)
+                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                            .textSelection(.enabled)
+                    }
                 }
                 .padding()
                 .background(Color(hex: "AF52DE").opacity(0.1))
@@ -548,10 +658,11 @@ struct ShareQRView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(hex: "AF52DE"))
+                    .background(inviteCode.isEmpty ? Color.gray : Color(hex: "AF52DE"))
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
+                .disabled(inviteCode.isEmpty)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 30)
             }
@@ -571,7 +682,7 @@ struct ShareQRView: View {
     private func refreshQRCode() {
         isRefreshing = true
         onRefresh()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             isRefreshing = false
         }
     }
