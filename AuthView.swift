@@ -482,8 +482,13 @@ struct AuthView: View {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 await MainActor.run {
                     print("🟢 登录成功，隐藏键盘")
-                    // 不显示 alert，直接通过状态变化让 ContentView 切换
-                    hideKeyboard()
+                    // 显示成功提示
+                    errorMessage = "✅ 登录成功！"
+                    showingError = true
+                    // 延迟后隐藏键盘，让 ContentView 有机会切换
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        hideKeyboard()
+                    }
                 }
             } else {
                 print("❌ 登录失败，处理错误...")
