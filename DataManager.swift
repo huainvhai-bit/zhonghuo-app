@@ -33,7 +33,7 @@ class DataManager: ObservableObject {
     
     /// 从服务器获取 API 配置（无条件相信后端返回的地址）
     func fetchServerConfig(from baseURL: String) async throws {
-        let configURL = "\(baseURL)/api/config.php"
+        let configURL = "\(baseURL)/api.php?action=config_get"
         guard let url = URL(string: configURL) else {
             throw NSError(domain: "Invalid URL", code: -1, userInfo: [NSLocalizedDescriptionKey: "无效的 URL: \(configURL)"])
         }
@@ -677,7 +677,7 @@ class DataManager: ObservableObject {
     func batchSyncWillModules() async -> (total: Int, created: Int, updated: Int)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -916,7 +916,7 @@ class DataManager: ObservableObject {
         print("🌐 API URL: \(DataManager.apiURL)")
         print("🔑 Token 长度：\(token.count)")
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/will.php?action=batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1629,7 +1629,7 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/config.php")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=config_get")!
             print("📡 请求系统配置：\(url)")
             
             let (data, response) = try await URLSession.shared.data(from: url)

@@ -750,7 +750,7 @@ struct ServerConfigModal: View {
         
         Task {
             do {
-                let url = URL(string: "\(tempURL)/api/config.php")!
+                let url = URL(string: "\(tempURL)/api.php?action=config_get")!
                 let (data, response) = try await URLSession.shared.data(from: url)
                 
                 guard let httpResponse = response as? HTTPURLResponse,

@@ -369,7 +369,7 @@ struct FamilyGuardView: View {
         guard !DataManager.apiURL.isEmpty else { return }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_list")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
@@ -401,7 +401,7 @@ struct FamilyGuardView: View {
         do {
             print("🔵 开始获取邀请码...")
             print("📍 API URL: \(DataManager.apiURL)")
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_get_invite_code")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
@@ -488,7 +488,7 @@ struct FamilyGuardView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_bind")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -538,7 +538,7 @@ struct FamilyGuardView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_bind")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -820,7 +820,7 @@ struct FamilyMemberCard: View {
         
         Task {
             do {
-                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
+                let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_remove")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")

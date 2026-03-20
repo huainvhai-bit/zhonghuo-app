@@ -236,7 +236,7 @@ class DeviceMonitor: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/device_info.php?action=upload")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=device_upload")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

@@ -109,7 +109,7 @@ class AccountValidator: ObservableObject {
         
         do {
             // 调用服务器验证 API
-            let url = URL(string: "\(dataManager.apiURL)/api/users.php?action=validate")!
+            let url = URL(string: "\(dataManager.apiURL)/api.php?action=user_validate")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -163,7 +163,7 @@ class AccountValidator: ObservableObject {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         
         do {
-            let url = URL(string: "\(dataManager.apiURL)/api/users.php?action=get_user_info")!
+            let url = URL(string: "\(dataManager.apiURL)/api.php?action=user_info")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             

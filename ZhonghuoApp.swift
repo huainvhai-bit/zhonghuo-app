@@ -102,7 +102,7 @@ struct ZhonghuoApp: App {
         let storedPassword = UserDefaults.standard.string(forKey: "userPassword") ?? ""
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=validate")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_validate")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -136,7 +136,7 @@ struct ZhonghuoApp: App {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=get_user_info")!
+            let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_info")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
