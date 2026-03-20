@@ -122,6 +122,9 @@ struct ContentView: View {
     
     private var mainTabView: some View {
         ZStack {
+            Color(hex: "F5F5F7")
+                .ignoresSafeArea()
+            
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {

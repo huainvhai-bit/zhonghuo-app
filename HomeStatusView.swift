@@ -124,8 +124,10 @@ struct HomeStatusView: View {
                     await DataManager.shared.loadSystemConfig()
                 }
                 
-                // 🎯 打开 App 自动签到（已在 ContentView 触发，这里不再重复）
-                // handleAutoCheckIn()  // ❌ 删除，避免重复签到
+                // 🎯 打开 App 自动签到（延迟执行，确保用户数据已加载）
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    handleAutoCheckIn()
+                }
                 
                 // 👥 检查紧急联系人数量（使用后端配置）
                 checkEmergencyContactsCount()

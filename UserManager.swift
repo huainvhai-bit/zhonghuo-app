@@ -838,8 +838,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// 从服务器拉取用户数据
     func fetchUserData() async {
         guard let token = UserDefaults.standard.string(forKey: "userToken"),
-              !token.isEmpty,
-              let apiURL = DataManager.apiURL else {
+              !token.isEmpty else {
+            return
+        }
+        
+        let apiURL = DataManager.apiURL
+        guard !apiURL.isEmpty else {
+            print("❌ API URL 未设置")
             return
         }
         
