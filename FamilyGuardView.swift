@@ -6,7 +6,8 @@
 //
 
 import SwiftUI
-// CodeScanner - 扫码功能暂不可用，待 Xcode Package 配置修复
+// CodeScanner 依赖 - 待 Xcode 正确配置后启用
+// import CodeScanner
 
 struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
