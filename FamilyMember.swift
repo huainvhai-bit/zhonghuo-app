@@ -118,3 +118,14 @@ struct InviteCodeData: Codable {
     var invite_code: String    // 邀请码
     var qr_url: String         // 二维码 URL
 }
+
+/// 紧急联系人添加响应
+struct EmergencyContactAddResponse: Codable {
+    var success: Bool
+    var message: String?
+    
+    // 兼容 status 字段
+    var status: String {
+        success ? "success" : "error"
+    }
+}

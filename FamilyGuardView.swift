@@ -2,21 +2,23 @@
 //  FamilyGuardView.swift
 //  终活
 //
-//  家人守护主页 - 重新美化
+//  家人守护主页 - 优化版
 //
 
 import SwiftUI
+import CoreImage.CIFilterBuiltins
 
 struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @State private var familyList: [FamilyMember] = []
     @State private var isLoading = false
-    @State private var showingInviteCode = false
     @State private var showingBindFamily = false
+    @State private var showingShareQR = false
     @State private var errorMessage = ""
     @State private var showingError = false
-    @State private var showingAddMember = false  // 添加家人弹窗
+    @State private var inviteCode = ""
+    @State private var qrImage: UIImage?
     
     var body: some View {
         NavigationView {
@@ -33,34 +35,17 @@ struct FamilyGuardView: View {
             }
             .navigationTitle("家人守护")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingInviteCode = true }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "qrcode.viewfinder")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("邀请码")
-                                .font(.system(size: 13, weight: .medium))
-                        }
-                        .foregroundColor(Color(hex: "AF52DE"))
-                    }
-                }
-            }
             .onAppear {
                 loadFamilyList()
-            }
-            .sheet(isPresented: $showingInviteCode) {
-                InviteCodeView()
+                generateInviteCode()
             }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {
                     loadFamilyList()
                 })
             }
-            .sheet(isPresented: $showingAddMember) {
-                AddFamilyMemberView(onAdded: {
-                    loadFamilyList()
-                })
+            .sheet(isPresented: $showingShareQR) {
+                ShareQRView(inviteCode: inviteCode, qrImage: qrImage)
             }
             .refreshable {
                 await loadFamilyListAsync()
@@ -70,212 +55,230 @@ struct FamilyGuardView: View {
     
     // MARK: - 空状态
     private var emptyState: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            
-            // 插图
-            ZStack {
-                Circle()
-                    .fill(Color(hex: "AF52DE").opacity(0.1))
-                    .frame(width: 140, height: 140)
-                
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(Color(hex: "AF52DE"))
-            }
-            
-            VStack(spacing: 12) {
-                Text("还没有家人")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                Text("邀请家人加入，互相关爱守护\n添加家人后会自动同步到紧急联系人")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            // 操作按钮
-            VStack(spacing: 12) {
-                Button(action: { showingAddMember = true }) {
-                    HStack {
-                        Image(systemName: "person.badge.plus")
-                        Text("添加家人")
-                    }
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "AF52DE"), Color(hex: "8B5CF6")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .shadow(color: Color(hex: "AF52DE").opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-                
-                Button(action: { showingBindFamily = true }) {
-                    HStack {
-                        Image(systemName: "link")
-                        Text("绑定邀请码")
-                    }
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.white)
-                    .foregroundColor(Color(hex: "AF52DE"))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(hex: "AF52DE"), lineWidth: 1.5)
-                    )
-                }
-                
-                Button(action: { showingInviteCode = true }) {
-                    HStack {
-                        Image(systemName: "qrcode.viewfinder")
-                        Text("生成邀请码")
-                    }
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.white)
-                    .foregroundColor(.secondary)
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-                }
-            }
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            // 提示信息
-            HStack(spacing: 8) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 12))
-                Text("添加的家人会自动成为紧急联系人")
-                    .font(.system(size: 12))
-            }
-            .foregroundColor(.secondary)
-            .padding(.bottom, 20)
-        }
-    }
-    
-    // MARK: - 家人列表
-    private var familyListView: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
-                // 统计卡片
-                statsCard
+            VStack(spacing: 30) {
+                Spacer(minLength: 40)
                 
-                // 添加按钮
-                addButtonCard
-                
-                // 家人列表
-                ForEach(familyList) { member in
-                    FamilyMemberCard(member: member, onDelete: {
-                        deleteFamilyMember(member)
-                    })
+                // 1. 扫码关联家人
+                actionCard(
+                    icon: "qrcode.viewfinder",
+                    iconColor: Color(hex: "6366F1"),
+                    title: "扫码关联家人",
+                    subtitle: "扫描家人的邀请码，快速绑定关系",
+                    buttonTitle: "开始扫码",
+                    buttonColor: Color(hex: "6366F1")
+                ) {
+                    showingBindFamily = true
                 }
+                
+                // 2. 分享我的二维码
+                actionCard(
+                    icon: "qrcode",
+                    iconColor: Color(hex: "AF52DE"),
+                    title: "分享我的二维码",
+                    subtitle: "家人扫描下方二维码绑定你",
+                    buttonTitle: "查看二维码",
+                    buttonColor: Color(hex: "AF52DE")
+                ) {
+                    showingShareQR = true
+                }
+                
+                // 3. 手动输入邀请码
+                manualInputSection
+                
+                Spacer()
             }
             .padding()
         }
     }
     
-    // MARK: - 统计卡片
-    private var statsCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("家人守护")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
+    // MARK: - 家人列表视图
+    private var familyListView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // 操作卡片区
+                VStack(spacing: 16) {
+                    // 1. 扫码关联家人
+                    actionCard(
+                        icon: "qrcode.viewfinder",
+                        iconColor: Color(hex: "6366F1"),
+                        title: "扫码关联家人",
+                        subtitle: "扫描家人的邀请码，快速绑定关系",
+                        buttonTitle: "开始扫码",
+                        buttonColor: Color(hex: "6366F1")
+                    ) {
+                        showingBindFamily = true
+                    }
                     
-                    Text("已绑定 \(familyList.count) 位家人")
+                    // 2. 分享我的二维码
+                    actionCard(
+                        icon: "qrcode",
+                        iconColor: Color(hex: "AF52DE"),
+                        title: "分享我的二维码",
+                        subtitle: "家人扫描下方二维码绑定你",
+                        buttonTitle: "查看二维码",
+                        buttonColor: Color(hex: "AF52DE")
+                    ) {
+                        showingShareQR = true
+                    }
+                    
+                    // 3. 手动输入邀请码
+                    manualInputSection
+                }
+                
+                // 4. 已关联家人列表
+                familyListSection
+            }
+            .padding()
+        }
+    }
+    
+    // MARK: - 操作卡片
+    private func actionCard(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        subtitle: String,
+        buttonTitle: String,
+        buttonColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 32))
+                    .foregroundColor(iconColor)
+                    .frame(width: 60, height: 60)
+                    .background(iconColor.opacity(0.1))
+                    .cornerRadius(12)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .semibold))
+                    
+                    Text(subtitle)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+                
+                Spacer()
+            }
+            
+            Button(action: action) {
+                Text(buttonTitle)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(buttonColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - 手动输入邀请码
+    @State private var manualInviteCode = ""
+    @State private var isBinding = false
+    
+    private var manualInputSection: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 16) {
+                Image(systemName: "textformat")
+                    .font(.system(size: 32))
+                    .foregroundColor(Color(hex: "F59E0B"))
+                    .frame(width: 60, height: 60)
+                    .background(Color(hex: "F59E0B").opacity(0.1))
+                    .cornerRadius(12)
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("手动输入邀请码")
+                        .font(.system(size: 17, weight: .semibold))
+                    
+                    Text("如果无法扫码，可以手动输入 6 位邀请码")
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
-                
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(Color(hex: "AF52DE"))
             }
             
-            // 进度条
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 8)
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "AF52DE"), Color(hex: "8B5CF6")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geometry.size.width * min(1.0, Double(familyList.count) / 5.0), height: 8)
+            HStack(spacing: 12) {
+                TextField("6 位邀请码", text: $manualInviteCode)
+                    .font(.system(size: 20, weight: .medium, design: .monospaced))
+                    .textContentType(.oneTimeCode)
+                    .keyboardType(.asciiCapable)
+                    .autocapitalization(.allCharacters)
+                    .onChange(of: manualInviteCode) { newValue in
+                        if newValue.count > 6 {
+                            manualInviteCode = String(newValue.prefix(6))
+                        }
+                        manualInviteCode = newValue.uppercased()
+                    }
+                    .padding()
+                    .background(Color(hex: "F5F5F7"))
+                    .cornerRadius(10)
+                
+                Button(action: bindManualInviteCode) {
+                    if isBinding {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(0.8)
+                    } else {
+                        Text("绑定")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
                 }
-            }
-            .frame(height: 8)
-            
-            HStack {
-                Text("至少绑定 2 位家人可获得完整守护")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                Text("\(familyList.count)/2")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(familyList.count >= 2 ? .green : .orange)
+                .frame(width: 80, height: 50)
+                .background(manualInviteCode.count == 6 && !isBinding ? Color(hex: "F59E0B") : Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
             }
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        )
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 添加按钮卡片
-    private var addButtonCard: some View {
-        Button(action: { showingAddMember = true }) {
+    // MARK: - 家人列表
+    private var familyListSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Image(systemName: "plus.circle.fill")
+                Image(systemName: "person.2.fill")
                     .font(.system(size: 20))
-                Text("添加新家人")
-                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Color(hex: "10B981"))
+                
+                Text("已关联的家人")
+                    .font(.system(size: 18, weight: .semibold))
+                
+                Spacer()
+                
+                Text("\(familyList.count) 人")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
             }
-            .foregroundColor(Color(hex: "AF52DE"))
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color(hex: "AF52DE"), lineWidth: 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: "AF52DE").opacity(0.05))
-                    )
-            )
+            
+            ForEach(familyList) { member in
+                FamilyMemberCard(member: member, onDelete: {
+                    loadFamilyList()
+                })
+            }
         }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 数据加载
+    // MARK: - 方法
+    
     private func loadFamilyList() {
         isLoading = true
-        
         Task {
             await loadFamilyListAsync()
         }
@@ -283,412 +286,348 @@ struct FamilyGuardView: View {
     
     @MainActor
     private func loadFamilyListAsync() async {
-        isLoading = true
-        
-        guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
-            showingError = true
-            isLoading = false
-            return
-        }
-        
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else {
-            errorMessage = "请先登录"
-            showingError = true
-            isLoading = false
-            return
-        }
+        guard !token.isEmpty else { return }
+        guard !DataManager.apiURL.isEmpty else { return }
         
         do {
             let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 家人列表响应：\(httpResponse.statusCode)")
-            }
-            
+            let (data, _) = try await URLSession.shared.data(for: request)
             let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
             
-            if result.status == "success" {
+            if result.success {
                 familyList = result.data?.list ?? []
-                print("✅ 家人列表加载成功：\(familyList.count) 人")
-            } else {
-                errorMessage = result.message ?? "加载失败"
-                showingError = true
             }
         } catch {
-            print("❌ 家人列表加载失败：\(error)")
-            errorMessage = error.localizedDescription
-            showingError = true
+            print("❌ 加载家人列表失败：\(error)")
         }
         
         isLoading = false
     }
     
-    // MARK: - 删除家人
-    private func deleteFamilyMember(_ member: FamilyMember) {
+    private func generateInviteCode() {
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        guard !token.isEmpty else { return }
+        guard !DataManager.apiURL.isEmpty else { return }
+        
         Task {
-            await deleteFamilyMemberAsync(member)
+            do {
+                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                
+                let (data, _) = try await URLSession.shared.data(for: request)
+                let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+                
+                if result.success, let inviteCode = result.data?.invite_code {
+                    self.inviteCode = inviteCode
+                    self.qrImage = generateQRCode(from: inviteCode)
+                }
+            } catch {
+                print("❌ 生成邀请码失败：\(error)")
+            }
+        }
+    }
+    
+    private func generateQRCode(from string: String) -> UIImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(string.utf8)
+        filter.correctionLevel = "M"
+        
+        guard let outputImage = filter.outputImage else { return nil }
+        
+        let transform = CGAffineTransform(scaleX: 10, y: 10)
+        let scaledImage = outputImage.transformed(by: transform)
+        
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else { return nil }
+        
+        return UIImage(cgImage: cgImage)
+    }
+    
+    private func bindManualInviteCode() {
+        guard manualInviteCode.count == 6 else { return }
+        
+        isBinding = true
+        Task {
+            await bindManualInviteCodeAsync()
         }
     }
     
     @MainActor
-    private func deleteFamilyMemberAsync(_ member: FamilyMember) async {
-        guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
-            showingError = true
-            return
-        }
-        
+    private func bindManualInviteCodeAsync() async {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"
             showingError = true
+            isBinding = false
+            return
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            errorMessage = "API 未初始化"
+            showingError = true
+            isBinding = false
             return
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=unbind")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
-            let body: [String: Any] = [
-                "family_id": member.id
-            ]
+            let body: [String: String] = ["invite_code": manualInviteCode]
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
-                print("📡 删除家人响应：\(httpResponse.statusCode)")
-            }
-            
-            let result = try JSONDecoder().decode(FamilyUnbindResponse.self, from: data)
-            
-            if result.status == "success" {
-                familyList.removeAll { $0.id == member.id }
-                print("✅ 家人删除成功")
-            } else {
-                errorMessage = result.message ?? "删除失败"
-                showingError = true
+                if (200...299).contains(httpResponse.statusCode) {
+                    let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+                    
+                    if result.success {
+                        manualInviteCode = ""
+                        await loadFamilyListAsync()
+                        return
+                    } else {
+                        errorMessage = result.message ?? "绑定失败"
+                    }
+                } else {
+                    errorMessage = "网络错误：\(httpResponse.statusCode)"
+                }
             }
         } catch {
-            print("❌ 家人删除失败：\(error)")
             errorMessage = error.localizedDescription
-            showingError = true
+        }
+        
+        showingError = true
+        isBinding = false
+    }
+}
+
+// MARK: - 分享二维码视图
+struct ShareQRView: View {
+    @Environment(\.dismiss) private var dismiss
+    let inviteCode: String
+    let qrImage: UIImage?
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 30) {
+                Spacer()
+                
+                VStack(spacing: 16) {
+                    Text("分享我的邀请码")
+                        .font(.system(size: 22, weight: .bold))
+                    
+                    Text("家人扫描下方二维码绑定你")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                
+                // 二维码
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white)
+                        .frame(width: 260, height: 260)
+                        .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
+                    
+                    if let qrImage = qrImage {
+                        Image(uiImage: qrImage)
+                            .interpolation(.none)
+                            .resizable()
+                            .frame(width: 220, height: 220)
+                    } else {
+                        ProgressView()
+                    }
+                }
+                
+                // 邀请码
+                VStack(spacing: 8) {
+                    Text("邀请码")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    
+                    Text(inviteCode)
+                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(hex: "AF52DE"))
+                        .textSelection(.enabled)
+                }
+                .padding()
+                .background(Color(hex: "AF52DE").opacity(0.1))
+                .cornerRadius(12)
+                
+                Spacer()
+                
+                Button(action: {
+                    UIPasteboard.general.string = inviteCode
+                }) {
+                    HStack {
+                        Image(systemName: "doc.on.doc")
+                        Text("复制邀请码")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color(hex: "AF52DE"))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 40)
+            }
+            .padding()
+            .navigationTitle("分享邀请码")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("关闭") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
+}
+
+#Preview {
+    FamilyGuardView()
 }
 
 // MARK: - 家人卡片
 struct FamilyMemberCard: View {
     let member: FamilyMember
     let onDelete: () -> Void
-    @State private var showingDetail = false
+    
     @State private var showingDeleteConfirm = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            Button(action: { showingDetail = true }) {
-                HStack(spacing: 15) {
-                    // 头像
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 50, height: 50)
-                        
-                        Text(member.name.prefix(1))
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                    }
+        VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                // 头像
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "AF52DE").opacity(0.1))
+                        .frame(width: 50, height: 50)
                     
-                    // 信息
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(member.name)
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.primary)
-                            
-                            if member.relationship == "配偶" {
-                                Image(systemName: "heart.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        HStack(spacing: 12) {
-                            Label(member.relationship, systemImage: "person.crop.circle")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                            
-                            Label(member.phone, systemImage: "phone.fill")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // 状态
-                    VStack(spacing: 4) {
-                        Image(systemName: member.isConfirmed ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(member.isConfirmed ? .green : .orange)
-                        
-                        Text(member.isConfirmed ? "已确认" : "待确认")
-                            .font(.system(size: 10))
-                            .foregroundColor(member.isConfirmed ? .green : .orange)
-                    }
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(Color(hex: "AF52DE"))
                 }
-                .padding(16)
-                .background(Color.white)
+                
+                // 信息
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Text(member.name)
+                            .font(.system(size: 16, weight: .semibold))
+                        
+                        // 关系标签
+                        Text(member.relationship)
+                            .font(.system(size: 12))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color(hex: "AF52DE").opacity(0.1))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                            .cornerRadius(4)
+                    }
+                    
+                    Text(member.phone)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // 状态
+                if member.status == .pending {
+                    Text("待接受")
+                        .font(.system(size: 12))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "F59E0B").opacity(0.1))
+                        .foregroundColor(Color(hex: "F59E0B"))
+                        .cornerRadius(6)
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.green)
+                }
+                
+                // 删除按钮
+                Button(action: { showingDeleteConfirm = true }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red.opacity(0.6))
+                }
             }
             
-            // 操作按钮
-            HStack(spacing: 12) {
-                Button(action: { showingDetail = true }) {
-                    Label("详情", systemImage: "info.circle")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(Color.gray.opacity(0.1))
-                        .foregroundColor(.secondary)
-                        .cornerRadius(8)
-                }
+            // 设备信息（如果有）
+            if let deviceInfo = member.deviceInfo {
+                Divider()
                 
-                Button(action: { showingDeleteConfirm = true }) {
-                    Label("解除", systemImage: "trash")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .cornerRadius(8)
+                HStack(spacing: 20) {
+                    // 步数
+                    HStack(spacing: 6) {
+                        Image(systemName: "footprints")
+                            .foregroundColor(Color(hex: "6366F1"))
+                        Text(deviceInfo.stepCountText)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // 电量
+                    HStack(spacing: 6) {
+                        Text(deviceInfo.batteryStateIcon)
+                        Text("\(deviceInfo.batteryLevelText)")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color(hex: "F5F5F7"))
         }
+        .padding(16)
+        .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        .sheet(isPresented: $showingDetail) {
-            FamilyMemberDetailView(member: member)
-        }
-        .alert("解除家人关系", isPresented: $showingDeleteConfirm) {
-            Button("取消", role: .cancel) {}
+        .confirmationDialog("解除关系", isPresented: $showingDeleteConfirm) {
             Button("解除", role: .destructive) {
-                onDelete()
+                deleteMember()
             }
+            Button("取消", role: .cancel) {}
         } message: {
-            Text("确定要解除与 \(member.name) 的家人关系吗？此操作不可恢复。")
-        }
-    }
-}
-
-// MARK: - 添加家人视图
-struct AddFamilyMemberView: View {
-    @Environment(\.dismiss) var dismiss
-    @ObservedObject var userManager = UserManager.shared
-    @State private var name = ""
-    @State private var phone = ""
-    @State private var relationship = "配偶"
-    @State private var isSubmitting = false
-    @State private var errorMessage = ""
-    @State private var showingError = false
-    
-    let relationships = ["配偶", "父母", "子女", "兄弟姐妹", "其他"]
-    
-    var onAdded: (() -> Void)?
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("基本信息")) {
-                    TextField("姓名", text: $name)
-                        .textContentType(.name)
-                    
-                    TextField("手机号", text: $phone)
-                        .textContentType(.telephoneNumber)
-                        .keyboardType(.phonePad)
-                    
-                    Picker("关系", selection: $relationship) {
-                        ForEach(relationships, id: \.self) { rel in
-                            Text(rel)
-                        }
-                    }
-                }
-                
-                Section(footer: Text("添加的家人会自动成为紧急联系人，出现在紧急联系人列表和家人守护列表。")) {
-                    Button(action: addFamilyMember) {
-                        HStack {
-                            Spacer()
-                            if isSubmitting {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                Text("添加中...")
-                            } else {
-                                Text("添加家人")
-                            }
-                            Spacer()
-                        }
-                    }
-                    .disabled(isSubmitting || name.isEmpty || phone.isEmpty)
-                }
-            }
-            .navigationTitle("添加家人")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
-                        dismiss()
-                    }
-                }
-            }
-            .alert("添加失败", isPresented: $showingError) {
-                Button("确定") {}
-            } message: {
-                Text(errorMessage)
-            }
+            Text("确定要与 \(member.name) 解除家人关系吗？此操作不可恢复。")
         }
     }
     
-    private func addFamilyMember() {
-        isSubmitting = true
+    private func deleteMember() {
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        guard !token.isEmpty else { return }
+        guard !DataManager.apiURL.isEmpty else { return }
         
         Task {
-            await addFamilyMemberAsync()
-        }
-    }
-    
-    @MainActor
-    private func addFamilyMemberAsync() async {
-        guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
-            showingError = true
-            isSubmitting = false
-            return
-        }
-        
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else {
-            errorMessage = "请先登录"
-            showingError = true
-            isSubmitting = false
-            return
-        }
-        
-        do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let body: [String: Any] = [
-                "name": name,
-                "phone": phone,
-                "relationship": relationship
-            ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 添加家人响应：\(httpResponse.statusCode)")
-            }
-            
-            let result = try JSONDecoder().decode(FamilyBindResponse.self, from: data)
-            
-            if result.status == "success" {
-                print("✅ 家人添加成功")
+            do {
+                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 
-                // 自动添加到紧急联系人
-                await addEmergencyContact()
+                let body: [String: String] = ["relation_id": member.relationId]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
-                dismiss()
-                onAdded?()
-            } else {
-                errorMessage = result.message ?? "添加失败"
-                showingError = true
+                let (data, _) = try await URLSession.shared.data(for: request)
+                let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+                
+                if result.success {
+                    onDelete()
+                }
+            } catch {
+                print("❌ 删除失败：\(error)")
             }
-        } catch {
-            print("❌ 家人添加失败：\(error)")
-            errorMessage = error.localizedDescription
-            showingError = true
         }
-        
-        isSubmitting = false
-    }
-    
-    @MainActor
-    private func addEmergencyContact() async {
-        guard !DataManager.apiURL.isEmpty else {
-            return
-        }
-        
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else {
-            return
-        }
-        
-        do {
-            let url = URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=add")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let body: [String: Any] = [
-                "name": name,
-                "phone": phone,
-                "relationship": relationship
-            ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let result = try JSONDecoder().decode(EmergencyContactAddResponse.self, from: data)
-            
-            if result.status == "success" {
-                print("✅ 紧急联系人添加成功")
-            }
-        } catch {
-            print("❌ 紧急联系人添加失败：\(error)")
-        }
-    }
-}
-
-// MARK: - 响应模型
-// FamilyListResponse 和 FamilyListData 已在 FamilyMember.swift 中定义
-
-struct FamilyBindResponse: Codable {
-    let status: String
-    let message: String?
-}
-
-struct FamilyUnbindResponse: Codable {
-    let status: String
-    let message: String?
-}
-
-struct EmergencyContactAddResponse: Codable {
-    let success: Bool
-    let message: String?
-    
-    // 兼容 status 字段
-    var status: String {
-        success ? "success" : "error"
     }
 }

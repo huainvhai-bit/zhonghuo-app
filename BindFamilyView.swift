@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct BindFamilyView: View {
     @Environment(\.dismiss) private var dismiss
