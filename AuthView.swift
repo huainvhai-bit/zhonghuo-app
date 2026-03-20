@@ -22,6 +22,19 @@ struct AuthView: View {
     @State private var showingResetPassword = false
     @State private var isLoading = false
     
+    // ✅ 计算属性：表单是否有效
+    private var isFormValid: Bool {
+        if isRegistering {
+            return !phone.isEmpty && !name.isEmpty && !password.isEmpty && password.count >= 6
+        } else {
+            if loginType == "password" {
+                return !phone.isEmpty && !password.isEmpty
+            } else {
+                return !phone.isEmpty && !verifyCode.isEmpty
+            }
+        }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
@@ -161,7 +174,7 @@ struct AuthView: View {
                         .background(isLoading ? Color.gray : Color(hex: "AF52DE"))
                         .cornerRadius(12)
                     }
-                    .disabled(isLoading || (isRegistering ? (phone.isEmpty || name.isEmpty || password.isEmpty || verifyCode.isEmpty) : (loginType == "password" ? (phone.isEmpty || password.isEmpty) : (phone.isEmpty || verifyCode.isEmpty))))
+                    .disabled(isLoading || !isFormValid)
                 }
                 .padding(.horizontal, 30)
                 
@@ -240,6 +253,14 @@ struct AuthView: View {
     }
     
     private func handleSubmit() {
+        print("🔴 ====== handleSubmit 被调用 ======")
+        print("   isRegistering: \(isRegistering)")
+        print("   loginType: \(loginType)")
+        print("   phone: \(phone)")
+        print("   password: \(password)")
+        print("   verifyCode: \(verifyCode)")
+        print("   isLoading: \(isLoading)")
+        
         // 验证输入
         if isRegistering {
             if name.isEmpty {
@@ -283,24 +304,21 @@ struct AuthView: View {
             }
         }
         
-        // 执行登录/注册
-        Task { @MainActor in
-            isLoading = true
-        }
+        print("✅ 验证通过，开始执行登录/注册")
         
-        if isRegistering {
-            Task {
+        // 执行登录/注册
+        isLoading = true
+        print("🟡 isLoading = true")
+        
+        Task {
+            if isRegistering {
                 await register()
-                await MainActor.run {
-                    isLoading = false
-                }
-            }
-        } else {
-            Task {
+            } else {
                 await login()
-                await MainActor.run {
-                    isLoading = false
-                }
+            }
+            await MainActor.run {
+                isLoading = false
+                print("🟢 isLoading = false")
             }
         }
     }
@@ -431,6 +449,8 @@ struct AuthView: View {
     }
     
     private func login() async {
+        print("🔵 ====== login() 开始执行 ======")
+        
         do {
             // 🔵 登录时才初始化 API
             DataManager.shared.initializeAPIConfig()
@@ -448,21 +468,28 @@ struct AuthView: View {
                 body["verify_code"] = verifyCode
             }
             
+            print("📤 准备发送登录请求...")
             let json = try await apiRequest(action: "login", body: body)
             
+            print("📥 收到响应：\(json)")
             let success = json["success"] as? Bool ?? false
+            print("🔍 success: \(success)")
             
             if success {
+                print("✅ 登录成功，处理用户数据...")
                 await handleAuthSuccess(json)
                 // 延迟一下让状态更新
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 await MainActor.run {
+                    print("🟢 登录成功，隐藏键盘")
                     // 不显示 alert，直接通过状态变化让 ContentView 切换
                     hideKeyboard()
                 }
             } else {
+                print("❌ 登录失败，处理错误...")
                 // 根据错误码显示友好提示（不显示错误编码）
                 let errorCode = json["code"] as? String ?? ""
+                print("   errorCode: \(errorCode)")
                 
                 switch errorCode {
                 case "USER_NOT_FOUND":
@@ -476,11 +503,13 @@ struct AuthView: View {
                 default:
                     errorMessage = json["error"] as? String ?? "登录失败"
                 }
+                print("❌ 显示错误：\(errorMessage)")
                 showingError = true
             }
         } catch {
             print("❌ 登录异常：\(error)")
             errorMessage = "❌ 登录失败：\(error.localizedDescription)"
+            print("❌ 显示错误：\(errorMessage)")
             showingError = true
         }
     }
