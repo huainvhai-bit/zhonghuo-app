@@ -440,7 +440,7 @@ struct SettingsView: View {
             throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "API 未初始化"])
         }
         
-        let url = URL(string: "\(DataManager.apiURL)/admin.php?action=update_checkin_interval")!
+        let url = URL(string: "\(DataManager.apiURL)/api.php?action=admin_update_checkin_interval")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -575,7 +575,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        let url = URL(string: "\(DataManager.apiURL)/checkin.php")!
+        let url = URL(string: "\(DataManager.apiURL)/api.php?action=checkin_record")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
