@@ -284,16 +284,23 @@ struct AuthView: View {
         }
         
         // 执行登录/注册
-        isLoading = true
+        Task { @MainActor in
+            isLoading = true
+        }
+        
         if isRegistering {
             Task {
                 await register()
-                isLoading = false
+                await MainActor.run {
+                    isLoading = false
+                }
             }
         } else {
             Task {
                 await login()
-                isLoading = false
+                await MainActor.run {
+                    isLoading = false
+                }
             }
         }
     }
@@ -472,6 +479,7 @@ struct AuthView: View {
                 showingError = true
             }
         } catch {
+            print("❌ 登录异常：\(error)")
             errorMessage = "❌ 登录失败：\(error.localizedDescription)"
             showingError = true
         }
