@@ -292,14 +292,28 @@ struct HomeStatusView: View {
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
         let hours = dataManager.settings.checkInInterval.hours
         
+        // 📱 使用后端配置的离线阈值（默认 24 小时）
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
         // 如果没有签到记录，返回完整的签到间隔时间
         guard let lastCheckIn = dataManager.lastCheckInDate else {
             return (true, Double(hours))
         }
         
         let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
-        let remaining = hours - elapsed
-        return (remaining > 0, max(0, remaining))
+        let remaining = Double(hours) - elapsed
+        
+        // 🔴 安全状态判断：
+        // - 剩余时间 > 0：绿色（安全）
+        // - 剩余时间 <= 0 但 < 离线阈值：橙色（警告）
+        // - 剩余时间 <= -离线阈值：红色（危险）
+        if remaining > 0 {
+            return (true, max(0, remaining))  // 绿色
+        } else if remaining > -offlineThreshold {
+            return (true, max(0, remaining))  // 橙色（警告但还安全）
+        } else {
+            return (false, 0)  // 红色（危险）
+        }
     }
     
     // MARK: - 签到卡片
@@ -341,13 +355,43 @@ struct HomeStatusView: View {
         .padding(26)
         .background(
             LinearGradient(
-                gradient: Gradient(colors: [Color(hex: "34C759"), Color(hex: "28A74A")]),
+                gradient: Gradient(colors: checkInColors),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .cornerRadius(22)
-        .shadow(color: Color(hex: "34C759").opacity(0.35), radius: 12, x: 0, y: 6)
+        .shadow(color: checkInShadowColor.opacity(0.35), radius: 12, x: 0, y: 6)
+    }
+    
+    // 🎨 签到卡片颜色（根据倒计时状态变化）
+    private var checkInColors: [Color] {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            // 绿色：安全状态
+            return [Color(hex: "34C759"), Color(hex: "28A74A")]
+        } else if hoursRemaining > -offlineThreshold {
+            // 橙色：警告状态（超过签到时间但未达离线阈值）
+            return [Color(hex: "FF9500"), Color(hex: "FF8800")]
+        } else {
+            // 红色：危险状态（超过离线阈值）
+            return [Color(hex: "FF3B30"), Color(hex: "FF2D55")]
+        }
+    }
+    
+    private var checkInShadowColor: Color {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            return Color(hex: "34C759")
+        } else if hoursRemaining > -offlineThreshold {
+            return Color(hex: "FF9500")
+        } else {
+            return Color(hex: "FF3B30")
+        }
     }
     
     // MARK: - 状态卡片
@@ -355,25 +399,25 @@ struct HomeStatusView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Circle()
-                    .fill(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
+                    .fill(statusColor)
                     .frame(width: 10, height: 10)
-                    .shadow(color: (isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30")).opacity(0.4), radius: 4, x: 0, y: 2)
+                    .shadow(color: statusColor.opacity(0.4), radius: 4, x: 0, y: 2)
                 
-                Text(isSafe ? "监测正常" : "需要签到")
+                Text(statusText)
                     .font(.headline)
-                    .foregroundColor(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
+                    .foregroundColor(statusColor)
                 
                 Spacer()
                 
-                Image(systemName: isSafe ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                    .foregroundColor(isSafe ? Color(hex: "34C759") : Color(hex: "FF3B30"))
+                Image(systemName: statusIcon)
+                    .foregroundColor(statusColor)
             }
             
-            Text(isSafe ? "一切安好，记得定期签到哦" : "您已超过签到时间，请立即签到")
+            Text(statusDescription)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
-            // 进度条
+            // 进度条 - 根据倒计时动态变化
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -383,13 +427,13 @@ struct HomeStatusView: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [isSafe ? Color(hex: "6366F1") : Color(hex: "FF3B30"), isSafe ? Color(hex: "007AFF") : Color(hex: "FF9500")]),
+                                gradient: Gradient(colors: [statusColor.opacity(0.7), statusColor]),
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geometry.size.width * (isSafe ? 0.76 : 0.1), height: 6)
-                        .shadow(color: (isSafe ? Color(hex: "6366F1") : Color(hex: "FF3B30")).opacity(0.3), radius: 3, x: 0, y: 2)
+                        .frame(width: geometry.size.width * progressPercentage, height: 6)
+                        .shadow(color: statusColor.opacity(0.3), radius: 3, x: 0, y: 2)
                 }
             }
             .frame(height: 6)
@@ -398,6 +442,76 @@ struct HomeStatusView: View {
         .background(Color.white)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
+    }
+    
+    // 🎨 状态卡片颜色（根据倒计时变化）
+    private var statusColor: Color {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            return Color(hex: "34C759")  // 绿色
+        } else if hoursRemaining > -offlineThreshold {
+            return Color(hex: "FF9500")  // 橙色
+        } else {
+            return Color(hex: "FF3B30")  // 红色
+        }
+    }
+    
+    private var statusText: String {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            return "监测正常"
+        } else if hoursRemaining > -offlineThreshold {
+            return "警告：已超时"
+        } else {
+            return "危险：离线超时"
+        }
+    }
+    
+    private var statusIcon: String {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            return "checkmark.circle.fill"
+        } else if hoursRemaining > -offlineThreshold {
+            return "exclamationmark.circle.fill"
+        } else {
+            return "xmark.circle.fill"
+        }
+    }
+    
+    private var statusDescription: String {
+        let hoursRemaining = secondsRemaining / 3600
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        if hoursRemaining > 0 {
+            return "一切安好，记得定期签到哦"
+        } else if hoursRemaining > -offlineThreshold {
+            return "您已超过签到时间，请尽快签到"
+        } else {
+            return "您已离线超时，请立即签到！"
+        }
+    }
+    
+    // 📊 进度条百分比（根据倒计时动态计算）
+    private var progressPercentage: Double {
+        let hoursRemaining = secondsRemaining / 3600
+        let checkInInterval = Double(dataManager.settings.checkInInterval.hours)
+        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        
+        // 总时间 = 签到间隔 + 离线阈值
+        let totalTime = checkInInterval + offlineThreshold
+        
+        // 剩余时间（可能为负数）
+        let remainingTime = max(0, hoursRemaining + offlineThreshold)
+        
+        // 计算百分比（0-100%）
+        let percentage = remainingTime / totalTime
+        return min(1.0, max(0.0, percentage))
     }
     
     // MARK: - 进度卡片
@@ -657,22 +771,8 @@ struct CapsulePreviewRow: View {
         }
     }
     
+    // 📅 中文日期格式化
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "MM 月 dd 日 HH:mm"
-        return formatter.string(from: date)
-    }
-    
-    // 中文日期格式化
-    private func formatChineseDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日"
-        return formatter.string(from: date)
-    }
-    
-    private func formatChineseDateTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"

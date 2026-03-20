@@ -120,38 +120,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // 测试工具（开发模式）
-                Section(header: Text("开发工具")) {
-                    Button(action: {
-                        print("🧪 手动触发位置上传")
-                        userManager.uploadLocation()
-                    }) {
-                        HStack {
-                            Image(systemName: "location.circle")
-                                .foregroundColor(.orange)
-                            Text("测试位置上传")
-                        }
-                    }
-                    
-                    Button(action: {
-                        print("🧪 手动触发数据同步")
-                        Task {
-                            if let result = await DataManager.shared.batchSyncCapsules() {
-                                print("✅ 胶囊同步：\(result)")
-                            }
-                            if let result = await DataManager.shared.batchSyncWills() {
-                                print("✅ 遗嘱同步：\(result)")
-                            }
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.blue)
-                            Text("测试数据同步")
-                        }
-                    }
-                }
-                
                 // 关于
                 Section(header: Text("关于")) {
                     HStack {

@@ -372,6 +372,9 @@ struct SystemConfig: Codable {
     /// 签到间隔时间（小时）（默认 48 小时）
     var checkinIntervalHours: Double = 48.0
     
+    /// 离线超时阈值（小时）- 超过这个时间未签到会变成红色警告（默认 24 小时）
+    var offlineTimeoutHours: Double = 24.0
+    
     /// 最新版本号
     var appVersionLatest: String = "2.0.0"
     
