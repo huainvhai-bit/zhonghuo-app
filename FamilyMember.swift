@@ -88,9 +88,14 @@ struct DeviceInfo: Codable {
 
 /// 家人关系 API 响应
 struct FamilyListResponse: Codable {
-    var status: String
+    var success: Bool
     var data: FamilyListData?
     var message: String?
+    
+    // 兼容 status 字段
+    var status: String {
+        success ? "success" : "error"
+    }
 }
 
 struct FamilyListData: Codable {
@@ -99,9 +104,14 @@ struct FamilyListData: Codable {
 
 /// 邀请码 API 响应
 struct InviteCodeResponse: Codable {
-    var status: String
+    var success: Bool
     var data: InviteCodeData?
     var message: String?
+    
+    // 兼容 status 字段
+    var status: String {
+        success ? "success" : "error"
+    }
 }
 
 struct InviteCodeData: Codable {

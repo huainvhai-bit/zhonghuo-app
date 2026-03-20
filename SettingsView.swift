@@ -22,6 +22,7 @@ struct SettingsView: View {
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
+    @State private var showingLogoutConfirm = false  // 退出登录确认
     
     var body: some View {
         NavigationView {
@@ -259,7 +260,7 @@ struct SettingsView: View {
                 
                 // 退出登录（放在最底部）
                 Section {
-                    Button(action: logout) {
+                    Button(action: { showingLogoutConfirm = true }) {
                         HStack {
                             Spacer()
                             Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -316,6 +317,14 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
+            }
+            .confirmationDialog("确认退出", isPresented: $showingLogoutConfirm) {
+                Button("退出登录", role: .destructive) {
+                    logout()
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("确定要退出登录吗？退出后需要重新登录才能使用 App。")
             }
         }
     }

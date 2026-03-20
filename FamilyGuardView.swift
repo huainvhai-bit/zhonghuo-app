@@ -684,6 +684,11 @@ struct FamilyUnbindResponse: Codable {
 }
 
 struct EmergencyContactAddResponse: Codable {
-    let status: String
+    let success: Bool
     let message: String?
+    
+    // 兼容 status 字段
+    var status: String {
+        success ? "success" : "error"
+    }
 }
