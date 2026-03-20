@@ -477,17 +477,20 @@ struct AuthView: View {
             
             if success {
                 print("✅ 登录成功，处理用户数据...")
+                // 🔴 先处理用户数据（在主线程更新状态）
                 await handleAuthSuccess(json)
-                // 延迟一下让状态更新
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                
+                // 🔴 关键修复：延迟后在主线程显示提示，给 UI 切换的时间
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
+                
                 await MainActor.run {
-                    print("🟢 登录成功，隐藏键盘")
+                    print("🟢 登录成功，显示提示")
                     // 显示成功提示
                     errorMessage = "✅ 登录成功！"
                     showingError = true
-                    // 延迟后隐藏键盘，让 ContentView 有机会切换
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        hideKeyboard()
+                    // 延迟后隐藏键盘
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        self.hideKeyboard()
                     }
                 }
             } else {
@@ -546,9 +549,11 @@ struct AuthView: View {
         
         print("✅ Token 已保存")
         
-        // 更新 UserManager
-        userManager.isLoggedIn = true
-        print("✅ UserManager.isLoggedIn = true")
+        // 🔴 关键修复：在主线程更新 UserManager，确保 UI 刷新
+        await MainActor.run {
+            userManager.isLoggedIn = true
+            print("✅ UserManager.isLoggedIn = true (主线程)")
+        }
         
         // 创建用户数据
         if let userDict = data["user"] as? [String: Any] {
@@ -599,8 +604,11 @@ struct AuthView: View {
             }
             
             print("💾 准备保存用户数据...")
-            userManager.currentUser = user
-            print("✅ UserManager.currentUser 已设置")
+            // 🔴 在主线程设置 currentUser，确保 UI 刷新
+            await MainActor.run {
+                userManager.currentUser = user
+                print("✅ UserManager.currentUser 已设置 (主线程)")
+            }
             
             let success = userManager.saveUser(user)
             print("✅ 用户数据已保存：\(success)")
