@@ -2,7 +2,7 @@
 //  BindFamilyView.swift
 //  终活
 //
-//  绑定家人页面 - 输入邀请码
+//  绑定家人页面 - 输入邀请码或扫码
 //
 
 import SwiftUI
@@ -35,7 +35,7 @@ struct BindFamilyView: View {
                         Text("绑定家人")
                             .font(.system(size: 22, weight: .bold))
                         
-                        Text("输入家人的邀请码或扫描二维码")
+                        Text("输入邀请码或扫描二维码")
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -62,7 +62,8 @@ struct BindFamilyView: View {
                                     inviteCode = newValue.uppercased()
                                 }
                             
-                            // 扫码按钮
+                            // 扫码按钮（暂时禁用，待 CodeScanner 配置完成）
+                            /*
                             Button(action: { showingScanner = true }) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 20))
@@ -71,6 +72,7 @@ struct BindFamilyView: View {
                                     .background(Color.indigo.opacity(0.1))
                                     .cornerRadius(8)
                             }
+                            */
                         }
                         .padding()
                         .background(Color.white)
@@ -142,7 +144,11 @@ struct BindFamilyView: View {
             // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
             /*
             .sheet(isPresented: $showingScanner) {
-                CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
+                CodeScannerView(
+                    codeTypes: [.qr],
+                    scanMode: .once,
+                    completion: handleScan
+                )
             }
             */
         }
@@ -223,6 +229,12 @@ struct BindFamilyView: View {
             if !code.isEmpty {
                 inviteCode = code
                 showingScanner = false
+                
+                // 震动反馈
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                
+                // 自动绑定
                 bindFamily()
             } else {
                 errorMessage = "无效的二维码"

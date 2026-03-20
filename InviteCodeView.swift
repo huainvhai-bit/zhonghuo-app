@@ -14,7 +14,6 @@ struct InviteCodeView: View {
     @State private var qrURL = ""
     @State private var isLoading = true
     @State private var errorMessage = ""
-    @State private var showingQRCode = false
     @State private var copied = false
     
     var body: some View {
@@ -90,11 +89,26 @@ struct InviteCodeView: View {
         .padding()
     }
     
-    // MARK: - 内容视图
+    // MARK: - 内容视图（二维码 + 邀请码合并）
     private var contentView: some View {
         ScrollView {
-            VStack(spacing: 30) {
-                // 二维码
+            VStack(spacing: 25) {
+                // 顶部说明
+                VStack(spacing: 8) {
+                    Image(systemName: "person.2")
+                        .font(.system(size: 40))
+                        .foregroundColor(.indigo)
+                    
+                    Text("邀请家人")
+                        .font(.system(size: 20, weight: .bold))
+                    
+                    Text("扫描二维码或分享邀请码")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 20)
+                
+                // 二维码卡片
                 VStack(spacing: 12) {
                     if !qrURL.isEmpty {
                         ZStack {
@@ -114,68 +128,82 @@ struct InviteCodeView: View {
                         .frame(width: 220, height: 220)
                     }
                     
-                    Text("扫描二维码绑定家人")
-                        .font(.system(size: 14))
+                    Text("扫描二维码快速绑定")
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 20)
+                .padding(.vertical, 10)
                 
-                Divider()
-                    .padding(.horizontal, 40)
-                
-                // 邀请码
-                VStack(spacing: 12) {
+                // 邀请码卡片（放在二维码下面）
+                VStack(spacing: 10) {
                     Text("邀请码")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     
                     HStack(spacing: 12) {
                         Text(formatInviteCode(inviteCode))
-                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                            .font(.system(size: 28, weight: .bold, design: .monospaced))
                             .foregroundColor(.indigo)
                             .tracking(4)
                         
                         Button(action: copyCode) {
                             Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                                .font(.system(size: 20))
+                                .font(.system(size: 18))
                                 .foregroundColor(copied ? .green : .indigo)
-                                .padding(10)
+                                .padding(8)
                                 .background(Color.indigo.opacity(0.1))
                                 .cornerRadius(8)
                         }
                     }
-                    .padding()
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
                     .background(Color.white)
                     .cornerRadius(12)
                     .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                     
                     if copied {
-                        Text("已复制")
+                        Text("✓ 已复制到剪贴板")
                             .font(.system(size: 12))
                             .foregroundColor(.green)
                     }
                 }
+                .padding(.horizontal, 30)
+                
+                // 分割线
+                HStack {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 1)
+                    Text("或")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 1)
+                }
+                .padding(.horizontal, 40)
                 
                 // 使用说明
-                VStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(.indigo)
-                        Text("使用说明")
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(systemName: "lightbulb")
+                            .foregroundColor(.orange)
+                        Text("如何邀请家人？")
+                            .font(.system(size: 15, weight: .semibold))
                     }
                     
-                    VStack(alignment: .leading, spacing: 8) {
-                        InstructionRow(number: 1, text: "将邀请码或二维码分享给家人")
+                    VStack(alignment: .leading, spacing: 10) {
+                        InstructionRow(number: 1, text: "分享邀请码或二维码给家人")
                         InstructionRow(number: 2, text: "家人在 App 中输入邀请码或扫码")
-                        InstructionRow(number: 3, text: "等待家人接受邀请")
-                        InstructionRow(number: 4, text: "绑定成功后即可查看设备信息")
+                        InstructionRow(number: 3, text: "双方自动成为家人关系")
+                        InstructionRow(number: 4, text: "可以互相查看设备信息和位置")
                     }
                     .padding()
                     .background(Color.white.opacity(0.6))
                     .cornerRadius(12)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 30)
                 
                 Spacer()
             }
@@ -203,19 +231,31 @@ struct InviteCodeView: View {
             return
         }
         
+        guard !DataManager.apiURL.isEmpty else {
+            errorMessage = "API 未初始化"
+            isLoading = false
+            return
+        }
+        
         do {
             let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+            let (data, response) = try await URLSession.shared.data(for: request)
             
-            if result.status == "success" {
-                inviteCode = result.data?.invite_code ?? ""
-                qrURL = result.data?.qr_url ?? ""
+            if let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+                
+                if result.status == "success" {
+                    inviteCode = result.data?.invite_code ?? ""
+                    qrURL = result.data?.qr_url ?? ""
+                } else {
+                    errorMessage = result.message ?? "生成失败"
+                }
             } else {
-                errorMessage = result.message ?? "生成失败"
+                errorMessage = "网络错误"
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -251,6 +291,10 @@ struct InviteCodeView: View {
     private func copyCode() {
         UIPasteboard.general.string = inviteCode
         copied = true
+        
+        // 震动反馈
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             copied = false
