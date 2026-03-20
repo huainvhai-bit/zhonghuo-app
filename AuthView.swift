@@ -618,6 +618,10 @@ struct AuthView: View {
             }
             
             print("💾 准备保存用户数据...")
+            print("   用户 ID: \(user.id)")
+            print("   用户姓名：\(user.name)")
+            print("   用户文件路径：\(userManager.userFileURL.path)")
+            
             // 🔴 在主线程设置 currentUser，确保 UI 刷新
             await MainActor.run {
                 userManager.currentUser = user
@@ -626,6 +630,13 @@ struct AuthView: View {
             
             let success = userManager.saveUser(user)
             print("✅ 用户数据已保存：\(success)")
+            
+            // 验证文件是否存在
+            if userManager.userFileExists {
+                print("✅ 用户文件已创建：\(userManager.userFileURL.path)")
+            } else {
+                print("❌ 用户文件创建失败！")
+            }
             
             // 🎯 登录成功后立即执行自动签到（重置倒计时）
             print("⏰ 登录成功，执行自动签到...")

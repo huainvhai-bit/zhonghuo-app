@@ -26,8 +26,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
     }
     
-    private var userFileURL: URL {
+    var userFileURL: URL {
         URL(fileURLWithPath: documentsPath).appendingPathComponent("user.json")
+    }
+    
+    var userFileExists: Bool {
+        fileManager.fileExists(atPath: userFileURL.path)
     }
     
     // 定位管理
@@ -779,13 +783,21 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func loadUser() {
+        print("🔍 UserManager.loadUser() 被调用")
+        print("   用户文件路径：\(userFileURL.path)")
+        print("   用户文件存在：\(userFileExists)")
+        
         if let user = loadUserFromFile() {
             self.currentUser = user
             self.isLoggedIn = true
-            self.checkInInterval = user.checkInInterval  // ✅ 修复：加载签到间隔
+            self.checkInInterval = user.checkInInterval
             self.lastCheckInDate = user.lastCheckInDate
             self.checkEmergencyContacts()
-            print("✅ UserManager 加载用户：\(user.name), 签到间隔：\(user.checkInInterval.rawValue)")
+            print("✅ UserManager 加载用户成功：\(user.name)")
+            print("   isLoggedIn: \(self.isLoggedIn)")
+        } else {
+            print("⚠️ UserManager 加载用户失败：文件不存在或解析失败")
+            print("   isLoggedIn: \(self.isLoggedIn)")
         }
     }
     
