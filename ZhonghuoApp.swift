@@ -114,8 +114,10 @@ struct ZhonghuoApp: App {
             
             if let httpResponse = response as? HTTPURLResponse,
                (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONDecoder().decode(ValidateResponse.self, from: data)
-                return result.status == "success"
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                let success = json?["success"] as? Bool ?? false
+                print("🔐 账号验证结果：\(success ? "成功" : "失败")")
+                return success
             }
         } catch {
             print("❌ 验证请求失败：\(error)")
@@ -142,9 +144,13 @@ struct ZhonghuoApp: App {
             
             if let httpResponse = response as? HTTPURLResponse {
                 if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(UserInfoResponse.self, from: data)
-                    if result.status == "success", let userInfo = result.data {
-                        return userInfo.phone == user.phone
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    let success = json?["success"] as? Bool ?? false
+                    if success,
+                       let data = json?["data"] as? [String: Any],
+                       let phone = data["phone"] as? String {
+                        print("🔐 Token 验证成功，手机号匹配：\(phone == user.phone)")
+                        return phone == user.phone
                     }
                 } else if httpResponse.statusCode == 401 {
                     print("❌ Token 已过期")
@@ -172,7 +178,7 @@ struct ZhonghuoApp: App {
 
 // MARK: - 响应模型
 struct ValidateResponse: Codable {
-    let status: String
+    let success: Bool
     let message: String?
 }
 
