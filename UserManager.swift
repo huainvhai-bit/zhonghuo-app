@@ -698,7 +698,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.currentUser = user
         
         if saveUser(user) {
-            // TODO: 同步删除到服务器
+            print("📞 紧急联系人已从本地删除，准备同步到服务器...")
+            
+            // 发送数据变更通知（触发实时同步）
+            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
+            
+            // 异步同步删除到服务器
+            Task {
+                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
+                    print("✅ 紧急联系人删除同步成功")
+                } else {
+                    print("⚠️ 紧急联系人删除同步失败")
+                }
+            }
+            
             return .success(())
         } else {
             return .failure(Error.saveFailed)
@@ -784,20 +797,101 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func loadUser() {
         print("🔍 UserManager.loadUser() 被调用")
-        print("   用户文件路径：\(userFileURL.path)")
-        print("   用户文件存在：\(userFileExists)")
+        print("   Token 存在：\(UserDefaults.standard.string(forKey: "userToken") != nil)")
         
-        if let user = loadUserFromFile() {
-            self.currentUser = user
+        // ✅ 云端优先架构：从 Token 恢复登录状态
+        if let token = UserDefaults.standard.string(forKey: "userToken"),
+           !token.isEmpty {
+            // 立即设置登录状态（同步）
             self.isLoggedIn = true
-            self.checkInInterval = user.checkInInterval
-            self.lastCheckInDate = user.lastCheckInDate
-            self.checkEmergencyContacts()
-            print("✅ UserManager 加载用户成功：\(user.name)")
-            print("   isLoggedIn: \(self.isLoggedIn)")
+            print("✅ 从 Token 恢复登录状态 - isLoggedIn = true")
+            
+            // 尝试从本地文件加载用户数据（快速）
+            if let user = loadUserFromFile() {
+                self.currentUser = user
+                self.checkInInterval = user.checkInInterval
+                self.lastCheckInDate = user.lastCheckInDate
+                self.checkEmergencyContacts()
+                print("✅ 从本地文件加载用户：\(user.name)")
+            }
+            
+            // 异步从服务器拉取最新数据
+            Task {
+                await fetchUserData()
+            }
         } else {
-            print("⚠️ UserManager 加载用户失败：文件不存在或解析失败")
-            print("   isLoggedIn: \(self.isLoggedIn)")
+            // 降级方案：从本地文件加载
+            print("⚠️ 无 Token，尝试从本地文件加载")
+            if let user = loadUserFromFile() {
+                self.currentUser = user
+                self.isLoggedIn = true
+                self.checkInInterval = user.checkInInterval
+                self.lastCheckInDate = user.lastCheckInDate
+                self.checkEmergencyContacts()
+                print("✅ 从本地文件恢复：\(user.name)")
+            } else {
+                print("❌ 本地文件也不存在")
+            }
+        }
+    }
+    
+    /// 从服务器拉取用户数据
+    func fetchUserData() async {
+        guard let token = UserDefaults.standard.string(forKey: "userToken"),
+              !token.isEmpty,
+              let apiURL = DataManager.apiURL else {
+            return
+        }
+        
+        print("🌐 从服务器拉取用户数据...")
+        
+        var request = URLRequest(url: URL(string: "\(apiURL)/api.php?action=user_info")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let success = json["success"] as? Bool,
+               success,
+               let dataDict = json["data"] as? [String: Any],
+               let userDict = dataDict["user"] as? [String: Any] {
+                
+                // 解析用户数据
+                let userId = userDict["id"] as? String ?? ""
+                let name = userDict["name"] as? String ?? "用户"
+                let phone = userDict["phone"] as? String ?? ""
+                
+                let user = User(
+                    id: userId,
+                    name: name,
+                    phone: phone,
+                    createdAt: Date(),
+                    emergencyContacts: [],
+                    checkInInterval: .twoDays,
+                    notificationsEnabled: true,
+                    cloudSyncEnabled: true
+                )
+                
+                await MainActor.run {
+                    self.currentUser = user
+                    self.checkInInterval = user.checkInInterval
+                    self.checkEmergencyContacts()
+                    print("✅ 从服务器加载用户成功：\(user.name)")
+                }
+                
+                // 保存本地缓存
+                saveUser(user)
+                
+            } else {
+                print("⚠️ 服务器返回失败，使用本地缓存")
+            }
+        } catch {
+            print("❌ 拉取用户数据失败：\(error)，使用本地缓存")
         }
     }
     

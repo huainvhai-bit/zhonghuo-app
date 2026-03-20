@@ -582,6 +582,19 @@ class DataManager: ObservableObject {
     func deleteWillModule(_ module: WillModule) {
         willModules.removeAll { $0.id == module.id }
         saveWillModulesToFile()
+        print("📜 遗嘱模块已从本地删除，准备同步到服务器...")
+        
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
+        
+        // 异步同步删除到服务器
+        Task {
+            if let result = await batchSyncWills() {
+                print("✅ 遗嘱删除同步成功")
+            } else {
+                print("⚠️ 遗嘱删除同步失败")
+            }
+        }
         // TODO: 同步删除到服务器
     }
     
