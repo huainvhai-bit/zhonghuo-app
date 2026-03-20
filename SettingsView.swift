@@ -8,6 +8,11 @@
 import SwiftUI
 
 struct SettingsView: View {
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
@@ -173,8 +178,8 @@ struct SettingsView: View {
                         
                         // 电量信息
                         HStack {
-                            Image(systemName: batteryIcon)
-                                .foregroundColor(batteryColor)
+                            Image(systemName: deviceMonitor.batteryIcon)
+                                .foregroundColor(deviceMonitor.batteryColor)
                                 .frame(width: 30)
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -191,7 +196,7 @@ struct SettingsView: View {
                                 .font(.system(size: 13))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(batteryStateColor)
+                                .background(deviceMonitor.batteryStateColor)
                                 .cornerRadius(8)
                         }
                         
@@ -201,7 +206,7 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                                 .font(.system(size: 12))
                             
-                            Text("最后更新：\(formatUpdateTime(deviceMonitor.lastUpdateTime))")
+                            Text("最后更新：\(deviceMonitor.lastUpdateTime, formatter: timeFormatter)")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                         }

@@ -8,6 +8,7 @@
 import Foundation
 import CoreMotion
 import UIKit
+import SwiftUI
 
 /// 设备信息监控器
 class DeviceMonitor: ObservableObject {
@@ -66,6 +67,46 @@ class DeviceMonitor: ObservableObject {
     /// 电量百分比文本
     var batteryLevelText: String {
         return "\(Int(batteryLevel * 100))%"
+    }
+    
+    /// 电量图标
+    var batteryIcon: String {
+        let level = Int(batteryLevel * 100)
+        if level >= 80 {
+            return "battery.100"
+        } else if level >= 60 {
+            return "battery.75"
+        } else if level >= 40 {
+            return "battery.50"
+        } else if level >= 20 {
+            return "battery.25"
+        } else {
+            return "battery.0"
+        }
+    }
+    
+    /// 电量颜色
+    var batteryColor: Color {
+        let level = Int(batteryLevel * 100)
+        if level >= 60 {
+            return .green
+        } else if level >= 20 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+    
+    /// 充电状态颜色
+    var batteryStateColor: Color {
+        switch batteryState {
+        case .charging, .full:
+            return .green.opacity(0.2)
+        case .unplugged:
+            return .gray.opacity(0.2)
+        @unknown default:
+            return .gray.opacity(0.2)
+        }
     }
     
     private var updateTimer: Timer?
@@ -133,7 +174,13 @@ class DeviceMonitor: ObservableObject {
     // MARK: - 信息更新
     
     /// 更新步数
-    private func updateStepCount() {
+    func updateStepCount() {
+        // 模拟器不支持 CMPedometer，暂时返回 0
+        // 真机上取消以下注释
+        #if targetEnvironment(simulator)
+        self.stepCount = 0
+        self.lastUpdateTime = Date()
+        #else
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
         
@@ -149,10 +196,10 @@ class DeviceMonitor: ObservableObject {
                 DispatchQueue.main.async {
                     self.stepCount = data.numberOfSteps.intValue
                     self.lastUpdateTime = Date()
-                    // print("👣 今日步数：\(self.stepCount)")
                 }
             }
         }
+        #endif
     }
     
     /// 更新电量信息

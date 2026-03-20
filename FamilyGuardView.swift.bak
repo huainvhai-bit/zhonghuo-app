@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-// import CodeScanner  // 暂时注释
+import CodeScanner
 
 struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
