@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-// import CodeScanner  // 暂时注释
+import CodeScanner
 
 struct BindFamilyView: View {
     @Environment(\.dismiss) private var dismiss
@@ -138,12 +138,9 @@ struct BindFamilyView: View {
             } message: {
                 Text("绑定成功，等待对方接受邀请")
             }
-            // 暂时禁用扫码功能
-            /*
             .sheet(isPresented: $showingScanner) {
                 CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
             }
-            */
         }
     }
     
@@ -211,8 +208,6 @@ struct BindFamilyView: View {
         isBinding = false
     }
     
-    // 暂时注释扫码功能 - CodeScanner 依赖问题
-    /*
     private func handleScan(result: Result<ScanResult, ScanError>) {
         switch result {
         case .success(let result):
@@ -232,7 +227,6 @@ struct BindFamilyView: View {
             showingScanner = false
         }
     }
-    */
     
     private func extractInviteCode(from string: String) -> String {
         // 尝试从 URL 中提取 code 参数
