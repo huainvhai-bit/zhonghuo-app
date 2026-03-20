@@ -332,7 +332,7 @@ struct AuthView: View {
         print("   action: \(action)")
         print("   DataManager.baseURL: \(DataManager.baseURL)")
         print("   DataManager.apiURL: \(DataManager.apiURL)")
-        print("   请求 URL: \(DataManager.apiURL)/api.php?action=user_login")
+        print("   请求 URL: \(DataManager.apiURL)/api.php?action=\(action)")
         print("   请求 Body: \(body)")
         
         guard !DataManager.apiURL.isEmpty else {
@@ -340,7 +340,7 @@ struct AuthView: View {
             throw NSError(domain: "API 未初始化", code: -1)
         }
         
-        let urlString = "\(DataManager.apiURL)/api.php?action=user_login"
+        let urlString = "\(DataManager.apiURL)/api.php?action=\(action)"
         guard let url = URL(string: urlString) else {
             print("❌ URL 无效：\(urlString)")
             throw NSError(domain: "URL 无效", code: -1)
