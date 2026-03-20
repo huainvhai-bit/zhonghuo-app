@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-// CodeScanner 依赖 - 待 Xcode 正确配置后启用
+// CodeScanner - 需要在 Xcode 中添加 Package 依赖
 // import CodeScanner
 
 struct BindFamilyView: View {
@@ -62,8 +62,7 @@ struct BindFamilyView: View {
                                     inviteCode = newValue.uppercased()
                                 }
                             
-                            // 扫码按钮 - 待 CodeScanner 依赖配置完成后启用
-                            /*
+                            // 扫码按钮
                             Button(action: { showingScanner = true }) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 20))
@@ -72,7 +71,6 @@ struct BindFamilyView: View {
                                     .background(Color.indigo.opacity(0.1))
                                     .cornerRadius(8)
                             }
-                            */
                         }
                         .padding()
                         .background(Color.white)
@@ -141,12 +139,9 @@ struct BindFamilyView: View {
             } message: {
                 Text("绑定成功，等待对方接受邀请")
             }
-            // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
-            /*
             .sheet(isPresented: $showingScanner) {
                 CodeScannerView(codeTypes: [.qr], simulatedData: "", completion: handleScan)
             }
-            */
         }
     }
     
@@ -214,8 +209,6 @@ struct BindFamilyView: View {
         isBinding = false
     }
     
-    // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
-    /*
     private func handleScan(result: Result<ScanResult, ScanError>) {
         switch result {
         case .success(let result):
@@ -234,7 +227,6 @@ struct BindFamilyView: View {
             showingScanner = false
         }
     }
-    */
     
     private func extractInviteCode(from string: String) -> String {
         // 尝试从 URL 中提取 code 参数

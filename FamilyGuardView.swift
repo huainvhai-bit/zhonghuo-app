@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-// CodeScanner 依赖 - 待 Xcode 正确配置后启用
+// CodeScanner - 需要在 Xcode 中添加 Package 依赖
 // import CodeScanner
 
 struct FamilyGuardView: View {
