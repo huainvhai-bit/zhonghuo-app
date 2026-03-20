@@ -334,8 +334,33 @@ class RealTimeSyncManager: ObservableObject {
 // MARK: - AppDelegate
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // 初始化 API 配置
+        Task {
+            await initializeAPIConfig()
+        }
+        
         NotificationManager.shared.requestPermission()
         print("✅ 终活 App 启动完成")
         return true
+    }
+    
+    private func initializeAPIConfig() async {
+        // 尝试从 UserDefaults 读取已保存的 API URL
+        if let savedURL = UserDefaults.standard.string(forKey: "apiURL"), !savedURL.isEmpty {
+            DataManager.apiURL = savedURL
+            print("🔵 API URL 已从缓存加载：\(DataManager.apiURL)")
+            return
+        }
+        
+        // 从服务器获取配置
+        let baseURL = "http://8.136.41.211:3395"
+        do {
+            try await DataManager.shared.fetchServerConfig(from: baseURL)
+            print("🔵 API URL 已从服务器获取：\(DataManager.apiURL)")
+        } catch {
+            print("❌ 获取 API 配置失败：\(error)")
+            // 使用默认值
+            DataManager.apiURL = baseURL
+        }
     }
 }
