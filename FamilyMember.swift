@@ -1,0 +1,104 @@
+//
+//  FamilyMember.swift
+//  终活
+//
+//  家人关系数据模型
+//
+
+import Foundation
+
+/// 家人成员
+struct FamilyMember: Identifiable, Codable {
+    var id: String           // 成员 ID
+    var relationId: String   // 关系 ID
+    var name: String         // 姓名
+    var phone: String        // 电话
+    var avatar: String       // 头像 URL
+    var status: Status       // 关系状态
+    var statusText: String   // 状态文本
+    var createdAt: Date      // 创建时间
+    var deviceInfo: DeviceInfo?  // 设备信息
+    
+    enum Status: Int, Codable {
+        case pending = 1    // 待接受
+        case accepted = 2   // 已绑定
+        case rejected = 3   // 已拒绝
+        case removed = 4    // 已解除
+        
+        var text: String {
+            switch self {
+            case .pending: return "待接受"
+            case .accepted: return "已绑定"
+            case .rejected: return "已拒绝"
+            case .removed: return "已解除"
+            }
+        }
+    }
+}
+
+/// 设备信息
+struct DeviceInfo: Codable {
+    var stepCount: Int          // 今日步数
+    var batteryLevel: Float     // 电量百分比（0-1）
+    var batteryState: Int       // 充电状态（0=未知，1=未充电，2=充电中，3=充满）
+    var lastUpdate: Date?       // 最后更新时间
+    
+    /// 电量百分比文本
+    var batteryLevelText: String {
+        return "\(Int(batteryLevel * 100))%"
+    }
+    
+    /// 充电状态文本
+    var batteryStateText: String {
+        switch batteryState {
+        case 0: return "未知"
+        case 1: return "未充电"
+        case 2: return "充电中"
+        case 3: return "已充满"
+        default: return "未知"
+        }
+    }
+    
+    /// 充电状态图标
+    var batteryStateIcon: String {
+        switch batteryState {
+        case 0: return "❓"
+        case 1: return "🔋"
+        case 2: return "⚡️"
+        case 3: return "✅"
+        default: return "❓"
+        }
+    }
+    
+    /// 步数格式化
+    var stepCountText: String {
+        if stepCount >= 10000 {
+            return String(format: "%.1f 万", Double(stepCount) / 10000)
+        } else {
+            return "\(stepCount) 步"
+        }
+    }
+}
+
+/// 家人关系 API 响应
+struct FamilyListResponse: Codable {
+    var status: String
+    var data: FamilyListData?
+    var message: String?
+}
+
+struct FamilyListData: Codable {
+    var list: [FamilyMember]
+}
+
+/// 邀请码 API 响应
+struct InviteCodeResponse: Codable {
+    var status: String
+    var data: InviteCodeData?
+    var message: String?
+}
+
+struct InviteCodeData: Codable {
+    var invite_code: String    // 邀请码
+    var qr_url: String         // 二维码 URL
+}
