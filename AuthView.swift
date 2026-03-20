@@ -421,9 +421,23 @@ struct AuthView: View {
             let success = json["success"] as? Bool ?? false
             
             if success {
+                print("✅ 注册成功，处理用户数据...")
+                // 🔴 先处理用户数据（在主线程更新状态）
                 await handleAuthSuccess(json)
-                errorMessage = "✅ 注册成功！"
-                showingError = true
+                
+                // 🔴 关键修复：延迟后在主线程显示提示，给 UI 切换的时间
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
+                
+                await MainActor.run {
+                    print("🟢 注册成功，显示提示")
+                    // 显示成功提示
+                    errorMessage = "✅ 注册成功！"
+                    showingError = true
+                    // 延迟后隐藏键盘
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        self.hideKeyboard()
+                    }
+                }
             } else {
                 // 根据错误码显示友好提示（不显示错误编码）
                 let errorCode = json["code"] as? String ?? ""
