@@ -495,6 +495,13 @@ struct AuthView: View {
         UserDefaults.standard.set(token, forKey: "userToken")
         UserDefaults.standard.set(userId, forKey: "userId")
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        
+        // 保存密码（用于后续启动时验证）
+        if loginType == "password" && !password.isEmpty {
+            UserDefaults.standard.set(password, forKey: "userPassword")
+            print("✅ 密码已保存（用于启动验证）")
+        }
+        
         print("✅ Token 已保存")
         
         // 更新 UserManager

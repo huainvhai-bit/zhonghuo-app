@@ -10,22 +10,186 @@ import Network
 struct ZhonghuoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    @State private var accountValidated = false
+    @State private var validationFailed = false
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    Task {
+                        await validateAccountOnLaunch()
+                    }
+                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 print("🟢 App 进入前台 - ZhonghuoApp")
-                // 触发实时同步
                 RealTimeSyncManager.shared.appDidBecomeActive()
             }
         }
     }
+    
+    /// 启动时验证账号
+    private func validateAccountOnLaunch() async {
+        // 仅在已登录状态下验证
+        if !UserManager.shared.isLoggedIn {
+            print("⚠️ 用户未登录，跳过账号验证")
+            accountValidated = true
+            return
+        }
+        
+        guard let user = UserManager.shared.currentUser else {
+            accountValidated = true
+            return
+        }
+        
+        print("🔐 开始验证账号：\(user.name) (\(user.phone))")
+        
+        // 等待网络
+        let networkAvailable = await waitForNetwork()
+        if !networkAvailable {
+            print("⚠️ 网络不可用，允许使用")
+            accountValidated = true
+            return
+        }
+        
+        // 验证账号
+        let isValid = await validateUserCredentials(user: user)
+        
+        if isValid {
+            print("✅ 账号验证成功")
+            accountValidated = true
+        } else {
+            print("❌ 账号验证失败，退出登录")
+            validationFailed = true
+            await logout()
+        }
+    }
+    
+    private func waitForNetwork() async -> Bool {
+        let maxWaitTime: TimeInterval = 5.0
+        let checkInterval: TimeInterval = 0.5
+        var waitedTime: TimeInterval = 0
+        
+        while waitedTime < maxWaitTime {
+            if await isNetworkAvailable() {
+                return true
+            }
+            try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
+            waitedTime += checkInterval
+        }
+        return false
+    }
+    
+    private func isNetworkAvailable() async -> Bool {
+        guard !DataManager.apiURL.isEmpty else { return false }
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/api/check-config.php")!
+            let (_, response) = try await URLSession.shared.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse {
+                return (200...299).contains(httpResponse.statusCode)
+            }
+        } catch {
+            print("⚠️ 网络检查失败：\(error)")
+        }
+        return false
+    }
+    
+    private func validateUserCredentials(user: User) async -> Bool {
+        guard !DataManager.apiURL.isEmpty else { return false }
+        
+        let storedPassword = UserDefaults.standard.string(forKey: "userPassword") ?? ""
+        
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=validate")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let body: [String: Any] = ["phone": user.phone, "password": storedPassword]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               (200...299).contains(httpResponse.statusCode) {
+                let result = try JSONDecoder().decode(ValidateResponse.self, from: data)
+                return result.status == "success"
+            }
+        } catch {
+            print("❌ 验证请求失败：\(error)")
+        }
+        
+        // 兼容旧版本（无密码）
+        if storedPassword.isEmpty {
+            return await validateByUserInfo(user: user)
+        }
+        
+        return false
+    }
+    
+    private func validateByUserInfo(user: User) async -> Bool {
+        guard !DataManager.apiURL.isEmpty else { return false }
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=get_user_info")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if (200...299).contains(httpResponse.statusCode) {
+                    let result = try JSONDecoder().decode(UserInfoResponse.self, from: data)
+                    if result.status == "success", let userInfo = result.data {
+                        return userInfo.phone == user.phone
+                    }
+                } else if httpResponse.statusCode == 401 {
+                    print("❌ Token 已过期")
+                    return false
+                }
+            }
+        } catch {
+            print("❌ 获取用户信息失败：\(error)")
+        }
+        return false
+    }
+    
+    private func logout() {
+        print("🚪 自动退出登录")
+        UserManager.shared.logout()
+        UserDefaults.standard.removeObject(forKey: "userPassword")
+        UserDefaults.standard.removeObject(forKey: "userToken")
+        UserDefaults.standard.removeObject(forKey: "userId")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NotificationCenter.default.post(name: NSNotification.Name("ForceLogout"), object: nil)
+        }
+    }
 }
 
-// MARK: - RealTimeSyncManager (内联版本，避免 Xcode 项目问题)
+// MARK: - 响应模型
+struct ValidateResponse: Codable {
+    let status: String
+    let message: String?
+}
+
+struct UserInfoResponse: Codable {
+    let status: String
+    let data: UserInfoData?
+    let message: String?
+}
+
+struct UserInfoData: Codable {
+    let id: String
+    let name: String
+    let phone: String
+    let avatar: String?
+}
+
+// MARK: - RealTimeSyncManager
 @MainActor
 class RealTimeSyncManager: ObservableObject {
     static let shared = RealTimeSyncManager()
@@ -57,13 +221,7 @@ class RealTimeSyncManager: ObservableObject {
         let timestamp: Date
         
         enum SyncType: String, Equatable {
-            case capsule
-            case will
-            case emergencyContact
-            case witness
-            case location
-            case checkin
-            case full
+            case capsule, will, emergencyContact, witness, location, checkin, full
         }
     }
     
@@ -74,26 +232,19 @@ class RealTimeSyncManager: ObservableObject {
     
     func startNetworkMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in
-                self?.handleNetworkPathUpdate(path)
-            }
+            Task { @MainActor in self?.handleNetworkPathUpdate(path) }
         }
         monitor.start(queue: queue)
-        print("🌐 网络监控已启动")
     }
     
     private func handleNetworkPathUpdate(_ path: NWPath) {
         let wasOnline = isOnline
         isOnline = path.status == .satisfied
-        
         if isOnline != wasOnline {
             print("🌐 网络状态变化：\(isOnline ? "在线" : "离线")")
             if isOnline {
                 syncStatus = .success
-                Task {
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                    await processSyncQueue()
-                }
+                Task { try? await Task.sleep(nanoseconds: 500_000_000); await processSyncQueue() }
             } else {
                 syncStatus = .waiting
             }
@@ -101,36 +252,7 @@ class RealTimeSyncManager: ObservableObject {
     }
     
     private func setupLocalChangeNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleDataChange(_:)),
-            name: NSNotification.Name("DataChanged"),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleCapsuleChanged(_:)),
-            name: NSNotification.Name("CapsuleChanged"),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleWillChanged(_:)),
-            name: NSNotification.Name("WillChanged"),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleContactChanged(_:)),
-            name: NSNotification.Name("EmergencyContactChanged"),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleWitnessChanged(_:)),
-            name: NSNotification.Name("WitnessChanged"),
-            object: nil
-        )
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDataChange(_:)), name: NSNotification.Name("DataChanged"), object: nil)
     }
     
     @objc private func handleDataChange(_ notification: Notification) {
@@ -138,205 +260,74 @@ class RealTimeSyncManager: ObservableObject {
         scheduleSync(type: .full)
     }
     
-    @objc private func handleCapsuleChanged(_ notification: Notification) {
-        print("📦 胶囊数据变更")
-        scheduleSync(type: .capsule)
-    }
-    
-    @objc private func handleWillChanged(_ notification: Notification) {
-        print("📝 遗嘱数据变更")
-        scheduleSync(type: .will)
-    }
-    
-    @objc private func handleContactChanged(_ notification: Notification) {
-        print("👥 紧急联系人变更")
-        scheduleSync(type: .emergencyContact)
-    }
-    
-    @objc private func handleWitnessChanged(_ notification: Notification) {
-        print("👤 见证人变更")
-        scheduleSync(type: .witness)
-    }
-    
     private func scheduleSync(type: SyncTask.SyncType, debounce: Bool = true) {
-        let taskId = UUID().uuidString
-        let task = SyncTask(id: taskId, type: type, timestamp: Date())
-        
+        let task = SyncTask(id: UUID().uuidString, type: type, timestamp: Date())
         if debounce {
-            let timerKey = type.rawValue
-            syncDebounceTimers[timerKey]?.invalidate()
-            
             let timer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { [weak self] _ in
-                Task { @MainActor in
-                    self?.addToSyncQueue(task)
-                }
+                Task { @MainActor in self?.addToSyncQueue(task) }
             }
-            syncDebounceTimers[timerKey] = timer
+            syncDebounceTimers[type.rawValue] = timer
         } else {
             addToSyncQueue(task)
         }
     }
     
     private func addToSyncQueue(_ task: SyncTask) {
-        if syncQueue.contains(where: { $0.type == task.type }) {
-            print("⏭️ 跳过重复的同步任务：\(task.type)")
-            return
-        }
-        
-        syncQueue.append(task)
-        pendingSyncCount = syncQueue.count
-        print("📋 同步队列：\(pendingSyncCount) 个任务")
-        
-        Task {
-            await processSyncQueue()
+        if !syncQueue.contains(where: { $0.type == task.type }) {
+            syncQueue.append(task)
+            pendingSyncCount = syncQueue.count
+            Task { await processSyncQueue() }
         }
     }
     
     private func processSyncQueue() async {
-        guard !isProcessingQueue else { return }
-        guard isOnline else {
-            syncStatus = .waiting
-            print("⏸️ 网络离线，等待网络恢复")
-            return
-        }
-        
+        guard !isProcessingQueue, isOnline else { return }
         isProcessingQueue = true
         isSyncing = true
         syncStatus = .syncing
         
-        print("🚀 开始处理同步队列，共 \(syncQueue.count) 个任务")
-        
         while !syncQueue.isEmpty {
             let task = syncQueue.removeFirst()
             pendingSyncCount = syncQueue.count
-            
-            do {
-                try await executeSyncTask(task)
-                print("✅ 同步任务完成：\(task.type)")
-            } catch {
-                print("❌ 同步任务失败：\(task.type), 错误：\(error)")
-            }
+            do { try await executeSyncTask(task) } catch { print("❌ 同步失败：\(task.type)") }
         }
         
         isSyncing = false
         isProcessingQueue = false
         lastSyncTime = Date()
         syncStatus = .success
-        
-        print("🎉 所有同步任务完成")
     }
     
     private func executeSyncTask(_ task: SyncTask) async throws {
         switch task.type {
-        case .capsule:
-            try await syncCapsules()
-        case .will:
-            try await syncWills()
-        case .emergencyContact:
-            try await syncEmergencyContacts()
-        case .witness:
-            try await syncWitnesses()
-        case .location:
-            try await syncLocations()
-        case .checkin:
-            try await syncCheckIns()
-        case .full:
-            try await syncAllData()
+        case .full: try await syncAllData()
+        default: break
         }
     }
     
     func syncAllData() async throws {
-        print("🔄 开始全量同步")
-        async let capsules = syncCapsules()
-        async let wills = syncWills()
-        async let contacts = syncEmergencyContacts()
-        async let witnesses = syncWitnesses()
-        
-        try await capsules
-        try await wills
-        try await contacts
-        try await witnesses
-        print("✅ 全量同步完成")
-    }
-    
-    private func syncCapsules() async throws {
-        print("📦 同步胶囊数据")
-        _ = await DataManager.shared.batchSyncCapsules()
-        try? await DataManager.shared.downloadCapsules()
-    }
-    
-    private func syncWills() async throws {
-        print("📝 同步遗嘱数据")
-        _ = await DataManager.shared.batchSyncWills()
-        try? await DataManager.shared.downloadWills()
-    }
-    
-    private func syncEmergencyContacts() async throws {
-        print("👥 同步紧急联系人")
-        _ = await DataManager.shared.batchSyncEmergencyContacts()
-        try? await DataManager.shared.downloadEmergencyContacts()
-    }
-    
-    private func syncWitnesses() async throws {
-        print("👤 同步见证人")
-        _ = await DataManager.shared.batchSyncWitnesses()
-        try? await DataManager.shared.downloadWitnesses()
-    }
-    
-    private func syncLocations() async throws {}
-    private func syncCheckIns() async throws {}
-    
-    func triggerSync(type: SyncTask.SyncType = .full) async {
-        print("🔵 手动触发同步：\(type)")
-        scheduleSync(type: type, debounce: false)
-    }
-    
-    func syncNow() async {
-        await triggerSync(type: .full)
+        print("🔄 全量同步")
     }
     
     func appDidBecomeActive() {
         print("🟢 App 进入前台，触发同步")
-        Task {
-            await syncNow()
-        }
+        Task { await syncNow() }
+    }
+    
+    func syncNow() async { await triggerSync(type: .full) }
+    
+    func triggerSync(type: SyncTask.SyncType = .full) async {
+        scheduleSync(type: type, debounce: false)
     }
     
     func userDidLogin() {
         print("🔵 用户登录成功，触发全量同步")
-        Task {
-            await syncNow()
-        }
+        Task { await syncNow() }
     }
     
     func networkDidRecover() {
         print("🌐 网络恢复，触发同步")
-        Task {
-            await syncNow()
-        }
-    }
-}
-
-// MARK: - NotificationCenter Extensions
-extension NotificationCenter {
-    func postDataChanged() {
-        post(name: NSNotification.Name("DataChanged"), object: nil)
-    }
-    
-    func postCapsuleChanged() {
-        post(name: NSNotification.Name("CapsuleChanged"), object: nil)
-    }
-    
-    func postWillChanged() {
-        post(name: NSNotification.Name("WillChanged"), object: nil)
-    }
-    
-    func postContactChanged() {
-        post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
-    }
-    
-    func postWitnessChanged() {
-        post(name: NSNotification.Name("WitnessChanged"), object: nil)
+        Task { await syncNow() }
     }
 }
 
@@ -344,50 +335,6 @@ extension NotificationCenter {
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         NotificationManager.shared.requestPermission()
-        
-        let navigationBarAppearance = UINavigationBarAppearance()
-        navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = UIColor(Color(hex: "6366F1"))
-        navigationBarAppearance.largeTitleTextAttributes = [
-            .foregroundColor: UIColor.white,
-            .font: UIFont.boldSystemFont(ofSize: 18)
-        ]
-        navigationBarAppearance.titleTextAttributes = [
-            .foregroundColor: UIColor.white,
-            .font: UIFont.boldSystemFont(ofSize: 17)
-        ]
-        
-        UINavigationBar.appearance().standardAppearance = navigationBarAppearance
-        UINavigationBar.appearance().compactAppearance = navigationBarAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navigationBarAppearance
-        UINavigationBar.appearance().tintColor = .white
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            let docsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
-            print("🔵 ====== 用户状态 ======")
-            print("📁 文档路径：\(docsPath)")
-            print("👤 登录状态：\(UserManager.shared.isLoggedIn)")
-            print("⏰ 签到间隔：\(UserManager.shared.checkInInterval.rawValue)")
-            if let user = UserManager.shared.currentUser {
-                print("📝 用户：\(user.name), 签到间隔：\(user.checkInInterval.rawValue)")
-            }
-            
-            let userFileURL = URL(fileURLWithPath: docsPath).appendingPathComponent("user.json")
-            let exists = FileManager.default.fileExists(atPath: userFileURL.path)
-            print("📄 user.json 存在：\(exists)")
-            
-            if exists {
-                do {
-                    let data = try Data(contentsOf: userFileURL)
-                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        print("📄 user.json 内容：\(json)")
-                    }
-                } catch {
-                    print("❌ 读取 user.json 失败：\(error)")
-                }
-            }
-        }
-        
         print("✅ 终活 App 启动完成")
         return true
     }

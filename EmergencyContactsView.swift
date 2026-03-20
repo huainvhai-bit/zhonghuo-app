@@ -118,7 +118,7 @@ struct EmergencyContactsView: View {
         userManager.saveUser(userManager.currentUser!)
         
         // 发送数据变更通知（触发实时同步）
-        NotificationCenter.default.postContactChanged()
+        NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
         
         print("📞 紧急联系人已删除，准备同步到服务器...")
         Task {

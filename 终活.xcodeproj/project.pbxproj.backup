@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		33DE7DE82F6D493700F8677E /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDA2F6D493700F8677E /* AccountValidator.swift */; };
 		3366C40A2F66D49800129FF3 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C4092F66D49800129FF3 /* AuthView.swift */; };
 		3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40B2F66D4C000129FF3 /* UserManager.swift */; };
 		3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */; };
@@ -68,7 +67,6 @@
 		33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyGuardView.swift; sourceTree = "<group>"; };
 		E8D5C31A82A346428E465EFE89BB4749 /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountValidator.swift; sourceTree = "<group>"; };
 
-		33DE7DDA2F6D493700F8677E /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountValidator.swift; sourceTree = "<group>"; };
 		33DE7DDF2F6D493700F8677E /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
 		33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMemberDetailView.swift; sourceTree = "<group>"; };
 		33DE7DE12F6D493700F8677E /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };

@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var showingEmergencyContactAlert = false
     @AppStorage("hasShownEmergencyContactAlert") private var hasShownEmergencyContactAlert = false
     @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
+    @State private var forceLogout = false  // 强制退出登录
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -25,10 +26,10 @@ struct ContentView: View {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
                 // 再检查登录状态（只依赖 UserManager，不使用 UserDefaults 双重检查）
-                if userManager.isLoggedIn {
-                    mainTabView
-                } else {
+                if forceLogout || !userManager.isLoggedIn {
                     AuthView()
+                } else {
+                    mainTabView
                 }
             }
         }
@@ -36,6 +37,12 @@ struct ContentView: View {
             // 🔴 登录前不执行任何操作！
             // 所有 API 调用必须在用户成功登录后才执行
             print("🟢 ContentView onAppear - 等待用户登录")
+            
+            // 监听强制退出登录通知
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { _ in
+                print("🚪 收到强制退出登录通知")
+                forceLogout = true
+            }
             
             // ✅ 用户已登录时，执行自动签到
             if userManager.isLoggedIn && userManager.currentUser != nil {

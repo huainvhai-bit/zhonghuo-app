@@ -432,7 +432,7 @@ class DataManager: ObservableObject {
         print("👥 见证人已添加到本地，准备同步到服务器...")
         
         // 发送数据变更通知（触发实时同步）
-        NotificationCenter.default.postWitnessChanged()
+        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
         
         // 异步同步到服务器
         Task {
@@ -450,7 +450,7 @@ class DataManager: ObservableObject {
         print("👥 见证人已删除，准备同步到服务器...")
         
         // 发送数据变更通知（触发实时同步）
-        NotificationCenter.default.postWitnessChanged()
+        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
         
         // 异步同步到服务器
         Task {
@@ -469,7 +469,7 @@ class DataManager: ObservableObject {
             print("👥 见证人已更新到本地，准备同步到服务器...")
             
             // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.postWitnessChanged()
+            NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
             
             // 异步同步到服务器
             Task {
@@ -565,7 +565,7 @@ class DataManager: ObservableObject {
             print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
             
             // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.postWillChanged()
+            NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
             
             // 异步同步到服务器
             Task {
@@ -614,7 +614,7 @@ class DataManager: ObservableObject {
         print("📦 胶囊已添加到本地，准备同步到服务器...")
         
         // 发送数据变更通知（触发实时同步）
-        NotificationCenter.default.postCapsuleChanged()
+        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
         // 异步同步到服务器
         Task {
@@ -633,7 +633,7 @@ class DataManager: ObservableObject {
             print("📦 胶囊已更新到本地，准备同步到服务器...")
             
             // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.postCapsuleChanged()
+            NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
             // 异步同步到服务器
             Task {

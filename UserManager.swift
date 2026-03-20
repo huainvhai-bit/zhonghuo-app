@@ -635,6 +635,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("   ❌ 删除用户文件失败：\(error)")
         }
         
+        // 🗑️ 清除保存的密码和 token
+        UserDefaults.standard.removeObject(forKey: "userPassword")
+        UserDefaults.standard.removeObject(forKey: "userToken")
+        UserDefaults.standard.removeObject(forKey: "userId")
+        print("   ✅ 已清除密码和 token")
+        
         print("   currentUser: nil")
         print("   isLoggedIn: \(self.isLoggedIn)")
         print("   lastCheckInDate: nil")
@@ -662,7 +668,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("📞 紧急联系人已添加到本地，准备同步到服务器...")
             
             // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.postContactChanged()
+            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
             
             // 异步同步到服务器
             Task {
@@ -708,7 +714,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("📞 紧急联系人已更新到本地，准备同步到服务器...")
             
             // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.postContactChanged()
+            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
             
             // 异步同步到服务器
             Task {
