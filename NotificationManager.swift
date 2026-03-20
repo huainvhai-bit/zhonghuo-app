@@ -34,6 +34,13 @@ class NotificationManager: ObservableObject {
     func scheduleCheckInReminders(hoursRemaining: Double, reminderThresholdHours: Double? = nil, reminderIntervalHours: Double? = nil) {
         print("🔔 检查是否需要安排签到提醒：hoursRemaining=\(hoursRemaining)小时")
         
+        // 🤫 检查静默模式
+        let silentMode = UserDefaults.standard.bool(forKey: "silentModeEnabled")
+        if silentMode {
+            print("🤫 静默模式已开启，跳过签到提醒")
+            return
+        }
+        
         // 取消所有现有提醒
         cancelAllCheckInReminders()
         

@@ -10,11 +10,13 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
+    @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
     @State private var showingEditProfile = false
     @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
+    @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
     
     var body: some View {
         NavigationView {
@@ -120,6 +122,93 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
+                // 🔔 通知设置
+                Section(header: Text("通知设置")) {
+                    // 🤫 静默模式
+                    Toggle(isOn: $silentModeEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Image(systemName: silentModeEnabled ? "bell.slash.fill" : "bell.fill")
+                                    .foregroundColor(silentModeEnabled ? .orange : .green)
+                                    .frame(width: 24)
+                                
+                                Text("静默模式")
+                                    .font(.system(size: 16))
+                            }
+                            
+                            Text(silentModeEnabled ? "已关闭所有签到通知" : "开启后不再推送任何签到通知")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .tint(.orange)
+                }
+                
+                // 🔋 设备信息
+                Section(header: Text("设备信息")) {
+                    VStack(spacing: 12) {
+                        // 今日步数
+                        HStack {
+                            Image(systemName: "figure.walk")
+                                .foregroundColor(Color(hex: "34C759"))
+                                .frame(width: 30)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("今日步数")
+                                    .font(.system(size: 14))
+                                Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            Spacer()
+                            
+                            // 刷新动画
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundColor(.secondary)
+                                .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
+                        }
+                        
+                        Divider()
+                        
+                        // 电量信息
+                        HStack {
+                            Image(systemName: batteryIcon)
+                                .foregroundColor(batteryColor)
+                                .frame(width: 30)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("设备电量")
+                                    .font(.system(size: 14))
+                                Text(deviceMonitor.batteryLevelText)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.primary)
+                            }
+                            
+                            Spacer()
+                            
+                            Text(deviceMonitor.batteryStateText)
+                                .font(.system(size: 13))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(batteryStateColor)
+                                .cornerRadius(8)
+                        }
+                        
+                        // 最后更新
+                        HStack {
+                            Image(systemName: "clock")
+                                .foregroundColor(.secondary)
+                                .font(.system(size: 12))
+                            
+                            Text("最后更新：\(formatUpdateTime(deviceMonitor.lastUpdateTime))")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
                 // 关于
                 Section(header: Text("关于")) {
                     HStack {
@@ -158,16 +247,30 @@ struct SettingsView: View {
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("我的")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        // 手动刷新设备信息
+                        deviceMonitor.updateStepCount()
+                        deviceMonitor.updateBatteryInfo()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.indigo)
                     }
                 }
+            }
+            .onAppear {
+                // 启动设备监控
+                startDeviceMonitoring()
+                
+                // 上传设备信息到服务器
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 秒后上传
+                    await deviceMonitor.uploadDeviceInfo()
+                }
+            }
+            .onDisappear {
+                // 停止监控
+                stopDeviceMonitoring()
             }
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileModal(dataManager: dataManager, userManager: userManager)
@@ -657,6 +760,75 @@ struct ServerConfigModal: View {
                 }
             }
         }
+    }
+    
+    // MARK: - 辅助方法
+    
+    /// 电池图标
+    private var batteryIcon: String {
+        let level = deviceMonitor.batteryLevel
+        if deviceMonitor.batteryState == .charging {
+            return "battery.100.bolt"
+        } else if level >= 0.75 {
+            return "battery.100"
+        } else if level >= 0.5 {
+            return "battery.75"
+        } else if level >= 0.25 {
+            return "battery.50"
+        } else if level > 0 {
+            return "battery.25"
+        } else {
+            return "battery.0"
+        }
+    }
+    
+    /// 电池颜色
+    private var batteryColor: Color {
+        let level = deviceMonitor.batteryLevel
+        if deviceMonitor.batteryState == .charging {
+            return .green
+        } else if level >= 0.5 {
+            return .green
+        } else if level >= 0.2 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+    
+    /// 电量状态背景色
+    private var batteryStateColor: Color {
+        switch deviceMonitor.batteryState {
+        case .charging:
+            return Color.green.opacity(0.15)
+        case .full:
+            return Color.blue.opacity(0.15)
+        case .unplugged:
+            return Color.gray.opacity(0.15)
+        default:
+            return Color.gray.opacity(0.15)
+        }
+    }
+    
+    /// 格式化更新时间
+    private func formatUpdateTime(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - 视图生命周期
+
+extension SettingsView {
+    func startDeviceMonitoring() {
+        deviceMonitor.startMonitoring()
+        print("🔋 设备监控已启动")
+    }
+    
+    func stopDeviceMonitoring() {
+        deviceMonitor.stopMonitoring()
+        print("🔋 设备监控已停止")
     }
 }
 
