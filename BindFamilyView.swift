@@ -18,6 +18,7 @@ struct BindFamilyView: View {
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var showingSuccess = false
+    // @State private var showingScanner = false  // 扫码功能用
     
     var body: some View {
         NavigationView {
@@ -63,6 +64,18 @@ struct BindFamilyView: View {
                             .background(Color.white)
                             .cornerRadius(12)
                             .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+                        
+                        // 扫码按钮（待 Xcode 添加 QRCodeScannerView.swift 后启用）
+                        /*
+                        Button(action: { showingScanner = true }) {
+                            Image(systemName: "qrcode")
+                                .font(.system(size: 20))
+                                .foregroundColor(.indigo)
+                                .padding(10)
+                                .background(Color.indigo.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                        */
                         .padding()
                         .background(Color.white)
                         .cornerRadius(12)
@@ -130,7 +143,7 @@ struct BindFamilyView: View {
             } message: {
                 Text("绑定成功，等待对方接受邀请")
             }
-            // 扫码功能 - 待后续添加
+            // 扫码功能 - 待 Xcode 添加 QRCodeScannerView.swift 文件后启用
         }
     }
     
@@ -199,6 +212,26 @@ struct BindFamilyView: View {
         showingError = true
         isBinding = false
     }
+    
+    // 扫码功能用
+    /*
+    private func extractInviteCode(from string: String) -> String {
+        // 尝试从 URL 中提取 code 参数
+        if let url = URL(string: string),
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
+            return code.uppercased().replacingOccurrences(of: "-", with: "")
+        }
+        
+        // 直接是 6 位邀请码
+        let cleaned = string.uppercased().replacingOccurrences(of: "-", with: "")
+        if cleaned.count == 6 {
+            return cleaned
+        }
+        
+        return ""
+    }
+    */
     
     @MainActor
     private func addEmergencyContactIfNeeded() async {
