@@ -6,8 +6,8 @@
 //
 
 import SwiftUI
-// CodeScanner - 需要在 Xcode 中添加 Package 依赖
-// import CodeScanner
+import UIKit
+import Vision
 
 struct BindFamilyView: View {
     @Environment(\.dismiss) private var dismiss
@@ -18,7 +18,6 @@ struct BindFamilyView: View {
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var showingSuccess = false
-    @State private var showingScanner = false
     
     var body: some View {
         NavigationView {
@@ -48,32 +47,22 @@ struct BindFamilyView: View {
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         
-                        HStack(spacing: 12) {
-                            TextField("6 位邀请码", text: $inviteCode)
-                                .font(.system(size: 24, weight: .medium, design: .monospaced))
-                                .textContentType(.oneTimeCode)
-                                .keyboardType(.asciiCapable)
-                                .autocapitalization(.allCharacters)
-                                .onChange(of: inviteCode) { newValue in
-                                    // 限制 6 位，转大写
-                                    if newValue.count > 6 {
-                                        inviteCode = String(newValue.prefix(6))
-                                    }
-                                    inviteCode = newValue.uppercased()
+                        TextField("6 位邀请码", text: $inviteCode)
+                            .font(.system(size: 24, weight: .medium, design: .monospaced))
+                            .textContentType(.oneTimeCode)
+                            .keyboardType(.asciiCapable)
+                            .autocapitalization(.allCharacters)
+                            .onChange(of: inviteCode) { newValue in
+                                // 限制 6 位，转大写
+                                if newValue.count > 6 {
+                                    inviteCode = String(newValue.prefix(6))
                                 }
-                            
-                            // 扫码按钮（暂时禁用，待 CodeScanner 配置完成）
-                            /*
-                            Button(action: { showingScanner = true }) {
-                                Image(systemName: "qrcode")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(.indigo)
-                                    .padding(10)
-                                    .background(Color.indigo.opacity(0.1))
-                                    .cornerRadius(8)
+                                inviteCode = newValue.uppercased()
                             }
-                            */
-                        }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                         .padding()
                         .background(Color.white)
                         .cornerRadius(12)
@@ -141,16 +130,7 @@ struct BindFamilyView: View {
             } message: {
                 Text("绑定成功，等待对方接受邀请")
             }
-            // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
-            /*
-            .sheet(isPresented: $showingScanner) {
-                CodeScannerView(
-                    codeTypes: [.qr],
-                    scanMode: .once,
-                    completion: handleScan
-                )
-            }
-            */
+            // 扫码功能 - 待后续添加
         }
     }
     
@@ -218,51 +198,6 @@ struct BindFamilyView: View {
         
         showingError = true
         isBinding = false
-    }
-    
-    // 扫码功能 - 待 CodeScanner 依赖配置完成后启用
-    /*
-    private func handleScan(result: Result<ScanResult, ScanError>) {
-        switch result {
-        case .success(let result):
-            let code = extractInviteCode(from: result.string)
-            if !code.isEmpty {
-                inviteCode = code
-                showingScanner = false
-                
-                // 震动反馈
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                
-                // 自动绑定
-                bindFamily()
-            } else {
-                errorMessage = "无效的二维码"
-                showingError = true
-            }
-        case .failure(let error):
-            errorMessage = error.localizedDescription
-            showingError = true
-            showingScanner = false
-        }
-    }
-    */
-    
-    private func extractInviteCode(from string: String) -> String {
-        // 尝试从 URL 中提取 code 参数
-        if let url = URL(string: string),
-           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let code = components.queryItems?.first(where: { $0.name == "code" })?.value {
-            return code.uppercased().replacingOccurrences(of: "-", with: "")
-        }
-        
-        // 直接是 6 位邀请码
-        let cleaned = string.uppercased().replacingOccurrences(of: "-", with: "")
-        if cleaned.count == 6 {
-            return cleaned
-        }
-        
-        return ""
     }
     
     @MainActor
