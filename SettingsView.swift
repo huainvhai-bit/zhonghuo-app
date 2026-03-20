@@ -209,6 +209,30 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
+                // 👨‍👩‍👧‍👦 家人守护
+                Section(header: Text("家人守护")) {
+                    Button(action: {
+                        // 打开家人守护页面
+                        NotificationCenter.default.post(name: NSNotification.Name("OpenFamilyGuard"), object: nil)
+                    }) {
+                        HStack {
+                            Image(systemName: "person.2.fill")
+                                .foregroundColor(Color(hex: "F59E0B"))
+                                .frame(width: 30)
+                            
+                            Text("家人守护")
+                                .font(.system(size: 16))
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
+                
                 // 关于
                 Section(header: Text("关于")) {
                     HStack {

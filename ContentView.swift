@@ -15,6 +15,7 @@ struct ContentView: View {
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var showingEmergencyContactAlert = false
     @AppStorage("hasShownEmergencyContactAlert") private var hasShownEmergencyContactAlert = false
+    @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -77,6 +78,12 @@ struct ContentView: View {
             }
         } message: {
             Text("为了您的安全，请至少设置 2 位紧急联系人。")
+        }
+        .sheet(isPresented: $showingFamilyGuard) {
+            FamilyGuardView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenFamilyGuard"))) { _ in
+            showingFamilyGuard = true
         }
     }
     
