@@ -94,7 +94,7 @@ struct FamilyGuardView: View {
                         buttonTitle: "开始扫码",
                         buttonColor: Color(hex: "6366F1")
                     ) {
-                        showingBindFamily = true
+                        showingScanner = true
                     }
                     
                     // 2. 分享我的二维码
@@ -173,7 +173,7 @@ struct FamilyGuardView: View {
                         buttonTitle: "开始扫码",
                         buttonColor: Color(hex: "6366F1")
                     ) {
-                        showingBindFamily = true
+                        showingScanner = true
                     }
                     
                     // 2. 分享我的二维码
