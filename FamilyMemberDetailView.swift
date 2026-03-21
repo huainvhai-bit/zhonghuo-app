@@ -184,27 +184,98 @@ struct FamilyMemberDetailView: View {
             }
             
             // 地图（如果有坐标）
-            if let deviceInfo = member.deviceInfo {
-                // TODO: 如果有经纬度，显示地图
-                // 暂时显示占位
-                VStack(spacing: 12) {
-                    Image(systemName: "map")
-                        .font(.system(size: 40))
-                        .foregroundColor(.gray.opacity(0.5))
-                    
-                    Text("位置信息加载中...")
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                }
-                .frame(height: 150)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
+            if let deviceInfo = member.deviceInfo, deviceInfo.hasLocation {
+                locationMap(deviceInfo: deviceInfo)
+            } else if let deviceInfo = member.deviceInfo {
+                // 无位置信息
+                noLocationView
             }
         }
         .padding()
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+    
+    // MARK: - 地图视图
+    @ViewBuilder
+    private func locationMap(deviceInfo: DeviceInfo) -> some View {
+        VStack(spacing: 12) {
+            if let coordinate = deviceInfo.coordinate {
+                // 使用 MapKit 显示地图
+                Map(
+                    coordinateRegion: .constant(
+                        MKCoordinateRegion(
+                            center: coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        )
+                    ),
+                    showsUserLocation: false,
+                    userTrackingMode: .constant(.none)
+                )
+                .frame(height: 200)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                
+                // 地址信息
+                if let address = deviceInfo.address {
+                    HStack {
+                        Image(systemName: "text.bubble.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Text(address)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                        Spacer()
+                    }
+                }
+                
+                // 最后更新时间
+                if let lastUpdate = deviceInfo.lastUpdate {
+                    HStack {
+                        Image(systemName: "clock")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Text("更新于 \(formatRelativeDate(lastUpdate))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - 无位置信息视图
+    private var noLocationView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "location.slash")
+                .font(.system(size: 40))
+                .foregroundColor(.gray.opacity(0.5))
+            
+            Text("暂无位置信息")
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+            
+            Text("对方可能未开启定位服务")
+                .font(.system(size: 12))
+                .foregroundColor(Color.secondary)
+        }
+        .frame(height: 150)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    // MARK: - 辅助方法
+    
+    private func formatRelativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
     
     // MARK: - 操作按钮

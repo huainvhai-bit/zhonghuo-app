@@ -426,6 +426,40 @@ class DataManager: ObservableObject {
         saveSettingsToFile()
     }
     
+    // MARK: - 密码重置
+    
+    /// 重置密码
+    func resetPassword(phone: String, newPassword: String) async throws -> Bool {
+        guard !Self.apiURL.isEmpty else {
+            print("❌ API URL 未设置")
+            return false
+        }
+        
+        let url = URL(string: "\(Self.apiURL)/api.php?action=reset_password")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "phone": phone,
+            "new_password": newPassword
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse,
+           (200...299).contains(httpResponse.statusCode) {
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let success = json?["success"] as? Bool ?? false
+            print("🔐 重置密码结果：\(success ? "成功" : "失败")")
+            return success
+        }
+        
+        return false
+    }
+    
     // MARK: - 见证人管理
     func addWitness(_ witness: Witness) {
         witnesses.append(witness)

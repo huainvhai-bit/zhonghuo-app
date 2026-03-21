@@ -767,9 +767,46 @@ struct ResetPasswordView: View {
     }
     
     private func resetPassword() async {
-        // TODO: 实现重置密码 API
-        errorMessage = "功能开发中..."
-        showingError = true
+        // 验证密码
+        if newPassword != confirmPassword {
+            errorMessage = "两次输入的密码不一致"
+            showingError = true
+            return
+        }
+        
+        if newPassword.count < 6 {
+            errorMessage = "密码至少 6 位"
+            showingError = true
+            return
+        }
+        
+        do {
+            // 调用重置密码 API
+            let result = try await DataManager.shared.resetPassword(
+                phone: phone,
+                newPassword: newPassword
+            )
+            
+            await MainActor.run {
+                if result {
+                    errorMessage = "✅ 密码重置成功，请登录"
+                    showingError = true
+                    // 延迟后关闭弹窗
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        dismiss()
+                    }
+                } else {
+                    errorMessage = "密码重置失败，请检查手机号是否正确"
+                    showingError = true
+                }
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "网络错误，请稍后重试"
+                showingError = true
+                print("❌ 重置密码失败：\(error)")
+            }
+        }
     }
 }
 
