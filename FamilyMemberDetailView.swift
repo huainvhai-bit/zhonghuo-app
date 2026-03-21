@@ -241,13 +241,13 @@ struct FamilyMemberDetailView: View {
                                 .shadow(radius: 3)
                         }
                         
-                        // 精度圆圈（表示定位精度）
-                        if let accuracy = deviceInfo.accuracy {
-                            Circle()
-                                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                                .fill(Color.blue.opacity(0.1))
-                                .tag("accuracy-circle")
-                        }
+                        // 精度圆圈（表示定位精度）- 暂时注释，需要正确的 MapKit API
+                        // if let accuracy = deviceInfo.accuracy {
+                        //     Circle()
+                        //         .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                        //         .fill(Color.blue.opacity(0.1))
+                        //         .tag("accuracy-circle")
+                        // }
                     }
                     .mapStyle(mapType == .standard ? .standard : .hybrid)
                     .mapControls {
