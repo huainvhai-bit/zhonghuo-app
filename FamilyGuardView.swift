@@ -401,7 +401,7 @@ struct FamilyGuardView: View {
         do {
             print("🔵 开始获取邀请码...")
             print("📍 API URL: \(DataManager.apiURL)")
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_get_invite_code")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
