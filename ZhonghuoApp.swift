@@ -425,6 +425,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 设置通知代理
         UNUserNotificationCenter.current().delegate = self
         
+        // 从后端加载通知配置
+        Task {
+            await LifeCheckStatusManager.shared.loadNotificationConfig()
+        }
+        
         // 设置签到提醒通知
         setupCheckInNotifications()
         

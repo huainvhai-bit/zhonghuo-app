@@ -533,6 +533,41 @@ class DataManager: ObservableObject {
         return try await sendSmsNotification(phone: guardianPhone, message: message)
     }
     
+    /// 获取通知配置
+    func fetchNotificationConfig() async -> NotificationConfig? {
+        guard !Self.apiURL.isEmpty else { return nil }
+        
+        let url = URL(string: "\(Self.apiURL)/api/notification_config.php?action=get")!
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                
+                if let success = json?["success"] as? Bool, success,
+                   let data = json?["data"] as? [String: Any] {
+                    
+                    let config = NotificationConfig(
+                        checkInInterval: data["checkInInterval"] as? Int ?? 48,
+                        firstReminderHours: data["firstReminderHours"] as? Int ?? 12,
+                        reminderInterval: data["reminderInterval"] as? Int ?? 2,
+                        overduePushInterval: data["overduePushInterval"] as? Int ?? 1,
+                        enableSmsNotification: data["enableSmsNotification"] as? Bool ?? true
+                    )
+                    
+                    print("✅ 获取通知配置成功：间隔=\(config.checkInInterval)h, 首次=\(config.firstReminderHours)h, 重复=\(config.reminderInterval)h")
+                    return config
+                }
+            }
+        } catch {
+            print("❌ 获取通知配置失败：\(error)")
+        }
+        
+        // 返回默认配置
+        return NotificationConfig()
+    }
+    
     // MARK: - 见证人管理
     func addWitness(_ witness: Witness) {
         witnesses.append(witness)

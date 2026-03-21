@@ -12,7 +12,7 @@ import BackgroundTasks
 // MARK: - 通知配置
 
 /// 通知配置（可从后端获取）
-struct NotificationConfig {
+struct NotificationConfig: Codable {
     /// 签到间隔（小时）- 默认 48 小时
     var checkInInterval: Int = 48
     
@@ -177,16 +177,29 @@ class LifeCheckStatusManager: ObservableObject {
     
     // MARK: - 通知配置
     
-    /// 通知配置（可从后端获取）
+    /// 通知配置（从后端获取）
     private var config: NotificationConfig {
-        // TODO: 从后端获取配置
-        return NotificationConfig(
-            checkInInterval: 48,      // 48 小时签到间隔
-            firstReminderHours: 12,   // 剩余 12 小时首次提醒
-            reminderInterval: 2,      // 每 2 小时重复提醒
-            overduePushInterval: 1,   // 超时后每 1 小时推送
-            enableSmsNotification: true
-        )
+        // 优先使用缓存的配置，如果没有则使用默认值
+        if let cachedConfig = UserDefaults.standard.object(forKey: "notificationConfig") as? Data,
+           let config = try? JSONDecoder().decode(NotificationConfig.self, from: cachedConfig) {
+            return config
+        }
+        return NotificationConfig()
+    }
+    
+    /// 从后端加载通知配置
+    func loadNotificationConfig() async {
+        print("🔄 从后端加载通知配置...")
+        
+        if let config = await DataManager.shared.fetchNotificationConfig() {
+            // 缓存配置
+            if let encoded = try? JSONEncoder().encode(config) {
+                UserDefaults.standard.set(encoded, forKey: "notificationConfig")
+                print("✅ 通知配置已加载并缓存")
+            }
+        } else {
+            print("⚠️ 使用默认通知配置")
+        }
     }
     
     // MARK: - 通知调度
