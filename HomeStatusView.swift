@@ -378,27 +378,27 @@ struct HomeStatusView: View {
     // 🎨 签到卡片颜色（根据倒计时状态变化）
     private var checkInColors: [Color] {
         let hoursRemaining = secondsRemaining / 3600
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours  // 提醒阈值（默认 12 小时）
         
-        if hoursRemaining > 0 {
-            // 绿色：安全状态
+        if hoursRemaining > reminderThreshold {
+            // 🟢 绿色：安全签到倒计时（高于提醒阈值）
             return [Color(hex: "34C759"), Color(hex: "28A74A")]
-        } else if hoursRemaining > -offlineThreshold {
-            // 橙色：警告状态（超过签到时间但未达离线阈值）
+        } else if hoursRemaining > 0 {
+            // 🟠 橙色：警告状态（低于提醒阈值但还未到期）
             return [Color(hex: "FF9500"), Color(hex: "FF8800")]
         } else {
-            // 红色：危险状态（超过离线阈值）
+            // 🔴 红色：危险状态（倒计时结束，已超时）
             return [Color(hex: "FF3B30"), Color(hex: "FF2D55")]
         }
     }
     
     private var checkInShadowColor: Color {
         let hoursRemaining = secondsRemaining / 3600
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+        let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours
         
-        if hoursRemaining > 0 {
+        if hoursRemaining > reminderThreshold {
             return Color(hex: "34C759")
-        } else if hoursRemaining > -offlineThreshold {
+        } else if hoursRemaining > 0 {
             return Color(hex: "FF9500")
         } else {
             return Color(hex: "FF3B30")
