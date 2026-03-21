@@ -306,15 +306,16 @@ class LifeCheckStatusManager: ObservableObject {
             notificationCount += 1
         }
         
-        // 设置后台任务，在超时后尝试发送短信
-        scheduleBackgroundSmsTask(after: deadline)
+        // 🔴 临时禁用后台任务（修复白屏问题）
+        // scheduleBackgroundSmsTask(after: deadline)
     }
     
-    /// 安排后台短信通知任务
+    /// 🔴 临时禁用后台短信通知任务
+    /*
     private func scheduleBackgroundSmsTask(after deadline: Date) {
         if #available(iOS 13.0, *) {
             let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.sms_notify")
-            request.earliestBeginDate = deadline.addingTimeInterval(60) // 超时后 1 分钟
+            request.earliestBeginDate = deadline.addingTimeInterval(60)
             
             do {
                 try BGTaskScheduler.shared.submit(request)
@@ -324,6 +325,7 @@ class LifeCheckStatusManager: ObservableObject {
             }
         }
     }
+    */
     
     /// 通用通知调度方法
     private func scheduleNotification(identifier: String, title: String, body: String, fireDate: Date, repeats: Bool) {
