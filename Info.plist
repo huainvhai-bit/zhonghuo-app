@@ -40,6 +40,8 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

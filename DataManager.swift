@@ -33,17 +33,29 @@ class DataManager: ObservableObject {
     
     /// 从服务器获取 API 配置（无条件相信后端返回的地址）
     func fetchServerConfig(from baseURL: String) async throws {
-        let configURL = "\(baseURL)/api.php?action=config_get"
+        // 新架构：使用 /api/ 目录而不是 api.php
+        let configURL = "\(baseURL)/api/config_get.php"
         guard let url = URL(string: configURL) else {
             throw NSError(domain: "Invalid URL", code: -1, userInfo: [NSLocalizedDescriptionKey: "无效的 URL: \(configURL)"])
         }
         
         print("🌐 请求配置：\(configURL)")
         
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NSError(domain: "Invalid response", code: -1)
+        }
+        
+        // 404 时尝试回退到旧版 api.php
+        if httpResponse.statusCode == 404 {
+            print("⚠️ 新 API 路径不存在，尝试旧版 api.php")
+            try await fetchServerConfigLegacy(from: baseURL)
+            return
         }
         
         guard (200...299).contains(httpResponse.statusCode) else {
@@ -82,6 +94,33 @@ class DataManager: ObservableObject {
             if let serverInfo = configData.serverInfo {
                 print("   服务器信息：\(serverInfo)")
             }
+        }
+    }
+    
+    /// 从服务器获取 API 配置（旧版 api.php 兼容）
+    func fetchServerConfigLegacy(from baseURL: String) async throws {
+        let configURL = "\(baseURL)/api.php?action=config_get"
+        guard let url = URL(string: configURL) else {
+            throw NSError(domain: "Invalid URL", code: -1)
+        }
+        
+        print("🌐 请求配置（旧版）：\(configURL)")
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw NSError(domain: "Server error", code: -1)
+        }
+        
+        let config = try JSONDecoder().decode(ServerConfig.self, from: data)
+        
+        await MainActor.run {
+            self.serverConfig = config
+            DataManager.baseURL = baseURL
+            DataManager.apiURL = baseURL
+            self.isBackendOnline = true
+            UserDefaults.standard.set(baseURL, forKey: "lastUsedBaseURL")
+            print("✅ 旧版配置获取成功")
         }
     }
     
