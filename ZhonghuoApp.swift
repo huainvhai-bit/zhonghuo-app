@@ -16,11 +16,9 @@ struct ZhonghuoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear {
-                    Task {
-                        await validateAccountOnLaunch()
-                    }
-                }
+            // 🔴 关键修复：删除启动时自动验证账号
+            // 原因：登录成功后也会触发验证，导致验证失败就退出登录的恶性循环
+            // 账号验证应该在设置页面由用户主动触发，而不是自动执行
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
@@ -30,42 +28,8 @@ struct ZhonghuoApp: App {
         }
     }
     
-    /// 启动时验证账号
-    private func validateAccountOnLaunch() async {
-        // 仅在已登录状态下验证
-        if !UserManager.shared.isLoggedIn {
-            print("⚠️ 用户未登录，跳过账号验证")
-            accountValidated = true
-            return
-        }
-        
-        guard let user = UserManager.shared.currentUser else {
-            accountValidated = true
-            return
-        }
-        
-        print("🔐 开始验证账号：\(user.name) (\(user.phone))")
-        
-        // 等待网络
-        let networkAvailable = await waitForNetwork()
-        if !networkAvailable {
-            print("⚠️ 网络不可用，允许使用")
-            accountValidated = true
-            return
-        }
-        
-        // 验证账号
-        let isValid = await validateUserCredentials(user: user)
-        
-        if isValid {
-            print("✅ 账号验证成功")
-            accountValidated = true
-        } else {
-            print("❌ 账号验证失败，退出登录")
-            validationFailed = true
-            await logout()
-        }
-    }
+    // 🔴 删除 validateAccountOnLaunch() - 不再自动验证账号
+    // 如果未来需要验证，应该在设置页面添加"验证账号"按钮，由用户主动触发
     
     private func waitForNetwork() async -> Bool {
         let maxWaitTime: TimeInterval = 5.0
