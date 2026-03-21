@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
+    @ObservedObject private var userManager = UserManager.shared  // 🔴 关键修复：观察 shared 实例的变化
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
@@ -17,10 +18,8 @@ struct ContentView: View {
     @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
     @State private var forceLogout = false  // 强制退出登录
     @State private var isCheckingAuth = true  // 🔴 添加加载状态
+    @State private var refreshTrigger = false  // 🔴 触发刷新的标记
     @Environment(\.scenePhase) private var scenePhase
-    
-    // 🔴 直接使用 shared 实例，而不是创建新的 @StateObject
-    private var userManager: UserManager { UserManager.shared }
     
     var body: some View {
         Group {
@@ -102,8 +101,10 @@ struct ContentView: View {
             print("   - isLoggedIn: \(userManager.isLoggedIn)")
             print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
             print("   - 最终结果：\(isLoggedIn)")
+            print("   - isCheckingAuth: \(isCheckingAuth)")
             
             isCheckingAuth = false
+            refreshTrigger.toggle()  // 🔴 触发 SwiftUI 重新渲染
             
             // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
             if isLoggedIn {

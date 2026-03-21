@@ -502,24 +502,23 @@ struct AuthView: View {
                     print("🟢 登录状态已更新：")
                     print("   - isLoggedIn: \(userManager.isLoggedIn)")
                     print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
+                    print("   - currentUser?.id: \(userManager.currentUser?.id ?? "nil")")
                 }
                 
-                // 🔴 延迟后显示成功提示
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 秒延迟
+                // 🔴 延迟后显示成功提示并触发 UI 切换
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
                 
                 await MainActor.run {
-                    print("🟢 登录成功，显示提示")
+                    print("🟢 准备显示成功提示...")
+                    
+                    // 🔴 关键修复：先触发 ContentView 重新检查，再显示提示
+                    // 这样提示消失时 UI 已经切换了
+                    print("🔔 立即触发 ContentView 重新检查登录状态...")
+                    NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+                    
                     // 显示成功提示
                     errorMessage = "✅ 登录成功！"
                     showingError = true
-                    
-                    // 🔴 关键修复：延迟后触发 ContentView 重新检查状态
-                    // 通过通知 ContentView 重新加载用户数据
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        print("🔔 触发 ContentView 重新检查登录状态...")
-                        // 强制 ContentView 重新检查（通过通知）
-                        NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
-                    }
                     
                     // 延迟后隐藏键盘
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
