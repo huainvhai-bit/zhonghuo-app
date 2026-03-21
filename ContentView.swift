@@ -41,50 +41,20 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            // 🔴 登录前不执行任何操作！
-            // 所有 API 调用必须在用户成功登录后才执行
-            
             // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                // 再次确认登录状态（从 Token 和本地文件恢复）
-                userManager.loadUser()
-                
-                // 🔴 确保 isLoggedIn 和 currentUser 都有效
-                let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
-                print("🔍 登录状态检查：isLoggedIn=\(isLoggedIn), currentUser=\(userManager.currentUser?.name ?? "nil")")
-                
-                isCheckingAuth = false
-                
-                // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
-                if isLoggedIn {
-                    Task {
-                        await userManager.performAutoSignIn()
-                        checkEmergencyContacts()
-                    }
-                }
-            }
+            checkLoginStatus()
             
             // 监听强制退出登录通知
             NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { _ in
+                print("🔴 收到强制退出登录通知")
                 forceLogout = true
                 isCheckingAuth = false
             }
-        }
-        .onAppear {
-            // 🔴 登录前不执行任何操作！
-            // 所有 API 调用必须在用户成功登录后才执行
             
-            // 监听强制退出登录通知
-            NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { _ in
-                forceLogout = true
-            }
-            
-            // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
-            if userManager.isLoggedIn && userManager.currentUser != nil {
-                Task {
-                    await userManager.performAutoSignIn()
-                    checkEmergencyContacts()
-                }
+            // 🔴 监听用户登录成功通知
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("UserDidLogin"), object: nil, queue: .main) { _ in
+                print("🔔 收到用户登录通知，重新检查状态...")
+                checkLoginStatus()
             }
         }
         .onChange(of: scenePhase) { newPhase in
@@ -117,6 +87,34 @@ struct ContentView: View {
            !hasShownEmergencyContactAlert {
             showingEmergencyContactAlert = true
             hasShownEmergencyContactAlert = true
+        }
+    }
+    
+    // 🔴 检查登录状态的函数（可重复调用）
+    private func checkLoginStatus() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // 从 Token 和本地文件恢复登录状态
+            userManager.loadUser()
+            
+            // 🔴 确保 isLoggedIn 和 currentUser 都有效
+            let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
+            print("🔍 登录状态检查：")
+            print("   - isLoggedIn: \(userManager.isLoggedIn)")
+            print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
+            print("   - 最终结果：\(isLoggedIn)")
+            
+            isCheckingAuth = false
+            
+            // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
+            if isLoggedIn {
+                print("✅ 用户已登录，执行自动签到...")
+                Task {
+                    await userManager.performAutoSignIn()
+                    checkEmergencyContacts()
+                }
+            } else {
+                print("⚠️ 用户未登录，显示登录界面")
+            }
         }
     }
     

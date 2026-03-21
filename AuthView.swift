@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct AuthView: View {
-    @StateObject private var userManager = UserManager.shared
+    // 🔴 关键修复：直接使用 shared 单例，而不是 @StateObject
+    private var userManager: UserManager { UserManager.shared }
+    
     @State private var name = ""
     @State private var phone = ""
     @State private var password = ""
@@ -21,6 +23,7 @@ struct AuthView: View {
     @State private var timer: Timer?
     @State private var showingResetPassword = false
     @State private var isLoading = false
+    @Environment(\.dismiss) private var dismiss  // 🔴 添加 dismiss 用于登录后关闭登录页
     
     // ✅ 计算属性：表单是否有效
     private var isFormValid: Bool {
@@ -494,14 +497,30 @@ struct AuthView: View {
                 // 🔴 先处理用户数据（在主线程更新状态）
                 await handleAuthSuccess(json)
                 
-                // 🔴 关键修复：延迟后在主线程显示提示，给 UI 切换的时间
-                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
+                // 🔴 关键修复：确保 UserManager 状态已更新
+                await MainActor.run {
+                    print("🟢 登录状态已更新：")
+                    print("   - isLoggedIn: \(userManager.isLoggedIn)")
+                    print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
+                }
+                
+                // 🔴 延迟后显示成功提示
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 秒延迟
                 
                 await MainActor.run {
                     print("🟢 登录成功，显示提示")
                     // 显示成功提示
                     errorMessage = "✅ 登录成功！"
                     showingError = true
+                    
+                    // 🔴 关键修复：延迟后触发 ContentView 重新检查状态
+                    // 通过通知 ContentView 重新加载用户数据
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        print("🔔 触发 ContentView 重新检查登录状态...")
+                        // 强制 ContentView 重新检查（通过通知）
+                        NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+                    }
+                    
                     // 延迟后隐藏键盘
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                         self.hideKeyboard()
