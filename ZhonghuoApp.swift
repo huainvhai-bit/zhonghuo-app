@@ -16,9 +16,14 @@ struct ZhonghuoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-            // 🔴 关键修复：删除启动时自动验证账号
-            // 原因：登录成功后也会触发验证，导致验证失败就退出登录的恶性循环
-            // 账号验证应该在设置页面由用户主动触发，而不是自动执行
+                .onAppear {
+                    // 🔴 关键修复：延迟验证，避免登录成功后立即触发
+                    // 仅在 App 冷启动时验证（距离上次验证超过 5 分钟）
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000) // 延迟 2 秒
+                        await validateAccountOnLaunch()
+                    }
+                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
@@ -28,12 +33,56 @@ struct ZhonghuoApp: App {
         }
     }
     
-    // 🔴 删除 validateAccountOnLaunch() - 不再自动验证账号
-    // 如果未来需要验证，应该在设置页面添加"验证账号"按钮，由用户主动触发
+    /// 启动时验证账号（仅在冷启动时）
+    private func validateAccountOnLaunch() async {
+        // 🔴 关键修复 1: 仅在已登录状态下验证
+        guard UserManager.shared.isLoggedIn else {
+            print("⚠️ 用户未登录，跳过账号验证")
+            return
+        }
+        
+        // 🔴 关键修复 2: 检查上次验证时间，避免频繁验证（5 分钟内不重复验证）
+        let lastValidationTime = UserDefaults.standard.double(forKey: "lastAccountValidationTime")
+        let now = Date().timeIntervalSince1970
+        if now - lastValidationTime < 300 { // 5 分钟
+            print("⏰ 距离上次验证仅 \(Int(now - lastValidationTime)) 秒，跳过验证")
+            return
+        }
+        
+        // 🔴 关键修复 3: 验证失败不立即退出登录，而是标记状态
+        if let user = UserManager.shared.currentUser {
+            print("🔐 开始验证账号：\(user.name) (\(user.phone))")
+            
+            // 等待网络（最多 3 秒）
+            let networkAvailable = await waitForNetwork(timeout: 3)
+            if !networkAvailable {
+                print("⚠️ 网络不可用，跳过验证")
+                return
+            }
+            
+            // 验证账号（不自动退出登录）
+            let result = await validateUserCredentials(user: user)
+            
+            if result.isValid {
+                print("✅ 账号验证成功")
+                UserDefaults.standard.set(now, forKey: "lastAccountValidationTime")
+            } else {
+                print("❌ 账号验证失败：\(result.reason)")
+                // 🔴 关键修复 4: 仅在不允许本地使用时才退出登录
+                if result.shouldLogout {
+                    print("🚪 账号异常，需要退出登录")
+                    await logout(reason: result.reason)
+                } else {
+                    print("⚠️ 账号异常，但允许本地使用")
+                }
+            }
+        }
+    }
     
-    private func waitForNetwork() async -> Bool {
-        let maxWaitTime: TimeInterval = 5.0
-        let checkInterval: TimeInterval = 0.5
+    /// 等待网络（可配置超时）
+    private func waitForNetwork(timeout: TimeInterval = 3.0) async -> Bool {
+        let maxWaitTime = timeout
+        let checkInterval: TimeInterval = 0.3
         var waitedTime: TimeInterval = 0
         
         while waitedTime < maxWaitTime {
@@ -46,6 +95,7 @@ struct ZhonghuoApp: App {
         return false
     }
     
+    /// 检查网络是否可用
     private func isNetworkAvailable() async -> Bool {
         guard !DataManager.apiURL.isEmpty else { return false }
         do {
@@ -60,80 +110,125 @@ struct ZhonghuoApp: App {
         return false
     }
     
-    private func validateUserCredentials(user: User) async -> Bool {
-        guard !DataManager.apiURL.isEmpty else { return false }
+    /// 验证结果
+    struct ValidationResult {
+        let isValid: Bool
+        let shouldLogout: Bool  // 是否应该退出登录
+        let reason: String      // 失败原因
+    }
+    
+    /// 验证用户账号（返回详细的验证结果）
+    private func validateUserCredentials(user: User) async -> ValidationResult {
+        guard !DataManager.apiURL.isEmpty else {
+            return ValidationResult(isValid: false, shouldLogout: false, reason: "API 地址未配置")
+        }
         
         let storedPassword = UserDefaults.standard.string(forKey: "userPassword") ?? ""
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_validate")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let body: [String: Any] = ["phone": user.phone, "password": storedPassword]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse,
-               (200...299).contains(httpResponse.statusCode) {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                let success = json?["success"] as? Bool ?? false
-                print("🔐 账号验证结果：\(success ? "成功" : "失败")")
-                return success
-            }
-        } catch {
-            print("❌ 验证请求失败：\(error)")
-        }
-        
-        // 兼容旧版本（无密码）
-        if storedPassword.isEmpty {
-            return await validateByUserInfo(user: user)
-        }
-        
-        return false
-    }
-    
-    private func validateByUserInfo(user: User) async -> Bool {
-        guard !DataManager.apiURL.isEmpty else { return false }
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        
-        do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_info")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if (200...299).contains(httpResponse.statusCode) {
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    let success = json?["success"] as? Bool ?? false
-                    if success,
-                       let data = json?["data"] as? [String: Any],
-                       let phone = data["phone"] as? String {
-                        print("🔐 Token 验证成功，手机号匹配：\(phone == user.phone)")
-                        return phone == user.phone
+            // 优先使用密码验证（更准确）
+            if !storedPassword.isEmpty {
+                let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_validate")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let body: [String: Any] = ["phone": user.phone, "password": storedPassword]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                    case 200:
+                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let success = json?["success"] as? Bool ?? false
+                        if success {
+                            return ValidationResult(isValid: true, shouldLogout: false, reason: "")
+                        } else {
+                            // 密码错误 → 需要退出
+                            let code = json?["code"] as? String ?? ""
+                            let shouldLogout = (code == "INVALID_PASSWORD")
+                            let reason = json?["message"] as? String ?? "密码错误"
+                            return ValidationResult(isValid: false, shouldLogout: shouldLogout, reason: reason)
+                        }
+                        
+                    case 401:
+                        // Token 无效 → 需要退出
+                        return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
+                        
+                    case 404, 500:
+                        // 服务器错误 → 不退出，允许本地使用
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
+                        
+                    default:
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
                     }
-                } else if httpResponse.statusCode == 401 {
-                    print("❌ Token 已过期")
-                    return false
+                }
+            } else {
+                // 兼容旧版本：使用 Token 验证
+                let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+                let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_info")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                    case 200:
+                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let success = json?["success"] as? Bool ?? false
+                        if success,
+                           let data = json?["data"] as? [String: Any],
+                           let phone = data["phone"] as? String,
+                           phone == user.phone {
+                            return ValidationResult(isValid: true, shouldLogout: false, reason: "")
+                        } else {
+                            // 账号不存在 → 需要退出
+                            return ValidationResult(isValid: false, shouldLogout: true, reason: "账号不存在")
+                        }
+                        
+                    case 401:
+                        // Token 无效 → 需要退出
+                        return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
+                        
+                    case 404, 500:
+                        // 服务器错误 → 不退出，允许本地使用
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
+                        
+                    default:
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
+                    }
                 }
             }
         } catch {
-            print("❌ 获取用户信息失败：\(error)")
+            print("❌ 验证请求失败：\(error)")
+            return ValidationResult(isValid: false, shouldLogout: false, reason: "网络异常")
         }
-        return false
+        
+        return ValidationResult(isValid: false, shouldLogout: false, reason: "未知错误")
     }
     
-    private func logout() {
-        print("🚪 自动退出登录")
-        UserManager.shared.logout()
-        UserDefaults.standard.removeObject(forKey: "userPassword")
-        UserDefaults.standard.removeObject(forKey: "userToken")
-        UserDefaults.standard.removeObject(forKey: "userId")
+    /// 退出登录（带原因）
+    private func logout(reason: String) async {
+        print("🚪 执行自动退出登录：\(reason)")
         
+        // 显示提示
+        await MainActor.run {
+            // 可以通过通知让 ContentView 显示提示
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ShowLogoutAlert"),
+                object: nil,
+                userInfo: ["reason": reason]
+            )
+        }
+        
+        // 延迟后退出登录（让用户看到提示）
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 秒
+        await UserManager.shared.logout()
+        
+        // 发送强制退出通知
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             NotificationCenter.default.post(name: NSNotification.Name("ForceLogout"), object: nil)
         }

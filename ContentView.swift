@@ -19,6 +19,8 @@ struct ContentView: View {
     @State private var forceLogout = false  // 强制退出登录
     @State private var isCheckingAuth = true  // 🔴 添加加载状态
     @State private var refreshTrigger = false  // 🔴 触发刷新的标记
+    @State private var showingLogoutAlert = false  // 🔴 显示退出登录提示
+    @State private var logoutReason = ""  // 🔴 退出登录原因
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -55,6 +57,14 @@ struct ContentView: View {
                 print("🔔 收到用户登录通知，重新检查状态...")
                 checkLoginStatus()
             }
+            
+            // 🔴 监听退出登录提示
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowLogoutAlert"), object: nil, queue: .main) { notification in
+                if let reason = notification.userInfo?["reason"] as? String {
+                    logoutReason = reason
+                    showingLogoutAlert = true
+                }
+            }
         }
         .onChange(of: scenePhase) { newPhase in
             // ✅ 从后台进入前台时，刷新用户数据（不再重复签到）
@@ -62,6 +72,11 @@ struct ContentView: View {
                 // 从本地重新加载用户数据
                 _ = UserManager.shared.currentUser
             }
+        }
+        .alert("账号验证失败", isPresented: $showingLogoutAlert) {
+            Button("确定", role: .destructive) {}
+        } message: {
+            Text(logoutReason)
         }
         .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
             Button("稍后设置", role: .cancel) {}
