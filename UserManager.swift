@@ -807,16 +807,21 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return currentUser?.emergencyContacts.count ?? 0
     }
     
+    // ✅ 性能优化：避免重复加载
+    private var isUserLoaded = false
+    
     func loadUser() {
+        // ✅ 如果已加载，直接返回（避免重复）
+        if isUserLoaded && currentUser != nil {
+            return
+        }
+        
         print("🔍 UserManager.loadUser() 被调用")
-        print("   Token 存在：\(UserDefaults.standard.string(forKey: "userToken") != nil)")
         
         // ✅ 云端优先架构：从 Token 恢复登录状态
         if let token = UserDefaults.standard.string(forKey: "userToken"),
            !token.isEmpty {
-            // 立即设置登录状态（同步）
             self.isLoggedIn = true
-            print("✅ 从 Token 恢复登录状态 - isLoggedIn = true")
             
             // 尝试从本地文件加载用户数据（快速）
             if let user = loadUserFromFile() {
@@ -824,7 +829,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.checkInInterval = user.checkInInterval
                 self.lastCheckInDate = user.lastCheckInDate
                 self.checkEmergencyContacts()
-                print("✅ 从本地文件加载用户：\(user.name)")
+                isUserLoaded = true
             }
             
             // 异步从服务器拉取最新数据
@@ -833,16 +838,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         } else {
             // 降级方案：从本地文件加载
-            print("⚠️ 无 Token，尝试从本地文件加载")
             if let user = loadUserFromFile() {
                 self.currentUser = user
                 self.isLoggedIn = true
                 self.checkInInterval = user.checkInInterval
                 self.lastCheckInDate = user.lastCheckInDate
                 self.checkEmergencyContacts()
-                print("✅ 从本地文件恢复：\(user.name)")
-            } else {
-                print("❌ 本地文件也不存在")
+                isUserLoaded = true
             }
         }
     }

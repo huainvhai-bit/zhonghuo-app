@@ -220,6 +220,14 @@ struct AuthView: View {
                 timer?.invalidate()
                 timer = nil
                 // 🔴 登录前不初始化 API，等到登录时再初始化
+                // ✅ 性能优化：避免 onAppear 中重复执行
+            }
+            .onChange(of: isRegistering) { _ in
+                // ✅ 切换登录/注册模式时重置状态
+                name = ""
+                phone = ""
+                password = ""
+                verifyCode = ""
             }
         }
     }
