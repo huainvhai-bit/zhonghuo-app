@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct AuthView: View {
     // 🔴 关键修复：直接使用 shared 单例，而不是 @StateObject
@@ -722,29 +723,94 @@ extension AuthView {
 struct ResetPasswordView: View {
     @Environment(\.dismiss) var dismiss
     @State private var phone = ""
+    @State private var verifyCode = ""
     @State private var newPassword = ""
     @State private var confirmPassword = ""
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var isLoading = false
+    @State private var isSendingCode = false
+    @State private var codeSent = false
+    @State private var countdown = 60
+    @State private var timer: Timer?
     
     var body: some View {
         NavigationView {
             Form {
                 Section("找回密码") {
+                    // 手机号
                     TextField("手机号", text: $phone)
                         .keyboardType(.phonePad)
+                        .disabled(codeSent)
                     
+                    // 验证码
+                    if codeSent {
+                        HStack {
+                            TextField("验证码", text: $verifyCode)
+                                .keyboardType(.numberPad)
+                                .onChange(of: verifyCode) { newValue in
+                                    if newValue.count > 6 {
+                                        verifyCode = String(newValue.prefix(6))
+                                    }
+                                }
+                            
+                            Button(action: sendVerifyCode) {
+                                Text(isSendingCode ? "发送中..." : countdownText)
+                                    .fontWeight(.medium)
+                            }
+                            .disabled(isSendingCode || countdown > 0)
+                            .foregroundColor(countdown > 0 ? .gray : .blue)
+                        }
+                    } else {
+                        Button(action: sendVerifyCode) {
+                            HStack {
+                                Spacer()
+                                Text("获取验证码")
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(phone.isEmpty || isSendingCode)
+                    }
+                    
+                    // 新密码
                     SecureField("新密码", text: $newPassword)
                     
+                    // 确认密码
                     SecureField("确认密码", text: $confirmPassword)
                     
-                    Button("重置密码") {
+                    // 重置密码按钮
+                    Button(action: {
                         Task {
                             await resetPassword()
                         }
+                    }) {
+                        HStack {
+                            Spacer()
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .padding(.horizontal, 16)
+                                Text("重置中...")
+                                    .padding(.horizontal, 16)
+                            } else {
+                                Text("重置密码")
+                                    .fontWeight(.semibold)
+                                    .padding(.vertical, 8)
+                            }
+                            Spacer()
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .disabled(phone.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canResetPassword || isLoading)
+                }
+                
+                Section(footer: Text("验证码将发送到您的手机，请输入 6 位数字验证码")) {
+                    Text("为了账号安全，重置密码需要验证手机号")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
             .navigationTitle("找回密码")
@@ -763,9 +829,72 @@ struct ResetPasswordView: View {
                     dismissButton: .default(Text("好的"))
                 )
             }
+            .onDisappear {
+                timer?.invalidate()
+            }
         }
     }
     
+    // MARK: - 计算属性
+    
+    private var canResetPassword: Bool {
+        return codeSent && 
+               !phone.isEmpty && 
+               verifyCode.count == 6 && 
+               !newPassword.isEmpty && 
+               !confirmPassword.isEmpty
+    }
+    
+    private var countdownText: String {
+        if countdown > 0 {
+            return "\(countdown) 秒后重发"
+        } else {
+            return "重新发送"
+        }
+    }
+    
+    // MARK: - 方法
+    
+    /// 发送验证码
+    private func sendVerifyCode() {
+        // 验证手机号格式
+        if !isValidPhone(phone) {
+            errorMessage = "请输入正确的手机号"
+            showingError = true
+            return
+        }
+        
+        isSendingCode = true
+        
+        Task {
+            do {
+                let success = try await DataManager.shared.sendResetPasswordCode(phone: phone)
+                
+                await MainActor.run {
+                    isSendingCode = false
+                    if success {
+                        codeSent = true
+                        countdown = 60
+                        startTimer()
+                        errorMessage = "✅ 验证码已发送"
+                        showingError = true
+                    } else {
+                        errorMessage = "发送失败，请稍后重试"
+                        showingError = true
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isSendingCode = false
+                    errorMessage = "网络错误，请稍后重试"
+                    showingError = true
+                    print("❌ 发送验证码失败：\(error)")
+                }
+            }
+        }
+    }
+    
+    /// 重置密码
     private func resetPassword() async {
         // 验证密码
         if newPassword != confirmPassword {
@@ -780,14 +909,24 @@ struct ResetPasswordView: View {
             return
         }
         
+        if verifyCode.count != 6 {
+            errorMessage = "请输入 6 位验证码"
+            showingError = true
+            return
+        }
+        
+        isLoading = true
+        
         do {
-            // 调用重置密码 API
-            let result = try await DataManager.shared.resetPassword(
+            // 调用重置密码 API（带验证码验证）
+            let result = try await DataManager.shared.resetPasswordWithCode(
                 phone: phone,
+                verifyCode: verifyCode,
                 newPassword: newPassword
             )
             
             await MainActor.run {
+                isLoading = false
                 if result {
                     errorMessage = "✅ 密码重置成功，请登录"
                     showingError = true
@@ -796,15 +935,36 @@ struct ResetPasswordView: View {
                         dismiss()
                     }
                 } else {
-                    errorMessage = "密码重置失败，请检查手机号是否正确"
+                    errorMessage = "验证码错误或已过期，请重新获取"
                     showingError = true
                 }
             }
         } catch {
             await MainActor.run {
+                isLoading = false
                 errorMessage = "网络错误，请稍后重试"
                 showingError = true
                 print("❌ 重置密码失败：\(error)")
+            }
+        }
+    }
+    
+    /// 验证手机号格式
+    private func isValidPhone(_ phone: String) -> Bool {
+        // 中国大陆手机号：11 位，以 1 开头
+        let pattern = "^1[3-9]\\d{9}$"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+        return predicate.evaluate(with: phone)
+    }
+    
+    /// 启动倒计时
+    private func startTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if countdown > 0 {
+                countdown -= 1
+            } else {
+                timer?.invalidate()
             }
         }
     }

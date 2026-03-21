@@ -428,8 +428,39 @@ class DataManager: ObservableObject {
     
     // MARK: - 密码重置
     
-    /// 重置密码
-    func resetPassword(phone: String, newPassword: String) async throws -> Bool {
+    /// 发送重置密码验证码
+    func sendResetPasswordCode(phone: String) async throws -> Bool {
+        guard !Self.apiURL.isEmpty else {
+            print("❌ API URL 未设置")
+            return false
+        }
+        
+        let url = URL(string: "\(Self.apiURL)/api.php?action=send_reset_code")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "phone": phone
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse,
+           (200...299).contains(httpResponse.statusCode) {
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let success = json?["success"] as? Bool ?? false
+            print("📱 发送验证码结果：\(success ? "成功" : "失败")")
+            return success
+        }
+        
+        return false
+    }
+    
+    /// 重置密码（带验证码验证）
+    func resetPasswordWithCode(phone: String, verifyCode: String, newPassword: String) async throws -> Bool {
         guard !Self.apiURL.isEmpty else {
             print("❌ API URL 未设置")
             return false
@@ -442,6 +473,7 @@ class DataManager: ObservableObject {
         
         let body: [String: Any] = [
             "phone": phone,
+            "verify_code": verifyCode,
             "new_password": newPassword
         ]
         
@@ -458,6 +490,47 @@ class DataManager: ObservableObject {
         }
         
         return false
+    }
+    
+    // MARK: - 短信通知
+    
+    /// 发送短信通知（阿里云/腾讯云）
+    func sendSmsNotification(phone: String, message: String) async throws -> Bool {
+        guard !Self.apiURL.isEmpty else {
+            print("❌ API URL 未设置")
+            return false
+        }
+        
+        // 调用后端 API，由后端调用短信服务商
+        let url = URL(string: "\(Self.apiURL)/api.php?action=send_sms")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "phone": phone,
+            "message": message
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse,
+           (200...299).contains(httpResponse.statusCode) {
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let success = json?["success"] as? Bool ?? false
+            print("📱 发送短信结果：\(success ? "成功" : "失败")")
+            return success
+        }
+        
+        return false
+    }
+    
+    /// 通知监护人（用户超时未签到）
+    func notifyGuardian(guardianPhone: String, userName: String, hoursOverdue: Double) async throws -> Bool {
+        let message = "【终活】您的家人\(userName)已超时\(Int(hoursOverdue))小时未签到，可能存在安全风险，请及时联系确认。"
+        return try await sendSmsNotification(phone: guardianPhone, message: message)
     }
     
     // MARK: - 见证人管理

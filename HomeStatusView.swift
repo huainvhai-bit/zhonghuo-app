@@ -10,6 +10,7 @@ import SwiftUI
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
     @Environment(\.scenePhase) var scenePhase
+    @StateObject private var statusManager = LifeCheckStatusManager.shared
     @State private var showCheckInAnimation = false
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var secondsRemaining: Double = 0
@@ -132,6 +133,9 @@ struct HomeStatusView: View {
                 // 👥 检查紧急联系人数量（使用后端配置）
                 checkEmergencyContactsCount()
                 
+                // 📞 检查是否需要通知监护人
+                checkGuardianNotification()
+                
                 // 然后更新倒计时显示
                 updateStatus()
             }
@@ -204,6 +208,17 @@ struct HomeStatusView: View {
         if contactCount < minimumContacts {
             print("⚠️ 紧急联系人不足 \(minimumContacts) 人，显示提示")
             showingEmergencyContactAlert = true
+        }
+    }
+    
+    /// 📞 检查是否需要通知监护人
+    private func checkGuardianNotification() {
+        // 使用 statusManager 检查状态
+        statusManager.updateStatus()
+        
+        if !statusManager.isSafe {
+            print("⚠️ 用户已超时未签到，检查是否需要通知监护人")
+            statusManager.notifyGuardianIfNeeded()
         }
     }
     
