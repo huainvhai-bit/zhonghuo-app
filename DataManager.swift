@@ -99,7 +99,7 @@ class DataManager: ObservableObject {
     
     /// 从服务器获取 API 配置（旧版 api.php 兼容）
     func fetchServerConfigLegacy(from baseURL: String) async throws {
-        let configURL = "\(baseURL)/api.php?action=config_get"
+        let configURL = "\(baseURL)/api/config.php?action=config_get"
         guard let url = URL(string: configURL) else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
@@ -474,7 +474,7 @@ class DataManager: ObservableObject {
             return false
         }
         
-        let url = URL(string: "\(Self.apiURL)/api.php?action=send_reset_code")!
+        let url = URL(string: "\(Self.apiURL)/api/users.php?action=send_reset_code")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -505,7 +505,7 @@ class DataManager: ObservableObject {
             return false
         }
         
-        let url = URL(string: "\(Self.apiURL)/api.php?action=reset_password")!
+        let url = URL(string: "\(Self.apiURL)/api/users.php?action=reset_password")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -541,7 +541,7 @@ class DataManager: ObservableObject {
         }
         
         // 调用后端 API，由后端调用短信服务商
-        let url = URL(string: "\(Self.apiURL)/api.php?action=send_sms")!
+        let url = URL(string: "\(Self.apiURL)/api/sms.php?action=send_sms")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -709,7 +709,7 @@ class DataManager: ObservableObject {
     func syncAssetToServer(_ asset: Asset) async {
         guard !DataManager.apiURL.isEmpty else { return }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_update_asset")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=update_asset")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -847,7 +847,7 @@ class DataManager: ObservableObject {
     func syncCheckInStatus() async -> (isSafe: Bool, hoursRemaining: Double, autoCheckInPerformed: Bool)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=checkin_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/checkin.php?action=checkin_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -872,7 +872,7 @@ class DataManager: ObservableObject {
     func batchSyncWillModules() async -> (total: Int, created: Int, updated: Int)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -951,7 +951,7 @@ class DataManager: ObservableObject {
         
         print("🔄 开始同步胶囊：共 \(capsules.count) 个")
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=capsule_batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/capsules.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1111,7 +1111,7 @@ class DataManager: ObservableObject {
         print("🌐 API URL: \(DataManager.apiURL)")
         print("🔑 Token 长度：\(token.count)")
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1242,7 +1242,7 @@ class DataManager: ObservableObject {
         
         print("🔄 开始同步紧急联系人：共 \(user.emergencyContacts.count) 个")
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=emergency_batch_sync")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=batch_sync")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1335,7 +1335,7 @@ class DataManager: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=capsule_list&token=\(token)")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/capsules.php?action=list&token=\(token)")!)
         request.httpMethod = "GET"
         
         do {
@@ -1412,7 +1412,7 @@ class DataManager: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_list&token=\(token)")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=list&token=\(token)")!)
         request.httpMethod = "GET"
         
         do {
@@ -1478,7 +1478,7 @@ class DataManager: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=emergency_list&token=\(token)")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=list&token=\(token)")!)
         request.httpMethod = "GET"
         
         do {
@@ -1544,7 +1544,7 @@ class DataManager: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_list_witnesses&token=\(token)")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=list_witnesses&token=\(token)")!)
         request.httpMethod = "GET"
         
         do {
@@ -1633,7 +1633,7 @@ class DataManager: ObservableObject {
         
         print("🔄 开始同步见证人：共 \(witnesses.count) 个")
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=will_sync_witnesses")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=sync_witnesses")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1749,7 +1749,7 @@ class DataManager: ObservableObject {
         }
         
         // 创建上传请求
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=upload_file")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php?action=upload")!)
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
@@ -1824,7 +1824,7 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=config_get")!
+            let url = URL(string: "\(DataManager.apiURL)/api/config.php?action=config_get")!
             print("📡 请求系统配置：\(url)")
             
             let (data, response) = try await URLSession.shared.data(from: url)

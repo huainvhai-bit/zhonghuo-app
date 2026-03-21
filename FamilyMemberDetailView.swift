@@ -270,15 +270,9 @@ struct FamilyMemberDetailView: View {
                                 span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
                             )
                         ),
-                        annotationItems: [coordinate]
-                    ) { coordinate in
-                        MapAnnotation(coordinate: coordinate) {
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundColor(.red)
-                                .shadow(radius: 3)
-                        }
-                    }
+                        showsUserLocation: false,
+                        userTrackingMode: .constant(.none)
+                    )
                     .frame(height: 280)
                     .cornerRadius(12)
                     .overlay(
