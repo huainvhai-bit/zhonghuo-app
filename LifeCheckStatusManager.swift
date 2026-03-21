@@ -167,24 +167,6 @@ class LifeCheckStatusManager: ObservableObject {
         }
     }
     
-    /// 检查并发送超时通知给监护人
-    func checkAndNotifyGuardians() {
-        updateStatus()
-        
-        if !isSafe {
-            let hoursOverdue = -hoursRemaining
-            
-            // 超时超过 24 小时才通知
-            if hoursOverdue >= 24 {
-                print("⚠️ 检测到超时，准备通知监护人...")
-                
-                Task {
-                    await notifyGuardians()
-                }
-            }
-        }
-    }
-    
     /// 通知所有监护人
     private func notifyGuardians() async {
         // 获取当前用户

@@ -481,10 +481,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             task.setTaskCompleted(success: false)
         }
         
-        // 检查并通知监护人
-        LifeCheckStatusManager.shared.checkAndNotifyGuardians()
-        
-        // 重新安排下一次检查
+        // 后台任务只负责重新安排通知，不检查超时
+        // 因为用户打开 App 会自动签到，说明用户安全
         scheduleBackgroundCheckTask()
         
         task.setTaskCompleted(success: true)
@@ -497,12 +495,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         print("🔔 收到通知：\(notification.request.identifier)")
         
-        // 如果是签到提醒，检查是否需要通知监护人
-        if notification.request.identifier == "checkin_reminder" {
-            LifeCheckStatusManager.shared.checkAndNotifyGuardians()
-        }
-        
         // 显示通知（横幅 + 声音）
+        // 用户点击通知打开 App 后会自动签到，不需要检查超时
         completionHandler([.banner, .sound])
     }
     
@@ -510,11 +504,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         print("👆 用户点击通知：\(response.actionIdentifier)")
         
-        // 如果是签到提醒，检查是否需要通知监护人
-        if response.notification.request.identifier == "checkin_reminder" {
-            LifeCheckStatusManager.shared.checkAndNotifyGuardians()
-        }
-        
+        // 用户打开 App 后会自动签到，不需要检查超时
         completionHandler()
     }
     
