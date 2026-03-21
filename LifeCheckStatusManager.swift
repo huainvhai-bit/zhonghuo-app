@@ -7,6 +7,27 @@
 
 import Foundation
 import UserNotifications
+import BackgroundTasks
+
+// MARK: - 通知配置
+
+/// 通知配置（可从后端获取）
+struct NotificationConfig {
+    /// 签到间隔（小时）- 默认 48 小时
+    var checkInInterval: Int = 48
+    
+    /// 首次提醒时间（小时）- 剩余 12 小时时首次提醒
+    var firstReminderHours: Int = 12
+    
+    /// 重复提醒间隔（小时）- 每 2 小时提醒一次
+    var reminderInterval: Int = 2
+    
+    /// 超时后推送间隔（小时）- 超时后每 1 小时推送一次
+    var overduePushInterval: Int = 1
+    
+    /// 是否启用短信通知（App 在后台运行时）
+    var enableSmsNotification: Bool = true
+}
 
 class LifeCheckStatusManager: ObservableObject {
     static let shared = LifeCheckStatusManager()
@@ -122,53 +143,205 @@ class LifeCheckStatusManager: ObservableObject {
         }
     }
     
-    /// 设置后台检查任务（App 退出后继续监控）
-    func scheduleBackgroundCheck() {
-        // 使用 BGTaskScheduler 安排后台检查
-        // 注意：iOS 后台任务有时间限制，需要后端配合才能实现长时间监控
-        // 这里使用本地通知作为替代方案
+    // MARK: - 后台任务处理
+    
+    /// 处理后台短信通知任务
+    func handleBackgroundSmsTask(task: BGAppRefreshTask) {
+        print("📱 执行后台短信通知任务...")
         
-        print("📅 设置签到提醒通知...")
+        // 设置任务过期处理
+        task.expirationHandler = {
+            print("⏰ 后台任务时间到")
+            task.setTaskCompleted(success: false)
+        }
+        
+        // 检查是否需要发送短信
+        updateStatus()
+        
+        if !isSafe && config.enableSmsNotification {
+            let hoursOverdue = -hoursRemaining
+            
+            // 超时即发送短信（不再等待 24 小时）
+            if hoursOverdue > 0 {
+                print("⚠️ 用户已超时\(Int(hoursOverdue))小时，发送短信通知监护人")
+                
+                Task {
+                    await notifyGuardians()
+                }
+            }
+        }
+        
+        task.setTaskCompleted(success: true)
+        print("✅ 后台短信通知任务完成")
+    }
+    
+    // MARK: - 通知配置
+    
+    /// 通知配置（可从后端获取）
+    private var config: NotificationConfig {
+        // TODO: 从后端获取配置
+        return NotificationConfig(
+            checkInInterval: 48,      // 48 小时签到间隔
+            firstReminderHours: 12,   // 剩余 12 小时首次提醒
+            reminderInterval: 2,      // 每 2 小时重复提醒
+            overduePushInterval: 1,   // 超时后每 1 小时推送
+            enableSmsNotification: true
+        )
+    }
+    
+    // MARK: - 通知调度
+    
+    /// 设置签到提醒通知（完整流程）
+    func scheduleCheckInNotifications() {
+        print("📅 设置签到提醒通知流程...")
         
         // 取消之前的通知
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         
-        // 计算下次签到时间（48 小时后）
-        let checkInInterval: TimeInterval = 48 * 3600
-        let nextCheckInTime = Date().addingTimeInterval(checkInInterval)
+        guard let lastCheckIn = UserManager.shared.currentUser?.lastCheckInDate else {
+            print("⚠️ 无上次签到时间，无法设置通知")
+            return
+        }
         
-        // 创建通知内容
+        let now = Date()
+        let checkInIntervalSeconds = config.checkInInterval * 3600
+        let nextCheckInTime = lastCheckIn.addingTimeInterval(TimeInterval(checkInIntervalSeconds))
+        
+        // 计算首次提醒时间（剩余 12 小时）
+        let firstReminderTime = nextCheckInTime.addingTimeInterval(-TimeInterval(config.firstReminderHours * 3600))
+        
+        // 如果已经过了首次提醒时间，立即设置
+        if firstReminderTime <= now {
+            print("⏰ 已到首次提醒时间，立即设置提醒")
+            scheduleFirstReminder()
+        } else {
+            // 设置首次提醒
+            scheduleNotification(
+                identifier: "checkin_first_reminder",
+                title: "⏰ 签到提醒",
+                body: "您将在 \(config.firstReminderHours) 小时后需要签到",
+                fireDate: firstReminderTime,
+                repeats: false
+            )
+        }
+        
+        // 设置重复提醒（每 2 小时）
+        scheduleRepeatReminders(from: firstReminderTime, to: nextCheckInTime)
+        
+        // 设置超时通知
+        scheduleOverdueNotifications(after: nextCheckInTime)
+        
+        print("✅ 通知流程设置完成")
+        print("   - 首次提醒：\(firstReminderTime)")
+        print("   - 下次签到：\(nextCheckInTime)")
+    }
+    
+    /// 设置首次提醒
+    private func scheduleFirstReminder() {
+        scheduleNotification(
+            identifier: "checkin_first_reminder",
+            title: "⏰ 该签到啦",
+            body: "您即将需要签到，请打开 App 确认安全",
+            fireDate: Date().addingTimeInterval(60), // 1 分钟后
+            repeats: false
+        )
+    }
+    
+    /// 设置重复提醒（每 2 小时）
+    private func scheduleRepeatReminders(from startTime: Date, to endTime: Date) {
+        let intervalSeconds = config.reminderInterval * 3600
+        var currentTime = startTime.addingTimeInterval(TimeInterval(intervalSeconds))
+        var reminderCount = 1
+        
+        while currentTime < endTime {
+            let hoursLeft = Int(endTime.timeIntervalSince(currentTime) / 3600)
+            scheduleNotification(
+                identifier: "checkin_repeat_reminder_\(reminderCount)",
+                title: "⏰ 签到提醒",
+                body: "您还有 \(hoursLeft) 小时需要签到",
+                fireDate: currentTime,
+                repeats: false
+            )
+            
+            currentTime.addTimeInterval(TimeInterval(intervalSeconds))
+            reminderCount += 1
+            
+            // 最多设置 10 个重复提醒
+            if reminderCount > 10 { break }
+        }
+    }
+    
+    /// 设置超时通知（倒计时结束后）
+    private func scheduleOverdueNotifications(after deadline: Date) {
+        let intervalSeconds = config.overduePushInterval * 3600
+        var currentTime = deadline.addingTimeInterval(TimeInterval(intervalSeconds))
+        var notificationCount = 1
+        
+        // 设置 5 个超时通知
+        while notificationCount <= 5 {
+            let hoursOverdue = notificationCount * config.overduePushInterval
+            
+            scheduleNotification(
+                identifier: "checkin_overdue_\(notificationCount)",
+                title: "⚠️ 已超时",
+                body: "您已超过签到时间 \(hoursOverdue) 小时，请打开 App 确认安全",
+                fireDate: currentTime,
+                repeats: false
+            )
+            
+            currentTime.addTimeInterval(TimeInterval(intervalSeconds))
+            notificationCount += 1
+        }
+        
+        // 设置后台任务，在超时后尝试发送短信
+        scheduleBackgroundSmsTask(after: deadline)
+    }
+    
+    /// 安排后台短信通知任务
+    private func scheduleBackgroundSmsTask(after deadline: Date) {
+        if #available(iOS 13.0, *) {
+            let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.sms_notify")
+            request.earliestBeginDate = deadline.addingTimeInterval(60) // 超时后 1 分钟
+            
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                print("📱 后台短信通知任务已安排")
+            } catch {
+                print("❌ 安排后台短信任务失败：\(error)")
+            }
+        }
+    }
+    
+    /// 通用通知调度方法
+    private func scheduleNotification(identifier: String, title: String, body: String, fireDate: Date, repeats: Bool) {
         let content = UNMutableNotificationContent()
-        content.title = "⏰ 该签到啦"
-        content.body = "您已经快 48 小时未签到，请打开 App 确认安全"
+        content.title = title
+        content.body = body
         content.sound = .default
         content.categoryIdentifier = "CHECKIN_REMINDER"
         
-        // 创建触发器（48 小时后）
         let trigger = UNCalendarNotificationTrigger(
-            dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: nextCheckInTime),
-            repeats: true
+            dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate),
+            repeats: repeats
         )
         
-        // 创建请求
         let request = UNNotificationRequest(
-            identifier: "checkin_reminder",
+            identifier: identifier,
             content: content,
             trigger: trigger
         )
         
-        // 添加通知
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ 设置通知失败：\(error)")
+                print("❌ 设置通知失败 [\(identifier)]：\(error)")
             } else {
-                print("✅ 签到提醒通知已设置：\(nextCheckInTime)")
+                print("✅ 通知已设置 [\(identifier)]：\(fireDate)")
             }
         }
     }
     
     /// 通知所有监护人
-    private func notifyGuardians() async {
+    func notifyGuardians() async {
         // 获取当前用户
         guard let user = DataManager.shared.currentUser else {
             print("❌ 无用户数据，无法通知监护人")

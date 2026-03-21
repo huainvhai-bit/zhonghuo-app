@@ -426,67 +426,53 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         UNUserNotificationCenter.current().delegate = self
         
         // 设置签到提醒通知
-        setupCheckInReminder()
+        setupCheckInNotifications()
         
-        // 启动后台检查任务
-        startBackgroundCheckTask()
+        // 启动后台任务
+        startBackgroundTasks()
         
         print("✅ 终活 App 启动完成")
         return true
     }
     
     /// 设置签到提醒通知
-    private func setupCheckInReminder() {
-        LifeCheckStatusManager.shared.scheduleBackgroundCheck()
+    private func setupCheckInNotifications() {
+        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
     }
     
-    /// 启动后台检查任务（定期检查超时）
-    private func startBackgroundCheckTask() {
-        // 使用 BGTaskScheduler 安排后台检查
-        // 注意：iOS 后台任务有时间限制，系统会决定何时执行
-        
-        // 注册后台任务（在 Info.plist 中配置）
+    /// 启动后台任务
+    private func startBackgroundTasks() {
+        // 注册后台任务
         if #available(iOS 13.0, *) {
-            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.check", using: nil) { task in
-                self.handleBackgroundCheck(task: task as! BGAppRefreshTask)
+            // 短信通知任务
+            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.sms_notify", using: nil) { task in
+                self.handleBackgroundSmsTask(task: task as! BGAppRefreshTask)
             }
-        }
-        
-        // 安排后台检查
-        scheduleBackgroundCheckTask()
-    }
-    
-    /// 安排后台检查任务
-    private func scheduleBackgroundCheckTask() {
-        if #available(iOS 13.0, *) {
-            let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.check")
-            request.earliestBeginDate = Date().addingTimeInterval(60 * 60) // 1 小时后
             
-            do {
-                try BGTaskScheduler.shared.submit(request)
-                print("📅 后台检查任务已安排")
-            } catch {
-                print("❌ 安排后台任务失败：\(error)")
+            // 通知刷新任务
+            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.refresh_notifications", using: nil) { task in
+                self.handleNotificationRefresh(task: task as! BGAppRefreshTask)
             }
         }
     }
     
-    /// 处理后台检查任务
-    private func handleBackgroundCheck(task: BGAppRefreshTask) {
-        print("🔍 执行后台检查任务...")
+    /// 处理后台短信通知任务
+    private func handleBackgroundSmsTask(task: BGAppRefreshTask) {
+        LifeCheckStatusManager.shared.handleBackgroundSmsTask(task: task)
+    }
+    
+    /// 处理通知刷新任务
+    private func handleNotificationRefresh(task: BGAppRefreshTask) {
+        print("🔄 刷新通知...")
         
-        // 设置任务过期处理
         task.expirationHandler = {
-            print("⏰ 后台任务时间到")
             task.setTaskCompleted(success: false)
         }
         
-        // 后台任务只负责重新安排通知，不检查超时
-        // 因为用户打开 App 会自动签到，说明用户安全
-        scheduleBackgroundCheckTask()
+        // 重新设置通知
+        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
         
         task.setTaskCompleted(success: true)
-        print("✅ 后台检查任务完成")
     }
     
     // MARK: - 通知代理
@@ -495,8 +481,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         print("🔔 收到通知：\(notification.request.identifier)")
         
+        // 如果是超时通知，且 App 在后台运行，尝试发送短信
+        if notification.request.identifier.contains("checkin_overdue") {
+            // App 在后台，可以尝试发送短信
+            print("📱 超时通知触发，准备发送短信...")
+            Task {
+                await LifeCheckStatusManager.shared.notifyGuardians()
+            }
+        }
+        
         // 显示通知（横幅 + 声音）
-        // 用户点击通知打开 App 后会自动签到，不需要检查超时
         completionHandler([.banner, .sound])
     }
     
@@ -504,7 +498,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         print("👆 用户点击通知：\(response.actionIdentifier)")
         
-        // 用户打开 App 后会自动签到，不需要检查超时
+        // 用户打开 App 后会自动签到
         completionHandler()
     }
     
