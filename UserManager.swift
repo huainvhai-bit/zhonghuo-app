@@ -46,8 +46,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     private func setupLocationManager() {
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 10 // 10 米更新一次
+        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation  // 导航级精度
+        locationManager.distanceFilter = 50  // 移动 50 米以上再更新
+        locationManager.activityType = .automotive  // 自动优化定位策略
         
         locationAuthStatus = CLLocationManager.authorizationStatus()
     }
@@ -131,6 +132,18 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         let latitude = location.coordinate.latitude
         let longitude = location.coordinate.longitude
+        let accuracy = location.horizontalAccuracy  // 精度（米）
+        
+        // 检查定位精度
+        print("📍 获取到位置：\(latitude), \(longitude)")
+        print("📊 定位精度：\(accuracy)米")
+        
+        // 如果精度太差（>500 米），不上传并提示用户
+        if accuracy > 500 {
+            print("⚠️ 定位精度过低（\(accuracy)米 > 500 米），暂不上传")
+            print("💡 请移动到开阔地带，确保 GPS 信号良好")
+            return
+        }
         
         // 逆地理编码获取地址
         let geocoder = CLGeocoder()
@@ -145,6 +158,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
+            print("✅ 位置精度良好，准备上传")
             self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address)
         }
     }
