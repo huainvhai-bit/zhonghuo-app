@@ -404,7 +404,7 @@ struct FamilyMemberDetailView: View {
     private func acceptInvite() {
         Task {
             let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_accept")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=accept_invite")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -421,7 +421,7 @@ struct FamilyMemberDetailView: View {
     private func rejectInvite() {
         Task {
             let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_reject")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=reject_invite")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -438,7 +438,7 @@ struct FamilyMemberDetailView: View {
     private func removeFamily() {
         Task {
             let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_remove")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")

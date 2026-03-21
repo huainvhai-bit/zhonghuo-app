@@ -200,7 +200,7 @@ struct BindFamilyView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_bind")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -266,7 +266,7 @@ struct BindFamilyView: View {
         
         do {
             // 获取家人列表
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_list")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             

@@ -369,7 +369,7 @@ struct FamilyGuardView: View {
         guard !DataManager.apiURL.isEmpty else { return }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_list")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
             var request = URLRequest(url: url)
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
@@ -488,7 +488,7 @@ struct FamilyGuardView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_bind")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -538,7 +538,7 @@ struct FamilyGuardView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_bind")!
+            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -820,7 +820,7 @@ struct FamilyMemberCard: View {
         
         Task {
             do {
-                let url = URL(string: "\(DataManager.apiURL)/api.php?action=family_remove")!
+                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
