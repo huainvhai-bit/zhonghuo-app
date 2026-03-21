@@ -48,7 +48,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation  // 导航级精度
         locationManager.distanceFilter = 50  // 移动 50 米以上再更新
-        locationManager.activityType = .automotive  // 自动优化定位策略
+        locationManager.activityType = .otherNavigation  // 自动优化定位策略
         
         locationAuthStatus = CLLocationManager.authorizationStatus()
     }
