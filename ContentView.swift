@@ -118,9 +118,7 @@ struct ContentView: View {
         print("🔍 开始检查登录状态...")
         
         // ✅ 使用 Dispatch 异步，避免阻塞 UI
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            
+        DispatchQueue.main.async {
             // 加载用户（同步）
             self.userManager.loadUser()
             
