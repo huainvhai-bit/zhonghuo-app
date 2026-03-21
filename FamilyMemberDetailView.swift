@@ -13,6 +13,13 @@ struct FamilyMemberDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingRemoveAlert = false
     
+    // ✅ 地图类型切换
+    enum MapType {
+        case standard  // 标准地图
+        case hybrid    // 卫星地图
+    }
+    @State private var mapType: MapType = .standard
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -202,23 +209,83 @@ struct FamilyMemberDetailView: View {
     private func locationMap(deviceInfo: DeviceInfo) -> some View {
         VStack(spacing: 12) {
             if let coordinate = deviceInfo.coordinate {
-                // 使用 MapKit 显示地图
-                Map(
-                    coordinateRegion: .constant(
+                // 地图类型切换按钮
+                HStack {
+                    Text("地图类型:")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    Picker("地图类型", selection: $mapType) {
+                        Label("标准", systemImage: "map").tag(MapType.standard)
+                        Label("卫星", systemImage: "globe").tag(MapType.hybrid)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
+                .padding(.horizontal, 12)
+                
+                // 使用 MapKit 显示地图（iOS 17+ 支持）
+                if #available(iOS 17.0, *) {
+                    Map(initialPosition: .region(
                         MKCoordinateRegion(
                             center: coordinate,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)  // 🔍 更近的缩放级别
                         )
-                    ),
-                    showsUserLocation: false,
-                    userTrackingMode: .constant(.none)
-                )
-                .frame(height: 200)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
+                    )) {
+                        Marker(coordinate: coordinate) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.system(size: 36))  // 🔍 更大的标记
+                                .foregroundColor(.red)
+                                .shadow(radius: 3)
+                        }
+                        
+                        // 精度圆圈（表示定位精度）
+                        if let accuracy = deviceInfo.accuracy {
+                            Circle()
+                                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                .fill(Color.blue.opacity(0.1))
+                                .tag("accuracy-circle")
+                        }
+                    }
+                    .mapStyle(mapType == .standard ? .standard : .hybrid)
+                    .mapControls {
+                        MapCompass()
+                        MapScaleView()
+                        MapUserLocationButton()
+                    }
+                    .frame(height: 280)  // 🔍 更高的地图
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
+                } else {
+                    // iOS 17 以下降级方案
+                    Map(
+                        coordinateRegion: .constant(
+                            MKCoordinateRegion(
+                                center: coordinate,
+                                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                            )
+                        ),
+                        annotationItems: [coordinate]
+                    ) { coordinate in
+                        MapAnnotation(coordinate: coordinate) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundColor(.red)
+                                .shadow(radius: 3)
+                        }
+                    }
+                    .frame(height: 280)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
+                }
                 
                 // 地址信息
                 if let address = deviceInfo.address {
@@ -232,6 +299,7 @@ struct FamilyMemberDetailView: View {
                             .lineLimit(2)
                         Spacer()
                     }
+                    .padding(.horizontal, 12)
                 }
                 
                 // 最后更新时间
@@ -245,6 +313,7 @@ struct FamilyMemberDetailView: View {
                             .foregroundColor(.secondary)
                         Spacer()
                     }
+                    .padding(.horizontal, 12)
                 }
             }
         }

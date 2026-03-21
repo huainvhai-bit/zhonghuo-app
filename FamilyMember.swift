@@ -52,6 +52,7 @@ struct DeviceInfo: Codable {
     var latitude: Double?       // 纬度（可选）
     var longitude: Double?      // 经度（可选）
     var address: String?        // 地址文本（可选）
+    var accuracy: Double?       // 定位精度（米，可选）
     
     /// 电量百分比文本
     var batteryLevelText: String {

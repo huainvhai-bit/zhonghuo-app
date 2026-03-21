@@ -159,7 +159,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
             
             print("✅ 位置精度良好，准备上传")
-            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address)
+            // ✅ 上传精度信息
+            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: accuracy)
         }
     }
     
@@ -167,7 +168,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("❌ 定位失败：\(error)")
     }
     
-    private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String) {
+    private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) {
         guard let apiURL = URL(string: "\(DataManager.apiURL)/location.php") else {
             print("⚠️ 位置上传失败：API URL 无效")
             print("   URL: \(DataManager.apiURL)/location.php")
