@@ -104,6 +104,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     // MARK: - 位置上传
+    private var isContinuouslyUpdating = false  // 是否正在持续定位
+    private var continuousUploadTimer: Timer?  // 定时上传定时器
+    
     func uploadLocation() {
         print("🔵 ====== uploadLocation 开始 ======")
         print("   - currentUser: \(currentUser?.name ?? "nil")")
@@ -118,50 +121,87 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
             print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
             print("💡 请在 设置 → 隐私 → 定位服务 中允许终活 App 使用定位")
-            // ❌ 不再上传模拟位置，避免地图显示错误
             return
         }
         
-        print("📍 开始请求位置...")
-        locationManager.requestLocation()
+        print("📍 开始持续定位...")
+        startContinuousLocationUpdates()
     }
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
+    // MARK: - 持续定位
+    
+    /// 开始持续定位并上传
+    func startContinuousLocationUpdates() {
+        guard !isContinuouslyUpdating else {
+            print("⚠️ 已经在持续定位中")
+            return
+        }
+        
+        isContinuouslyUpdating = true
+        print("🔄 开始持续定位模式")
+        
+        // 配置定位：平衡精度和耗电
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 10  // 移动 10 米更新
+        
+        // 开始定位
+        locationManager.startUpdatingLocation()
+        
+        // 定时上传：每 5 秒上传一次（即使位置未变化）
+        continuousUploadTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.uploadLatestLocation()
+        }
+        
+        // 首次立即上传
+        uploadLatestLocation()
+    }
+    
+    /// 停止持续定位
+    func stopContinuousLocationUpdates() {
+        isContinuouslyUpdating = false
+        continuousUploadTimer?.invalidate()
+        continuousUploadTimer = nil
+        locationManager.stopUpdatingLocation()
+        print("⏹️ 停止持续定位")
+    }
+    
+    /// 上传最新位置（即使用户未移动）
+    private func uploadLatestLocation() {
+        guard let location = locationManager.location else {
+            print("⚠️ 暂无可用位置")
+            return
+        }
+        
+        handleLocationUpdate(location)
+    }
+    
+    /// 处理位置更新
+    private func handleLocationUpdate(_ location: CLLocation) {
         guard let user = currentUser else { return }
         
         let latitude = location.coordinate.latitude
         let longitude = location.coordinate.longitude
-        let accuracy = location.horizontalAccuracy  // 精度（米）
-        let age = Date().timeIntervalSince(location.timestamp)  // 位置年龄（秒）
+        let accuracy = location.horizontalAccuracy
+        let age = Date().timeIntervalSince(location.timestamp)
         
-        // 检查定位精度
-        print("📍 获取到位置：\(latitude), \(longitude)")
-        print("📊 定位精度：\(accuracy)米")
-        print("⏱️ 位置年龄：\(String(format: "%.1f", age))秒")
+        print("📍 获取位置：\(latitude), \(longitude)")
+        print("📊 精度：\(accuracy)米，年龄：\(String(format: "%.1f", age))秒")
         
-        // 🔴 严格精度检查：>100 米不上传
-        if accuracy > 100 {
-            print("⚠️ 定位精度过低（\(accuracy)米 > 100 米），暂不上传")
-            print("💡 请移动到开阔地带，确保 GPS 信号良好")
-            print("💡 室内、地下室、高楼密集区会影响定位精度")
-            return
-        }
-        
-        // 🔴 检查位置年龄：超过 5 分钟的位置不用
-        if age > 300 {
-            print("⚠️ 位置太旧（\(String(format: "%.0f", age))秒 > 300 秒），暂不上传")
-            print("💡 请保持 App 在前台，等待 GPS 刷新")
-            return
-        }
-        
-        // 🔴 检查是否为有效坐标
+        // 🔴 检查位置有效性
         if accuracy < 0 || latitude == 0 || longitude == 0 {
-            print("⚠️ 位置数据无效，暂不上传")
+            print("⚠️ 位置数据无效，跳过")
             return
         }
         
-        print("✅ 位置精度良好（±\(Int(accuracy))米），准备上传")
+        // 🔴 检查位置年龄（超过 2 分钟的位置不用）
+        if age > 120 {
+            print("⚠️ 位置太旧（\(String(format: "%.0f", age))秒），跳过")
+            return
+        }
+        
+        // ✅ 上传所有有效位置（包括精度较差的，让后端显示范围）
+        // 不再拒绝低精度位置，而是让后端显示范围圈
+        print("✅ 准备上传（精度：±\(Int(accuracy))米）")
         
         // 逆地理编码获取地址
         let geocoder = CLGeocoder()
@@ -176,10 +216,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
-            // ✅ 上传精度信息
             self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: accuracy)
         }
     }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        
+        // 持续定位模式下，处理每个位置更新
+        if isContinuouslyUpdating {
+            handleLocationUpdate(location)
+        }
+    }
+    
+    // locationManager(_:didUpdateLocations:) 已移到上面，在持续定位模式下处理
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: any Swift.Error) {
         print("❌ 定位失败：\(error)")
