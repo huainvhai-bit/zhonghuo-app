@@ -53,21 +53,60 @@ enum AppError: LocalizedError {
 class ErrorHandler {
     static let shared = ErrorHandler()
     
+    // 错误提示闭包（由 UI 层设置）
+    var showErrorAlert: ((String, String?) -> Void)?
+    
     private init() {}
     
     // MARK: - 错误处理
-    func handle(_ error: Error, context: String = "") {
+    func handle(_ error: Error, context: String = "", showAlert: Bool = true) {
         let appError = convertToAppError(error)
         
         #if DEBUG
         print("❌ 错误 [\(context)]: \(appError.errorDescription ?? "未知错误")")
+        print("💡 建议：\(appError.recoverySuggestion ?? "")")
         #endif
         
         // 记录错误到日志
         AppStabilityManager.shared.logError(error)
         
-        // TODO: 显示错误提示给用户
-        // 在实际应用中，这里应该触发 UI 层的错误提示
+        // 显示错误提示给用户
+        if showAlert {
+            showUserFriendlyAlert(for: appError, context: context)
+        }
+    }
+    
+    /// 显示用户友好的错误提示
+    private func showUserFriendlyAlert(for appError: AppError, context: String) {
+        let title = getErrorTitle(for: appError)
+        let message = "\(appError.errorDescription ?? "发生错误")\n\n💡 \(appError.recoverySuggestion ?? "请稍后重试")"
+        
+        #if DEBUG
+        print("🔔 错误提示：\(title) - \(message)")
+        #endif
+        
+        // 通过闭包通知 UI 层显示弹窗
+        DispatchQueue.main.async { [weak self] in
+            self?.showErrorAlert?(title, message)
+        }
+    }
+    
+    /// 获取错误标题
+    private func getErrorTitle(for error: AppError) -> String {
+        switch error {
+        case .networkError:
+            return "⚠️ 网络连接问题"
+        case .dataError:
+            return "⚠️ 数据异常"
+        case .authenticationError:
+            return "⚠️ 认证失败"
+        case .storageError:
+            return "⚠️ 存储问题"
+        case .validationError:
+            return "⚠️ 输入验证失败"
+        case .unknownError:
+            return "⚠️ 发生错误"
+        }
     }
     
     // MARK: - 转换错误

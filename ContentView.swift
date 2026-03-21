@@ -45,6 +45,15 @@ struct ContentView: View {
             // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
             checkLoginStatus()
             
+            // 📝 设置全局错误处理器
+            ErrorHandler.shared.showErrorAlert = { title, message in
+                // 在主线程显示错误提示
+                DispatchQueue.main.async {
+                    // 可以扩展为显示全局错误弹窗
+                    print("🔔 全局错误提示：\(title) - \(message ?? "")")
+                }
+            }
+            
             // 监听强制退出登录通知
             NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { _ in
                 print("🔴 收到强制退出登录通知")
