@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var dataManager = DataManager.shared
-    @StateObject private var userManager = UserManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
@@ -17,7 +16,11 @@ struct ContentView: View {
     @AppStorage("hasShownEmergencyContactAlert") private var hasShownEmergencyContactAlert = false
     @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
     @State private var forceLogout = false  // 强制退出登录
+    @State private var isCheckingAuth = true  // 🔴 添加加载状态
     @Environment(\.scenePhase) private var scenePhase
+    
+    // 🔴 直接使用 shared 实例，而不是创建新的 @StateObject
+    private var userManager: UserManager { UserManager.shared }
     
     var body: some View {
         Group {
@@ -25,12 +28,46 @@ struct ContentView: View {
             if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
-                // 再检查登录状态（只依赖 UserManager，不使用 UserDefaults 双重检查）
-                if forceLogout || !userManager.isLoggedIn {
+                // 🔴 等待登录状态检查完成
+                if isCheckingAuth {
+                    // 显示加载界面
+                    LoadingView()
+                } else if forceLogout || !userManager.isLoggedIn || userManager.currentUser == nil {
+                    // 🔴 增加 currentUser 检查，确保用户数据也存在
                     AuthView()
                 } else {
                     mainTabView
                 }
+            }
+        }
+        .onAppear {
+            // 🔴 登录前不执行任何操作！
+            // 所有 API 调用必须在用户成功登录后才执行
+            
+            // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                // 再次确认登录状态（从 Token 和本地文件恢复）
+                userManager.loadUser()
+                
+                // 🔴 确保 isLoggedIn 和 currentUser 都有效
+                let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
+                print("🔍 登录状态检查：isLoggedIn=\(isLoggedIn), currentUser=\(userManager.currentUser?.name ?? "nil")")
+                
+                isCheckingAuth = false
+                
+                // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
+                if isLoggedIn {
+                    Task {
+                        await userManager.performAutoSignIn()
+                        checkEmergencyContacts()
+                    }
+                }
+            }
+            
+            // 监听强制退出登录通知
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { _ in
+                forceLogout = true
+                isCheckingAuth = false
             }
         }
         .onAppear {
@@ -191,6 +228,29 @@ extension Color {
             blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// 🔴 加载视图 - 等待登录状态检查
+struct LoadingView: View {
+    @State private var opacity = 0.5
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+            
+            Text("正在加载...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(hex: "F5F5F7"))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                opacity = 1.0
+            }
+        }
     }
 }
 
