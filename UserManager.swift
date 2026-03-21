@@ -133,17 +133,35 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let latitude = location.coordinate.latitude
         let longitude = location.coordinate.longitude
         let accuracy = location.horizontalAccuracy  // 精度（米）
+        let age = Date().timeIntervalSince(location.timestamp)  // 位置年龄（秒）
         
         // 检查定位精度
         print("📍 获取到位置：\(latitude), \(longitude)")
         print("📊 定位精度：\(accuracy)米")
+        print("⏱️ 位置年龄：\(String(format: "%.1f", age))秒")
         
-        // 如果精度太差（>500 米），不上传并提示用户
-        if accuracy > 500 {
-            print("⚠️ 定位精度过低（\(accuracy)米 > 500 米），暂不上传")
+        // 🔴 严格精度检查：>100 米不上传
+        if accuracy > 100 {
+            print("⚠️ 定位精度过低（\(accuracy)米 > 100 米），暂不上传")
             print("💡 请移动到开阔地带，确保 GPS 信号良好")
+            print("💡 室内、地下室、高楼密集区会影响定位精度")
             return
         }
+        
+        // 🔴 检查位置年龄：超过 5 分钟的位置不用
+        if age > 300 {
+            print("⚠️ 位置太旧（\(String(format: "%.0f", age))秒 > 300 秒），暂不上传")
+            print("💡 请保持 App 在前台，等待 GPS 刷新")
+            return
+        }
+        
+        // 🔴 检查是否为有效坐标
+        if accuracy < 0 || latitude == 0 || longitude == 0 {
+            print("⚠️ 位置数据无效，暂不上传")
+            return
+        }
+        
+        print("✅ 位置精度良好（±\(Int(accuracy))米），准备上传")
         
         // 逆地理编码获取地址
         let geocoder = CLGeocoder()
@@ -158,7 +176,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
-            print("✅ 位置精度良好，准备上传")
             // ✅ 上传精度信息
             self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: accuracy)
         }
