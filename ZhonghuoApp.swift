@@ -17,17 +17,6 @@ struct ZhonghuoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear {
-                    // 🔴 关键修复：注册后台任务（确保真机上也能注册）
-                    registerBackgroundTasks()
-                    
-                    // 🔴 关键修复：延迟验证，避免登录成功后立即触发
-                    // 仅在 App 冷启动时验证（距离上次验证超过 5 分钟）
-                    Task {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000) // 延迟 2 秒
-                        await validateAccountOnLaunch()
-                    }
-                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
@@ -35,43 +24,6 @@ struct ZhonghuoApp: App {
                 RealTimeSyncManager.shared.appDidBecomeActive()
             }
         }
-    }
-    
-    /// 注册后台任务（真机必需）
-    private func registerBackgroundTasks() {
-        if #available(iOS 13.0, *) {
-            print("🔧 注册后台任务...")
-            
-            // 短信通知任务
-            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.sms_notify", using: nil) { task in
-                self.handleBackgroundSmsTask(task: task as! BGAppRefreshTask)
-            }
-            
-            // 通知刷新任务
-            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.refresh_notifications", using: nil) { task in
-                self.handleNotificationRefresh(task: task as! BGAppRefreshTask)
-            }
-            
-            print("✅ 后台任务注册完成")
-        }
-    }
-    
-    /// 处理后台短信通知任务
-    private func handleBackgroundSmsTask(task: BGAppRefreshTask) {
-        print("📱 执行后台短信通知任务...")
-        LifeCheckStatusManager.shared.handleBackgroundSmsTask(task: task)
-    }
-    
-    /// 处理通知刷新任务
-    private func handleNotificationRefresh(task: BGAppRefreshTask) {
-        print("🔄 刷新通知...")
-        
-        task.expirationHandler = {
-            task.setTaskCompleted(success: false)
-        }
-        
-        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
-        task.setTaskCompleted(success: true)
     }
     
     /// 启动时验证账号（仅在冷启动时）
@@ -473,8 +425,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 设置签到提醒通知
         setupCheckInNotifications()
         
-        // 启动后台任务
-        startBackgroundTasks()
+        // 🔴 临时禁用后台任务（修复白屏问题）
+        // startBackgroundTasks()
         
         print("✅ 终活 App 启动完成")
         return true
@@ -485,40 +437,32 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         LifeCheckStatusManager.shared.scheduleCheckInNotifications()
     }
     
-    /// 启动后台任务
+    // 🔴 临时禁用后台任务注册
+    /*
     private func startBackgroundTasks() {
-        // 注册后台任务
         if #available(iOS 13.0, *) {
-            // 短信通知任务
             BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.sms_notify", using: nil) { task in
                 self.handleBackgroundSmsTask(task: task as! BGAppRefreshTask)
             }
-            
-            // 通知刷新任务
             BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.refresh_notifications", using: nil) { task in
                 self.handleNotificationRefresh(task: task as! BGAppRefreshTask)
             }
         }
     }
     
-    /// 处理后台短信通知任务
     private func handleBackgroundSmsTask(task: BGAppRefreshTask) {
         LifeCheckStatusManager.shared.handleBackgroundSmsTask(task: task)
     }
     
-    /// 处理通知刷新任务
     private func handleNotificationRefresh(task: BGAppRefreshTask) {
         print("🔄 刷新通知...")
-        
         task.expirationHandler = {
             task.setTaskCompleted(success: false)
         }
-        
-        // 重新设置通知
         LifeCheckStatusManager.shared.scheduleCheckInNotifications()
-        
         task.setTaskCompleted(success: true)
     }
+    */
     
     // MARK: - 通知代理
     

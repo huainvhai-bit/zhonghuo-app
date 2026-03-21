@@ -115,29 +115,38 @@ struct ContentView: View {
     
     // 🔴 检查登录状态的函数（可重复调用）
     private func checkLoginStatus() {
-        // ✅ 立即执行，不延迟（避免白屏）
-        userManager.loadUser()
+        print("🔍 开始检查登录状态...")
         
-        // 🔴 确保 isLoggedIn 和 currentUser 都有效
-        let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
-        print("🔍 登录状态检查：")
-        print("   - isLoggedIn: \(userManager.isLoggedIn)")
-        print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
-        print("   - 最终结果：\(isLoggedIn)")
-        print("   - isCheckingAuth: \(isCheckingAuth)")
-        
-        isCheckingAuth = false
-        refreshTrigger.toggle()  // 🔴 触发 SwiftUI 重新渲染
-        
-        // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
-        if isLoggedIn {
-            print("✅ 用户已登录，执行自动签到...")
-            Task {
-                await userManager.performAutoSignIn()
-                checkEmergencyContacts()
+        // ✅ 使用 Dispatch 异步，避免阻塞 UI
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 加载用户（同步）
+            self.userManager.loadUser()
+            
+            // 🔴 确保 isLoggedIn 和 currentUser 都有效
+            let isLoggedIn = self.userManager.isLoggedIn && self.userManager.currentUser != nil
+            print("🔍 登录状态检查：")
+            print("   - isLoggedIn: \(self.userManager.isLoggedIn)")
+            print("   - currentUser: \(self.userManager.currentUser?.name ?? "nil")")
+            print("   - 最终结果：\(isLoggedIn)")
+            
+            // 🔴 关键：立即更新状态，避免白屏
+            self.isCheckingAuth = false
+            self.refreshTrigger.toggle()
+            
+            print("   - isCheckingAuth: \(self.isCheckingAuth)")
+            
+            // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
+            if isLoggedIn {
+                print("✅ 用户已登录，执行自动签到...")
+                Task {
+                    await self.userManager.performAutoSignIn()
+                    self.checkEmergencyContacts()
+                }
+            } else {
+                print("⚠️ 用户未登录，显示登录界面")
             }
-        } else {
-            print("⚠️ 用户未登录，显示登录界面")
         }
     }
     
