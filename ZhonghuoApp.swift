@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Network
+import BackgroundTasks
 
 @main
 struct ZhonghuoApp: App {
@@ -411,16 +412,110 @@ class RealTimeSyncManager: ObservableObject {
 }
 
 // MARK: - AppDelegate
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // 初始化 API 配置
         Task {
             await initializeAPIConfig()
         }
         
+        // 请求通知权限
         NotificationManager.shared.requestPermission()
+        
+        // 设置通知代理
+        UNUserNotificationCenter.current().delegate = self
+        
+        // 设置签到提醒通知
+        setupCheckInReminder()
+        
+        // 启动后台检查任务
+        startBackgroundCheckTask()
+        
         print("✅ 终活 App 启动完成")
         return true
+    }
+    
+    /// 设置签到提醒通知
+    private func setupCheckInReminder() {
+        LifeCheckStatusManager.shared.scheduleBackgroundCheck()
+    }
+    
+    /// 启动后台检查任务（定期检查超时）
+    private func startBackgroundCheckTask() {
+        // 使用 BGTaskScheduler 安排后台检查
+        // 注意：iOS 后台任务有时间限制，系统会决定何时执行
+        
+        // 注册后台任务（在 Info.plist 中配置）
+        if #available(iOS 13.0, *) {
+            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.check", using: nil) { task in
+                self.handleBackgroundCheck(task: task as! BGAppRefreshTask)
+            }
+        }
+        
+        // 安排后台检查
+        scheduleBackgroundCheckTask()
+    }
+    
+    /// 安排后台检查任务
+    private func scheduleBackgroundCheckTask() {
+        if #available(iOS 13.0, *) {
+            let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.check")
+            request.earliestBeginDate = Date().addingTimeInterval(60 * 60) // 1 小时后
+            
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                print("📅 后台检查任务已安排")
+            } catch {
+                print("❌ 安排后台任务失败：\(error)")
+            }
+        }
+    }
+    
+    /// 处理后台检查任务
+    private func handleBackgroundCheck(task: BGAppRefreshTask) {
+        print("🔍 执行后台检查任务...")
+        
+        // 设置任务过期处理
+        task.expirationHandler = {
+            print("⏰ 后台任务时间到")
+            task.setTaskCompleted(success: false)
+        }
+        
+        // 检查并通知监护人
+        LifeCheckStatusManager.shared.checkAndNotifyGuardians()
+        
+        // 重新安排下一次检查
+        scheduleBackgroundCheckTask()
+        
+        task.setTaskCompleted(success: true)
+        print("✅ 后台检查任务完成")
+    }
+    
+    // MARK: - 通知代理
+    
+    /// 收到通知时的处理（App 在后台）
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        print("🔔 收到通知：\(notification.request.identifier)")
+        
+        // 如果是签到提醒，检查是否需要通知监护人
+        if notification.request.identifier == "checkin_reminder" {
+            LifeCheckStatusManager.shared.checkAndNotifyGuardians()
+        }
+        
+        // 显示通知（横幅 + 声音）
+        completionHandler([.banner, .sound])
+    }
+    
+    /// 用户点击通知时的处理
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        print("👆 用户点击通知：\(response.actionIdentifier)")
+        
+        // 如果是签到提醒，检查是否需要通知监护人
+        if response.notification.request.identifier == "checkin_reminder" {
+            LifeCheckStatusManager.shared.checkAndNotifyGuardians()
+        }
+        
+        completionHandler()
     }
     
     private func initializeAPIConfig() async {

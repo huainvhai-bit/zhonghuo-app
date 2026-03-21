@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UserNotifications
 
 class LifeCheckStatusManager: ObservableObject {
     static let shared = LifeCheckStatusManager()
@@ -114,6 +115,69 @@ class LifeCheckStatusManager: ObservableObject {
                 print("⚠️ 用户已超时\(Int(hoursOverdue))小时未签到，需要通知监护人")
                 
                 // 异步通知监护人
+                Task {
+                    await notifyGuardians()
+                }
+            }
+        }
+    }
+    
+    /// 设置后台检查任务（App 退出后继续监控）
+    func scheduleBackgroundCheck() {
+        // 使用 BGTaskScheduler 安排后台检查
+        // 注意：iOS 后台任务有时间限制，需要后端配合才能实现长时间监控
+        // 这里使用本地通知作为替代方案
+        
+        print("📅 设置签到提醒通知...")
+        
+        // 取消之前的通知
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        
+        // 计算下次签到时间（48 小时后）
+        let checkInInterval: TimeInterval = 48 * 3600
+        let nextCheckInTime = Date().addingTimeInterval(checkInInterval)
+        
+        // 创建通知内容
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ 该签到啦"
+        content.body = "您已经快 48 小时未签到，请打开 App 确认安全"
+        content.sound = .default
+        content.categoryIdentifier = "CHECKIN_REMINDER"
+        
+        // 创建触发器（48 小时后）
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: nextCheckInTime),
+            repeats: true
+        )
+        
+        // 创建请求
+        let request = UNNotificationRequest(
+            identifier: "checkin_reminder",
+            content: content,
+            trigger: trigger
+        )
+        
+        // 添加通知
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ 设置通知失败：\(error)")
+            } else {
+                print("✅ 签到提醒通知已设置：\(nextCheckInTime)")
+            }
+        }
+    }
+    
+    /// 检查并发送超时通知给监护人
+    func checkAndNotifyGuardians() {
+        updateStatus()
+        
+        if !isSafe {
+            let hoursOverdue = -hoursRemaining
+            
+            // 超时超过 24 小时才通知
+            if hoursOverdue >= 24 {
+                print("⚠️ 检测到超时，准备通知监护人...")
+                
                 Task {
                     await notifyGuardians()
                 }
