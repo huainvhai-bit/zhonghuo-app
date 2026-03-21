@@ -10,7 +10,7 @@ import SwiftUI
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
     @Environment(\.scenePhase) var scenePhase
-    @StateObject private var statusManager = LifeCheckStatusManager.shared
+    @ObservedObject private var statusManager = LifeCheckStatusManager.shared
     @State private var showCheckInAnimation = false
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var secondsRemaining: Double = 0
