@@ -116,10 +116,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
             print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
-            print("💡 请在模拟器设置 → 隐私 → 定位服务 中允许终活 App 使用定位")
-            print("📍 尝试使用模拟位置上传...")
-            // 🆕 即使未授权，也尝试上传模拟位置（用于测试）
-            uploadLocationToServer(userId: user.id, latitude: 39.9042, longitude: 116.4074, address: "北京市（模拟）")
+            print("💡 请在 设置 → 隐私 → 定位服务 中允许终活 App 使用定位")
+            // ❌ 不再上传模拟位置，避免地图显示错误
             return
         }
         
