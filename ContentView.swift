@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var dataManager = DataManager.shared
-    @ObservedObject private var userManager = UserManager.shared  // 🔴 关键修复：观察 shared 实例的变化
+    @ObservedObject private var dataManager = DataManager.shared
+    @ObservedObject private var userManager = UserManager.shared
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
@@ -115,31 +115,29 @@ struct ContentView: View {
     
     // 🔴 检查登录状态的函数（可重复调用）
     private func checkLoginStatus() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // 从 Token 和本地文件恢复登录状态
-            userManager.loadUser()
-            
-            // 🔴 确保 isLoggedIn 和 currentUser 都有效
-            let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
-            print("🔍 登录状态检查：")
-            print("   - isLoggedIn: \(userManager.isLoggedIn)")
-            print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
-            print("   - 最终结果：\(isLoggedIn)")
-            print("   - isCheckingAuth: \(isCheckingAuth)")
-            
-            isCheckingAuth = false
-            refreshTrigger.toggle()  // 🔴 触发 SwiftUI 重新渲染
-            
-            // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
-            if isLoggedIn {
-                print("✅ 用户已登录，执行自动签到...")
-                Task {
-                    await userManager.performAutoSignIn()
-                    checkEmergencyContacts()
-                }
-            } else {
-                print("⚠️ 用户未登录，显示登录界面")
+        // ✅ 立即执行，不延迟（避免白屏）
+        userManager.loadUser()
+        
+        // 🔴 确保 isLoggedIn 和 currentUser 都有效
+        let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
+        print("🔍 登录状态检查：")
+        print("   - isLoggedIn: \(userManager.isLoggedIn)")
+        print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
+        print("   - 最终结果：\(isLoggedIn)")
+        print("   - isCheckingAuth: \(isCheckingAuth)")
+        
+        isCheckingAuth = false
+        refreshTrigger.toggle()  // 🔴 触发 SwiftUI 重新渲染
+        
+        // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
+        if isLoggedIn {
+            print("✅ 用户已登录，执行自动签到...")
+            Task {
+                await userManager.performAutoSignIn()
+                checkEmergencyContacts()
             }
+        } else {
+            print("⚠️ 用户未登录，显示登录界面")
         }
     }
     
