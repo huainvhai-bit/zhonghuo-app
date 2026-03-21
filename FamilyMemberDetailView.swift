@@ -205,10 +205,29 @@ struct FamilyMemberDetailView: View {
     }
     
     // MARK: - 地图视图
-    @ViewBuilder
     private func locationMap(deviceInfo: DeviceInfo) -> some View {
         VStack(spacing: 12) {
             if let coordinate = deviceInfo.coordinate {
+                // 精度提示（如果有）
+                if let accuracy = deviceInfo.accuracy {
+                    HStack {
+                        Image(systemName: accuracy > 100 ? "location.slash.fill" : "location.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(accuracy > 100 ? .orange : .green)
+                        Text("定位精度：±\(Int(accuracy))米")
+                            .font(.system(size: 12))
+                            .foregroundColor(accuracy > 100 ? .orange : .green)
+                        if accuracy > 100 {
+                            Text("（可能偏离）")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 4)
+                }
+                
                 // 地图类型切换按钮
                 HStack {
                     Text("地图类型:")
@@ -228,39 +247,7 @@ struct FamilyMemberDetailView: View {
                 
                 // 使用 MapKit 显示地图（iOS 17+ 支持）
                 if #available(iOS 17.0, *) {
-                    Map(initialPosition: .region(
-                        MKCoordinateRegion(
-                            center: coordinate,
-                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)  // 🔍 更近的缩放级别
-                        )
-                    )) {
-                        Marker(coordinate: coordinate) {
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.system(size: 36))  // 🔍 更大的标记
-                                .foregroundColor(.red)
-                                .shadow(radius: 3)
-                        }
-                        
-                        // 精度圆圈（表示定位精度）- 暂时注释，需要正确的 MapKit API
-                        // if let accuracy = deviceInfo.accuracy {
-                        //     Circle()
-                        //         .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                        //         .fill(Color.blue.opacity(0.1))
-                        //         .tag("accuracy-circle")
-                        // }
-                    }
-                    .mapStyle(mapType == .standard ? .standard : .hybrid)
-                    .mapControls {
-                        MapCompass()
-                        MapScaleView()
-                        MapUserLocationButton()
-                    }
-                    .frame(height: 280)  // 🔍 更高的地图
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    )
+                    mapiOS17(coordinate: coordinate, accuracy: deviceInfo.accuracy)
                 } else {
                     // iOS 17 以下降级方案
                     Map(
@@ -311,6 +298,50 @@ struct FamilyMemberDetailView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - iOS 17+ 地图视图（分离函数避免@ViewBuilder 问题）
+    @available(iOS 17.0, *)
+    private func mapiOS17(coordinate: CLLocationCoordinate2D, accuracy: Double?) -> some View {
+        // 根据精度调整缩放级别
+        let latitudeDelta: Double
+        if let accuracy = accuracy {
+            if accuracy > 500 {
+                latitudeDelta = 0.05  // 精度差，放大范围
+            } else if accuracy > 100 {
+                latitudeDelta = 0.02  // 精度一般
+            } else {
+                latitudeDelta = 0.005  // 精度好，放大细节
+            }
+        } else {
+            latitudeDelta = 0.005
+        }
+        
+        return Map(initialPosition: .region(
+            MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: latitudeDelta, longitudeDelta: latitudeDelta)
+            )
+        )) {
+            Marker(coordinate: coordinate) {
+                Image(systemName: "mappin.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundColor(.red)
+                    .shadow(radius: 3)
+            }
+        }
+        .mapStyle(mapType == .standard ? .standard : .hybrid)
+        .mapControls {
+            MapCompass()
+            MapScaleView()
+            MapUserLocationButton()
+        }
+        .frame(height: 280)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
     
     // MARK: - 无位置信息视图
