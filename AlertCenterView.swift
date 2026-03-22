@@ -264,9 +264,41 @@ struct AlertCenterView: View {
     }
     
     private func clearAlertHistory() {
-        // TODO: 清除本地告警历史
-        alertHistory.removeAll()
-        print("🗑️ 清除告警历史成功")
+        Task {
+            guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+                errorMessage = "请先登录"
+                showingError = true
+                return
+            }
+            
+            guard !DataManager.apiURL.isEmpty else {
+                errorMessage = "API 未配置"
+                showingError = true
+                return
+            }
+            
+            do {
+                let url = URL(string: "\(DataManager.apiURL)/api/alert.php?action=clear")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                
+                let (data, _) = try await URLSession.shared.data(for: request)
+                let result = try JSONDecoder().decode(ClearResponse.self, from: data)
+                
+                if result.success {
+                    alertHistory.removeAll()
+                    print("🗑️ 清除告警历史成功：\(result.data?.deletedCount ?? 0) 条")
+                } else {
+                    errorMessage = result.message ?? "清除失败"
+                    showingError = true
+                }
+            } catch {
+                print("❌ 清除告警历史失败：\(error)")
+                errorMessage = "清除失败：\(error.localizedDescription)"
+                showingError = true
+            }
+        }
     }
     
     // MARK: - Helper Methods
@@ -511,6 +543,22 @@ extension AlertCenterView {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
+}
+
+// MARK: - API Response Models
+
+struct ClearResponse: Codable {
+    let success: Bool
+    let message: String?
+    let data: ClearData?
+}
+
+struct ClearData: Codable {
+    let deletedCount: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case deletedCount = "deleted_count"
+    }
 }
 
 // MARK: - Preview

@@ -114,6 +114,17 @@ struct PerformanceMonitorView: View {
                     }
                     .padding(.vertical, 8)
                 }
+                
+                Button(action: clearHistory) {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "trash", foregroundColor: .red)
+                        Text("清空历史")
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
             }
         }
         .navigationTitle("性能监控")
@@ -199,6 +210,12 @@ struct PerformanceMonitorView: View {
     private func exportReport() {
         // TODO: 导出性能报告
         print("📊 导出性能报告")
+    }
+    
+    private func clearHistory() {
+        // 清空本地历史数据
+        performanceHistory.removeAll()
+        print("🗑️ 性能历史已清空")
     }
     
     private func colorForUsage(_ usage: Double) -> Color {
