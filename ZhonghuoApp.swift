@@ -425,8 +425,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 设置签到提醒通知
         setupCheckInNotifications()
         
-        // ✅ 重新启用后台任务（在 didFinishLaunchingWithOptions 中注册，确保真机正常）
-        startBackgroundTasks()
+        // 🔴 临时禁用后台任务（避免真机崩溃）
+        // startBackgroundTasks()
         
         print("✅ 终活 App 启动完成")
         return true
@@ -491,15 +491,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     private func initializeAPIConfig() async {
-        // 设置默认值（确保即使配置加载失败也能启动）
-        DataManager.apiURL = "http://8.136.41.211:3395"
-        DataManager.baseURL = "http://8.136.41.211:3395"
+        // 🔴 关键：立即设置默认值（同步，确保在异步操作前就设置好）
+        await MainActor.run {
+            DataManager.apiURL = "http://8.136.41.211:3395"
+            DataManager.baseURL = "http://8.136.41.211:3395"
+        }
         
         do {
             // 尝试从 UserDefaults 读取已保存的 API URL
             if let savedURL = UserDefaults.standard.string(forKey: "apiURL"), !savedURL.isEmpty {
-                DataManager.apiURL = savedURL
-                DataManager.baseURL = savedURL
+                await MainActor.run {
+                    DataManager.apiURL = savedURL
+                    DataManager.baseURL = savedURL
+                }
                 print("🔵 API URL 已从缓存加载：\(DataManager.apiURL)")
                 return
             }
