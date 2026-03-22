@@ -40,19 +40,6 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 
-                // 🔍 功能页面
-                Section(header: Text("功能")) {
-                    NavigationLink(destination: PerformanceMonitorView()) {
-                        Label("性能监控", systemImage: "gauge")
-                    }
-                    NavigationLink(destination: LocationHistoryView()) {
-                        Label("位置历史", systemImage: "location.fill")
-                    }
-                    NavigationLink(destination: AlertCenterView()) {
-                        Label("告警中心", systemImage: "bell.badge.fill")
-                    }
-                }
-                
                 // 定位权限
                 Section(header: Text("安全")) {
                     HStack {
