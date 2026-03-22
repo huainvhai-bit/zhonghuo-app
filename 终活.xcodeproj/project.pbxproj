@@ -11,9 +11,6 @@
 		3366C40A2F66D49800129FF3 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C4092F66D49800129FF3 /* AuthView.swift */; };
 		3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40B2F66D4C000129FF3 /* UserManager.swift */; };
 		3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */; };
-		33BA36FE2F6F938E009D845C /* AlertCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33BA36FB2F6F938E009D845C /* AlertCenterView.swift */; };
-		33BA36FF2F6F938E009D845C /* LocationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33BA36FC2F6F938E009D845C /* LocationHistoryView.swift */; };
-		33BA37002F6F938E009D845C /* PerformanceMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33BA36FD2F6F938E009D845C /* PerformanceMonitorView.swift */; };
 		33DE7DE22F6D493700F8677E /* DeviceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDD2F6D493700F8677E /* DeviceMonitor.swift */; };
 		33DE7DE32F6D493700F8677E /* BindFamilyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDC2F6D493700F8677E /* BindFamilyView.swift */; };
 		33DE7DE42F6D493700F8677E /* InviteCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DE12F6D493700F8677E /* InviteCodeView.swift */; };
@@ -65,9 +62,6 @@
 		3366C4092F66D49800129FF3 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		3366C40B2F66D4C000129FF3 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillModuleEdit.swift; sourceTree = "<group>"; };
-		33BA36FB2F6F938E009D845C /* AlertCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertCenterView.swift; sourceTree = "<group>"; };
-		33BA36FC2F6F938E009D845C /* LocationHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationHistoryView.swift; sourceTree = "<group>"; };
-		33BA36FD2F6F938E009D845C /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMonitorView.swift; sourceTree = "<group>"; };
 		33DE7DDC2F6D493700F8677E /* BindFamilyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindFamilyView.swift; sourceTree = "<group>"; };
 		33DE7DDD2F6D493700F8677E /* DeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceMonitor.swift; sourceTree = "<group>"; };
 		33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyGuardView.swift; sourceTree = "<group>"; };
@@ -158,9 +152,6 @@
 				A2000036 /* HelpPolicyView.swift */,
 				A2000037 /* MediaRecorderView.swift */,
 				33DE7DDB2F6D480800F8677E /* Recovered References */,
-				33BA36FB2F6F938E009D845C /* AlertCenterView.swift */,
-				33BA36FC2F6F938E009D845C /* LocationHistoryView.swift */,
-				33BA36FD2F6F938E009D845C /* PerformanceMonitorView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -259,9 +250,6 @@
 				33DE7DE32F6D493700F8677E /* BindFamilyView.swift in Sources */,
 				33DE7DE42F6D493700F8677E /* InviteCodeView.swift in Sources */,
 				33DE7DE52F6D493700F8677E /* FamilyMember.swift in Sources */,
-				33BA36FE2F6F938E009D845C /* AlertCenterView.swift in Sources */,
-				33BA36FF2F6F938E009D845C /* LocationHistoryView.swift in Sources */,
-				33BA37002F6F938E009D845C /* PerformanceMonitorView.swift in Sources */,
 				33DE7DE62F6D493700F8677E /* FamilyMemberDetailView.swift in Sources */,
 				33DE7DE72F6D493700F8677E /* FamilyGuardView.swift in Sources */,
 				A1000011 /* SecureStorage.swift in Sources */,
