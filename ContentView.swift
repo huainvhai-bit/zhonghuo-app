@@ -43,7 +43,9 @@ struct ContentView: View {
         }
         .onAppear {
             // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
-            checkLoginStatus()
+            Task {
+                await checkLoginStatus()
+            }
             
             // 📝 设置全局错误处理器
             ErrorHandler.shared.showErrorAlert = { title, message in
@@ -114,22 +116,35 @@ struct ContentView: View {
     }
     
     // 🔴 检查登录状态的函数（可重复调用）
-    private func checkLoginStatus() {
+    private func checkLoginStatus() async {
         print("🔍 开始检查登录状态...")
         
-        // ✅ 使用 Dispatch 异步，避免阻塞 UI
-        DispatchQueue.main.async {
-            // 加载用户（同步）
-            self.userManager.loadUser()
-            
-            // 🔴 确保 isLoggedIn 和 currentUser 都有效
-            let isLoggedIn = self.userManager.isLoggedIn && self.userManager.currentUser != nil
-            print("🔍 登录状态检查：")
-            print("   - isLoggedIn: \(self.userManager.isLoggedIn)")
-            print("   - currentUser: \(self.userManager.currentUser?.name ?? "nil")")
-            print("   - 最终结果：\(isLoggedIn)")
-            
-            // 🔴 关键：立即更新状态，避免白屏
+        // 加载用户（同步）
+        self.userManager.loadUser()
+        
+        // 🔴 确保 isLoggedIn 和 currentUser 都有效
+        let isLoggedIn = self.userManager.isLoggedIn && self.userManager.currentUser != nil
+        print("🔍 登录状态检查：")
+        print("   - isLoggedIn: \(self.userManager.isLoggedIn)")
+        print("   - currentUser: \(self.userManager.currentUser?.name ?? "nil")")
+        
+        // 🔴 新增：验证后端 Token 是否有效
+        if isLoggedIn {
+            let tokenValid = await validateToken()
+            if !tokenValid {
+                print("❌ Token 验证失败，后端可能没有此账号，执行退出登录")
+                await self.userManager.logout()
+                await MainActor.run {
+                    self.isCheckingAuth = false
+                    self.refreshTrigger.toggle()
+                }
+                return
+            }
+            print("✅ Token 验证成功")
+        }
+        
+        // 🔴 关键：立即更新状态，避免白屏
+        await MainActor.run {
             self.isCheckingAuth = false
             self.refreshTrigger.toggle()
             
@@ -146,6 +161,47 @@ struct ContentView: View {
                 print("⚠️ 用户未登录，显示登录界面")
             }
         }
+    }
+    
+    /// 验证后端 Token 是否有效
+    private func validateToken() async -> Bool {
+        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            return false
+        }
+        
+        guard !DataManager.apiURL.isEmpty else {
+            return false
+        }
+        
+        do {
+            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                switch httpResponse.statusCode {
+                case 200:
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    let success = json?["success"] as? Bool ?? false
+                    return success
+                case 401:
+                    print("❌ Token 无效（401）")
+                    return false
+                case 404:
+                    print("❌ 用户不存在（404）")
+                    return false
+                default:
+                    print("⚠️ 服务器错误（\(httpResponse.statusCode)），允许本地使用")
+                    return true
+                }
+            }
+        } catch {
+            print("⚠️ 网络错误：\(error)，允许本地使用")
+        }
+        
+        return true
     }
     
     private func writeLogToFile(_ message: String) {
