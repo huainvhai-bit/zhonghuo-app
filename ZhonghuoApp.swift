@@ -428,11 +428,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await LifeCheckStatusManager.shared.loadNotificationConfig()
         }
         
-        // 设置签到提醒通知
-        setupCheckInNotifications()
-        
-        // ✅ 启用后台任务
+        // ✅ 先注册后台任务（在调用 schedule 之前）
         startBackgroundTasks()
+        
+        // 设置签到提醒通知（会调用 scheduleBackgroundSmsTask）
+        setupCheckInNotifications()
         
         print("✅ 终活 App 启动完成")
         return true
