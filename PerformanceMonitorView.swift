@@ -19,7 +19,7 @@ struct PerformanceMonitorView: View {
                 PerformanceRow(
                     icon: "cpu",
                     title: "CPU 使用率",
-                    value: "\(deviceMonitor.cpuUsage, specifier: "%.1f")%",
+                    value: String(format: "%.1f", deviceMonitor.cpuUsage) + "%",
                     color: colorForUsage(deviceMonitor.cpuUsage)
                 )
                 
@@ -35,15 +35,15 @@ struct PerformanceMonitorView: View {
                 PerformanceRow(
                     icon: "thermometer",
                     title: "电池温度",
-                    value: "\(deviceMonitor.batteryTemperature, specifier: "%.1f")°C",
+                    value: String(format: "%.1f", deviceMonitor.batteryTemperature) + "°C",
                     color: .orange
                 )
                 
                 // 网络信号
                 PerformanceRow(
                     icon: "wifi",
-                    title: "网络信号",
-                    value: deviceMonitor.networkSignal,
+                    title: "网络类型",
+                    value: deviceMonitor.networkType,
                     color: .green
                 )
             }
@@ -76,7 +76,7 @@ struct PerformanceMonitorView: View {
                 } else {
                     ForEach(performanceHistory) { record in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(record.timestamp, formatter: timeFormatter)
+                            Text(record.timestamp, formatter: PerformanceMonitorView.timeFormatter)
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                             
@@ -119,11 +119,11 @@ struct PerformanceMonitorView: View {
         .navigationTitle("性能监控")
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
-            deviceMonitor.startPerformanceMonitoring()
+            deviceMonitor.startMonitoring()
             loadPerformanceHistory()
         }
         .onDisappear {
-            deviceMonitor.stopPerformanceMonitoring()
+            deviceMonitor.stopMonitoring()
         }
     }
     
@@ -146,11 +146,54 @@ struct PerformanceMonitorView: View {
         if performanceHistory.count > 20 {
             performanceHistory.removeLast()
         }
+        
+        // 上传到服务器
+        Task {
+            await deviceMonitor.uploadPerformanceData(
+                cpuUsage: deviceMonitor.cpuUsage,
+                memoryUsage: deviceMonitor.memoryUsage,
+                batteryTemperature: deviceMonitor.batteryTemperature,
+                availableStorage: deviceMonitor.availableStorage
+            )
+        }
     }
     
     private func loadPerformanceHistory() {
-        // 从本地加载历史记录（示例）
-        // TODO: 从服务器加载
+        Task {
+            do {
+                guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+                    print("⚠️ 加载失败：无 token")
+                    return
+                }
+                
+                let url = URL(string: "\(DataManager.apiURL)/api/performance.php?action=history&limit=100&token=\(token)")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("📡 性能历史响应：\(httpResponse.statusCode)")
+                }
+                
+                let result = try JSONDecoder().decode(PerformanceHistoryResponse.self, from: data)
+                
+                if result.success {
+                    performanceHistory = result.data.map { apiRecord in
+                        PerformanceRecord(
+                            timestamp: Self.dateFormatter.date(from: apiRecord.createdAt) ?? Date(),
+                            cpuUsage: apiRecord.cpuUsage ?? 0,
+                            memoryUsage: apiRecord.memoryUsage ?? 0
+                        )
+                    }
+                    print("✅ 加载性能历史成功，共 \(performanceHistory.count) 条")
+                } else {
+                    print("❌ 加载失败：\(result.error ?? "未知错误")")
+                }
+            } catch {
+                print("❌ 加载性能历史失败：\(error)")
+            }
+        }
     }
     
     private func exportReport() {
@@ -203,6 +246,54 @@ struct PerformanceRow: View {
         }
         .padding(.vertical, 4)
     }
+}
+
+// MARK: - API Response Models
+
+struct PerformanceHistoryResponse: Codable {
+    let success: Bool
+    let data: [ApiPerformanceRecord]
+    let count: Int?
+    let error: String?
+}
+
+struct ApiPerformanceRecord: Codable {
+    let id: Int
+    let cpuUsage: Double?
+    let memoryUsage: Int?
+    let batteryLevel: Int?
+    let batteryTemperature: Double?
+    let networkType: String?
+    let signalStrength: Int?
+    let createdAt: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case cpuUsage = "cpu_usage"
+        case memoryUsage = "memory_usage"
+        case batteryLevel = "battery_level"
+        case batteryTemperature = "battery_temperature"
+        case networkType = "network_type"
+        case signalStrength = "signal_strength"
+        case createdAt = "created_at"
+    }
+}
+
+// MARK: - Date Formatter
+
+extension PerformanceMonitorView {
+    static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd HH:mm"
+        return formatter
+    }()
+    
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
 }
 
 // MARK: - Preview

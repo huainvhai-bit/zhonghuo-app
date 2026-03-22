@@ -265,18 +265,16 @@ struct LocationMapView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                Map(coordinateRegion: .constant(
-                    MKCoordinateRegion(
-                        center: CLLocationCoordinate2D(
-                            latitude: location.latitude,
-                            longitude: location.longitude
-                        ),
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    )
-                ))
-                
-                Annotation("", coordinate: CLLocationCoordinate2D(
+            Map(coordinateRegion: .constant(
+                MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(
+                        latitude: location.latitude,
+                        longitude: location.longitude
+                    ),
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            ), annotationItems: [location]) { location in
+                MapAnnotation(coordinate: CLLocationCoordinate2D(
                     latitude: location.latitude,
                     longitude: location.longitude
                 )) {

@@ -32,6 +32,14 @@ class DeviceMonitor: ObservableObject {
     /// 是否正在监控
     @Published var isMonitoring = false
     
+    // 🔋 性能监控属性
+    @Published var cpuUsage: Double = 0.0
+    @Published var memoryUsage: Int = 0
+    @Published var batteryTemperature: Double = 36.5  // 默认体温
+    @Published var availableStorage: Double = 0.0
+    @Published var networkType: String = "WiFi"
+    @Published var networkSignalStrength: Int = -50
+    
     /// 电量状态文本
     var batteryStateText: String {
         switch batteryState {
@@ -212,6 +220,43 @@ class DeviceMonitor: ObservableObject {
         }
     }
     
+    func updateCPUUsage() {
+        // iOS 不直接提供 CPU 使用率，这里使用模拟值
+        // 实际应用中可以通过 host_processor_info 获取
+        DispatchQueue.main.async {
+            self.cpuUsage = Double.random(in: 0.1...0.9)
+            self.lastUpdateTime = Date()
+        }
+    }
+    
+    func updateMemoryUsage() {
+        // 获取内存使用情况（模拟值，iOS 不直接提供）
+        let totalMemory = ProcessInfo.processInfo.physicalMemory
+        DispatchQueue.main.async {
+            // 使用随机值模拟（实际应用需要通过 mach_task_basic_info 获取）
+            self.memoryUsage = Int(Double(totalMemory) / 1024 / 1024 * 0.5)  // 假设使用 50%
+            self.lastUpdateTime = Date()
+        }
+    }
+    
+    func updateStorageInfo() {
+        // 获取存储信息
+        let fileManager = FileManager.default
+        do {
+            let attributes = try fileManager.attributesOfFileSystem(forPath: NSHomeDirectory())
+            if let freeSize = attributes[.systemFreeSize] as? UInt64 {
+                DispatchQueue.main.async {
+                    self.availableStorage = Double(freeSize) / 1024 / 1024 / 1024  // 转换为 GB
+                    self.lastUpdateTime = Date()
+                }
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.availableStorage = 0
+            }
+        }
+    }
+    
     // MARK: - 通知处理
     
     @objc private func batteryStatusDidChange(_ notification: Notification) {
@@ -236,7 +281,7 @@ class DeviceMonitor: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api.php?action=device_upload")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/device_info.php?action=upload")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -263,6 +308,60 @@ class DeviceMonitor: ObservableObject {
             
         } catch {
             print("❌ 设备信息上传失败：\(error)")
+        }
+    }
+    
+    // MARK: - 性能数据上传
+    
+    /// 上传性能数据到服务器
+    func uploadPerformanceData(cpuUsage: Double, memoryUsage: Int, batteryTemperature: Double, availableStorage: Double) async {
+        print("☁️ 上传性能数据...")
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ 上传失败：API URL 为空")
+            return
+        }
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        if token.isEmpty {
+            print("⚠️ 上传失败：无 token")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/performance.php?action=upload")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let body: [String: Any] = [
+            "cpu_usage": cpuUsage,
+            "memory_usage": Double(memoryUsage),
+            "battery_level": batteryLevel,
+            "battery_temperature": batteryTemperature,
+            "network_type": "WiFi",  // TODO: 获取真实网络类型
+            "signal_strength": -50,  // TODO: 获取真实信号强度
+            "device_info": [
+                "model": UIDevice.current.model,
+                "system": "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+                "available_storage": availableStorage
+            ]
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 性能数据上传响应：\(httpResponse.statusCode)")
+            }
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 响应：\(jsonString)")
+            }
+            
+        } catch {
+            print("❌ 性能数据上传失败：\(error)")
         }
     }
 }
