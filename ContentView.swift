@@ -130,19 +130,24 @@ struct ContentView: View {
         print("   - isLoggedIn: \(self.userManager.isLoggedIn)")
         print("   - currentUser: \(self.userManager.currentUser?.name ?? "nil")")
         
-        // 🔴 新增：验证后端 Token 是否有效
+        // 🔴 新增：验证后端 Token 是否有效（仅在网络请求失败且返回 401 时退出）
         if isLoggedIn {
-            let tokenValid = await validateToken()
-            if !tokenValid {
-                print("❌ Token 验证失败，后端可能没有此账号，执行退出登录")
+            let validationResult = await validateToken()
+            if validationResult == .unauthorized {
+                // 只有明确 401 时才退出登录
+                print("❌ Token 验证失败（401），后端可能没有此账号，执行退出登录")
                 await self.userManager.logout()
                 await MainActor.run {
                     self.isCheckingAuth = false
                     self.refreshTrigger.toggle()
                 }
                 return
+            } else if validationResult == .networkError || validationResult == .serverError {
+                // 网络错误/服务器错误时，保持登录状态（使用本地数据）
+                print("⚠️ 网络/服务器错误，保持登录状态（使用本地缓存）")
+            } else {
+                print("✅ Token 验证成功")
             }
-            print("✅ Token 验证成功")
         }
         
         // 🔴 关键：立即更新状态，避免白屏
@@ -165,14 +170,22 @@ struct ContentView: View {
         }
     }
     
+    /// Token 验证结果
+    enum ValidateTokenResult {
+        case success      // Token 有效
+        case unauthorized // 401/404 - Token 无效或用户不存在（需要退出登录）
+        case networkError // 网络错误（保持登录）
+        case serverError  // 服务器错误（保持登录）
+    }
+    
     /// 验证后端 Token 是否有效
-    private func validateToken() async -> Bool {
+    private func validateToken() async -> ValidateTokenResult {
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            return false
+            return .unauthorized
         }
         
         guard !DataManager.apiURL.isEmpty else {
-            return false
+            return .networkError
         }
         
         do {
@@ -187,23 +200,33 @@ struct ContentView: View {
                 case 200:
                     let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                     let success = json?["success"] as? Bool ?? false
-                    return success
+                    return success ? .success : .unauthorized
                 case 401:
                     print("❌ Token 无效（401）")
-                    return false
+                    return .unauthorized
                 case 404:
                     print("❌ 用户不存在（404）")
-                    return false
+                    return .unauthorized
+                case 500, 502, 503:
+                    print("⚠️ 服务器错误（\(httpResponse.statusCode)），保持登录状态")
+                    return .serverError
                 default:
-                    print("⚠️ 服务器错误（\(httpResponse.statusCode)），允许本地使用")
-                    return true
+                    print("⚠️ 未知状态码（\(httpResponse.statusCode)），保持登录状态")
+                    return .serverError
                 }
             }
+        } catch let urlError as URLError {
+            // 网络错误（无网络、超时等）
+            print("⚠️ 网络错误：\(urlError.localizedDescription)，保持登录状态")
+            return .networkError
         } catch {
-            print("⚠️ 网络错误：\(error)，允许本地使用")
+            // 其他错误
+            print("⚠️ 未知错误：\(error)，保持登录状态")
+            return .networkError
         }
         
-        return true
+        // 默认保持登录
+        return .networkError
     }
     
     private func writeLogToFile(_ message: String) {
