@@ -406,7 +406,13 @@ class RealTimeSyncManager: ObservableObject {
 // MARK: - AppDelegate
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // 初始化 API 配置
+        // 🔴 关键：同步设置默认 API URL（在后台任务注册前）
+        DataManager.apiURL = "http://8.136.41.211:3395"
+        DataManager.baseURL = "http://8.136.41.211:3395"
+        UserDefaults.standard.set("http://8.136.41.211:3395", forKey: "apiURL")
+        print("🔵 API URL 已设置：\(DataManager.apiURL)")
+        
+        // 异步更新配置（从服务器获取最新配置）
         Task {
             await initializeAPIConfig()
         }
@@ -425,8 +431,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 设置签到提醒通知
         setupCheckInNotifications()
         
-        // 🔴 临时禁用后台任务（避免真机崩溃）
-        // startBackgroundTasks()
+        // ✅ 启用后台任务
+        startBackgroundTasks()
         
         print("✅ 终活 App 启动完成")
         return true
