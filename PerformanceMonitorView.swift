@@ -118,7 +118,8 @@ struct PerformanceMonitorView: View {
                 Button(action: clearHistory) {
                     HStack {
                         Spacer()
-                        Image(systemName: "trash", foregroundColor: .red)
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
                         Text("清空历史")
                             .foregroundColor(.red)
                         Spacer()

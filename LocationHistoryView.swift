@@ -209,13 +209,16 @@ struct LocationHistoryView: View {
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 
                 let (data, _) = try await URLSession.shared.data(for: request)
-                let result = try JSONDecoder().decode(ClearResponse.self, from: data)
                 
-                if result.success {
+                // 解析 JSON
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let success = json["success"] as? Bool, success,
+                   let dataDict = json["data"] as? [String: Any],
+                   let deletedCount = dataDict["deleted_count"] as? Int {
                     locationHistory.removeAll()
-                    print("🗑️ 清除位置历史成功：\(result.data?.deletedCount ?? 0) 条")
+                    print("🗑️ 清除位置历史成功：\(deletedCount) 条")
                 } else {
-                    errorMessage = result.message ?? "清除失败"
+                    errorMessage = "清除失败"
                     showingError = true
                 }
             } catch {
@@ -326,22 +329,6 @@ struct LocationMapView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - API Response Models
-
-struct ClearResponse: Codable {
-    let success: Bool
-    let message: String?
-    let data: ClearData?
-}
-
-struct ClearData: Codable {
-    let deletedCount: Int?
-    
-    enum CodingKeys: String, CodingKey {
-        case deletedCount = "deleted_count"
     }
 }
 
