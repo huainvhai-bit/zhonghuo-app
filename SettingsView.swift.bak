@@ -23,35 +23,16 @@ struct SettingsView: View {
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
     @State private var showingLogoutConfirm = false  // 退出登录确认
-    @State private var errorMessage = ""
-    @State private var showingError = false
     
     var body: some View {
-        ZStack {
-            Color(hex: "F5F5F7")
-                .ignoresSafeArea()
-            
-            NavigationView {
-                List {
+        NavigationView {
+            List {
                 // 用户信息卡片
                 Section {
                     userInfoCard
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
-                
-                // 🔍 功能页面 (待添加 - 需要手动添加到 Xcode 项目)
-                // Section(header: Text("功能")) {
-                //     NavigationLink(destination: PerformanceMonitorView()) {
-                //         Label("性能监控", systemImage: "gauge")
-                //     }
-                //     NavigationLink(destination: LocationHistoryView()) {
-                //         Label("位置历史", systemImage: "location.fill")
-                //     }
-                //     NavigationLink(destination: AlertCenterView()) {
-                //         Label("告警中心", systemImage: "bell.badge.fill")
-                //     }
-                // }
                 
                 // 定位权限
                 Section(header: Text("安全")) {
@@ -166,56 +147,129 @@ struct SettingsView: View {
                     .tint(.orange)
                 }
                 
-                // 🔋 设备信息
+                // 🔋 设备信息 & 性能监控
                 Section(header: Text("设备信息")) {
-                    VStack(spacing: 12) {
-                        // 今日步数
+                    // 性能监控入口
+                    NavigationLink(destination: PerformanceMonitorView()) {
                         HStack {
-                            Image(systemName: "figure.walk")
-                                .foregroundColor(Color(hex: "34C759"))
+                            Image(systemName: "gauge")
+                                .foregroundColor(Color(hex: "6366F1"))
                                 .frame(width: 30)
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("今日步数")
-                                    .font(.system(size: 14))
-                                Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("性能监控")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看 CPU、内存、电池等性能数据")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
                             }
                             
                             Spacer()
                             
-                            // 刷新动画
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
-                                .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
                         }
-                        
-                        Divider()
-                        
-                        // 电量信息
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // 位置历史入口
+                    NavigationLink(destination: LocationHistoryView()) {
                         HStack {
-                            Image(systemName: deviceMonitor.batteryIcon)
-                                .foregroundColor(deviceMonitor.batteryColor)
+                            Image(systemName: "location.fill")
+                                .foregroundColor(Color(hex: "6366F1"))
                                 .frame(width: 30)
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("设备电量")
-                                    .font(.system(size: 14))
-                                Text(deviceMonitor.batteryLevelText)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("位置历史")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看最近 30 天的位置轨迹")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
                             }
                             
                             Spacer()
                             
-                            Text(deviceMonitor.batteryStateText)
-                                .font(.system(size: 13))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(deviceMonitor.batteryStateColor)
-                                .cornerRadius(8)
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
                         }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // 告警中心入口（合并到系统设置）
+                    NavigationLink(destination: AlertCenterView()) {
+                        HStack {
+                            Image(systemName: "bell.badge.fill")
+                                .foregroundColor(Color(hex: "FF3B30"))
+                                .frame(width: 30)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("告警中心")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看告警记录和设置阈值")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    Divider()
+                    
+                    // 今日步数
+                    HStack {
+                        Image(systemName: "figure.walk")
+                            .foregroundColor(Color(hex: "34C759"))
+                            .frame(width: 30)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("今日步数")
+                                .font(.system(size: 14))
+                            Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        // 刷新动画
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.secondary)
+                            .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
+                    }
+                    
+                    Divider()
+                    
+                    // 电量信息
+                    HStack {
+                        Image(systemName: deviceMonitor.batteryIcon)
+                            .foregroundColor(deviceMonitor.batteryColor)
+                            .frame(width: 30)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("设备电量")
+                                .font(.system(size: 14))
+                            Text(deviceMonitor.batteryLevelText)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(deviceMonitor.batteryStateText)
+                            .font(.system(size: 13))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(deviceMonitor.batteryStateColor)
+                            .cornerRadius(8)
+                    }
                         
                         // 最后更新
                         HStack {
@@ -318,8 +372,8 @@ struct SettingsView: View {
             } message: {
                 Text("确定要退出登录吗？退出后需要重新登录才能使用 App。")
             }
-            }
         }
+        .background(Color(hex: "F5F5F7"))
     }
     
     // MARK: - 用户信息卡片
@@ -491,16 +545,8 @@ struct SettingsView: View {
         print("✅ 服务器同步成功")
     }
     
-    struct ServerResponse: Codable {
-        let success: Bool
-        let message: String?
-        let error: String?
-    }
-}
-
-// MARK: - 编辑个人信息弹窗
-struct EditProfileModal: View {
-    @ObservedObject var dataManager: DataManager
+    // MARK: - 编辑个人信息弹窗
+    // EditProfileModal moved to end of file
     @ObservedObject var userManager: UserManager
     @Environment(\.dismiss) var dismiss
     @State private var name = ""

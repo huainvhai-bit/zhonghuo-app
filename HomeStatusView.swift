@@ -25,6 +25,10 @@ struct HomeStatusView: View {
     var body: some View {
         NavigationView {
             ZStack {
+                // 背景色
+                Color(hex: "F5F5F7")
+                    .ignoresSafeArea()
+                
                 ScrollView {
                     VStack(spacing: 16) {
                         checkInCard
@@ -35,7 +39,6 @@ struct HomeStatusView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                .background(Color(hex: "F6F6F8"))
                 
                 // 隐藏的全局导航链接
                 NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) {

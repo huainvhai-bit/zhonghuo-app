@@ -694,8 +694,10 @@ struct ShareQRView: View {
     
     private func refreshQRCode() {
         isRefreshing = true
+        // 直接调用 onRefresh，它会触发 generateInviteCode
         onRefresh()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // 2 秒后重置刷新状态（给 API 调用足够时间）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             isRefreshing = false
         }
     }

@@ -40,19 +40,6 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 
-                // 🔍 功能页面 (待添加 - 需要手动添加到 Xcode 项目)
-                // Section(header: Text("功能")) {
-                //     NavigationLink(destination: PerformanceMonitorView()) {
-                //         Label("性能监控", systemImage: "gauge")
-                //     }
-                //     NavigationLink(destination: LocationHistoryView()) {
-                //         Label("位置历史", systemImage: "location.fill")
-                //     }
-                //     NavigationLink(destination: AlertCenterView()) {
-                //         Label("告警中心", systemImage: "bell.badge.fill")
-                //     }
-                // }
-                
                 // 定位权限
                 Section(header: Text("安全")) {
                     HStack {
@@ -166,56 +153,129 @@ struct SettingsView: View {
                     .tint(.orange)
                 }
                 
-                // 🔋 设备信息
+                // 🔋 设备信息 & 性能监控
                 Section(header: Text("设备信息")) {
-                    VStack(spacing: 12) {
-                        // 今日步数
+                    // 性能监控入口
+                    NavigationLink(destination: PerformanceMonitorView()) {
                         HStack {
-                            Image(systemName: "figure.walk")
-                                .foregroundColor(Color(hex: "34C759"))
+                            Image(systemName: "gauge")
+                                .foregroundColor(Color(hex: "6366F1"))
                                 .frame(width: 30)
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("今日步数")
-                                    .font(.system(size: 14))
-                                Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("性能监控")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看 CPU、内存、电池等性能数据")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
                             }
                             
                             Spacer()
                             
-                            // 刷新动画
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
-                                .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
                         }
-                        
-                        Divider()
-                        
-                        // 电量信息
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // 位置历史入口
+                    NavigationLink(destination: LocationHistoryView()) {
                         HStack {
-                            Image(systemName: deviceMonitor.batteryIcon)
-                                .foregroundColor(deviceMonitor.batteryColor)
+                            Image(systemName: "location.fill")
+                                .foregroundColor(Color(hex: "6366F1"))
                                 .frame(width: 30)
                             
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("设备电量")
-                                    .font(.system(size: 14))
-                                Text(deviceMonitor.batteryLevelText)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("位置历史")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看最近 30 天的位置轨迹")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
                             }
                             
                             Spacer()
                             
-                            Text(deviceMonitor.batteryStateText)
-                                .font(.system(size: 13))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(deviceMonitor.batteryStateColor)
-                                .cornerRadius(8)
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
                         }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // 告警中心入口（合并到系统设置）
+                    NavigationLink(destination: AlertCenterView()) {
+                        HStack {
+                            Image(systemName: "bell.badge.fill")
+                                .foregroundColor(Color(hex: "FF3B30"))
+                                .frame(width: 30)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("告警中心")
+                                    .font(.system(size: 16))
+                                
+                                Text("查看告警记录和设置阈值")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    Divider()
+                    
+                    // 今日步数
+                    HStack {
+                        Image(systemName: "figure.walk")
+                            .foregroundColor(Color(hex: "34C759"))
+                            .frame(width: 30)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("今日步数")
+                                .font(.system(size: 14))
+                            Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        // 刷新动画
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.secondary)
+                            .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
+                    }
+                    
+                    Divider()
+                    
+                    // 电量信息
+                    HStack {
+                        Image(systemName: deviceMonitor.batteryIcon)
+                            .foregroundColor(deviceMonitor.batteryColor)
+                            .frame(width: 30)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("设备电量")
+                                .font(.system(size: 14))
+                            Text(deviceMonitor.batteryLevelText)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(deviceMonitor.batteryStateText)
+                            .font(.system(size: 13))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(deviceMonitor.batteryStateColor)
+                            .cornerRadius(8)
+                    }
                         
                         // 最后更新
                         HStack {
@@ -317,7 +377,6 @@ struct SettingsView: View {
                 Button("取消", role: .cancel) {}
             } message: {
                 Text("确定要退出登录吗？退出后需要重新登录才能使用 App。")
-            }
             }
         }
     }
@@ -491,116 +550,7 @@ struct SettingsView: View {
         print("✅ 服务器同步成功")
     }
     
-    struct ServerResponse: Codable {
-        let success: Bool
-        let message: String?
-        let error: String?
-    }
-}
-
-// MARK: - 编辑个人信息弹窗
-struct EditProfileModal: View {
-    @ObservedObject var dataManager: DataManager
-    @ObservedObject var userManager: UserManager
-    @Environment(\.dismiss) var dismiss
-    @State private var name = ""
-    @State private var phone = ""
-    @State private var ethnicity = ""
-    @State private var birthday = Date()
-    @State private var idCard = ""
-    @State private var address = ""
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("姓名")) {
-                    TextField("请输入姓名", text: $name)
-                }
-                
-                Section(header: Text("手机号")) {
-                    HStack {
-                        Image(systemName: "phone.fill")
-                            .foregroundColor(.secondary)
-                            .frame(width: 20)
-                        Text(phone)
-                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                }
-                
-                Section(header: Text("身份信息")) {
-                    TextField("民族", text: $ethnicity)
-                    
-                    DatePicker("出生日期", selection: $birthday, displayedComponents: .date)
-                    
-                    TextField("身份证号码", text: $idCard)
-                        .textInputAutocapitalization(.characters)
-                    
-                    TextField("住址", text: $address)
-                        .lineLimit(2)
-                }
-                
-                Section {
-                    Button(action: {
-                        print("🔵 开始保存用户信息...")
-                        print("   userManager.isLoggedIn (保存前): \(userManager.isLoggedIn)")
-                        print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
-                        
-                        if !name.isEmpty {
-                            if var user = userManager.currentUser {
-                                user.name = name
-                                // phone 不可修改
-                                user.ethnicity = ethnicity
-                                user.birthday = birthday
-                                user.idCard = idCard
-                                user.address = address
-                                
-                                // 先更新 currentUser，再保存
-                                userManager.currentUser = user
-                                let saveSuccess = userManager.saveUser(user)
-                                
-                                print("   saveUser 返回：\(saveSuccess)")
-                                print("   userManager.isLoggedIn (保存后): \(userManager.isLoggedIn)")
-                                
-                                if saveSuccess {
-                                    // 确保登录状态保持
-                                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                                    UserDefaults.standard.set(user.id, forKey: "userId")
-                                    print("✅ 用户信息已保存，登录状态保持")
-                                    dismiss()
-                                } else {
-                                    print("❌ 保存用户失败")
-                                }
-                            }
-                        }
-                    }) {
-                        Text("保存")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .disabled(name.isEmpty)
-                }
-            }
-            .navigationTitle("编辑资料")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
-                }
-            }
-            .onAppear {
-                if let user = userManager.currentUser {
-                    name = user.name ?? ""
-                    phone = user.phone ?? ""
-                    ethnicity = user.ethnicity ?? ""
-                    birthday = user.birthday ?? Date()
-                    idCard = user.idCard ?? ""
-                    address = user.address ?? ""
-                    print("🔵 编辑资料：name=\(name), phone=\(phone)")
-                }
-            }
-        }
-    }
-}
+    // MARK: - 编辑个人信息弹窗
 
 // MARK: - 紧急联系人弹窗
 struct EmergencyContactModal: View {
@@ -815,4 +765,101 @@ extension SettingsView {
 
 #Preview {
     SettingsView()
+}
+
+// MARK: - 编辑个人信息弹窗
+struct EditProfileModal: View {
+    @ObservedObject var dataManager: DataManager
+    @ObservedObject var userManager: UserManager
+    @Environment(\.dismiss) var dismiss
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var ethnicity = ""
+    @State private var birthday = Date()
+    @State private var idCard = ""
+    @State private var address = ""
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("姓名")) {
+                    TextField("请输入姓名", text: $name)
+                }
+                
+                Section(header: Text("手机号")) {
+                    HStack {
+                        Image(systemName: "phone.fill")
+                            .foregroundColor(.secondary)
+                            .frame(width: 20)
+                        Text(phone)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                }
+                
+                Section(header: Text("身份信息")) {
+                    TextField("民族", text: $ethnicity)
+                    
+                    DatePicker("出生日期", selection: $birthday, displayedComponents: .date)
+                    
+                    TextField("身份证号码", text: $idCard)
+                        .textInputAutocapitalization(.characters)
+                    
+                    TextField("住址", text: $address)
+                        .lineLimit(2)
+                }
+                
+                Section {
+                    Button(action: {
+                        if !name.isEmpty {
+                            if var user = userManager.currentUser {
+                                user.name = name
+                                user.ethnicity = ethnicity
+                                user.birthday = birthday
+                                user.idCard = idCard
+                                user.address = address
+                                
+                                userManager.currentUser = user
+                                let saveSuccess = userManager.saveUser(user)
+                                
+                                if saveSuccess {
+                                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                                    UserDefaults.standard.set(user.id, forKey: "userId")
+                                    dismiss()
+                                }
+                            }
+                        }
+                    }) {
+                        Text("保存")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
+            .navigationTitle("编辑资料")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { dismiss() }
+                }
+            }
+            .onAppear {
+                if let user = userManager.currentUser {
+                    name = user.name ?? ""
+                    phone = user.phone ?? ""
+                    ethnicity = user.ethnicity ?? ""
+                    birthday = user.birthday ?? Date()
+                    idCard = user.idCard ?? ""
+                    address = user.address ?? ""
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 辅助结构体
+struct ServerResponse: Codable {
+    let success: Bool
+    let message: String?
+    let error: String?
 }
