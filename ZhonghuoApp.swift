@@ -491,22 +491,43 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     private func initializeAPIConfig() async {
-        // 尝试从 UserDefaults 读取已保存的 API URL
-        if let savedURL = UserDefaults.standard.string(forKey: "apiURL"), !savedURL.isEmpty {
-            DataManager.apiURL = savedURL
-            print("🔵 API URL 已从缓存加载：\(DataManager.apiURL)")
-            return
-        }
+        // 设置默认值（确保即使配置加载失败也能启动）
+        DataManager.apiURL = "http://8.136.41.211:3395"
+        DataManager.baseURL = "http://8.136.41.211:3395"
         
-        // 从服务器获取配置
-        let baseURL = "http://8.136.41.211:3395"
         do {
-            try await DataManager.shared.fetchServerConfig(from: baseURL)
+            // 尝试从 UserDefaults 读取已保存的 API URL
+            if let savedURL = UserDefaults.standard.string(forKey: "apiURL"), !savedURL.isEmpty {
+                DataManager.apiURL = savedURL
+                DataManager.baseURL = savedURL
+                print("🔵 API URL 已从缓存加载：\(DataManager.apiURL)")
+                return
+            }
+            
+            // 从服务器获取配置（超时 3 秒）
+            let baseURL = "http://8.136.41.211:3395"
+            try await withTimeout(seconds: 3) {
+                try await DataManager.shared.fetchServerConfig(from: baseURL)
+            }
             print("🔵 API URL 已从服务器获取：\(DataManager.apiURL)")
         } catch {
-            print("❌ 获取 API 配置失败：\(error)")
-            // 使用默认值
-            DataManager.apiURL = baseURL
+            print("❌ 获取 API 配置失败：\(error) - 使用默认值")
+            // 默认值已设置，不需要额外处理
+        }
+    }
+    
+    private func withTimeout<T>(seconds: Double, operation: @escaping () async throws -> T) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await operation()
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                throw URLError(.timedOut)
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
         }
     }
 }
