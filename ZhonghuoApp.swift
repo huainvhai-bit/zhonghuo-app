@@ -121,7 +121,7 @@ struct ZhonghuoApp: App {
         do {
             // 优先使用密码验证（更准确）
             if !storedPassword.isEmpty {
-                let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_validate")!
+                let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=validate")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -161,7 +161,7 @@ struct ZhonghuoApp: App {
             } else {
                 // 兼容旧版本：使用 Token 验证
                 let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-                let url = URL(string: "\(DataManager.apiURL)/api.php?action=user_info")!
+                let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
                 var request = URLRequest(url: url)
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 

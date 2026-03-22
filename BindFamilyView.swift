@@ -278,7 +278,7 @@ struct BindFamilyView: View {
                 let lastMember = familyList.last!
                 
                 // 添加到紧急联系人
-                let emergencyURL = URL(string: "\(DataManager.apiURL)/api.php?action=emergency_add")!
+                let emergencyURL = URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=add")!
                 var emergencyRequest = URLRequest(url: emergencyURL)
                 emergencyRequest.httpMethod = "POST"
                 emergencyRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

@@ -659,7 +659,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        let url = URL(string: "\(DataManager.apiURL)/api.php?action=checkin_record")!
+        let url = URL(string: "\(DataManager.apiURL)/api/checkin.php?action=record")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -932,7 +932,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("🌐 从服务器拉取用户数据...")
         
-        var request = URLRequest(url: URL(string: "\(apiURL)/api.php?action=user_info")!)
+        var request = URLRequest(url: URL(string: "\(apiURL)/api/users.php?action=info")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

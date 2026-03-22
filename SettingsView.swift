@@ -40,18 +40,18 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 
-                // 🔍 功能页面 (待添加 - 需要手动添加到 Xcode 项目)
-                // Section(header: Text("功能")) {
-                //     NavigationLink(destination: PerformanceMonitorView()) {
-                //         Label("性能监控", systemImage: "gauge")
-                //     }
-                //     NavigationLink(destination: LocationHistoryView()) {
-                //         Label("位置历史", systemImage: "location.fill")
-                //     }
-                //     NavigationLink(destination: AlertCenterView()) {
-                //         Label("告警中心", systemImage: "bell.badge.fill")
-                //     }
-                // }
+                // 🔍 功能页面
+                Section(header: Text("功能")) {
+                    NavigationLink(destination: PerformanceMonitorView()) {
+                        Label("性能监控", systemImage: "gauge")
+                    }
+                    NavigationLink(destination: LocationHistoryView()) {
+                        Label("位置历史", systemImage: "location.fill")
+                    }
+                    NavigationLink(destination: AlertCenterView()) {
+                        Label("告警中心", systemImage: "bell.badge.fill")
+                    }
+                }
                 
                 // 定位权限
                 Section(header: Text("安全")) {
@@ -460,7 +460,7 @@ struct SettingsView: View {
             throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "API 未初始化"])
         }
         
-        let url = URL(string: "\(DataManager.apiURL)/api.php?action=admin_update_checkin_interval")!
+        let url = URL(string: "\(DataManager.apiURL)/api/settings.php?action=admin_update_checkin_interval")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -766,7 +766,7 @@ struct ServerConfigModal: View {
         
         Task {
             do {
-                let url = URL(string: "\(tempURL)/api.php?action=config_get")!
+                let url = URL(string: "\(tempURL)/api/config_get.php")!
                 let (data, response) = try await URLSession.shared.data(from: url)
                 
                 guard let httpResponse = response as? HTTPURLResponse,
