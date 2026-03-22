@@ -425,8 +425,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 设置签到提醒通知
         setupCheckInNotifications()
         
-        // 🔴 临时禁用后台任务（修复白屏问题）
-        // startBackgroundTasks()
+        // ✅ 重新启用后台任务（在 didFinishLaunchingWithOptions 中注册，确保真机正常）
+        startBackgroundTasks()
         
         print("✅ 终活 App 启动完成")
         return true
@@ -437,8 +437,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         LifeCheckStatusManager.shared.scheduleCheckInNotifications()
     }
     
-    // 🔴 临时禁用后台任务注册
-    /*
+    // ✅ 后台任务注册（在 didFinishLaunchingWithOptions 之后立即注册）
     private func startBackgroundTasks() {
         if #available(iOS 13.0, *) {
             BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.sms_notify", using: nil) { task in
@@ -447,6 +446,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.refresh_notifications", using: nil) { task in
                 self.handleNotificationRefresh(task: task as! BGAppRefreshTask)
             }
+            print("✅ 后台任务已注册")
         }
     }
     
@@ -462,7 +462,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         LifeCheckStatusManager.shared.scheduleCheckInNotifications()
         task.setTaskCompleted(success: true)
     }
-    */
     
     // MARK: - 通知代理
     

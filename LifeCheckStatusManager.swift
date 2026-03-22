@@ -306,12 +306,11 @@ class LifeCheckStatusManager: ObservableObject {
             notificationCount += 1
         }
         
-        // 🔴 临时禁用后台任务（修复白屏问题）
-        // scheduleBackgroundSmsTask(after: deadline)
+        // ✅ 启用后台任务（在超时后安排短信通知）
+        scheduleBackgroundSmsTask(after: deadline)
     }
     
-    /// 🔴 临时禁用后台短信通知任务
-    /*
+    /// 后台短信通知任务（用户超时未签到时触发）
     private func scheduleBackgroundSmsTask(after deadline: Date) {
         if #available(iOS 13.0, *) {
             let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.sms_notify")
@@ -325,7 +324,6 @@ class LifeCheckStatusManager: ObservableObject {
             }
         }
     }
-    */
     
     /// 通用通知调度方法
     private func scheduleNotification(identifier: String, title: String, body: String, fireDate: Date, repeats: Bool) {

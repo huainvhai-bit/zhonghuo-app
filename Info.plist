@@ -37,14 +37,13 @@
 	<string>需要摄像头权限用于录制视频时光胶囊。</string>
 	<key>NSMotionUsageDescription</key>
 	<string>需要获取您的运动数据用于记录每日步数，关注您的健康状况。</string>
-	<!-- 🔴 临时移除后台任务声明（修复白屏问题）
+	<!-- ✅ 后台任务声明 -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.zhonghuo.app.sms_notify</string>
 		<string>com.zhonghuo.app.refresh_notifications</string>
 		<string>com.zhonghuo.app.checkin</string>
 	</array>
-	-->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
