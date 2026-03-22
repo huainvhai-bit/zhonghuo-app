@@ -66,7 +66,9 @@ struct ContentView: View {
             // 🔴 监听用户登录成功通知
             NotificationCenter.default.addObserver(forName: NSNotification.Name("UserDidLogin"), object: nil, queue: .main) { _ in
                 print("🔔 收到用户登录通知，重新检查状态...")
-                checkLoginStatus()
+                Task {
+                    await checkLoginStatus()
+                }
             }
             
             // 🔴 监听退出登录提示
