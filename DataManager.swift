@@ -99,7 +99,7 @@ class DataManager: ObservableObject {
     
     /// 从服务器获取 API 配置（旧版 api.php 兼容）
     func fetchServerConfigLegacy(from baseURL: String) async throws {
-        let configURL = "\(baseURL)/api/config.php?action=config_get"
+        let configURL = "\(baseURL)/api/config_get.php"
         guard let url = URL(string: configURL) else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
@@ -1824,7 +1824,7 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/config.php?action=config_get")!
+            let url = URL(string: "\(DataManager.apiURL)/api/config_get.php")!
             print("📡 请求系统配置：\(url)")
             
             let (data, response) = try await URLSession.shared.data(from: url)
