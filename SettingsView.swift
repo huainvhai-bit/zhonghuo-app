@@ -7,6 +7,37 @@
 
 import SwiftUI
 
+// MARK: - Stat Item View
+struct StatItemView: View {
+    let icon: String
+    let color: Color
+    let count: Int
+    let label: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.1))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+            }
+            
+            Text("\(count)")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.primary)
+            
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 struct SettingsView: View {
     private let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -36,6 +67,13 @@ struct SettingsView: View {
                 // 用户信息卡片
                 Section {
                     userInfoCard
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                
+                // 统计信息
+                Section {
+                    statsCard
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
@@ -311,6 +349,66 @@ struct SettingsView: View {
     
     // MARK: - 用户信息卡片
     @ViewBuilder
+    private var statsCard: some View {
+        VStack(spacing: 12) {
+            Text("我的数据")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+            
+            HStack(spacing: 12) {
+                StatItemView(
+                    icon: "person.crop.circle.badge.exclamationmark",
+                    color: Color(hex: "FF3B30"),
+                    count: userManager.currentUser?.emergency_contacts_count ?? 0,
+                    label: "紧急联系人"
+                )
+                
+                StatItemView(
+                    icon: "checkmark.shield.fill",
+                    color: Color(hex: "FF9500"),
+                    count: userManager.currentUser?.witnesses_count ?? 0,
+                    label: "见证人"
+                )
+                
+                StatItemView(
+                    icon: "capsule.fill",
+                    color: Color(hex: "AF52DE"),
+                    count: userManager.currentUser?.capsules_count ?? 0,
+                    label: "胶囊"
+                )
+            }
+            
+            HStack(spacing: 12) {
+                StatItemView(
+                    icon: "doc.text.fill",
+                    color: Color(hex: "FF2D55"),
+                    count: userManager.currentUser?.will_modules_count ?? 0,
+                    label: "嘱托"
+                )
+                
+                StatItemView(
+                    icon: "person.2.fill",
+                    color: Color(hex: "007AFF"),
+                    count: userManager.currentUser?.family_count ?? 0,
+                    label: "家人"
+                )
+                
+                StatItemView(
+                    icon: "calendar.badge.checkmark",
+                    color: Color(hex: "34C759"),
+                    count: userManager.currentUser?.checkin_count ?? 0,
+                    label: "签到"
+                )
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+    
     private var userInfoCard: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {

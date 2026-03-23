@@ -322,11 +322,23 @@ struct User: Codable, Identifiable {
     var cloudSyncEnabled: Bool
     var lastCheckInDate: Date?
     
+    // 登录信息
+    var lastLoginAt: Date?
+    var lastLoginIp: String?
+    var checkinCount: Int
+    
     // 新增身份信息字段
     var ethnicity: String?  // 民族
     var birthday: Date?     // 出生日期
     var idCard: String?     // 身份证号码
     var address: String?    // 住址
+    
+    // 统计信息
+    var emergencyContactsCount: Int
+    var witnessesCount: Int
+    var capsulesCount: Int
+    var willModulesCount: Int
+    var familyCount: Int
     
     struct EmergencyContact: Codable, Identifiable {
         var id: String = UUID().uuidString

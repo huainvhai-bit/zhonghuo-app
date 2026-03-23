@@ -995,6 +995,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let name = userDict["name"] as? String ?? "用户"
                 let phone = userDict["phone"] as? String ?? ""
                 
+                // 解析统计信息
+                let emergencyContactsCount = userDict["emergency_contacts_count"] as? Int ?? 0
+                let witnessesCount = userDict["witnesses_count"] as? Int ?? 0
+                let capsulesCount = userDict["capsules_count"] as? Int ?? 0
+                let willModulesCount = userDict["will_modules_count"] as? Int ?? 0
+                let familyCount = userDict["family_count"] as? Int ?? 0
+                let checkinCount = userDict["checkin_count"] as? Int ?? 0
+                
                 let user = User(
                     id: userId,
                     name: name,
@@ -1003,7 +1011,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     emergencyContacts: [],
                     checkInInterval: .twoDays,
                     notificationsEnabled: true,
-                    cloudSyncEnabled: true
+                    cloudSyncEnabled: true,
+                    lastCheckInDate: nil,
+                    lastLoginAt: nil,
+                    lastLoginIp: nil,
+                    checkinCount: checkinCount,
+                    emergencyContactsCount: emergencyContactsCount,
+                    witnessesCount: witnessesCount,
+                    capsulesCount: capsulesCount,
+                    willModulesCount: willModulesCount,
+                    familyCount: familyCount
                 )
                 
                 await MainActor.run {
