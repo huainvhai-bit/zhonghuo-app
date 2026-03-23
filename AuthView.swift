@@ -337,22 +337,19 @@ struct AuthView: View {
     
     // MARK: - API 请求
     
-    private func apiRequest(action: String, body: [String: Any]) async throws -> [String: Any] {
-        try await DataManager.shared.checkAPIReady()
-        
-        print("🔍 ====== API 请求调试 ======")
-        print("   action: \(action)")
-        print("   DataManager.baseURL: \(DataManager.baseURL)")
-        print("   DataManager.apiURL: \(DataManager.apiURL)")
-        print("   请求 URL: \(DataManager.apiURL)/api/users.php?action=\(action)")
-        print("   请求 Body: \(body)")
+    // MARK: - GraphQL 认证请求
+    
+    private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
+        print("🔍 ====== GraphQL 请求 ======")
+        print("   mutation: \(mutation)")
+        print("   variables: \(variables)")
         
         guard !DataManager.apiURL.isEmpty else {
             print("❌ API 未初始化")
             throw NSError(domain: "API 未初始化", code: -1)
         }
         
-        let urlString = "\(DataManager.apiURL)/api/users.php?action=\(action)"
+        let urlString = "\(DataManager.apiURL)/api/graphql.php"
         guard let url = URL(string: urlString) else {
             print("❌ URL 无效：\(urlString)")
             throw NSError(domain: "URL 无效", code: -1)
@@ -362,47 +359,38 @@ struct AuthView: View {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let body: [String: Any] = [
+            "query": mutation,
+            "variables": variables
+        ]
+        
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        print("📤 发送请求...")
+        print("📤 发送 GraphQL 请求...")
         
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
-        
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            print("❌ 响应类型错误：\(type(of: response))")
+            print("❌ 响应类型错误")
             throw NSError(domain: "响应类型错误", code: -1)
         }
         
-        print("📥 收到响应:")
-        print("   状态码：\(httpResponse.statusCode)")
-        print("   URL: \(httpResponse.url?.absoluteString ?? "nil")")
+        print("📥 收到响应：状态码 \(httpResponse.statusCode)")
         
-        // 即使 HTTP 状态码不是 2xx，也尝试解析 JSON 获取错误信息
         let responseString = String(data: data, encoding: .utf8) ?? "无法解析"
-        print("📥 响应内容：\(responseString.prefix(200))")
+        print("📥 响应内容：\(responseString.prefix(300))")
         
-        // 尝试解析 JSON（即使是错误响应）
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            // 成功解析 JSON，返回给调用者处理错误
-            return json
-        }
-        
-        // 无法解析 JSON，抛出原始错误
-        if !(200...299).contains(httpResponse.statusCode) {
-            print("❌ HTTP 错误：\(httpResponse.statusCode)")
-            throw NSError(domain: "HTTP 错误：\(httpResponse.statusCode)", code: httpResponse.statusCode)
-        }
-        
-        print("✅ 请求成功")
-        
-        // 使用 JSONSerialization 解析（更灵活，不要求严格类型匹配）
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        // 解析 GraphQL 响应
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw NSError(domain: "JSON 解析失败", code: -1)
+        }
+        
+        // 检查 GraphQL errors
+        if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
+            let message = errors[0]["message"] as? String ?? "GraphQL 错误"
+            print("❌ GraphQL 错误：\(message)")
+            throw NSError(domain: message, code: -1)
         }
         
         return json
@@ -421,52 +409,56 @@ struct AuthView: View {
             DataManager.shared.initializeAPIConfig()
             print("🔵 注册请求 - API 已初始化")
             
-            let body: [String: Any] = [
-                "action": "register",
-                "name": name,
-                "phone": phone,
-                "password": password
-            ]
-            
-            let json = try await apiRequest(action: "register", body: body)
-            
-            let success = json["success"] as? Bool ?? false
-            
-            if success {
-                print("✅ 注册成功，处理用户数据...")
-                // 🔴 先处理用户数据（在主线程更新状态）
-                await handleAuthSuccess(json)
-                
-                // 🔴 关键修复：延迟后在主线程显示提示，给 UI 切换的时间
-                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
-                
-                await MainActor.run {
-                    print("🟢 注册成功，显示提示")
-                    // 显示成功提示
-                    errorMessage = "✅ 注册成功！"
-                    showingError = true
-                    // 延迟后隐藏键盘
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        self.hideKeyboard()
+            let mutation = """
+            mutation {
+                register(name: "\(name)", phone: "\(phone)", password: "\(password)") {
+                    success
+                    token
+                    user {
+                        id
+                        name
+                        phone
                     }
                 }
-            } else {
-                // 根据错误码显示友好提示（不显示错误编码）
-                let errorCode = json["code"] as? String ?? ""
-                
-                switch errorCode {
-                case "PHONE_EXISTS":
-                    errorMessage = "该手机号已注册，请直接登录"
-                case "INVALID_NAME":
-                    errorMessage = "姓名不能为空"
-                case "INVALID_PHONE":
-                    errorMessage = "手机号格式不正确"
-                case "INVALID_PASSWORD":
-                    errorMessage = "密码至少 6 位"
-                default:
-                    errorMessage = json["error"] as? String ?? "注册失败"
-                }
+            }
+            """
+            
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: [:])
+            
+            guard let data = response["data"] as? [String: Any],
+                  let registerData = data["register"] as? [String: Any],
+                  let success = registerData["success"] as? Bool,
+                  success else {
+                throw NSError(domain: "注册失败", code: -1)
+            }
+            
+            print("✅ 注册成功，处理用户数据...")
+            
+            // 保存 Token 和用户信息
+            if let token = registerData["token"] as? String {
+                UserDefaults.standard.set(token, forKey: "userToken")
+            }
+            
+            if let user = registerData["user"] as? [String: Any],
+               let userId = user["id"] as? String {
+                UserDefaults.standard.set(userId, forKey: "userId")
+            }
+            
+            // 🔴 先处理用户数据（在主线程更新状态）
+            await handleAuthSuccess(response)
+            
+            // 🔴 关键修复：延迟后在主线程显示提示，给 UI 切换的时间
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
+            
+            await MainActor.run {
+                print("🟢 注册成功，显示提示")
+                // 显示成功提示
+                errorMessage = "✅ 注册成功！"
                 showingError = true
+                // 延迟后隐藏键盘
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    self.hideKeyboard()
+                }
             }
         } catch {
             errorMessage = "❌ 注册失败：\(error.localizedDescription)"
@@ -482,72 +474,106 @@ struct AuthView: View {
             DataManager.shared.initializeAPIConfig()
             print("🔵 登录请求 - API 已初始化")
             
-            var body: [String: Any] = [
-                "action": "login",
-                "phone": phone,
-                "login_type": loginType
-            ]
-            
+            let mutation: String
             if loginType == "password" {
-                body["password"] = password
+                mutation = """
+                mutation {
+                    login(phone: "\(phone)", password: "\(password)") {
+                        success
+                        token
+                        user {
+                            id
+                            name
+                            phone
+                        }
+                    }
+                }
+                """
             } else {
-                body["verify_code"] = verifyCode
+                mutation = """
+                mutation {
+                    login(phone: "\(phone)", verifyCode: "\(verifyCode)") {
+                        success
+                        token
+                        user {
+                            id
+                            name
+                            phone
+                        }
+                    }
+                }
+                """
             }
             
             print("📤 准备发送登录请求...")
-            let json = try await apiRequest(action: "login", body: body)
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: [:])
             
-            print("📥 收到响应：\(json)")
-            let success = json["success"] as? Bool ?? false
-            print("🔍 success: \(success)")
+            guard let data = response["data"] as? [String: Any],
+                  let loginData = data["login"] as? [String: Any],
+                  let success = loginData["success"] as? Bool,
+                  success else {
+                throw NSError(domain: "登录失败", code: -1)
+            }
             
-            if success {
-                print("✅ 登录成功，处理用户数据...")
-                // 🔴 先处理用户数据（在主线程更新状态）
-                await handleAuthSuccess(json)
+            print("✅ 登录成功，处理用户数据...")
+            
+            // 保存 Token 和用户信息
+            if let token = loginData["token"] as? String {
+                UserDefaults.standard.set(token, forKey: "userToken")
+            }
+            
+            if let user = loginData["user"] as? [String: Any],
+               let userId = user["id"] as? String {
+                UserDefaults.standard.set(userId, forKey: "userId")
+            }
+            
+            // 🔴 先处理用户数据（在主线程更新状态）
+            await handleAuthSuccess(response)
+            
+            // 🔴 关键修复：确保 UserManager 状态已更新
+            await MainActor.run {
+                print("🟢 登录状态已更新：")
+                print("   - isLoggedIn: \(userManager.isLoggedIn)")
+                print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
+                print("   - currentUser?.id: \(userManager.currentUser?.id ?? "nil")")
+            }
+            
+            // 🔴 延迟后显示成功提示并触发 UI 切换
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
+            
+            await MainActor.run {
+                print("🟢 准备显示成功提示...")
                 
-                // 🔴 关键修复：确保 UserManager 状态已更新
-                await MainActor.run {
-                    print("🟢 登录状态已更新：")
-                    print("   - isLoggedIn: \(userManager.isLoggedIn)")
-                    print("   - currentUser: \(userManager.currentUser?.name ?? "nil")")
-                    print("   - currentUser?.id: \(userManager.currentUser?.id ?? "nil")")
+                // 🔴 关键修复：先触发 ContentView 重新检查，再显示提示
+                // 这样提示消失时 UI 已经切换了
+                print("🔔 立即触发 ContentView 重新检查登录状态...")
+                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+                
+                // 显示成功提示
+                errorMessage = "✅ 登录成功！"
+                showingError = true
+                
+                // 延迟后隐藏键盘
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    self.hideKeyboard()
                 }
-                
-                // 🔴 延迟后显示成功提示并触发 UI 切换
-                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 秒延迟
-                
-                await MainActor.run {
-                    print("🟢 准备显示成功提示...")
-                    
-                    // 🔴 关键修复：先触发 ContentView 重新检查，再显示提示
-                    // 这样提示消失时 UI 已经切换了
-                    print("🔔 立即触发 ContentView 重新检查登录状态...")
-                    NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
-                    
-                    // 显示成功提示
-                    errorMessage = "✅ 登录成功！"
-                    showingError = true
-                    
-                    // 延迟后隐藏键盘
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        self.hideKeyboard()
-                    }
-                }
+            }
+        } catch {
+            print("❌ 登录失败：\(error.localizedDescription)")
+            // 显示友好错误提示
+            let errorMsg = error.localizedDescription
+            if errorMsg.contains("用户不存在") {
+                errorMessage = "账号不存在，请先注册"
+            } else if errorMsg.contains("密码错误") {
+                errorMessage = "密码错误"
+            } else if errorMsg.contains("验证码") {
+                errorMessage = "验证码错误或已过期"
             } else {
-                print("❌ 登录失败，处理错误...")
-                // 根据错误码显示友好提示（不显示错误编码）
-                let errorCode = json["code"] as? String ?? ""
-                print("   errorCode: \(errorCode)")
-                
-                switch errorCode {
-                case "USER_NOT_FOUND":
-                    errorMessage = "账号不存在，请先注册"
-                case "INVALID_PASSWORD":
-                    errorMessage = "密码错误"
-                case "INVALID_VERIFY_CODE", "INVALID_CODE":
-                    errorMessage = "验证码错误或已过期"
-                case "INVALID_PHONE":
+                errorMessage = "❌ 登录失败：\(errorMsg)"
+            }
+            showingError = true
+        }
+    }
                     errorMessage = "手机号格式不正确"
                 default:
                     errorMessage = json["error"] as? String ?? "登录失败"
