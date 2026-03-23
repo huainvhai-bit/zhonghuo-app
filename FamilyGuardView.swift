@@ -8,6 +8,8 @@
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 
+// 使用 APIManager 进行 GraphQL API 调用
+
 struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
