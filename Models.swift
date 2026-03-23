@@ -333,12 +333,12 @@ struct User: Codable, Identifiable {
     var idCard: String?     // 身份证号码
     var address: String?    // 住址
     
-    // 统计信息
-    var emergencyContactsCount: Int
-    var witnessesCount: Int
-    var capsulesCount: Int
-    var willModulesCount: Int
-    var familyCount: Int
+    // 统计信息（带默认值）
+    var emergencyContactsCount: Int = 0
+    var witnessesCount: Int = 0
+    var capsulesCount: Int = 0
+    var willModulesCount: Int = 0
+    var familyCount: Int = 0
     
     struct EmergencyContact: Codable, Identifiable {
         var id: String = UUID().uuidString
