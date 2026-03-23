@@ -42,6 +42,15 @@ struct TimeCapsuleView: View {
             .background(Color(hex: "F5F5F7"))
             .navigationTitle("时光胶囊")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // 设置导航栏背景色（兼容 iOS 15+）
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = UIColor(hex: "6366F1")
+                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+                UINavigationBar.appearance().standardAppearance = appearance
+                UINavigationBar.appearance().scrollEdgeAppearance = appearance
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
