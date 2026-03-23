@@ -32,6 +32,11 @@ struct InviteCodeView: View {
             .navigationTitle("我的邀请码")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: loadInviteCode) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("完成") { dismiss() }
                 }
