@@ -128,6 +128,8 @@ extension GraphQLClient {
                     capsulesCount
                     willModulesCount
                     familyCount
+                    assetsCount
+                    checkinCount
                 }
             }
             capsules {
