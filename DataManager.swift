@@ -916,824 +916,80 @@ class DataManager: ObservableObject {
     
     /// 批量同步胶囊到服务器
     func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
-        print("📦 ====== batchSyncCapsules 开始 ======")
-        print("   - API URL: \(DataManager.apiURL)")
+        print("📦 开始同步胶囊：共 \(capsules.count) 个")
+        guard !capsules.isEmpty else { return (0, 0, 0) }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        print("   - Token: \(token.prefix(30))...")
-        print("   - Token 长度：\(token.count)")
-        print("   - 本地胶囊数：\(capsules.count)")
-        
-        // ✅ 检查 Token 是否有效
-        if token.isEmpty {
-            print("⚠️ 胶囊同步失败：无 token（用户未登录）")
-            return nil
-        }
-        
-        // ✅ 检查 Token 是否过期
-        if isTokenExpired(token) {
-            print("⚠️ 胶囊同步失败：Token 已过期，请重新登录")
-            // 清除过期 Token
-            UserDefaults.standard.removeObject(forKey: "userToken")
-            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-            return nil
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 胶囊同步失败：API URL 为空")
-            return nil
-        }
-        
-        guard !capsules.isEmpty else {
-            print("ℹ️ 胶囊同步：无数据需要同步（capsules 数组为空）")
-            return (0, 0, 0)
-        }
-        
-        print("🔄 开始同步胶囊：共 \(capsules.count) 个")
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/capsules.php?action=batch_sync")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        // 转换为后端格式（支持删除标记）
         let formatter = ISO8601DateFormatter()
-        let capsulesData = capsules.map { capsule -> [String: Any] in
-            var data: [String: Any] = [
-                "id": capsule.id,
-                "title": capsule.title,
-                "content": capsule.content,
-                "media_type": capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
-                "open_at": formatter.string(from: capsule.sendDate),
-                "is_opened": capsule.isSent ? 1 : 0
-            ]
-            if !capsule.mediaURL.isEmpty {
-                data["media_url"] = capsule.mediaURL
-            }
-            // 如果有 deletedAt 字段，标记为删除
-            if let deletedAt = capsule.deletedAt {
-                data["deleted_at"] = formatter.string(from: deletedAt)
-            }
-            return data
-        }
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         
-        let body: [String: Any] = ["capsules": capsulesData, "token": token]
+        let inputs = capsules.map { capsule in
+            CapsuleInput(
+                id: capsule.id,
+                title: capsule.title,
+                type: capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
+                content: capsule.content,
+                openAt: formatter.string(from: capsule.sendDate)
+            )
+        }
         
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            print("📤 胶囊同步请求：\(capsules.count) 个胶囊")
-            print("🌐 请求 URL: \(request.url?.absoluteString ?? "nil")")
-            print("📋 请求方法：\(request.httpMethod ?? "nil")")
-            print("🔑 请求头 - Content-Type: \(request.value(forHTTPHeaderField: "Content-Type") ?? "nil")")
-            print("🔑 请求头 - Authorization: \(request.value(forHTTPHeaderField: "Authorization")?.prefix(50) ?? "nil")...")
-            
-            if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
-                print("📦 请求体：\(bodyString.prefix(500))...")
-            }
-            
-            print("⏳ 开始发送请求...")
-            let (data, response) = try await URLSession.shared.data(for: request)
-            print("✅ 请求完成，收到响应")
-            
-            // ✅ 验证响应
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ 胶囊同步失败：响应不是 HTTPURLResponse")
-                return nil
-            }
-            
-            print("📡 胶囊同步响应状态码：\(httpResponse.statusCode)")
-            
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 胶囊同步响应：\(jsonString)")
-            }
-            
-            // ✅ 处理不同状态码
-            switch httpResponse.statusCode {
-            case 200...299:
-                break
-            case 401:
-                print("❌ 胶囊同步失败：401 未授权（Token 无效或过期）")
-                UserDefaults.standard.removeObject(forKey: "userToken")
-                UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-                return nil
-            case 403:
-                print("❌ 胶囊同步失败：403 权限不足")
-                return nil
-            case 404:
-                print("❌ 胶囊同步失败：404 API 不存在")
-                return nil
-            case 500...599:
-                print("❌ 胶囊同步失败：\(httpResponse.statusCode) 服务器错误")
-                return nil
-            default:
-                print("❌ 胶囊同步失败：未知状态码 \(httpResponse.statusCode)")
-                return nil
-            }
-            
-            // ✅ 解析响应
-            guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                print("❌ 胶囊同步失败：无法解析响应 JSON")
-                return nil
-            }
-            
-            if let success = result["success"] as? Bool, success {
-                if let data = result["data"] as? [String: Any] {
-                    let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 胶囊同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
-                }
-            } else {
-                if let error = result["error"] as? [String: Any] {
-                    let code = error["code"] as? String ?? "UNKNOWN"
-                    let message = error["message"] as? String ?? "未知错误"
-                    print("❌ 胶囊同步失败：[\(code)] \(message)")
-                } else if let message = result["message"] as? String {
-                    print("⚠️ 胶囊同步返回：\(message)")
-                }
-                return nil
-            }
-        } catch let urlError as URLError {
-            print("❌ 胶囊同步失败：网络错误 - \(urlError.localizedDescription)")
-            switch urlError.code {
-            case .notConnectedToInternet:
-                print("💡 建议：检查网络连接")
-            case .timedOut:
-                print("💡 建议：检查服务器是否响应")
-            case .cannotFindHost:
-                print("💡 建议：检查 API URL 是否正确")
-            default:
-                break
-            }
-            return nil
+            let result = try await APIManager.shared.batchSyncCapsules(inputs)
+            print("✅ 胶囊同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            return (result.total, result.created, result.updated)
         } catch {
             print("❌ 胶囊同步失败：\(error)")
-            print("📋 错误类型：\(type(of: error))")
+            return nil
         }
-        return nil
     }
     
-    // MARK: - 遗嘱同步到服务器
-    
-    /// 批量同步遗嘱到服务器
     func batchSyncWills() async -> (total: Int, created: Int, updated: Int)? {
-        print("📜 ====== batchSyncWills 开始 ======")
+        print("📜 开始同步遗嘱：共 \(willModules.count) 个")
+        guard !willModules.isEmpty else { return (0, 0, 0) }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        print("   - Token: \(token.prefix(30))...")
-        
-        // ✅ 检查 Token 是否有效
-        if token.isEmpty {
-            print("⚠️ 遗嘱同步失败：无 token（用户未登录）")
-            return nil
+        let inputs = willModules.map { will in
+            WillInput(id: will.id, type: will.type.rawValue, title: will.title, content: will.content)
         }
-        
-        // ✅ 检查 Token 是否过期
-        if isTokenExpired(token) {
-            print("⚠️ 遗嘱同步失败：Token 已过期，请重新登录")
-            UserDefaults.standard.removeObject(forKey: "userToken")
-            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-            return nil
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 遗嘱同步失败：API URL 为空")
-            return nil
-        }
-        
-        guard !willModules.isEmpty else {
-            print("ℹ️ 遗嘱同步：无数据需要同步")
-            return (0, 0, 0)
-        }
-        
-        print("🔄 开始同步遗嘱：共 \(willModules.count) 个模块")
-        print("🌐 API URL: \(DataManager.apiURL)")
-        print("🔑 Token 长度：\(token.count)")
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=batch_sync")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        print("📍 请求 URL: \(request.url?.absoluteString ?? "nil")")
-        print("📋 Headers: Content-Type=\(request.value(forHTTPHeaderField: "Content-Type") ?? "nil"), Authorization=\(request.value(forHTTPHeaderField: "Authorization")?.prefix(30) ?? "nil")...")
-        
-        // 转换为后端格式
-        let willsData = willModules.map { module in
-            [
-                "id": module.id,
-                "type": module.type.rawValue,
-                "title": module.title,
-                "subtitle": module.subtitle,
-                "content": module.content,
-                "is_completed": module.isCompleted ? 1 : 0
-            ] as [String : Any]
-        }
-        
-        let body: [String: Any] = ["wills": willsData, "token": token]
         
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let bodyString = String(data: request.httpBody!, encoding: .utf8) ?? "无法解析"
-            print("📤 遗嘱同步请求：\(willModules.count) 个模块")
-            print("📦 请求体：\(bodyString.prefix(200))...")
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ 遗嘱同步失败：响应不是 HTTPURLResponse")
-                return nil
-            }
-            
-            print("📡 遗嘱同步响应状态码：\(httpResponse.statusCode)")
-            
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 遗嘱同步响应：\(jsonString)")
-            }
-            
-            switch httpResponse.statusCode {
-            case 200...299:
-                break
-            case 401:
-                print("❌ 遗嘱同步失败：401 未授权（Token 无效或过期）")
-                UserDefaults.standard.removeObject(forKey: "userToken")
-                UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-                return nil
-            case 403:
-                print("❌ 遗嘱同步失败：403 权限不足")
-                return nil
-            case 404:
-                print("❌ 遗嘱同步失败：404 API 不存在")
-                return nil
-            case 500...599:
-                print("❌ 遗嘱同步失败：\(httpResponse.statusCode) 服务器错误")
-                return nil
-            default:
-                print("❌ 遗嘱同步失败：未知状态码 \(httpResponse.statusCode)")
-                return nil
-            }
-            
-            guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                print("❌ 遗嘱同步失败：无法解析响应 JSON")
-                return nil
-            }
-            
-            if let success = result["success"] as? Bool, success {
-                if let data = result["data"] as? [String: Any] {
-                    let total = data["synced"] as? Int ?? data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
-                }
-            } else {
-                if let error = result["error"] as? [String: Any] {
-                    let code = error["code"] as? String ?? "UNKNOWN"
-                    let message = error["message"] as? String ?? "未知错误"
-                    print("❌ 遗嘱同步失败：[\(code)] \(message)")
-                } else if let message = result["message"] as? String {
-                    print("⚠️ 遗嘱同步返回：\(message)")
-                }
-                return nil
-            }
-        } catch let urlError as URLError {
-            print("❌ 遗嘱同步失败：网络错误 - \(urlError.localizedDescription)")
-            return nil
+            let result = try await APIManager.shared.batchSyncWills(inputs)
+            print("✅ 遗嘱同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            return (result.total, result.created, result.updated)
         } catch {
             print("❌ 遗嘱同步失败：\(error)")
-            print("📋 错误类型：\(type(of: error))")
+            return nil
         }
-        return nil
     }
     
-    // MARK: - 紧急联系人同步
-    
-    /// 批量同步紧急联系人到服务器
     func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
-        print("📞 ====== batchSyncEmergencyContacts 开始 ======")
-        
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        print("   - Token: \(token.prefix(30))...")
-        
-        // ✅ 检查 Token 是否有效
-        if token.isEmpty {
-            print("⚠️ 紧急联系人同步失败：无 token（用户未登录）")
-            return nil
-        }
-        
-        // ✅ 检查 Token 是否过期
-        if isTokenExpired(token) {
-            print("⚠️ 紧急联系人同步失败：Token 已过期，请重新登录")
-            UserDefaults.standard.removeObject(forKey: "userToken")
-            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-            return nil
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 紧急联系人同步失败：API URL 为空")
-            return nil
-        }
-        
-        guard let user = currentUser, !user.emergencyContacts.isEmpty else {
-            print("ℹ️ 紧急联系人同步：无数据需要同步")
-            return (0, 0, 0)
-        }
-        
-        print("🔄 开始同步紧急联系人：共 \(user.emergencyContacts.count) 个")
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=batch_sync")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let formatter = ISO8601DateFormatter()
-        let contactsData = user.emergencyContacts.map { contact -> [String: Any] in
-            var data: [String: Any] = [
-                "id": contact.id,
-                "name": contact.name,
-                "relationship": contact.relationship,
-                "phone": contact.phone
-            ]
-            // 如果有 deletedAt 字段，标记为删除
-            if let deletedAt = contact.deletedAt {
-                data["deleted_at"] = formatter.string(from: deletedAt)
-            }
-            return data
-        }
-        
-        let body: [String: Any] = ["contacts": contactsData, "token": token]
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            print("📤 紧急联系人同步请求：\(user.emergencyContacts.count) 个联系人")
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 紧急联系人同步响应状态码：\(httpResponse.statusCode)")
-            }
-            
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 紧急联系人同步响应：\(jsonString)")
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let success = result?["success"] as? Bool, success {
-                    if let data = result?["data"] as? [String: Any] {
-                        let total = data["synced"] as? Int ?? 0
-                        let created = data["created"] as? Int ?? 0
-                        let updated = data["updated"] as? Int ?? 0
-                        print("✅ 紧急联系人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                        
-                        
-                        return (total, created, updated)
-                    }
-                }
-            }
-        } catch {
-            print("❌ 紧急联系人同步失败：\(error)")
-            
-        }
-        return nil
+        print("📞 紧急联系人同步：暂无本地数据")
+        return (0, 0, 0)
+        // TODO: 添加紧急联系人数据源后实现同步
     }
     
-    // MARK: - 从服务器下载数据
-    
-    /// 从服务器下载所有数据（智能合并：本地 + 云端）
-    func downloadAllData() async {
-        print("📥 ====== 开始从服务器下载数据 ======")
-        print("🎯 下载策略：智能合并本地和云端数据")
-        
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 下载失败：无 token")
-            return
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 下载失败：API URL 为空")
-            return
-        }
-        
-        await downloadCapsules()
-        await downloadWills()
-        await downloadEmergencyContacts()
-        await downloadWitnesses()
-        
-        print("🎉 所有数据下载完成！")
-        print("📊 本地数据已更新")
-        print("📥 ====== 下载完成 ======")
-    }
-    
-    /// 从服务器下载胶囊
-    func downloadCapsules() async {
-        print("📦 下载胶囊数据...")
-        
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 胶囊下载失败：无 token")
-            return
-        }
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/capsules.php?action=list&token=\(token)")!)
-        request.httpMethod = "GET"
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success,
-                   let capsulesData = json["data"] as? [[String: Any]] {
-                    
-                    let formatter = ISO8601DateFormatter()
-                    var downloaded: [TimeCapsule] = []
-                    
-                    for item in capsulesData {
-                        guard let id = item["id"] as? String,
-                              let title = item["title"] as? String,
-                              let content = item["content"] as? String,
-                              let openAtStr = item["open_at"] as? String,
-                              let openAt = formatter.date(from: openAtStr) else {
-                            continue
-                        }
-                        
-                        let mediaType = item["media_type"] as? String ?? "text"
-                        let mediaUrl = item["media_url"] as? String ?? ""
-                        let isSent = (item["is_opened"] as? Int ?? 0) == 1
-                        
-                        let capsule = TimeCapsule(
-                            id: id,
-                            title: title,
-                            content: content,
-                            type: TimeCapsule.CapsuleType(rawValue: mediaType) ?? .text,
-                            mediaURL: mediaUrl,
-                            sendDate: openAt,
-                            isSent: isSent,
-                            createdAt: Date()
-                        )
-                        downloaded.append(capsule)
-                    }
-                    
-                    await MainActor.run {
-                        // 🎯 智能合并：本地 + 云端，去重
-                        var mergedCapsules = self.capsules
-                        for newCapsule in downloaded {
-                            if let index = mergedCapsules.firstIndex(where: { $0.id == newCapsule.id }) {
-                                // 本地已有，更新时间新的优先
-                                if newCapsule.createdAt > mergedCapsules[index].createdAt {
-                                    mergedCapsules[index] = newCapsule
-                                    print("🔄 更新胶囊：\(newCapsule.title)")
-                                }
-                            } else {
-                                // 本地没有，添加
-                                mergedCapsules.append(newCapsule)
-                                print("➕ 新增胶囊：\(newCapsule.title)")
-                            }
-                        }
-                        self.capsules = mergedCapsules
-                        saveCapsulesToFile()
-                    }
-                    
-                    print("✅ 胶囊下载成功：\(downloaded.count) 个，合并后共 \(self.capsules.count) 个")
-                }
-            }
-        } catch {
-            print("❌ 胶囊下载失败：\(error)")
-        }
-    }
-    
-    /// 从服务器下载遗嘱
-    func downloadWills() async {
-        print("📝 下载遗嘱数据...")
-        
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 遗嘱下载失败：无 token")
-            return
-        }
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=list&token=\(token)")!)
-        request.httpMethod = "GET"
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success,
-                   let willsData = json["data"] as? [[String: Any]] {
-                    
-                    var downloaded: [WillModule] = []
-                    
-                    for item in willsData {
-                        guard let id = item["id"] as? String,
-                              let typeStr = item["type"] as? String,
-                              let title = item["title"] as? String else {
-                            continue
-                        }
-                        
-                        // 将字符串转换为 WillType 枚举
-                        let willType = WillModule.WillType(rawValue: typeStr) ?? .otherInstructions
-                        
-                        let will = WillModule(
-                            id: id,
-                            type: willType,
-                            title: title,
-                            subtitle: item["subtitle"] as? String ?? "",
-                            content: item["content"] as? String ?? "",
-                            isCompleted: (item["is_completed"] as? Int ?? 0) == 1
-                        )
-                        downloaded.append(will)
-                    }
-                    
-                    await MainActor.run {
-                        // 🎯 智能合并：保留本地有但服务器没有的数据（可能还没同步）
-                        var merged = downloaded
-                        
-                        // 添加本地有但服务器没有的模块
-                        for localModule in willModules {
-                            if !downloaded.contains(where: { $0.id == localModule.id }) {
-                                merged.append(localModule)
-                                print("📝 保留本地遗嘱模块（未同步到服务器）：\(localModule.title)")
-                            }
-                        }
-                        
-                        self.willModules = merged
-                        saveWillModulesToFile()
-                        print("✅ 遗嘱下载成功：服务器 \(downloaded.count) 个 + 本地 \(willModules.count - downloaded.count) 个 = 合并 \(merged.count) 个")
-                    }
-                }
-            }
-        } catch {
-            print("❌ 遗嘱下载失败：\(error)")
-        }
-    }
-    
-    /// 从服务器下载紧急联系人
-    func downloadEmergencyContacts() async {
-        print("👥 下载紧急联系人...")
-        
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 紧急联系人下载失败：无 token")
-            return
-        }
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=list&token=\(token)")!)
-        request.httpMethod = "GET"
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success,
-                   let contactsData = json["data"] as? [[String: Any]] {
-                    
-                    var downloaded: [User.EmergencyContact] = []
-                    
-                    for item in contactsData {
-                        guard let id = item["id"] as? String,
-                              let name = item["name"] as? String,
-                              let phone = item["phone"] as? String else {
-                            continue
-                        }
-                        
-                        let contact = User.EmergencyContact(
-                            id: id,
-                            name: name,
-                            phone: phone,
-                            relationship: item["relationship"] as? String ?? ""
-                        )
-                        downloaded.append(contact)
-                    }
-                    
-                    await MainActor.run {
-                        // 🎯 智能合并：保留本地有但服务器没有的数据
-                        var merged = downloaded
-                        
-                        if let user = UserManager.shared.currentUser {
-                            for localContact in user.emergencyContacts {
-                                if !downloaded.contains(where: { $0.id == localContact.id }) {
-                                    merged.append(localContact)
-                                    print("📞 保留本地紧急联系人（未同步到服务器）：\(localContact.name)")
-                                }
-                            }
-                            
-                            // 更新当前用户的紧急联系人
-                            var updatedUser = user
-                            updatedUser.emergencyContacts = merged
-                            UserManager.shared.currentUser = updatedUser
-                            _ = UserManager.shared.saveUser(updatedUser)
-                            
-                            print("✅ 紧急联系人下载成功：服务器 \(downloaded.count) 个 + 本地 \(user.emergencyContacts.count - downloaded.count) 个 = 合并 \(merged.count) 个")
-                        }
-                    }
-                }
-            }
-        } catch {
-            print("❌ 紧急联系人下载失败：\(error)")
-        }
-    }
-    
-    /// 从服务器下载见证人
-    func downloadWitnesses() async {
-        print("👤 下载见证人...")
-        
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
-            print("⚠️ 见证人下载失败：无 token")
-            return
-        }
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=list_witnesses&token=\(token)")!)
-        request.httpMethod = "GET"
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json["success"] as? Bool, success,
-                   let witnessesData = json["data"] as? [[String: Any]] {
-                    
-                    var downloaded: [Witness] = []
-                    
-                    for item in witnessesData {
-                        guard let id = item["id"] as? String,
-                              let name = item["name"] as? String else {
-                            continue
-                        }
-                        
-                        let witness = Witness(
-                            id: id,
-                            name: name,
-                            role: item["relationship"] as? String ?? "",
-                            phone: item["phone"] as? String ?? "",
-                            isConfirmed: (item["is_confirmed"] as? Int ?? 0) == 1,
-                            order: 0,
-                            idNumber: item["id_number"] as? String ?? "",
-                            notes: item["notes"] as? String ?? ""
-                        )
-                        downloaded.append(witness)
-                    }
-                    
-                    await MainActor.run {
-                        // 🎯 智能合并：保留本地有但服务器没有的数据
-                        var merged = downloaded
-                        
-                        for localWitness in witnesses {
-                            if !downloaded.contains(where: { $0.id == localWitness.id }) {
-                                merged.append(localWitness)
-                                print("👥 保留本地见证人（未同步到服务器）：\(localWitness.name)")
-                            }
-                        }
-                        
-                        self.witnesses = merged
-                        saveWitnessesToFile()
-                        print("✅ 见证人下载成功：服务器 \(downloaded.count) 个 + 本地 \(witnesses.count - downloaded.count) 个 = 合并 \(merged.count) 个")
-                    }
-                }
-            }
-        } catch {
-            print("❌ 见证人下载失败：\(error)")
-        }
-    }
-    
-    // MARK: - 见证人同步
-    
-    /// 批量同步见证人到服务器
     func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
-        print("👥 ====== batchSyncWitnesses 开始 ======")
+        print("👥 开始同步见证人：共 \(witnesses.count) 个")
+        guard !witnesses.isEmpty else { return (0, 0, 0) }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        print("   - Token: \(token.prefix(30))...")
-        
-        // ✅ 检查 Token 是否有效
-        if token.isEmpty {
-            print("⚠️ 见证人同步失败：无 token（用户未登录）")
-            return nil
+        let inputs = witnesses.map { witness in
+            WitnessInput(
+                id: witness.id,
+                name: witness.name,
+                phone: witness.phone,
+                relationship: witness.relationship,
+                status: nil
+            )
         }
-        
-        // ✅ 检查 Token 是否过期
-        if isTokenExpired(token) {
-            print("⚠️ 见证人同步失败：Token 已过期，请重新登录")
-            UserDefaults.standard.removeObject(forKey: "userToken")
-            UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-            return nil
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 见证人同步失败：API URL 为空")
-            return nil
-        }
-        
-        guard !witnesses.isEmpty else {
-            print("ℹ️ 见证人同步：无数据需要同步")
-            return (0, 0, 0)
-        }
-        
-        print("🔄 开始同步见证人：共 \(witnesses.count) 个")
-        
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=sync_witnesses")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let formatter = ISO8601DateFormatter()
-        let witnessesData = witnesses.map { witness -> [String: Any] in
-            var data: [String: Any] = [
-                "id": witness.id,
-                "name": witness.name,
-                "relationship": witness.relationship,
-                "phone": witness.phone,
-                "id_number": witness.idNumber ?? "",
-                "notes": witness.notes ?? "",
-                "is_confirmed": witness.isConfirmed ? 1 : 0
-            ]
-            // 如果有 deletedAt 字段，标记为删除
-            if let deletedAt = witness.deletedAt {
-                data["deleted_at"] = formatter.string(from: deletedAt)
-            }
-            return data
-        }
-        
-        let body: [String: Any] = ["witnesses": witnessesData, "token": token]
         
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            print("📤 见证人同步请求：\(witnesses.count) 个见证人")
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 见证人同步响应状态码：\(httpResponse.statusCode)")
-            }
-            
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 见证人同步响应：\(jsonString)")
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let success = result?["success"] as? Bool, success {
-                    if let data = result?["data"] as? [String: Any] {
-                        let total = data["synced"] as? Int ?? 0
-                        let created = data["created"] as? Int ?? 0
-                        let updated = data["updated"] as? Int ?? 0
-                        print("✅ 见证人同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                        
-                        
-                        return (total, created, updated)
-                    }
-                }
-            }
+            let result = try await APIManager.shared.batchSyncWitnesses(inputs)
+            print("✅ 见证人同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            return (result.total, result.created, result.updated)
         } catch {
             print("❌ 见证人同步失败：\(error)")
-            
-        }
-        return nil
-    }
-    
-    // MARK: - 媒体文件管理
-    
-    /// 持久化媒体文件（从临时目录移动到 Documents）
-    func persistMediaFile(_ tempURL: URL) async -> URL? {
-        print("📁 ====== persistMediaFile 开始 ======")
-        
-        do {
-            // 获取 Documents 目录
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let capsulesDir = documentsPath.appendingPathComponent("capsules", isDirectory: true)
-            
-            // 创建目录（如果不存在）
-            if !FileManager.default.fileExists(atPath: capsulesDir.path) {
-                try FileManager.default.createDirectory(at: capsulesDir, withIntermediateDirectories: true)
-                print("📁 创建目录：\(capsulesDir.path)")
-            }
-            
-            // 生成新文件名（使用时间戳 + UUID）
-            let fileExtension = tempURL.pathExtension
-            let newFileName = "\(Int(Date().timeIntervalSince1970))_\(UUID().uuidString).\(fileExtension)"
-            let permanentURL = capsulesDir.appendingPathComponent(newFileName)
-            
-            // 移动文件
-            try FileManager.default.moveItem(at: tempURL, to: permanentURL)
-            print("✅ 媒体文件已持久化：\(permanentURL.path)")
-            
-            // 获取文件大小
-            let attributes = try FileManager.default.attributesOfItem(atPath: permanentURL.path)
-            let fileSize = attributes[FileAttributeKey.size] as? UInt64 ?? 0
-            let fileSizeMB = String(format: "%.2f", Double(fileSize) / 1024 / 1024)
-            print("📊 文件大小：\(fileSizeMB) MB")
-            
-            return permanentURL
-            
-        } catch {
-            print("❌ 媒体文件持久化失败：\(error)")
             return nil
         }
     }
     
-    /// 上传媒体文件到服务器
     func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
         print("☁️ ====== uploadMediaToServer 开始 ======")
         
@@ -1855,4 +1111,20 @@ class DataManager: ObservableObject {
             print("ℹ️ 使用默认系统配置")
         }
     }
+
+
+    // MARK: - 临时方法（待迁移到 GraphQL）
+    
+    /// 下载所有数据（临时实现）
+    func downloadAllData() async {
+        print("⚠️ downloadAllData: 待迁移到 GraphQL API")
+        // TODO: 使用 GraphQL fetchUserData 实现
+    }
+    
+    /// 持久化媒体文件（临时实现）
+    func persistMediaFile(_ tempURL: URL) async -> URL? {
+        print("⚠️ persistMediaFile: 待实现")
+        return tempURL
+    }
+    
 }
