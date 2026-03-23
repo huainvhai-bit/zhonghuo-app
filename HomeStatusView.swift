@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MessageUI
 
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
@@ -21,6 +22,7 @@ struct HomeStatusView: View {
     @State private var showingWitnessSheet = false
     @State private var showingEmergencyContactAlert = false
     @State private var showingEmergencyContactsSheet = false  // 紧急联系人弹窗
+    @State private var hasSentOverdueAlert = false  // 防止重复发送
     
     var body: some View {
         NavigationView {
@@ -117,6 +119,12 @@ struct HomeStatusView: View {
                 // 每秒递减倒计时
                 if secondsRemaining > 0 {
                     secondsRemaining -= 1
+                    
+                    // 检查是否刚进入危险状态（倒计时归零）
+                    if secondsRemaining == 0 && !hasSentOverdueAlert {
+                        // 倒计时结束，发送 iMessage 通知紧急联系人
+                        sendOverdueAlertToEmergencyContacts()
+                    }
                 } else {
                     // 倒计时结束，检查是否需要签到
                     updateStatus()
@@ -288,6 +296,51 @@ struct HomeStatusView: View {
     }
     
     // 🚫 已移除手动签到功能 - 只保留自动签到
+    
+    /// 发送超时通知给紧急联系人（使用苹果原生 iMessage）
+    private func sendOverdueAlertToEmergencyContacts() {
+        print("🚨 倒计时结束，准备发送 iMessage 通知紧急联系人")
+        
+        guard let user = UserManager.shared.currentUser else {
+            print("⚠️ 无用户数据，跳过通知")
+            return
+        }
+        
+        // 获取紧急联系人，转换为 MessageManager 需要的格式
+        let contacts = user.emergencyContacts
+            .filter { $0.deletedAt == nil }  // 只选择未删除的联系人
+            .map { EmergencyContactInfo(
+                id: $0.id,
+                name: $0.name,
+                phone: $0.phone,
+                relationship: $0.relationship
+            )}
+        
+        guard !contacts.isEmpty else {
+            print("⚠️ 没有紧急联系人，跳过通知")
+            return
+        }
+        
+        // 计算超时小时数
+        let hoursOverdue = Int(DataManager.shared.systemConfig.offlineTimeoutHours)
+        
+        print("📱 发送 iMessage 给 \(contacts.count) 个紧急联系人")
+        print("   - 超时阈值：\(hoursOverdue) 小时")
+        
+        // 使用苹果原生 iMessage 发送通知
+        MessageManager.shared.sendLifeCheckAlert(
+            to: contacts,
+            userName: user.name,
+            hoursOverdue: hoursOverdue
+        ) { success, message in
+            if success {
+                print("✅ iMessage 通知发送成功")
+                hasSentOverdueAlert = true  // 标记已发送，防止重复
+            } else {
+                print("❌ iMessage 通知失败：\(message ?? "未知错误")")
+            }
+        }
+    }
     
     private func updateStatus() {
         // 确保使用最新的签到间隔

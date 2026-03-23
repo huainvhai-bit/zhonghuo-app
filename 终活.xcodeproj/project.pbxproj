@@ -21,6 +21,7 @@
 		A1000001 /* ZhonghuoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ZhonghuoApp.swift */; };
 		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
 		A1000003 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* HomeStatusView.swift */; };
+		A1000025 /* MessageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025 /* MessageManager.swift */; };
 		A1000004 /* TimeCapsuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* TimeCapsuleView.swift */; };
 		A1000005 /* WillAssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* WillAssetsView.swift */; };
 		A1000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* SettingsView.swift */; };
@@ -71,6 +72,7 @@
 		A2000001 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuoApp.swift; sourceTree = SOURCE_ROOT; };
 		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = SOURCE_ROOT; };
 		A2000003 /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
+	A2000025 /* MessageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageManager.swift; sourceTree = SOURCE_ROOT; };
 		A2000004 /* TimeCapsuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeCapsuleView.swift; sourceTree = SOURCE_ROOT; };
 		A2000005 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = SOURCE_ROOT; };
@@ -131,6 +133,7 @@
 				A2000001 /* ZhonghuoApp.swift */,
 				A2000002 /* ContentView.swift */,
 				A2000003 /* HomeStatusView.swift */,
+				A2000025 /* MessageManager.swift */,
 				A2000004 /* TimeCapsuleView.swift */,
 				A2000005 /* WillAssetsView.swift */,
 				A2000007 /* SettingsView.swift */,
@@ -232,6 +235,7 @@
 				A1000001 /* ZhonghuoApp.swift in Sources */,
 				A1000002 /* ContentView.swift in Sources */,
 				A1000003 /* HomeStatusView.swift in Sources */,
+			A1000025 /* MessageManager.swift in Sources */,
 				A1000004 /* TimeCapsuleView.swift in Sources */,
 				A1000005 /* WillAssetsView.swift in Sources */,
 				3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */,
