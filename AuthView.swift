@@ -410,8 +410,8 @@ struct AuthView: View {
             print("🔵 注册请求 - API 已初始化")
             
             let mutation = """
-            mutation {
-                register(name: "\(name)", phone: "\(phone)", password: "\(password)") {
+            mutation($name: String!, $phone: String!, $password: String!) {
+                register(name: $name, phone: $phone, password: $password) {
                     success
                     token
                     user {
@@ -423,7 +423,13 @@ struct AuthView: View {
             }
             """
             
-            let response = try await graphqlAuthRequest(mutation: mutation, variables: [:])
+            let variables: [String: Any] = [
+                "name": name,
+                "phone": phone,
+                "password": password
+            ]
+            
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
             
             guard let data = response["data"] as? [String: Any],
                   let registerData = data["register"] as? [String: Any],
@@ -475,10 +481,12 @@ struct AuthView: View {
             print("🔵 登录请求 - API 已初始化")
             
             let mutation: String
+            var variables: [String: Any] = [:]
+            
             if loginType == "password" {
                 mutation = """
-                mutation {
-                    login(phone: "\(phone)", password: "\(password)") {
+                mutation($phone: String!, $password: String!) {
+                    login(phone: $phone, password: $password) {
                         success
                         token
                         user {
@@ -489,10 +497,14 @@ struct AuthView: View {
                     }
                 }
                 """
+                variables = [
+                    "phone": phone,
+                    "password": password
+                ]
             } else {
                 mutation = """
-                mutation {
-                    login(phone: "\(phone)", verifyCode: "\(verifyCode)") {
+                mutation($phone: String!, $verifyCode: String!) {
+                    login(phone: $phone, verifyCode: $verifyCode) {
                         success
                         token
                         user {
@@ -503,10 +515,14 @@ struct AuthView: View {
                     }
                 }
                 """
+                variables = [
+                    "phone": phone,
+                    "verifyCode": verifyCode
+                ]
             }
             
             print("📤 准备发送登录请求...")
-            let response = try await graphqlAuthRequest(mutation: mutation, variables: [:])
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
             
             guard let data = response["data"] as? [String: Any],
                   let loginData = data["login"] as? [String: Any],
