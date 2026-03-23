@@ -185,6 +185,8 @@ struct UserStats: Decodable {
     let capsulesCount: Int
     let willModulesCount: Int
     let familyCount: Int
+    let assetsCount: Int
+    let checkinCount: Int
 }
 
 struct CapsuleInfo: Decodable {

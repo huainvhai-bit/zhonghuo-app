@@ -611,7 +611,11 @@ struct AuthView: View {
                 emergencyContacts: [],
                 checkInInterval: .twoDays,
                 notificationsEnabled: true,
-                cloudSyncEnabled: false
+                cloudSyncEnabled: false,
+                lastCheckInDate: nil,
+                lastLoginAt: nil,
+                lastLoginIp: nil,
+                checkinCount: 0
             )
             print("✅ User 对象已创建：\(user.name)")
             

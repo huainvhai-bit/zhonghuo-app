@@ -352,7 +352,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             checkInInterval: .twoDays,
             notificationsEnabled: true,
             cloudSyncEnabled: true,
-            lastCheckInDate: nil
+            lastCheckInDate: nil,
+            lastLoginAt: nil,
+            lastLoginIp: nil,
+            checkinCount: 0
         )
         
         if saveUser(user) {

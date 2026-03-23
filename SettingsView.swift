@@ -361,21 +361,21 @@ struct SettingsView: View {
                 StatItemView(
                     icon: "person.crop.circle.badge.exclamationmark",
                     color: Color(hex: "FF3B30"),
-                    count: userManager.currentUser?.emergency_contacts_count ?? 0,
+                    count: userManager.currentUser?.emergencyContactsCount ?? 0,
                     label: "紧急联系人"
                 )
                 
                 StatItemView(
                     icon: "checkmark.shield.fill",
                     color: Color(hex: "FF9500"),
-                    count: userManager.currentUser?.witnesses_count ?? 0,
+                    count: userManager.currentUser?.witnessesCount ?? 0,
                     label: "见证人"
                 )
                 
                 StatItemView(
                     icon: "capsule.fill",
                     color: Color(hex: "AF52DE"),
-                    count: userManager.currentUser?.capsules_count ?? 0,
+                    count: userManager.currentUser?.capsulesCount ?? 0,
                     label: "胶囊"
                 )
             }
@@ -384,21 +384,21 @@ struct SettingsView: View {
                 StatItemView(
                     icon: "doc.text.fill",
                     color: Color(hex: "FF2D55"),
-                    count: userManager.currentUser?.will_modules_count ?? 0,
+                    count: userManager.currentUser?.willModulesCount ?? 0,
                     label: "嘱托"
                 )
                 
                 StatItemView(
                     icon: "person.2.fill",
                     color: Color(hex: "007AFF"),
-                    count: userManager.currentUser?.family_count ?? 0,
+                    count: userManager.currentUser?.familyCount ?? 0,
                     label: "家人"
                 )
                 
                 StatItemView(
                     icon: "calendar.badge.checkmark",
                     color: Color(hex: "34C759"),
-                    count: userManager.currentUser?.checkin_count ?? 0,
+                    count: userManager.currentUser?.checkinCount ?? 0,
                     label: "签到"
                 )
             }
