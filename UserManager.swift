@@ -254,12 +254,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
-            // 🌍 坐标转换：WGS84 → GCJ02（高德地图使用）
-            let (gcjLat, gcjLon) = UserManager.wgs84ToGCJ02(latitude: latitude, longitude: longitude)
-            print("🔄 坐标转换：WGS84(\(latitude), \(longitude)) → GCJ02(\(gcjLat), \(gcjLon))")
-            
-            // 上传转换后的 GCJ02 坐标（匹配高德地图）
-            self.uploadLocationToServer(userId: user.id, latitude: gcjLat, longitude: gcjLon, address: address, accuracy: simulatedAccuracy)
+            // 上传原始 GPS 坐标（WGS84）
+            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: simulatedAccuracy)
         }
     }
     
@@ -1087,52 +1083,5 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             case .phoneMismatch: return "手机号不匹配"
             }
         }
-    }
-}
-
-// MARK: - 坐标转换工具（WGS84 ↔ GCJ02）
-
-extension UserManager {
-    /// WGS84 转 GCJ02（高德/腾讯地图使用）
-    /// - Parameters:
-    ///   - latitude: WGS84 纬度
-    ///   - longitude: WGS84 经度
-    /// - Returns: GCJ02 坐标（纬度，经度）
-    static func wgs84ToGCJ02(latitude: Double, longitude: Double) -> (Double, Double) {
-        // 判断是否在中国范围内
-        if latitude < 0 || latitude > 81 || longitude < 72 || longitude > 137 {
-            return (latitude, longitude)
-        }
-        
-        let a = 6378245.0  // 地球长半轴
-        let ee = 0.00669342162296594323  // 偏心率平方
-        
-        var dLat = transformLat(longitude - 105.0, latitudeY: latitude - 35.0)
-        var dLon = transformLon(longitude - 105.0, latitudeY: latitude - 35.0)
-        
-        let radLat = latitude / 180.0 * .pi
-        var magic = sin(radLat)
-        magic = 1 - ee * magic * magic
-        let sqrtMagic = sqrt(magic)
-        
-        dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * .pi / 180.0)
-        dLon = (dLon * 180.0) / (a / sqrtMagic * cos(radLat) * .pi / 180.0)
-        
-        let gcjLat = latitude + dLat
-        let gcjLon = longitude + dLon
-        
-        return (gcjLat, gcjLon)
-    }
-    
-    private static func transformLat(_ x: Double, latitudeY y: Double) -> Double {
-        var ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * abs(x)
-        ret += (20.0 * abs(x) + 13.0 * abs(y) + 0.12 * x * x + 0.08 * y * y + 0.001 * x * y) * 0.001
-        return ret
-    }
-    
-    private static func transformLon(_ x: Double, latitudeY y: Double) -> Double {
-        var ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * abs(x)
-        ret += (20.0 * abs(x) + 13.0 * abs(y) + 0.15 * x * x + 0.08 * y * y + 0.001 * x * y) * 0.001
-        return ret
     }
 }
