@@ -249,17 +249,26 @@ struct InviteCodeView: View {
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
+            // 打印调试信息
+            print("📡 邀请码响应状态码：\(response)")
+            print("📡 邀请码响应数据：\(String(data: data, encoding: .utf8) ?? "无")")
+            
             // 尝试解析响应（无论状态码）
             let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+            
+            print("📡 邀请码解析结果：success=\(result.success), message=\(result.message ?? "nil")")
             
             if result.success {
                 inviteCode = result.data?.invite_code ?? ""
                 qrURL = result.data?.qr_url ?? ""
+                print("✅ 邀请码加载成功：\(inviteCode)")
             } else {
                 errorMessage = result.message ?? "生成失败"
+                print("❌ 邀请码生成失败：\(errorMessage)")
             }
         } catch {
             errorMessage = error.localizedDescription
+            print("❌ 邀请码加载异常：\(error)")
         }
         
         isLoading = false
@@ -290,15 +299,22 @@ struct InviteCodeView: View {
     }
     
     private func copyCode() {
+        guard !inviteCode.isEmpty else {
+            print("⚠️ 邀请码为空，无法复制")
+            return
+        }
+        
         UIPasteboard.general.string = inviteCode
+        print("✅ 邀请码已复制：\(inviteCode)")
         copied = true
         
         // 震动反馈
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
+        // 2 秒后重置状态
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            copied = false
+            self.copied = false
         }
     }
 }
