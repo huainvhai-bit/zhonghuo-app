@@ -409,11 +409,11 @@ struct FamilyGuardView: View {
             
             if let httpResponse = response as? HTTPURLResponse {
                 print("📊 HTTP 状态码：\(httpResponse.statusCode)")
-                print("📄 响应数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
             }
             
             let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
             
+            print("📄 响应数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
             print("✅ 响应：success=\(result.success), message=\(result.message ?? "nil")")
             
             if result.success, let inviteCode = result.data?.invite_code {

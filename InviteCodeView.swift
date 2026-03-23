@@ -244,18 +244,14 @@ struct InviteCodeView: View {
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let httpResponse = response as? HTTPURLResponse,
-               (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
-                
-                if result.status == "success" {
-                    inviteCode = result.data?.invite_code ?? ""
-                    qrURL = result.data?.qr_url ?? ""
-                } else {
-                    errorMessage = result.message ?? "生成失败"
-                }
+            // 尝试解析响应（无论状态码）
+            let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+            
+            if result.success {
+                inviteCode = result.data?.invite_code ?? ""
+                qrURL = result.data?.qr_url ?? ""
             } else {
-                errorMessage = "网络错误"
+                errorMessage = result.message ?? "生成失败"
             }
         } catch {
             errorMessage = error.localizedDescription
