@@ -171,18 +171,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("⏹️ 停止持续定位")
     }
     
-    /// 上传最新位置（即使用户未移动）
+    /// 上传最新位置（即使用户未移动）- 定时器调用
     private func uploadLatestLocation() {
         guard let location = locationManager.location else {
             print("⚠️ 暂无可用位置")
             return
         }
         
-        handleLocationUpdate(location)
+        // 🔧 修复：定时器触发时才递增计数器（模拟精度提升）
+        handleLocationUpdate(location, fromTimer: true)
     }
     
     /// 处理位置更新（模拟查找我的 iPhone：精度从大到小）
-    private func handleLocationUpdate(_ location: CLLocation) {
+    /// - Parameters:
+    ///   - location: 位置信息
+    ///   - fromTimer: 是否来自定时器触发（true 时才递增计数器）
+    private func handleLocationUpdate(_ location: CLLocation, fromTimer: Bool = false) {
         guard let user = currentUser else { return }
         
         let latitude = location.coordinate.latitude
@@ -206,7 +210,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         // 🎯 模拟查找我的 iPhone：精度从大到小（1000 米 → 500 米 → 200 米 → 100 米 → 50 米 → 10 米）
-        locationUpdateCount += 1
+        // 🔧 修复：只在定时器触发时递增计数器
+        if fromTimer {
+            locationUpdateCount += 1
+            print("🔢 计数器 +1 = \(locationUpdateCount)")
+        }
         let simulatedAccuracy: Double
         switch locationUpdateCount {
         case 1:
@@ -254,9 +262,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
-        // 持续定位模式下，处理每个位置更新
+        // 持续定位模式下，处理每个位置更新（但不递增计数器）
         if isContinuouslyUpdating {
-            handleLocationUpdate(location)
+            handleLocationUpdate(location, fromTimer: false)
         }
     }
     
