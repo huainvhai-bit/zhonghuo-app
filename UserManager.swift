@@ -106,6 +106,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - 位置上传
     private var isContinuouslyUpdating = false  // 是否正在持续定位
     private var continuousUploadTimer: Timer?  // 定时上传定时器
+    private var locationUpdateCount = 0  // 位置更新次数（用于模拟精度提升）
     
     func uploadLocation() {
         print("🔵 ====== uploadLocation 开始 ======")
@@ -124,13 +125,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
+        // 重置计数器（模拟首次定位）
+        locationUpdateCount = 0
+        print("🔄 重置位置更新计数器：\(locationUpdateCount)")
+        
         print("📍 开始持续定位...")
         startContinuousLocationUpdates()
     }
     
     // MARK: - 持续定位
     
-    /// 开始持续定位并上传
+    /// 开始持续定位并上传（模拟查找我的 iPhone：精度从大到小）
     func startContinuousLocationUpdates() {
         guard !isContinuouslyUpdating else {
             print("⚠️ 已经在持续定位中")
@@ -138,21 +143,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         isContinuouslyUpdating = true
-        print("🔄 开始持续定位模式")
+        locationUpdateCount = 0
+        print("🔄 开始持续定位模式（查找我的 iPhone 风格）")
         
-        // 配置定位：平衡精度和耗电
+        // 配置定位：最高精度
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 10  // 移动 10 米更新
+        locationManager.distanceFilter = 5  // 移动 5 米更新
         
         // 开始定位
         locationManager.startUpdatingLocation()
         
-        // 定时上传：每 5 秒上传一次（即使位置未变化）
-        continuousUploadTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        // 定时上传：每 3 秒上传一次（模拟精度提升）
+        continuousUploadTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
             self?.uploadLatestLocation()
         }
         
-        // 首次立即上传
+        // 首次立即上传（大范围）
         uploadLatestLocation()
     }
     
@@ -175,20 +181,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         handleLocationUpdate(location)
     }
     
-    /// 处理位置更新
+    /// 处理位置更新（模拟查找我的 iPhone：精度从大到小）
     private func handleLocationUpdate(_ location: CLLocation) {
         guard let user = currentUser else { return }
         
         let latitude = location.coordinate.latitude
         let longitude = location.coordinate.longitude
-        let accuracy = location.horizontalAccuracy
+        let actualAccuracy = location.horizontalAccuracy
         let age = Date().timeIntervalSince(location.timestamp)
         
         print("📍 获取位置：\(latitude), \(longitude)")
-        print("📊 精度：\(accuracy)米，年龄：\(String(format: "%.1f", age))秒")
+        print("📊 实际精度：\(actualAccuracy)米，年龄：\(String(format: "%.1f", age))秒")
         
         // 🔴 检查位置有效性
-        if accuracy < 0 || latitude == 0 || longitude == 0 {
+        if actualAccuracy < 0 || latitude == 0 || longitude == 0 {
             print("⚠️ 位置数据无效，跳过")
             return
         }
@@ -199,9 +205,33 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        // ✅ 上传所有有效位置（包括精度较差的，让后端显示范围）
-        // 不再拒绝低精度位置，而是让后端显示范围圈
-        print("✅ 准备上传（精度：±\(Int(accuracy))米）")
+        // 🎯 模拟查找我的 iPhone：精度从大到小（1000 米 → 500 米 → 200 米 → 100 米 → 50 米 → 10 米）
+        locationUpdateCount += 1
+        let simulatedAccuracy: Double
+        switch locationUpdateCount {
+        case 1:
+            simulatedAccuracy = 1000  // 首次：1km 范围
+            print("🎯 第\(locationUpdateCount)次：大范围定位（±\(Int(simulatedAccuracy))米）")
+        case 2:
+            simulatedAccuracy = 500   // 3 秒后：500m
+            print("🎯 第\(locationUpdateCount)次：中范围定位（±\(Int(simulatedAccuracy))米）")
+        case 3:
+            simulatedAccuracy = 200   // 6 秒后：200m
+            print("🎯 第\(locationUpdateCount)次：中小范围定位（±\(Int(simulatedAccuracy))米）")
+        case 4:
+            simulatedAccuracy = 100   // 9 秒后：100m
+            print("🎯 第\(locationUpdateCount)次：小范围定位（±\(Int(simulatedAccuracy))米）")
+        case 5:
+            simulatedAccuracy = 50    // 12 秒后：50m
+            print("🎯 第\(locationUpdateCount)次：精确范围定位（±\(Int(simulatedAccuracy))米）")
+        default:
+            // 使用实际精度（但不低于 10 米）
+            simulatedAccuracy = max(actualAccuracy, 10)
+            print("🎯 第\(locationUpdateCount)次：精确定位（±\(Int(simulatedAccuracy))米）")
+        }
+        
+        // ✅ 上传模拟精度的位置（让后端显示范围圈）
+        print("✅ 准备上传（模拟精度：±\(Int(simulatedAccuracy))米，实际精度：±\(Int(actualAccuracy))米）")
         
         // 逆地理编码获取地址
         let geocoder = CLGeocoder()
@@ -216,7 +246,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
-            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: accuracy)
+            // 上传模拟精度（查找我的 iPhone 风格）
+            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: simulatedAccuracy)
         }
     }
     
@@ -249,19 +280,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        print("📍 准备上传位置：\(latitude), \(longitude)")
+        // 如果没有传入精度，使用默认值（模拟查找我的 iPhone：从大到小）
+        let accuracyValue = accuracy ?? 1000.0
+        print("📍 准备上传位置：\(latitude), \(longitude), 精度：\(accuracyValue)米")
         
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "action": "upload",
             "token": token,
             "user_id": userId,
             "latitude": latitude,
             "longitude": longitude,
-            "address": address
+            "address": address,
+            "accuracy": accuracyValue
         ]
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
