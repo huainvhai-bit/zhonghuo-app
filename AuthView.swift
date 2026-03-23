@@ -574,20 +574,6 @@ struct AuthView: View {
             showingError = true
         }
     }
-                    errorMessage = "手机号格式不正确"
-                default:
-                    errorMessage = json["error"] as? String ?? "登录失败"
-                }
-                print("❌ 显示错误：\(errorMessage)")
-                showingError = true
-            }
-        } catch {
-            print("❌ 登录异常：\(error)")
-            errorMessage = "❌ 登录失败：\(error.localizedDescription)"
-            print("❌ 显示错误：\(errorMessage)")
-            showingError = true
-        }
-    }
     
     private func handleAuthSuccess(_ json: [String: Any]) async {
         print("🔵 登录成功，开始处理用户数据...")
@@ -641,7 +627,12 @@ struct AuthView: View {
                 lastCheckInDate: nil,
                 lastLoginAt: nil,
                 lastLoginIp: nil,
-                checkinCount: 0
+                checkinCount: 0,
+                emergencyContactsCount: 0,
+                witnessesCount: 0,
+                capsulesCount: 0,
+                willModulesCount: 0,
+                familyCount: 0
             )
             print("✅ User 对象已创建：\(user.name)")
             
