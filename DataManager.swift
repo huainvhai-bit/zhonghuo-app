@@ -1117,14 +1117,73 @@ class DataManager: ObservableObject {
     
     /// 下载所有数据（临时实现）
     func downloadAllData() async {
-        print("⚠️ downloadAllData: 待迁移到 GraphQL API")
-        // TODO: 使用 GraphQL fetchUserData 实现
+        print("📥 开始从云端下载数据...")
+        
+        do {
+            let apiManager = APIManager.shared
+            let result = try await apiManager.fetchUserData()
+            
+            // 从字典中解析数据
+            await MainActor.run {
+                // 解析胶囊数据
+                if let capsulesArray = result["capsules"] as? [[String: Any]] {
+                    capsules = capsulesArray.compactMap { dict -> TimeCapsule? in
+                        guard let id = dict["id"] as? String,
+                              let title = dict["title"] as? String,
+                              let type = dict["type"] as? String else { return nil }
+                        return TimeCapsule(
+                            id: id,
+                            title: title,
+                            content: dict["content"] as? String ?? "",
+                            type: TimeCapsule.CapsuleType(rawValue: type) ?? .text,
+                            sendDate: Date(),
+                            isSent: false,
+                            createdAt: Date()
+                        )
+                    }
+                }
+                
+                // 解析遗嘱数据
+                if let willsArray = result["wills"] as? [[String: Any]] {
+                    willModules = willsArray.compactMap { dict -> WillModule? in
+                        guard let id = dict["id"] as? String,
+                              let typeStr = dict["type"] as? String,
+                              let title = dict["title"] as? String else { return nil }
+                        return WillModule(
+                            id: id,
+                            type: WillModule.WillType(rawValue: typeStr) ?? .property,
+                            title: title,
+                            subtitle: "",
+                            content: dict["content"] as? String ?? "",
+                            isCompleted: false
+                        )
+                    }
+                }
+            }
+            
+            print("✅ 数据下载成功")
+        } catch {
+            print("❌ 数据下载失败：\(error)")
+        }
     }
     
     /// 持久化媒体文件（临时实现）
     func persistMediaFile(_ tempURL: URL) async -> URL? {
-        print("⚠️ persistMediaFile: 待实现")
-        return tempURL
+        // 移动到 Documents 目录
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let permanentURL = documents.appendingPathComponent(tempURL.lastPathComponent)
+        
+        do {
+            if FileManager.default.fileExists(atPath: permanentURL.path) {
+                try FileManager.default.removeItem(at: permanentURL)
+            }
+            try FileManager.default.copyItem(at: tempURL, to: permanentURL)
+            print("✅ 媒体文件已持久化：\(permanentURL.path)")
+            return permanentURL
+        } catch {
+            print("❌ 媒体文件持久化失败：\(error)")
+            return tempURL
+        }
     }
     
 }
