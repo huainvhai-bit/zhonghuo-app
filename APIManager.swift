@@ -328,6 +328,181 @@ class APIManager {
         
         try await client.query(query)
     }
+    
+    // MARK: - 批量同步
+    
+    /// 批量同步胶囊
+    func batchSyncCapsules(_ capsules: [CapsuleInput]) async throws -> BatchSyncResult {
+        // 构建胶囊输入
+        let capsulesInput = capsules.map { c in
+            var parts: [String] = []
+            parts.append("id: \"\(c.id)\"")
+            parts.append("title: \"\(c.title.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            parts.append("type: \"\(c.type)\"")
+            if let content = c.content {
+                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            }
+            if let openAt = c.openAt {
+                parts.append("openAt: \"\(openAt)\"")
+            }
+            return "{ \(parts.joined(separator: ", ")) }"
+        }.joined(separator: ", ")
+        
+        let query = """
+        mutation {
+            batchSyncCapsules(capsules: [\(capsulesInput)]) {
+                total
+                created
+                updated
+            }
+        }
+        """
+        
+        let result = try await client.query(query)
+        if let data = result["batchSyncCapsules"] as? [String: Any],
+           let total = data["total"] as? Int,
+           let created = data["created"] as? Int,
+           let updated = data["updated"] as? Int {
+            return BatchSyncResult(total: total, created: created, updated: updated)
+        }
+        throw APIError.networkError
+    }
+    
+    /// 批量同步遗嘱
+    func batchSyncWills(_ wills: [WillInput]) async throws -> BatchSyncResult {
+        let willsInput = wills.map { w in
+            var parts: [String] = []
+            parts.append("id: \"\(w.id)\"")
+            parts.append("type: \"\(w.type)\"")
+            parts.append("title: \"\(w.title.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            if let content = w.content {
+                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            }
+            return "{ \(parts.joined(separator: ", ")) }"
+        }.joined(separator: ", ")
+        
+        let query = """
+        mutation {
+            batchSyncWills(wills: [\(willsInput)]) {
+                total
+                created
+                updated
+            }
+        }
+        """
+        
+        let result = try await client.query(query)
+        if let data = result["batchSyncWills"] as? [String: Any],
+           let total = data["total"] as? Int,
+           let created = data["created"] as? Int,
+           let updated = data["updated"] as? Int {
+            return BatchSyncResult(total: total, created: created, updated: updated)
+        }
+        throw APIError.networkError
+    }
+    
+    /// 批量同步紧急联系人
+    func batchSyncEmergencyContacts(_ contacts: [ContactInput]) async throws -> BatchSyncResult {
+        let contactsInput = contacts.map { c in
+            var parts: [String] = []
+            parts.append("id: \"\(c.id)\"")
+            parts.append("name: \"\(c.name.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            parts.append("phone: \"\(c.phone)\"")
+            parts.append("relationship: \"\(c.relationship.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            return "{ \(parts.joined(separator: ", ")) }"
+        }.joined(separator: ", ")
+        
+        let query = """
+        mutation {
+            batchSyncEmergencyContacts(contacts: [\(contactsInput)]) {
+                total
+                created
+                updated
+            }
+        }
+        """
+        
+        let result = try await client.query(query)
+        if let data = result["batchSyncEmergencyContacts"] as? [String: Any],
+           let total = data["total"] as? Int,
+           let created = data["created"] as? Int,
+           let updated = data["updated"] as? Int {
+            return BatchSyncResult(total: total, created: created, updated: updated)
+        }
+        throw APIError.networkError
+    }
+    
+    /// 批量同步见证人
+    func batchSyncWitnesses(_ witnesses: [WitnessInput]) async throws -> BatchSyncResult {
+        let witnessesInput = witnesses.map { w in
+            var parts: [String] = []
+            parts.append("id: \"\(w.id)\"")
+            parts.append("name: \"\(w.name.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            parts.append("phone: \"\(w.phone)\"")
+            parts.append("relationship: \"\(w.relationship.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            if let status = w.status {
+                parts.append("status: \"\(status)\"")
+            }
+            return "{ \(parts.joined(separator: ", ")) }"
+        }.joined(separator: ", ")
+        
+        let query = """
+        mutation {
+            batchSyncWitnesses(witnesses: [\(witnessesInput)]) {
+                total
+                created
+                updated
+            }
+        }
+        """
+        
+        let result = try await client.query(query)
+        if let data = result["batchSyncWitnesses"] as? [String: Any],
+           let total = data["total"] as? Int,
+           let created = data["created"] as? Int,
+           let updated = data["updated"] as? Int {
+            return BatchSyncResult(total: total, created: created, updated: updated)
+        }
+        throw APIError.networkError
+    }
+}
+
+// MARK: - Input Types
+
+struct CapsuleInput {
+    let id: String
+    let title: String
+    let type: String
+    let content: String?
+    let openAt: String?
+}
+
+struct WillInput {
+    let id: String
+    let type: String
+    let title: String
+    let content: String?
+}
+
+struct ContactInput {
+    let id: String
+    let name: String
+    let phone: String
+    let relationship: String
+}
+
+struct WitnessInput {
+    let id: String
+    let name: String
+    let phone: String
+    let relationship: String
+    let status: String?
+}
+
+struct BatchSyncResult {
+    let total: Int
+    let created: Int
+    let updated: Int
 }
 
 // MARK: - API Errors
