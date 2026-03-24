@@ -436,11 +436,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await LifeCheckStatusManager.shared.loadNotificationConfig()
         }
         
-        // ✅ 先注册后台任务（在调用 schedule 之前）
-        startBackgroundTasks()
-        
-        // 设置签到提醒通知（会调用 scheduleBackgroundSmsTask）
-        setupCheckInNotifications()
+        // 🔴 临时禁用后台任务（修复白屏问题）
+        // startBackgroundTasks()
+        // setupCheckInNotifications()
+        print("⚠️ 后台任务已临时禁用")
         
         print("✅ 终活 App 启动完成")
         return true
