@@ -970,7 +970,9 @@ class GraphQLClient {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = token {
+        // 动态读取 token（确保使用最新的 token）
+        let currentToken = UserDefaults.standard.string(forKey: "userToken") ?? token
+        if let token = currentToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
