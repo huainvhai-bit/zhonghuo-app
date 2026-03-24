@@ -266,9 +266,9 @@ class DeviceMonitor: ObservableObject {
     
     // MARK: - 设备信息上传
     
-    /// 上传设备信息到服务器
+    /// 上传设备信息到服务器（GraphQL）
     func uploadDeviceInfo() async {
-        print("☁️ 上传设备信息...")
+        print("☁️ 上传设备信息（GraphQL）...")
         
         guard !DataManager.apiURL.isEmpty else {
             print("⚠️ 上传失败：API URL 为空")
@@ -281,30 +281,25 @@ class DeviceMonitor: ObservableObject {
             return
         }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/device_info.php?action=upload")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let body: [String: Any] = [
-            "step_count": stepCount,
-            "battery_level": batteryLevel,
-            "battery_state": batteryState.rawValue,
-            "timestamp": Int(Date().timeIntervalSince1970)
-        ]
-        
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 设备信息上传响应：\(httpResponse.statusCode)")
+            let query = """
+            mutation($deviceId: String!, $deviceModel: String!, $osVersion: String!, $appVersion: String!) {
+                uploadDeviceInfo(deviceId: $deviceId, deviceModel: $deviceModel, osVersion: $osVersion, appVersion: $appVersion) {
+                    success
+                    message
+                }
             }
+            """
             
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 响应：\(jsonString)")
-            }
+            let variables: [String: Any] = [
+                "deviceId": UIDevice.current.identifierForVendor?.uuidString ?? "unknown",
+                "deviceModel": UIDevice.current.model,
+                "osVersion": UIDevice.current.systemVersion,
+                "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+            ]
+            
+            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            print("📡 设备信息上传响应：\(result)")
             
         } catch {
             print("❌ 设备信息上传失败：\(error)")

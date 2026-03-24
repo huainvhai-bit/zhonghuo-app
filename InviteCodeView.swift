@@ -243,28 +243,33 @@ struct InviteCodeView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            // 使用 GraphQL getInviteCode mutation
+            let query = """
+            mutation {
+                getInviteCode {
+                    success
+                    message
+                    data { inviteCode qrUrl }
+                }
+            }
+            """
             
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let result = try await GraphQLClient.shared.query(query)
+            print("📡 GraphQL 邀请码响应：\(result)")
             
-            // 打印调试信息
-            print("📡 邀请码响应状态码：\(response)")
-            print("📡 邀请码响应数据：\(String(data: data, encoding: .utf8) ?? "无")")
-            
-            // 尝试解析响应（无论状态码）
-            let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
-            
-            print("📡 邀请码解析结果：success=\(result.success), message=\(result.message ?? "nil")")
-            
-            if result.success {
-                inviteCode = result.data?.invite_code ?? ""
-                qrURL = result.data?.qr_url ?? ""
-                print("✅ 邀请码加载成功：\(inviteCode)")
-            } else {
-                errorMessage = result.message ?? "生成失败"
-                print("❌ 邀请码生成失败：\(errorMessage)")
+            if let data = result["data"] as? [String: Any],
+               let inviteResult = data["getInviteCode"] as? [String: Any] {
+                let success = inviteResult["success"] as? Bool ?? false
+                if success {
+                    if let resultData = inviteResult["data"] as? [String: Any] {
+                        inviteCode = resultData["inviteCode"] as? String ?? ""
+                        qrURL = resultData["qrUrl"] as? String ?? ""
+                        print("✅ 邀请码加载成功：\(inviteCode)")
+                    }
+                } else {
+                    errorMessage = inviteResult["message"] as? String ?? "生成失败"
+                    print("❌ 邀请码生成失败：\(errorMessage)")
+                }
             }
         } catch {
             errorMessage = error.localizedDescription

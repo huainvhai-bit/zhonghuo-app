@@ -410,30 +410,38 @@ struct FamilyGuardView: View {
         }
         
         do {
-            print("🔵 开始获取邀请码...")
-            print("📍 API URL: \(DataManager.apiURL)")
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=get_invite_code")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("🔵 开始获取邀请码（GraphQL）...")
             
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📊 HTTP 状态码：\(httpResponse.statusCode)")
+            // 使用 GraphQL getInviteCode mutation
+            let query = """
+            mutation {
+                getInviteCode {
+                    success
+                    message
+                    data { inviteCode qrUrl }
+                }
             }
+            """
             
-            let result = try JSONDecoder().decode(InviteCodeResponse.self, from: data)
+            let result = try await GraphQLClient.shared.query(query)
+            print("📡 GraphQL 邀请码响应：\(result)")
             
-            print("📄 响应数据：\(String(data: data, encoding: .utf8) ?? "无法解析")")
-            print("✅ 响应：success=\(result.success), message=\(result.message ?? "nil")")
-            
-            if result.success, let inviteCode = result.data?.invite_code {
-                print("✅ 邀请码：\(inviteCode)")
-                self.inviteCode = inviteCode
-                self.qrImage = generateQRCode(from: inviteCode)
-                print("✅ 二维码生成完成")
-            } else {
-                print("❌ 邀请码生成失败：\(result.message ?? "未知错误")")
+            if let data = result["data"] as? [String: Any],
+               let inviteResult = data["getInviteCode"] as? [String: Any] {
+                let success = inviteResult["success"] as? Bool ?? false
+                if success {
+                    if let resultData = inviteResult["data"] as? [String: Any] {
+                        let inviteCode = resultData["inviteCode"] as? String ?? ""
+                        let qrURL = resultData["qrUrl"] as? String ?? ""
+                        print("✅ 邀请码：\(inviteCode)")
+                        self.inviteCode = inviteCode
+                        self.qrImage = generateQRCode(from: inviteCode)
+                        print("✅ 二维码生成完成")
+                    }
+                } else {
+                    let message = inviteResult["message"] as? String ?? "未知错误"
+                    print("❌ 邀请码生成失败：\(message)")
+                }
             }
         } catch {
             print("❌ 生成邀请码失败：\(error)")
