@@ -298,7 +298,8 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Image(systemName: "house.fill")
+                        Image(systemName: "house")
+                            .renderingMode(.template)
                         Text("首页")
                     }
                     .tag(0)
@@ -306,6 +307,7 @@ struct ContentView: View {
                 TimeCapsuleView()
                     .tabItem {
                         Image(systemName: "hourglass")
+                            .renderingMode(.template)
                         Text("时光胶囊")
                     }
                     .tag(1)
@@ -313,25 +315,28 @@ struct ContentView: View {
                 WillAssetsView()
                     .tabItem {
                         Image(systemName: "signature")
+                            .renderingMode(.template)
                         Text("嘱托与资产")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Image(systemName: "heart.fill")
+                        Image(systemName: "heart")
+                            .renderingMode(.template)
                         Text("家人守护")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "gearshape.fill")
+                        Image(systemName: "gearshape")
+                            .renderingMode(.template)
                         Text("我的")
                     }
                     .tag(4)
             }
-            .accentColor(Color(hex: "6366F1"))
+            .tint(Color(hex: "6366F1"))
             
         }
     }
