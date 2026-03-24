@@ -2,11 +2,33 @@
 //  DataManager.swift
 //  终活
 //
-//  Created on 2026-03-15.
+//  数据管理中心 - 单例模式
+//  技术文档：📖 终活 App 技术开发文档.md - 3.3.1 DataManager
+//
+//  核心职责：
+//  - API 配置管理（动态获取服务器地址）
+//  - 用户数据管理（胶囊、遗嘱、资产等）
+//  - 系统配置管理
+//  - 数据持久化（本地 JSON 文件）
+//  - 前后端数据同步
 //
 
 import Foundation
 
+/// 数据管理中心 - 全局单例
+/// 
+/// 功能模块：
+/// - **API 配置**：动态获取服务器地址（`apiURL`）
+/// - **用户数据**：`capsules`, `willModules`, `assets`, `witnesses`
+/// - **系统配置**：签到间隔、通知配置等
+/// - **数据同步**：GraphQL + REST API 混合架构
+/// 
+/// 使用方式：
+/// ```swift
+/// let manager = DataManager.shared
+/// manager.capsules.append(newCapsule)
+/// manager.saveCapsules()
+/// ```
 class DataManager: ObservableObject {
     static let shared = DataManager()
     
