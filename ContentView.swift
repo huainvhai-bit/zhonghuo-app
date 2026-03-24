@@ -298,31 +298,31 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Label("首页", systemImage: "house.fill")
+                        Label("首页", systemImage: "house")
                     }
                     .tag(0)
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Label("时光胶囊", systemImage: "capsule.fill")
+                        Label("时光胶囊", systemImage: "hourglass")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Label("嘱托与资产", systemImage: "doc.text.fill")
+                        Label("嘱托与资产", systemImage: "signature")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Label("家人守护", systemImage: "person.2.fill")
+                        Label("家人守护", systemImage: "heart")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Label("我的", systemImage: "person.fill")
+                        Label("我的", systemImage: "gear")
                     }
                     .tag(4)
             }
