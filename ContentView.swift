@@ -298,53 +298,41 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Label("首页", systemImage: "house")
+                        Image(systemName: "house.fill")
+                        Text("首页")
                     }
                     .tag(0)
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Label("时光胶囊", systemImage: "hourglass")
+                        Image(systemName: "hourglass")
+                        Text("时光胶囊")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Label("嘱托与资产", systemImage: "signature")
+                        Image(systemName: "signature")
+                        Text("嘱托与资产")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Label("家人守护", systemImage: "heart")
+                        Image(systemName: "heart.fill")
+                        Text("家人守护")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Label("我的", systemImage: "gear")
+                        Image(systemName: "gearshape.fill")
+                        Text("我的")
                     }
                     .tag(4)
             }
-            .tint(Color(hex: "6366F1"))
+            .accentColor(Color(hex: "6366F1"))
             
-        }
-        .onAppear {
-            // 设置 Tab 栏样式
-            let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor.white
-            
-            // 设置选中项颜色（紫色）
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(hex: "6366F1")
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(hex: "6366F1")]
-            
-            // 未选中项颜色（灰色）
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.gray
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.gray]
-            
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
         }
     }
 }
