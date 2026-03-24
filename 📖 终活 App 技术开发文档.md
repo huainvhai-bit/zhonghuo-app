@@ -1,8 +1,9 @@
 # 终活 App 技术开发文档
 
 **版本**: v2.0  
-**最后更新**: 2026-03-24  
-**项目状态**: ✅ 生产就绪
+**最后更新**: 2026-03-24 12:00  
+**项目状态**: ✅ 生产就绪  
+**文档状态**: 🔄 持续更新
 
 ---
 
@@ -15,9 +16,11 @@
 5. [数据库设计](#5-数据库设计)
 6. [API 接口文档](#6-api-接口文档)
 7. [核心功能模块](#7-核心功能模块)
-8. [安全机制](#8-安全机制)
-9. [部署指南](#9-部署指南)
-10. [开发规范](#10-开发规范)
+8. [管理后台](#8-管理后台)
+9. [安全机制](#9-安全机制)
+10. [部署指南](#10-部署指南)
+11. [开发规范](#11-开发规范)
+12. [故障排查](#12-故障排查)
 
 ---
 
@@ -35,20 +38,47 @@
 | 时光胶囊 | 文字/语音/视频胶囊、定时发送 | ✅ 完成 |
 | 嘱托与资产 | 10+ 遗嘱模板、资产管理、PDF 导出 | ✅ 完成 |
 | 家人守护 | 位置共享、邀请码、紧急联系人 | ✅ 完成 |
+| 见证人 | 见证人管理、确认状态跟踪 | ✅ 完成 |
+| 新手引导 | 5 屏滑动引导 | ✅ 完成 |
 
-### 1.3 项目仓库
+### 1.3 技术亮点
+
+- **GraphQL API** - 统一查询语言，灵活高效
+- **精度动画** - 查找我的 iPhone 风格位置精度提升
+- **iMessage 紧急通知** - 倒计时结束自动通知紧急联系人
+- **开发者模式** - 短信验证码测试模式
+- **PDF 导出** - 遗嘱与资产一键导出
+- **本地加密存储** - 敏感数据安全存储
+
+### 1.4 项目仓库
 
 - **前端**: https://github.com/huainvhai-bit/zhonghuo-app
 - **后端**: https://github.com/huainvhai-bit/zhonghuo-backend-php
 - **Bundle ID**: `com.zhonghuo.app`
+- **前端文档**: `📖 终活 App 技术开发文档.md`
+- **后端文档**: `README.md`, `📚GraphQL API 文档.md`
 
-### 1.4 服务器信息
+### 1.5 服务器信息
 
-- **服务器 IP**: `8.136.41.211`
-- **SSH**: `ssh root@8.136.41.211`
-- **Web 目录**: `/www/wwwroot/zhonghuo.cn`
-- **PHP 版本**: PHP 8.1-FPM
-- **数据库**: MySQL 8.0
+| 项目 | 值 |
+|------|-----|
+| 服务器 IP | `8.136.41.211` |
+| SSH | `ssh root@8.136.41.211` |
+| Web 目录 | `/www/wwwroot/zhonghuo.cn` |
+| PHP 版本 | PHP 8.1-FPM |
+| 数据库 | MySQL 8.0 |
+| 端口 | 3395 |
+| 时区 | Asia/Shanghai |
+
+### 1.6 访问地址
+
+| 页面 | URL |
+|------|-----|
+| 前端 App | iOS 模拟器/真机 |
+| 后端 API | `http://8.136.41.211:3395/api/graphql.php` |
+| 管理后台 | `http://8.136.41.211:3395/admin/` |
+| 位置地图 | `http://8.136.41.211:3395/admin/map.php` |
+| 系统统计 | `http://8.136.41.211:3395/admin/stats.php` |
 
 ---
 
@@ -801,27 +831,132 @@ L.circle(userLocation, {
 
 ---
 
-## 8. 安全机制
+## 8. 管理后台
 
-### 8.1 认证安全
+### 8.1 管理后台架构
+
+管理后台提供完整的用户管理、数据统计、系统配置等功能。
+
+**技术栈**:
+- PHP 8.1 + HTML + CSS + JavaScript
+- Leaflet.js 地图库（OpenStreetMap）
+- Chart.js 数据可视化
+- JWT Token 认证
+
+### 8.2 管理后台功能模块
+
+| 页面 | 文件 | 功能描述 |
+|------|------|----------|
+| 登录页 | `admin/login.php` | 管理员登录、图形验证码 |
+| 仪表盘 | `admin/index.php` | 用户统计、系统状态、快速操作 |
+| 用户管理 | `admin/users.php` | 用户列表、搜索、详情、编辑 |
+| 用户详情 | `admin/user_detail.php` | 单个用户完整信息 |
+| 用户轨迹 | `admin/user_track.php` | 用户位置历史追踪 |
+| 位置地图 | `admin/map.php` | 实时位置地图（精度动画） |
+| 紧急联系人 | `admin/emergency_contacts.php` | 紧急联系人管理 |
+| 家人关系 | `admin/family.php` | 家人关系管理 |
+| 系统设置 | `admin/settings.php` | 系统配置、短信配置 |
+| 性能监控 | `admin/performance.php` | API 性能监控、慢查询 |
+| 数据统计 | `admin/stats.php` | 详细统计数据 |
+| 告警中心 | `admin/alerts.php` | 离线告警、异常位置告警 |
+
+### 8.3 位置地图功能
+
+**文件**: `admin/map.php`
+
+**功能**:
+- 实时显示所有用户位置
+- 精度圆圈动画（查找我的 iPhone 风格）
+- 每 5 秒自动刷新
+- 点击用户标记查看详情
+- 支持搜索和筛选
+
+**技术实现**:
+```javascript
+// 精度圆圈
+L.circle(userLocation, {
+    radius: accuracy,  // 精度（米）
+    color: '#3b82f6',
+    fillColor: '#3b82f6',
+    fillOpacity: 0.3
+}).addTo(map);
+
+// 自动刷新
+setInterval(() => {
+    fetch('/api/graphql.php', {
+        method: 'POST',
+        body: JSON.stringify({ query: '{ locations { id latitude longitude accuracy } }' })
+    }).then(updateMap);
+}, 5000);
+```
+
+### 8.4 管理员认证
+
+**登录流程**:
+```php
+// admin/login.php
+POST /admin/login.php
+{
+    "username": "admin",
+    "password": "password123",
+    "captcha": "ABCD"
+}
+
+// 验证成功
+Set-Cookie: admin_token=eyJhbGc...; Path=/admin; HttpOnly
+
+// 重定向到仪表盘
+Location: /admin/index.php
+```
+
+**权限检查**:
+```php
+// admin/check_auth.php
+require_once 'check_auth.php';
+// 未登录自动跳转到登录页
+```
+
+### 8.5 系统配置管理
+
+**可配置项**:
+```sql
+-- 短信配置
+sms_is_development      -- 开发者模式（1=开启）
+sms_provider            -- 服务商（aliyun/tencent）
+sms_test_code           -- 测试验证码
+
+-- 告警配置
+alert_offline_timeout   -- 离线超时（小时）
+alert_abnormal_distance -- 异常距离（公里）
+
+-- 通知配置
+notify_checkin_interval -- 签到间隔（小时）
+notify_first_reminder   -- 首次提醒（小时）
+```
+
+---
+
+## 9. 安全机制
+
+### 9.1 认证安全
 
 - **JWT Token**: 有效期 30 天
 - **Token 刷新**: 登录后自动刷新
 - **防爆破**: 登录失败 5 次锁定 30 分钟
 
-### 8.2 数据安全
+### 9.2 数据安全
 
 - **本地存储**: JSON 文件加密存储
 - **传输加密**: HTTPS/TLS
 - **敏感数据**: 密码哈希（password_hash）
 
-### 8.3 API 安全
+### 9.3 API 安全
 
 - **Token 验证**: 所有 API 需携带 Authorization header
 - **参数校验**: 严格校验输入参数
 - **SQL 注入防护**: 使用预处理语句
 
-### 8.4 短信安全
+### 9.4 短信安全
 
 ```php
 // 开发者模式开关
@@ -837,11 +972,11 @@ if ($config['sms_is_development'] == '1') {
 
 ---
 
-## 9. 部署指南
+## 10. 部署指南
 
-### 9.1 前端部署
+### 10.1 前端部署
 
-#### 9.1.1 编译构建
+#### 10.1.1 编译构建
 
 ```bash
 cd /Users/lishimin/Documents/zhonghuo-app
@@ -859,7 +994,7 @@ xcrun simctl install "iPhone 17 Pro" \
   ~/Library/Developer/Xcode/DerivedData/终活-*/Build/Products/Debug-iphonesimulator/终活.app
 ```
 
-#### 9.1.2 推送到 GitHub
+#### 10.1.2 推送到 GitHub
 
 ```bash
 git add -A
@@ -867,9 +1002,9 @@ git commit -m "描述"
 git push origin main
 ```
 
-### 9.2 后端部署
+### 10.2 后端部署
 
-#### 9.2.1 服务器部署
+#### 10.2.1 服务器部署
 
 ```bash
 # SSH 登录
@@ -892,7 +1027,7 @@ curl http://localhost:3395/api/check-config.php
 # 应返回：{"success":true,"message":"配置加载成功"}
 ```
 
-#### 9.2.2 数据库初始化
+#### 10.2.2 数据库初始化
 
 ```bash
 # 首次安装
@@ -907,7 +1042,7 @@ EXIT;
 mysql -u zhonghuo -pzhonghuo zhonghuo < database.sql
 ```
 
-### 9.3 配置检查清单
+### 10.3 配置检查清单
 
 #### 后端配置
 - [ ] `config/database.php` 存在且正确
@@ -923,11 +1058,11 @@ mysql -u zhonghuo -pzhonghuo zhonghuo < database.sql
 
 ---
 
-## 10. 开发规范
+## 11. 开发规范
 
-### 10.1 代码规范
+### 11.1 代码规范
 
-#### Swift 命名规范
+#### 11.1.1 Swift 命名规范
 ```swift
 // 类名：大驼峰
 class DataManager {}
@@ -943,7 +1078,7 @@ enum CapsuleType {}
 case audio, video
 ```
 
-#### PHP 命名规范
+#### 11.1.2 PHP 命名规范
 ```php
 // 函数：小写 + 下划线
 function send_sms_code() {}
@@ -955,7 +1090,7 @@ class UserManager {}
 define('DB_HOST', 'localhost');
 ```
 
-### 10.2 Git 提交规范
+### 11.2 Git 提交规范
 
 ```bash
 # 格式：<emoji> <类型>: <描述>
@@ -980,7 +1115,7 @@ git commit -m "📝 更新 API 文档"
 | 🔒 | 安全相关 |
 | 🗑️ | 删除代码 |
 
-### 10.3 开发流程
+### 11.3 开发流程
 
 ```
 收到需求 → 理解需求 → 审查关联性 → 提供选项（如有歧义）
@@ -990,7 +1125,7 @@ git commit -m "📝 更新 API 文档"
 服务器部署 → 测试验证 → 更新文档
 ```
 
-### 10.4 5 条铁律
+### 11.4 5 条铁律
 
 1. **不擅作主张添加功能** - 没让添加的绝不添加
 2. **修改前全面审查关联性** - 搜索所有调用处
@@ -1000,9 +1135,9 @@ git commit -m "📝 更新 API 文档"
 
 ---
 
-## 附录
+## 12. 故障排查
 
-### A. 常见问题（FAQ）
+### 12.1 常见问题（FAQ）
 
 #### Q1: 位置上传失败？
 **A**: 检查 `UserManager.swift` 中 API URL 是否为 `/api/location.php`
@@ -1016,20 +1151,244 @@ git commit -m "📝 更新 API 文档"
 #### Q4: 短信验证码收不到？
 **A**: 检查 `system_config` 表中 `sms_is_development` 配置
 
-### B. 相关文档
+### 12.2 后端诊断工具
+
+#### 12.2.1 配置检查
+
+```bash
+# 访问配置检查 API
+curl http://8.136.41.211:3395/api/check-config.php
+
+# 预期响应
+{"success":true,"message":"配置加载成功"}
+```
+
+#### 12.2.2 数据库检查
+
+```bash
+# 访问数据库检查 API
+curl http://8.136.41.211:3395/api/check-db.php
+
+# 检查表完整性
+mysql -u zhonghuo -pzhonghuo zhonghuo < check-db-integrity.sql
+```
+
+#### 12.2.3 全量诊断
+
+```bash
+# 访问全量诊断 API
+curl http://8.136.41.211:3395/api/diagnose-all.php
+
+# 位置专项诊断
+curl http://8.136.41.211:3395/api/diagnose-location.php
+```
+
+### 12.3 前端诊断工具
+
+#### 12.3.1 调试模式
+
+在 `DebugConfig.swift` 中开启调试模式：
+
+```swift
+struct DebugConfig {
+    static let enableLogs = true
+    static let enableMockData = false
+    static let apiTimeout = 30.0
+}
+```
+
+#### 12.3.2 网络诊断
+
+```bash
+# 测试 API 连通性
+curl -v http://8.136.41.211:3395/api/graphql.php \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { user { id } }"}'
+```
+
+### 12.4 日志查看
+
+#### 12.4.1 PHP 日志
+
+```bash
+# PHP-FPM 日志
+tail -f /www/wwwlogs/php-fpm.log
+
+# Nginx 日志
+tail -f /www/wwwlogs/zhonghuo.cn.error.log
+tail -f /www/wwwlogs/zhonghuo.cn.access.log
+```
+
+#### 12.4.2 MySQL 日志
+
+```bash
+# 慢查询日志
+tail -f /var/log/mysql/slow.log
+
+# 错误日志
+tail -f /var/log/mysql/error.log
+```
+
+### 12.5 性能优化
+
+#### 12.5.1 数据库优化
+
+```sql
+-- 添加索引
+ALTER TABLE capsules ADD INDEX idx_user_open (user_id, open_at);
+ALTER TABLE user_locations ADD INDEX idx_user_time (user_id, created_at);
+
+-- 分析慢查询
+EXPLAIN SELECT * FROM capsules WHERE user_id = 'xxx' AND open_at > NOW();
+```
+
+#### 12.5.2 API 优化
+
+- 使用 GraphQL 按需查询，避免过度获取
+- 启用查询缓存
+- 批量操作代替单个操作
+
+### 12.6 备份与恢复
+
+#### 12.6.1 数据库备份
+
+```bash
+# 备份数据库
+mysqldump -u zhonghuo -pzhonghuo zhonghuo > backup_$(date +%Y%m%d).sql
+
+# 恢复数据库
+mysql -u zhonghuo -pzhonghuo zhonghuo < backup_20260324.sql
+```
+
+#### 12.6.2 代码备份
+
+```bash
+# 备份后端代码
+tar -czf backend_backup_$(date +%Y%m%d).tar.gz /www/wwwroot/zhonghuo.cn
+
+# 备份前端代码
+cd /Users/lishimin/Documents/zhonghuo-app
+git bundle create frontend_backup.bundle main
+```
+
+---
+
+## 附录
+
+### A. 快速参考
+
+#### A.1 常用命令速查
+
+```bash
+# 前端编译
+xcodebuild -scheme 终活 -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+
+# 前端推送
+cd /Users/lishimin/Documents/zhonghuo-app
+git add -A && git commit -m "描述" && git push origin main
+
+# 后端部署
+ssh root@8.136.41.211
+cd /www/wwwroot/zhonghuo.cn
+git pull origin main
+mysql -u zhonghuo -pzhonghuo zhonghuo < migrate-database.sql
+systemctl restart php-fpm-81
+
+# 数据库备份
+mysqldump -u zhonghuo -pzhonghuo zhonghuo > backup.sql
+```
+
+#### A.2 API 端点速查
+
+| 功能 | 端点 | 方法 |
+|------|------|------|
+| GraphQL API | `/api/graphql.php` | POST |
+| 配置检查 | `/api/check-config.php` | GET |
+| 数据库检查 | `/api/check-db.php` | GET |
+| 全量诊断 | `/api/diagnose-all.php` | GET |
+| 位置诊断 | `/api/diagnose-location.php` | GET |
+| 短信发送 | `/api/sms.php` | POST |
+| 管理后台 | `/admin/` | GET |
+| 位置地图 | `/admin/map.php` | GET |
+
+#### A.3 数据模型速查
+
+| 模型 | 核心字段 |
+|------|----------|
+| User | id, name, phone, token, checkInInterval |
+| TimeCapsule | id, title, type, content, openAt, isSent |
+| WillModule | id, type, title, content, isCompleted |
+| Asset | id, type, name, value, accountNumber |
+| EmergencyContact | id, name, phone, relationship, isGuardian |
+| WillWitness | id, name, phone, isConfirmed, confirmedAt |
+
+#### A.4 端口与路径
+
+| 项目 | 值 |
+|------|-----|
+| Web 端口 | 3395 |
+| SSH 端口 | 22 |
+| MySQL 端口 | 3306 |
+| 前端项目 | `/Users/lishimin/Documents/zhonghuo-app/` |
+| 后端项目 | `/Users/lishimin/Documents/zhonghuo-backend-php/` |
+| 服务器路径 | `/www/wwwroot/zhonghuo.cn` |
+
+### B. 常见问题（FAQ）
+
+#### Q1: 位置上传失败？
+**A**: 检查 `UserManager.swift` 中 API URL 是否为 `/api/location.php`
+
+#### Q2: 邀请码生成失败？
+**A**: 检查后端 `api/core.php` 的 error 函数是否返回 `success` 字段
+
+#### Q3: 真机白屏？
+**A**: 检查 `Info.plist` 后台任务声明，确保在 `didFinishLaunchingWithOptions` 中注册
+
+#### Q4: 短信验证码收不到？
+**A**: 检查 `system_config` 表中 `sms_is_development` 配置
+
+#### Q5: GraphQL 查询返回空数据？
+**A**: 检查 Authorization header 是否携带有效 Token
+
+#### Q6: 编译失败 DerivedData 缓存问题？
+**A**: 执行 `rm -rf ~/Library/Developer/Xcode/DerivedData/终活-*`
+
+### C. 相关文档
 
 - `/Users/lishimin/Documents/zhonghuo-app/📊前后端对接完整排查报告.md`
 - `/Users/lishimin/Documents/zhonghuo-backend-php/✅前后端对接修复完成.md`
 - `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL API 文档.md`
 
-### C. 联系方式
+### C. 相关文档
 
-- **项目仓库**: https://github.com/huainvhai-bit/zhonghuo-app
-- **服务器**: 8.136.41.211
-- **技术支持**: 查看 GitHub Issues
+- `/Users/lishimin/Documents/zhonghuo-app/📊前后端对接完整排查报告.md`
+- `/Users/lishimin/Documents/zhonghuo-backend-php/✅前后端对接修复完成.md`
+- `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL API 文档.md`
+- `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL 使用指南.md`
+- `/Users/lishimin/Documents/zhonghuo-backend-php/🚀后端部署指南.md`
+
+### D. 项目链接
+
+| 项目 | 链接 |
+|------|------|
+| 前端 GitHub | https://github.com/huainvhai-bit/zhonghuo-app |
+| 后端 GitHub | https://github.com/huainvhai-bit/zhonghuo-backend-php |
+| 服务器 IP | http://8.136.41.211:3395 |
+| 管理后台 | http://8.136.41.211:3395/admin/ |
+| 位置地图 | http://8.136.41.211:3395/admin/map.php |
+
+### E. 版本历史
+
+| 版本 | 日期 | 更新内容 |
+|------|------|----------|
+| v2.0 | 2026-03-24 | 完整技术文档（12 章节） |
+| v1.0 | 2026-03-15 | 初始版本（基础功能） |
 
 ---
 
 **文档版本**: v2.0  
-**最后更新**: 2026-03-24  
+**最后更新**: 2026-03-24 12:00  
+**文档状态**: ✅ 生产就绪  
 **维护者**: 终活开发团队
+
+**📖 终活 App 技术开发文档 - 完**
