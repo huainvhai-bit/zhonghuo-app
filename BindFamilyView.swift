@@ -310,12 +310,49 @@ struct BindFamilyView: View {
                     let phone = lastMember["phone"] as? String ?? ""
                     let relation = lastMember["relation"] as? String ?? "家人"
                     
-                    // TODO: 使用 GraphQL addEmergencyContact mutation
-                    print("✅ 家人绑定成功：\(name)，紧急联系人功能待迁移到 GraphQL")
+                    // 自动添加到紧急联系人
+                    await addEmergencyContact(name: name, phone: phone, relation: relation)
+                    print("✅ 家人绑定成功：\(name)，已自动添加到紧急联系人")
                 }
             }
         } catch {
             print("❌ 紧急联系人自动添加失败：\(error)")
+        }
+    }
+    
+    /// 自动添加家人到紧急联系人
+    private func addEmergencyContact(name: String, phone: String, relation: String) async {
+        guard !name.isEmpty && !phone.isEmpty else {
+            print("⚠️ 家人信息不完整，跳过添加紧急联系人")
+            return
+        }
+        
+        let query = """
+        mutation {
+            createEmergencyContact(
+                name: "\(name)",
+                phone: "\(phone)",
+                relation: "\(relation)",
+                priority: 1
+            ) {
+                success
+                id
+            }
+        }
+        """
+        
+        do {
+            let result = try await GraphQLClient.shared.query(query)
+            if let data = result["data"] as? [String: Any],
+               let contactResult = data["createEmergencyContact"] as? [String: Any],
+               let success = contactResult["success"] as? Bool,
+               success {
+                print("✅ 紧急联系人自动添加成功：\(name)")
+            } else {
+                print("⚠️ 紧急联系人已存在或添加失败")
+            }
+        } catch {
+            print("❌ 添加紧急联系人失败：\(error)")
         }
     }
 }
