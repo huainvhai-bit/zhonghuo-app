@@ -1,0 +1,110 @@
+name: 终活
+options:
+  bundleIdPrefix: com.zhonghuo
+  deploymentTarget:
+    iOS: 15.0
+  xcodeVersion: 16.0
+  groupSortPosition: top
+  fileNaming: oghub
+  generateEmptyDirectories: true
+  postGenCommand: cd .. && rm -rf DerivedData/终活-*
+settings:
+  base:
+    PRODUCT_NAME: 终活
+    PRODUCT_BUNDLE_IDENTIFIER: com.zhonghuo.app
+    MARKETING_VERSION: 2.0
+    CURRENT_PROJECT_VERSION: 1
+    INFOPLIST_FILE: Info.plist
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    TARGETED_DEVICE_FAMILY: 1,2
+    IOS_DEPLOYMENT_TARGET: 15.0
+    SWIFT_VERSION: "6.0"
+    ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: "YES"
+    SWIFT_EMIT_LOC_STRINGS: "YES"
+    ENABLE_PREVIEWS: "YES"
+    GENERATE_STRING_CATALOGS: "YES"
+    SWIFT_STRICT_CONCURRENCY: "complete"
+    SWIFT_TREAT_AS_ERROR_CONCURRENCY_VIOLATIONS: "YES"
+    GCC_OPTIMIZATION_LEVEL: 0
+    SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+    MTL_ENABLE_DEBUG_INFO: "INCLUDE_SOURCE"
+    ONLY_ACTIVE_ARCH: "YES"
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+    GCC_PREPROCESSOR_DEFINITIONS:
+      - DEBUG=1
+      - $(inherited)
+targets:
+  终活:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        excludes:
+          - "*.md"
+          - "*.txt"
+          - "*.log"
+          - "*/__*"
+          - ".*"
+          - "终活.xcodeproj"
+          - "build"
+          - "DerivedData"
+          - "*.xcodeproj"
+    info:
+      path: Info.plist
+      properties:
+        CFBundleName: 终活
+        CFBundleDisplayName: 终活
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundlePackageType: APPL
+        CFBundleSignature: ????
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        LSRequiresIPhoneOS: YES
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: NO
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication: []
+        UILaunchScreen:
+          UIColorName: LaunchScreenBackground
+          UIImageName: LaunchScreenImage
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSCameraUsageDescription: 终活需要使用摄像头扫描邀请码绑定家人
+        NSLocationWhenInUseUsageDescription: 终活需要获取您的位置用于家人守护功能
+        NSLocationAlwaysAndWhenInUseUsageDescription: 终活需要获取您的位置用于家人守护功能
+        UIBackgroundModes:
+          - location
+        NSUserNotificationUsageDescription: 终活需要发送通知提醒您签到
+        UIUserNotificationSettings:
+          UIUserNotificationType:
+            - UIUserNotificationTypeAlert
+            - UIUserNotificationTypeBadge
+            - UIUserNotificationTypeSound
+        UISupportsDocumentBrowser: YES
+        LSSupportsOpeningDocumentsInPlace: YES
+        UIFileSharingEnabled: YES
+        ITSAppUsesNonExemptEncryption: NO
+        NSPhotoLibraryUsageDescription: 终活需要访问相册以保存时光胶囊内容
+        NSMicrophoneUsageDescription: 终活需要访问麦克风以录制语音胶囊
+        NSPhotoLibraryAddUsageDescription: 终活需要保存到相册以保存时光胶囊内容
+    dependencies:
+      - package:
+          url: https://github.com/huainvhai-bit/CodeScanner
+          from: 1.0.0
+    preBuildScripts:
+      - script: |
+          echo "🔧 清理旧缓存..."
+          rm -rf "${PROJECT_DIR}/DerivedData"
+          echo "✅ 清理完成"
+        name: "清理缓存"
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        outputFiles:
+          - "${PROJECT_DIR}/.cleaned"
