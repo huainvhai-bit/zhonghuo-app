@@ -1031,7 +1031,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    /// 从服务器拉取用户数据
+    /// 从服务器拉取用户数据（使用 GraphQL）
     func fetchUserData() async {
         guard let token = UserDefaults.standard.string(forKey: "userToken"),
               !token.isEmpty else {
@@ -1044,21 +1044,43 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        print("🌐 从服务器拉取用户数据...")
+        print("🌐 从服务器拉取用户数据（GraphQL）...")
         
-        var request = URLRequest(url: URL(string: "\(apiURL)/api/users.php?action=info")!)
+        // 使用 GraphQL 查询用户数据和统计信息
+        let query = """
+        query {
+            user {
+                id
+                name
+                phone
+                checkinCount
+                stats {
+                    emergencyContactsCount
+                    witnessesCount
+                    capsulesCount
+                    willModulesCount
+                    familyCount
+                    assetsCount
+                    checkinCount
+                }
+            }
+        }
+        """
+        
+        var request = URLRequest(url: URL(string: "\(apiURL)/api/graphql.php")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let body: [String: Any] = ["query": query]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse,
                (200...299).contains(httpResponse.statusCode),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let success = json["success"] as? Bool,
-               success,
+               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                let dataDict = json["data"] as? [String: Any],
                let userDict = dataDict["user"] as? [String: Any] {
                 
@@ -1066,14 +1088,24 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let userId = userDict["id"] as? String ?? ""
                 let name = userDict["name"] as? String ?? "用户"
                 let phone = userDict["phone"] as? String ?? ""
+                let checkinCount = userDict["checkinCount"] as? Int ?? 0
                 
                 // 解析统计信息
-                let emergencyContactsCount = userDict["emergency_contacts_count"] as? Int ?? 0
-                let witnessesCount = userDict["witnesses_count"] as? Int ?? 0
-                let capsulesCount = userDict["capsules_count"] as? Int ?? 0
-                let willModulesCount = userDict["will_modules_count"] as? Int ?? 0
-                let familyCount = userDict["family_count"] as? Int ?? 0
-                let checkinCount = userDict["checkin_count"] as? Int ?? 0
+                var emergencyContactsCount = 0
+                var witnessesCount = 0
+                var capsulesCount = 0
+                var willModulesCount = 0
+                var familyCount = 0
+                var assetsCount = 0
+                
+                if let stats = userDict["stats"] as? [String: Any] {
+                    emergencyContactsCount = stats["emergencyContactsCount"] as? Int ?? 0
+                    witnessesCount = stats["witnessesCount"] as? Int ?? 0
+                    capsulesCount = stats["capsulesCount"] as? Int ?? 0
+                    willModulesCount = stats["willModulesCount"] as? Int ?? 0
+                    familyCount = stats["familyCount"] as? Int ?? 0
+                    assetsCount = stats["assetsCount"] as? Int ?? 0
+                }
                 
                 let user = User(
                     id: userId,
@@ -1099,7 +1131,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.currentUser = user
                     self.checkInInterval = user.checkInInterval
                     self.checkEmergencyContacts()
-                    print("✅ 从服务器加载用户成功：\(user.name)")
+                    print("✅ 从服务器加载用户成功：\(user.name) (胶囊:\(capsulesCount), 嘱托:\(willModulesCount), 见证人:\(witnessesCount))")
                 }
                 
                 // 保存本地缓存
