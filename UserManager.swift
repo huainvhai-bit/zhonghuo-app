@@ -374,18 +374,23 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - GraphQL 辅助方法
     
     /// 发送带 Token 的 GraphQL 请求（静态方法）
+    /// ✅ 支持自动刷新 Token（永久登录）
     static func sendGraphQLQueryWithToken(query: String, variables: [String: Any]) async throws -> [String: Any] {
         let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "http://8.136.41.211:3395"
         guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        // ✅ 优先从 Keychain 读取 Token
+        var token = KeychainManager.shared.getToken()
+        if token == nil {
+            token = UserDefaults.standard.string(forKey: "userToken")
+        }
         
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token ?? "")", forHTTPHeaderField: "Authorization")
         
         let body: [String: Any] = [
             "query": query,
@@ -397,6 +402,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NSError(domain: "Server error", code: -1)
+        }
+        
+        // ✅ 检查响应头中的新 Token（自动刷新）
+        if let newToken = httpResponse.allHeaderFields["X-New-Token"] as? String {
+            KeychainManager.shared.saveToken(newToken)
+            UserDefaults.standard.set(newToken, forKey: "userToken")
+            print("🔄 Token 已自动刷新（永久登录）")
         }
         
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
@@ -457,6 +469,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.checkInInterval = user.checkInInterval
         
         print("✅ 用户登录成功：\(user.name), 手机号：\(user.phone), 签到间隔：\(user.checkInInterval.rawValue)")
+        
+        // ✅ 永久登录：保存 Token 到 Keychain
+        if let token = UserDefaults.standard.string(forKey: "userToken") {
+            KeychainManager.shared.saveToken(token)
+            KeychainManager.shared.saveUserId(user.id)
+            KeychainManager.shared.saveUserPhone(user.phone)
+            print("🔐 Token 已保存到 Keychain（永久登录）")
+        }
         
         // 触发实时同步
         Task {
@@ -833,11 +853,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("   ❌ 删除用户文件失败：\(error)")
         }
         
-        // 🗑️ 清除保存的密码和 token
+        // 🗑️ 清除 Keychain 中的 Token（永久登录数据）
+        KeychainManager.shared.clearAll()
+        
+        // 🗑️ 清除 UserDefaults 中的旧数据（兼容）
         UserDefaults.standard.removeObject(forKey: "userPassword")
         UserDefaults.standard.removeObject(forKey: "userToken")
         UserDefaults.standard.removeObject(forKey: "userId")
-        print("   ✅ 已清除密码和 token")
+        print("   ✅ 已清除所有登录数据")
         
         print("   currentUser: nil")
         print("   isLoggedIn: \(self.isLoggedIn)")
@@ -1000,9 +1023,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("🔍 UserManager.loadUser() 被调用")
         
-        // ✅ 云端优先架构：从 Token 恢复登录状态
-        if let token = UserDefaults.standard.string(forKey: "userToken"),
-           !token.isEmpty {
+        // ✅ 永久登录：优先从 Keychain 恢复 Token
+        var token: String? = KeychainManager.shared.getToken()
+        
+        // 降级方案：从 UserDefaults 读取（兼容旧版本）
+        if token == nil {
+            token = UserDefaults.standard.string(forKey: "userToken")
+        }
+        
+        if let token = token, !token.isEmpty {
             self.isLoggedIn = true
             
             // 尝试从本地文件加载用户数据（快速）
@@ -1012,6 +1041,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.lastCheckInDate = user.lastCheckInDate
                 self.checkEmergencyContacts()
                 isUserLoaded = true
+                print("🔐 从 Keychain 恢复永久登录状态")
             }
             
             // 异步从服务器拉取最新数据
