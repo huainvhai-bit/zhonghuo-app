@@ -38,13 +38,7 @@ struct WillAssetsView: View {
             .navigationTitle("嘱托与资产")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // 设置导航栏背景色（兼容 iOS 15+）
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(hex: "6366F1")
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-                UINavigationBar.appearance().standardAppearance = appearance
-                UINavigationBar.appearance().scrollEdgeAppearance = appearance
+                setupNavigationBar()
                 
                 // 初始化默认模板（如果为空）
                 if dataManager.willModules.isEmpty {
@@ -57,7 +51,7 @@ struct WillAssetsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
-                        Image(systemName: "doc.text.fill")
+                        Image(systemName: "signature")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                         Text("嘱托与资产")
@@ -554,6 +548,22 @@ struct WillModuleRow: View {
 #Preview {
     WillAssetsView()
 }
+
+// MARK: - 导航栏样式设置
+extension WillAssetsView {
+    private func setupNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "6366F1")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+    }
+}
+
 //
 //  WillModuleEdit.swift
 //  终活

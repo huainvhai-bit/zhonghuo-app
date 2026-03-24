@@ -104,22 +104,15 @@ struct HomeStatusView: View {
             .navigationTitle("终活")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // 设置导航栏背景色（兼容 iOS 15+）
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(hex: "6366F1")
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-                appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-                UINavigationBar.appearance().standardAppearance = appearance
-                UINavigationBar.appearance().scrollEdgeAppearance = appearance
+                setupNavigationBar()
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "heart.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("终活")
+                        Text("终活 v2.0 ✅")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -854,6 +847,23 @@ struct CapsulePreviewRow: View {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - 导航栏样式设置
+extension HomeStatusView {
+    private func setupNavigationBar() {
+    // 设置导航栏背景色（兼容 iOS 15+）
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = UIColor(hex: "6366F1")
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+    
+    // 设置滚动时的外观
+    UINavigationBar.appearance().standardAppearance = appearance
+    UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 

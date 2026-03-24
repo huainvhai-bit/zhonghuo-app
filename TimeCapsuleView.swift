@@ -43,13 +43,7 @@ struct TimeCapsuleView: View {
             .navigationTitle("时光胶囊")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // 设置导航栏背景色（兼容 iOS 15+）
-                let appearance = UINavigationBarAppearance()
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor(hex: "6366F1")
-                appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-                UINavigationBar.appearance().standardAppearance = appearance
-                UINavigationBar.appearance().scrollEdgeAppearance = appearance
+                setupNavigationBar()
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -661,6 +655,21 @@ struct EditCapsuleModal: View {
         }
         
         return nil
+    }
+}
+
+// MARK: - 导航栏样式设置
+extension TimeCapsuleView {
+    private func setupNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "6366F1")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 
