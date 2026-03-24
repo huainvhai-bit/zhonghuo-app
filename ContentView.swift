@@ -80,8 +80,12 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { newPhase in
-            // ✅ 从后台进入前台时，刷新用户数据（不再重复签到）
+            // ✅ 从后台进入前台时，自动签到 + 刷新用户数据
             if newPhase == .active && userManager.isLoggedIn && userManager.currentUser != nil {
+                print("🔵 App 从后台进入前台，触发自动签到...")
+                Task {
+                    await self.userManager.performAutoSignIn()
+                }
                 // 从本地重新加载用户数据
                 _ = UserManager.shared.currentUser
             }
@@ -266,7 +270,7 @@ struct ContentView: View {
     }
     
     private func autoSignIn() {
-        let logMsg = "🔵 autoSignIn() 自动签到"
+        let logMsg = "🔵 autoSignIn() 自动签到 - 每次打开 App 触发"
         writeLogToFile(logMsg)
         print(logMsg)
         

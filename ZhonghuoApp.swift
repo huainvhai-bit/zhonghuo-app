@@ -22,6 +22,14 @@ struct ZhonghuoApp: App {
             if newPhase == .active {
                 print("🟢 App 进入前台 - ZhonghuoApp")
                 RealTimeSyncManager.shared.appDidBecomeActive()
+                
+                // 🔵 每次 App 进入前台时触发自动签到
+                Task {
+                    if UserManager.shared.isLoggedIn {
+                        print("🔵 App 进入前台，触发自动签到...")
+                        await UserManager.shared.performAutoSignIn()
+                    }
+                }
             }
         }
     }
