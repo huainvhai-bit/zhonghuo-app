@@ -28,9 +28,6 @@ struct WitnessView: View {
         .background(Color(hex: "F6F6F8"))
         .navigationTitle("见证人")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            setupNavigationBar()
-        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 6) {
@@ -39,14 +36,12 @@ struct WitnessView: View {
                     Text("见证人")
                         .font(.system(size: 17, weight: .bold))
                 }
-                .foregroundColor(.white)
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingAddModal = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
                 }
             }
         }
@@ -510,19 +505,4 @@ struct EditWitnessModal: View {
 
 #Preview {
     WitnessView()
-}
-
-// MARK: - 导航栏样式设置
-extension WitnessView {
-    private func setupNavigationBar() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "6366F1")
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-    }
 }
