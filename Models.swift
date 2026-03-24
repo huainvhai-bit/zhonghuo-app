@@ -769,11 +769,13 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
-        if let data = result["batchSyncCapsules"] as? [String: Any],
-           let total = data["total"] as? Int,
-           let created = data["created"] as? Int,
-           let updated = data["updated"] as? Int {
+        let response = try await client.query(query)
+        // GraphQL 响应格式：{"data": {"batchSyncCapsules": {...}}}
+        if let data = response["data"] as? [String: Any],
+           let syncResult = data["batchSyncCapsules"] as? [String: Any],
+           let total = syncResult["total"] as? Int,
+           let created = syncResult["created"] as? Int,
+           let updated = syncResult["updated"] as? Int {
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -802,11 +804,12 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
-        if let data = result["batchSyncWills"] as? [String: Any],
-           let total = data["total"] as? Int,
-           let created = data["created"] as? Int,
-           let updated = data["updated"] as? Int {
+        let response = try await client.query(query)
+        if let data = response["data"] as? [String: Any],
+           let syncResult = data["batchSyncWills"] as? [String: Any],
+           let total = syncResult["total"] as? Int,
+           let created = syncResult["created"] as? Int,
+           let updated = syncResult["updated"] as? Int {
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -833,11 +836,12 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
-        if let data = result["batchSyncEmergencyContacts"] as? [String: Any],
-           let total = data["total"] as? Int,
-           let created = data["created"] as? Int,
-           let updated = data["updated"] as? Int {
+        let response = try await client.query(query)
+        if let data = response["data"] as? [String: Any],
+           let syncResult = data["batchSyncEmergencyContacts"] as? [String: Any],
+           let total = syncResult["total"] as? Int,
+           let created = syncResult["created"] as? Int,
+           let updated = syncResult["updated"] as? Int {
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -867,11 +871,12 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
-        if let data = result["batchSyncWitnesses"] as? [String: Any],
-           let total = data["total"] as? Int,
-           let created = data["created"] as? Int,
-           let updated = data["updated"] as? Int {
+        let response = try await client.query(query)
+        if let data = response["data"] as? [String: Any],
+           let syncResult = data["batchSyncWitnesses"] as? [String: Any],
+           let total = syncResult["total"] as? Int,
+           let created = syncResult["created"] as? Int,
+           let updated = syncResult["updated"] as? Int {
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -955,7 +960,7 @@ class GraphQLClient {
         self.token = UserDefaults.standard.string(forKey: "userToken")
     }
     
-    /// 执行 GraphQL 查询并返回字典
+    /// 执行 GraphQL 查询并返回字典（返回完整响应，包含 success/message/data）
     func query(_ query: String, variables: [String: Any]? = nil) async throws -> [String: Any] {
         guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
             throw GraphQLError.invalidURL
@@ -995,11 +1000,9 @@ class GraphQLClient {
             throw GraphQLError.serverError(message)
         }
         
-        guard let data = json["data"] as? [String: Any] else {
-            throw GraphQLError.noData
-        }
-        
-        return data
+        // 返回完整响应（包含 data 字段）
+        // 调用方需要从 json["data"]["batchSyncCapsules"] 中获取结果
+        return json
     }
     
     /// 设置 Token

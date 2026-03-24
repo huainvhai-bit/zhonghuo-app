@@ -884,48 +884,47 @@ class DataManager: ObservableObject {
         return nil
     }
     
-    /// 批量同步遗嘱模块到服务器
+    /// 批量同步遗嘱模块到服务器（GraphQL）
     func batchSyncWillModules() async -> (total: Int, created: Int, updated: Int)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=batch_sync")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        // 转换为后端格式
-        let modulesData = willModules.map { module in
+        // 转换为 GraphQL 格式
+        let modulesInput = willModules.map { module in
             [
                 "id": module.id,
                 "type": module.type,
                 "title": module.title,
                 "subtitle": module.subtitle,
                 "content": module.content,
-                "is_completed": module.isCompleted,
+                "isCompleted": module.isCompleted,
                 "template": module.template ?? ""
             ]
         }
         
-        let body: [String: Any] = ["modules": modulesData]
+        let query = """
+        mutation($modules: [WillModuleInput!]!) {
+            batchSyncWills(modules: $modules) {
+                success
+                message
+                data { total created updated }
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["modules": modulesInput]
         
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let (data, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                if let data = result?["data"] as? [String: Any] {
-                    let total = data["total"] as? Int ?? 0
-                    let created = data["created"] as? Int ?? 0
-                    let updated = data["updated"] as? Int ?? 0
-                    print("✅ 遗嘱同步成功：总计 \(total), 新增 \(created), 更新 \(updated)")
-                    return (total, created, updated)
-                }
+            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            if let data = result["data"] as? [String: Any],
+               let syncResult = data["batchSyncWills"] as? [String: Any],
+               let total = syncResult["total"] as? Int,
+               let created = syncResult["created"] as? Int,
+               let updated = syncResult["updated"] as? Int {
+                print("✅ 遗嘱同步成功（GraphQL）：总计 \(total), 新增 \(created), 更新 \(updated)")
+                return (total, created, updated)
             }
         } catch {
-            print("❌ 遗嘱同步失败：\(error)")
+            print("❌ 遗嘱同步失败（GraphQL）：\(error)")
         }
         return nil
     }
