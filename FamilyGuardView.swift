@@ -46,6 +46,18 @@ struct FamilyGuardView: View {
                     await generateInviteCode()
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("家人守护")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {
                     loadFamilyList()
