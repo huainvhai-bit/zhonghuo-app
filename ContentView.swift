@@ -294,40 +294,35 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Image(systemName: "house.fill")
-                        Text("首页")
+                        Label("首页", systemImage: "house.fill")
                     }
                     .tag(0)
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Image(systemName: "capsule.fill")
-                        Text("时光胶囊")
+                        Label("时光胶囊", systemImage: "capsule.fill")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Image(systemName: "doc.text.fill")
-                        Text("嘱托与资产")
+                        Label("嘱托与资产", systemImage: "doc.text.fill")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Image(systemName: "person.2.fill")
-                        Text("家人守护")
+                        Label("家人守护", systemImage: "person.2.fill")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "person.fill")
-                        Text("我的")
+                        Label("我的", systemImage: "person.fill")
                     }
                     .tag(4)
             }
-            .accentColor(Color(hex: "AF52DE"))
+            .accentColor(Color(hex: "6366F1"))
             
         }
     }

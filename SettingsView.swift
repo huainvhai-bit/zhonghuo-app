@@ -15,23 +15,37 @@ struct StatItemView: View {
     let label: String
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .fill(color.opacity(0.1))
-                    .frame(width: 50, height: 50)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [color.opacity(0.15), color.opacity(0.05)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 52, height: 52)
                 
                 Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(color)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [color, color.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
             }
             
             Text("\(count)")
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.primary)
+                .minimumScaleFactor(0.6)
             
             Text(label)
-                .font(.system(size: 11))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -352,8 +366,8 @@ struct SettingsView: View {
     private var statsCard: some View {
         VStack(spacing: 12) {
             Text("我的数据")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.secondary)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
             
@@ -404,9 +418,15 @@ struct SettingsView: View {
             }
         }
         .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.white, Color(hex: "F8F9FF")]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .cornerRadius(20)
+        .shadow(color: Color(hex: "6366F1").opacity(0.15), radius: 12, x: 0, y: 6)
     }
     
     private var userInfoCard: some View {
