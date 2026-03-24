@@ -3,6 +3,7 @@
 //  终活
 //
 //  用户管理 - 注册、登录、紧急联系人、定位
+//  技术文档：📖 终活 App 技术开发文档.md - 第 3 章 前端技术栈
 //
 
 import Foundation
@@ -11,6 +12,20 @@ import CoreLocation
 
 // SyncManager 在同一模块中，无需额外 import
 
+/// 用户管理器 - 负责用户认证、位置服务、数据同步
+/// 
+/// 核心功能：
+/// - 用户注册/登录/退出
+/// - 位置服务（查找我的 iPhone 风格精度动画）
+/// - 紧急联系人管理
+/// - 家人绑定与邀请码
+/// - 本地数据持久化
+/// 
+/// 技术要点：
+/// - 单例模式：`UserManager.shared`
+/// - 位置精度：1000m → 500m → 200m → 100m → 50m → 10m（每 3 秒）
+/// - 数据持久化：user.json 本地存储
+/// - API 调用：REST API + GraphQL 混合架构
 class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = UserManager()
     
@@ -34,16 +49,27 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         fileManager.fileExists(atPath: userFileURL.path)
     }
     
-    // 定位管理
+    // MARK: - 定位管理
+    
+    /// 位置管理器
     private let locationManager = CLLocationManager()
+    
+    /// 定位授权状态
     @Published var locationAuthStatus: CLAuthorizationStatus = .notDetermined
     
+    /// 初始化
+    /// - 自动配置定位管理器
+    /// - 加载本地用户数据
     override init() {
         super.init()
         setupLocationManager()
         loadUser()
     }
     
+    /// 配置定位管理器
+    /// - 授权级别：导航级精度（kCLLocationAccuracyBestForNavigation）
+    /// - 距离过滤器：50 米（移动 50 米以上才更新）
+    /// - 活动类型：其他导航（自动优化定位策略）
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation  // 导航级精度
@@ -135,7 +161,25 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 持续定位
     
-    /// 开始持续定位并上传（模拟查找我的 iPhone：精度从大到小）
+    /// 开始持续定位并上传（模拟查找我的 iPhone 风格精度动画）
+    /// 
+    /// 功能说明：
+    /// - 每 3 秒上传一次位置
+    /// - 模拟精度提升过程：1000m → 500m → 200m → 100m → 50m → 10m
+    /// - 精度计数器：`locationUpdateCount`
+    /// 
+    /// 技术实现：
+    /// - 使用 Timer 定时触发（每 3 秒）
+    /// - 每次定时器触发时递增计数器
+    /// - `didUpdateLocations` 调用时不递增（避免用户静止时无法提升精度）
+    /// 
+    /// 后端地图效果：
+    /// - 蓝色半透明圆圈 + 脉冲动画
+    /// - 每 5 秒自动刷新用户位置
+    /// - 精度变化平滑过渡动画
+    /// 
+    /// 相关文档：
+    /// - 📖 终活 App 技术开发文档.md - 7.4 家人守护模块
     func startContinuousLocationUpdates() {
         guard !isContinuouslyUpdating else {
             print("⚠️ 已经在持续定位中")
