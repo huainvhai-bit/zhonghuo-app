@@ -54,96 +54,90 @@ class DataManager: ObservableObject {
     // MARK: - API 配置管理
     
     /// 从服务器获取 API 配置（无条件相信后端返回的地址）
+    // MARK: - API 配置管理
+    
+    /// 从服务器获取 API 配置（GraphQL）
     func fetchServerConfig(from baseURL: String) async throws {
-        // 新架构：使用 /api/ 目录而不是 api.php
-        let configURL = "\(baseURL)/api/config_get.php"
-        guard let url = URL(string: configURL) else {
-            throw NSError(domain: "Invalid URL", code: -1, userInfo: [NSLocalizedDescriptionKey: "无效的 URL: \(configURL)"])
+        print("🌐 请求配置（GraphQL）：\(baseURL)")
+        
+        let query = """
+        query {
+            getConfig {
+                checkinIntervalHours
+                notificationReminderThresholdHours
+                notificationPushIntervalHours
+                smsIsDevelopment
+            }
         }
+        """
         
-        print("🌐 请求配置：\(configURL)")
+        let variables: [String: Any] = [:]
+        let response = try await sendGraphQLQuery(query: query, variables: variables, baseURL: baseURL)
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NSError(domain: "Invalid response", code: -1)
-        }
-        
-        // 404 时尝试回退到旧版 api.php
-        if httpResponse.statusCode == 404 {
-            print("⚠️ 新 API 路径不存在，尝试旧版 api.php")
-            try await fetchServerConfigLegacy(from: baseURL)
-            return
-        }
-        
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw NSError(domain: "Server error", code: httpResponse.statusCode)
-        }
-        
-        let config = try JSONDecoder().decode(ServerConfig.self, from: data)
-        
-        guard config.success, let configData = config.data else {
-            throw NSError(domain: "Config error", code: -1, userInfo: [NSLocalizedDescriptionKey: config.error ?? "配置加载失败"])
+        guard let data = response["data"] as? [String: Any],
+              let configData = data["getConfig"] as? [String: Any] else {
+            throw NSError(domain: "Config error", code: -1, userInfo: [NSLocalizedDescriptionKey: "配置加载失败"])
         }
         
         await MainActor.run {
-            self.serverConfig = config
+            // 解析配置
+            let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
+            let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
+            let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+            let smsDev = configData["smsIsDevelopment"] as? Int ?? 1
+            
+            self.systemConfig = SystemConfig(
+                checkinReminderThresholdHours: Double(reminderHours),
+                checkinReminderIntervalHours: Double(pushInterval),
+                minimumEmergencyContacts: 2
+            )
+            
+            // 保存签到间隔到 UserSettings
+            self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
             
             // 使用后端返回的地址（无条件相信）
-            // 新架构：baseURL 和 apiURL 相同，所有 API 通过 api.php 统一入口
             DataManager.baseURL = baseURL
-            DataManager.apiURL = baseURL  // 与 baseURL 相同
-            
-            // 解析短信配置
-            if let smsData = configData.sms {
-                self.smsConfig = try? JSONDecoder().decode(ServerConfig.ServerConfigData.SMSConfig.self, from: JSONSerialization.data(withJSONObject: smsData))
-            }
+            DataManager.apiURL = baseURL
             
             self.isBackendOnline = true
             
             // 保存地址供下次使用
             UserDefaults.standard.set(DataManager.baseURL, forKey: "lastUsedBaseURL")
             
-            print("✅ 后端配置获取成功")
+            print("✅ 后端配置获取成功（GraphQL）")
             print("   Base URL: \(DataManager.baseURL)")
-            print("   API URL: \(DataManager.apiURL)")
-            print("   短信模式：\(self.smsConfig?.isDevelopment ?? true ? "测试" : "生产")")
-            
-            if let serverInfo = configData.serverInfo {
-                print("   服务器信息：\(serverInfo)")
-            }
+            print("   签到间隔：\(checkinHours) 小时")
+            print("   提醒阈值：\(reminderHours) 小时")
+            print("   推送间隔：\(pushInterval) 小时")
+            print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
         }
     }
     
-    /// 从服务器获取 API 配置（旧版 api.php 兼容）
-    func fetchServerConfigLegacy(from baseURL: String) async throws {
-        let configURL = "\(baseURL)/api/config_get.php"
-        guard let url = URL(string: configURL) else {
+    // MARK: - GraphQL 辅助方法
+    
+    /// 发送 GraphQL 请求（不带 Token）
+    func sendGraphQLQuery(query: String, variables: [String: Any] = [:], baseURL: String) async throws -> [String: Any] {
+        guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
         
-        print("🌐 请求配置（旧版）：\(configURL)")
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let body: [String: Any] = [
+            "query": query,
+            "variables": variables
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NSError(domain: "Server error", code: -1)
         }
         
-        let config = try JSONDecoder().decode(ServerConfig.self, from: data)
-        
-        await MainActor.run {
-            self.serverConfig = config
-            DataManager.baseURL = baseURL
-            DataManager.apiURL = baseURL
-            self.isBackendOnline = true
-            UserDefaults.standard.set(baseURL, forKey: "lastUsedBaseURL")
-            print("✅ 旧版配置获取成功")
-        }
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
     }
     
     /// 初始化 API 配置（同步版本 - 立即设置默认值）

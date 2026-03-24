@@ -299,7 +299,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
             
             // 上传原始 GPS 坐标（WGS84）
-            self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: simulatedAccuracy)
+            Task {
+                await self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: simulatedAccuracy)
+            }
         }
     }
     
@@ -318,13 +320,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("❌ 定位失败：\(error)")
     }
     
-    private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) {
-        guard let apiURL = URL(string: "\(DataManager.apiURL)/api/location.php") else {
-            print("⚠️ 位置上传失败：API URL 无效")
-            print("   URL: \(DataManager.apiURL)/api/location.php")
-            return
-        }
-        
+    private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) async {
         // 获取 token
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         if token.isEmpty {
@@ -334,47 +330,76 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // 如果没有传入精度，使用默认值（模拟查找我的 iPhone：从大到小）
         let accuracyValue = accuracy ?? 1000.0
-        print("📍 准备上传位置：\(latitude), \(longitude), 精度：\(accuracyValue)米")
+        print("📍 准备上传位置（GraphQL）：\(latitude), \(longitude), 精度：\(accuracyValue)米")
+        
+        let query = """
+        mutation($latitude: Float!, $longitude: Float!, $accuracy: Float, $address: String) {
+            uploadLocation(latitude: $latitude, longitude: $longitude, accuracy: $accuracy, address: $address) {
+                success
+                message
+                data {
+                    id
+                    latitude
+                    longitude
+                }
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "latitude": latitude,
+            "longitude": longitude,
+            "accuracy": accuracyValue,
+            "address": address
+        ]
+        
+        do {
+            let response = try await UserManager.sendGraphQLQueryWithToken(query: query, variables: variables)
+            
+            if let data = response["data"] as? [String: Any],
+               let uploadLocation = data["uploadLocation"] as? [String: Any],
+               let success = uploadLocation["success"] as? Bool, success {
+                print("✅ 位置上传成功（GraphQL）：\(latitude), \(longitude)")
+                if let message = uploadLocation["message"] as? String {
+                    print("   \(message)")
+                }
+            } else {
+                print("❌ 位置上传失败")
+            }
+        } catch {
+            print("❌ 位置上传失败：\(error)")
+        }
+    }
+    
+    // MARK: - GraphQL 辅助方法
+    
+    /// 发送带 Token 的 GraphQL 请求（静态方法）
+    static func sendGraphQLQueryWithToken(query: String, variables: [String: Any]) async throws -> [String: Any] {
+        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "http://8.136.41.211:3395"
+        guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
+            throw NSError(domain: "Invalid URL", code: -1)
+        }
+        
+        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        var body: [String: Any] = [
-            "action": "upload",
-            "token": token,
-            "user_id": userId,
-            "latitude": latitude,
-            "longitude": longitude,
-            "address": address,
-            "accuracy": accuracyValue
+        let body: [String: Any] = [
+            "query": query,
+            "variables": variables
         ]
-        
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("❌ 位置上传失败：\(error)")
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 位置上传响应状态码：\(httpResponse.statusCode)")
-            }
-            
-            if let data = data,
-               let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 位置上传响应：\(jsonString)")
-                
-                if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = jsonObj["success"] as? Bool, success {
-                    print("✅ 位置上传成功：\(latitude), \(longitude)")
-                } else if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                          let message = jsonObj["message"] as? String {
-                    print("⚠️ 位置上传返回：\(message)")
-                }
-            }
-        }.resume()
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw NSError(domain: "Server error", code: -1)
+        }
+        
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
     }
     
     // MARK: - 用户注册

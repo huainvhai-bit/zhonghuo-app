@@ -851,24 +851,33 @@ struct ServerConfigModal: View {
         
         Task {
             do {
-                let url = URL(string: "\(tempURL)/api/config_get.php")!
-                let (data, response) = try await URLSession.shared.data(from: url)
-                
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    throw NSError(domain: "Server error", code: -1)
+                let query = """
+                query {
+                    getConfig {
+                        checkinIntervalHours
+                        notificationReminderThresholdHours
+                        notificationPushIntervalHours
+                        smsIsDevelopment
+                    }
                 }
+                """
                 
-                let config = try JSONDecoder().decode(ServerConfig.self, from: data)
+                let variables: [String: Any] = [:]
+                let response = try await DataManager.shared.sendGraphQLQuery(query: query, variables: variables, baseURL: tempURL)
                 
                 await MainActor.run {
                     isTesting = false
-                    testResult = config.success ? "成功" : "失败"
+                    if let data = response["data"] as? [String: Any],
+                       data["getConfig"] != nil {
+                        testResult = "成功 (GraphQL)"
+                    } else {
+                        testResult = "失败"
+                    }
                 }
             } catch {
                 await MainActor.run {
                     isTesting = false
-                    testResult = "失败"
+                    testResult = "失败：\(error.localizedDescription)"
                 }
             }
         }
