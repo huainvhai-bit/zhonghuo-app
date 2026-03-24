@@ -576,7 +576,7 @@ struct AuthView: View {
             }
         } catch {
             print("❌ 登录失败：\(error.localizedDescription)")
-            // 显示友好错误提示
+            // 显示友好错误提示（只显示中文）
             let errorMsg = error.localizedDescription
             if errorMsg.contains("用户不存在") {
                 errorMessage = "账号不存在，请先注册"
@@ -584,8 +584,10 @@ struct AuthView: View {
                 errorMessage = "密码错误"
             } else if errorMsg.contains("验证码") {
                 errorMessage = "验证码错误或已过期"
+            } else if errorMsg.contains("手机号") {
+                errorMessage = "手机号格式错误"
             } else {
-                errorMessage = "❌ 登录失败：\(errorMsg)"
+                errorMessage = "登录失败，请稍后重试"
             }
             showingError = true
         }

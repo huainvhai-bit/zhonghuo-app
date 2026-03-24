@@ -17,6 +17,12 @@ struct ZhonghuoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    // 🔵 启动时验证账号
+                    Task {
+                        await validateAccountOnLaunch()
+                    }
+                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
