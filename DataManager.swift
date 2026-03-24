@@ -1231,7 +1231,8 @@ class DataManager: ObservableObject {
             try FileManager.default.copyItem(at: tempURL, to: permanentURL)
             
             // 验证文件
-            let fileSize = FileManager.default.fileSize(atPath: permanentURL.path) ?? 0
+            let attributes = try? FileManager.default.attributesOfItem(atPath: permanentURL.path)
+            let fileSize = attributes?[.size] as? Int ?? 0
             let isReadable = FileManager.default.isReadableFile(atPath: permanentURL.path)
             
             print("✅ 媒体文件已持久化：\(permanentURL.path)")

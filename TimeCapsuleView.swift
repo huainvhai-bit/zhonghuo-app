@@ -424,7 +424,9 @@ struct AddCapsuleModal: View {
             if let tempURL = mediaFileURL {
                 print("📁 处理媒体文件：\(tempURL.path)")
                 print("📁 文件存在：\(FileManager.default.fileExists(atPath: tempURL.path))")
-                print("📁 文件大小：\(FileManager.default.fileSize(atPath: tempURL.path) ?? 0) bytes")
+                let tempAttributes = try? FileManager.default.attributesOfItem(atPath: tempURL.path)
+                let tempFileSize = tempAttributes?[.size] as? Int ?? 0
+                print("📁 文件大小：\(tempFileSize) bytes")
                 
                 // 1. 移动到持久化目录
                 if let permanentURL = await DataManager.shared.persistMediaFile(tempURL) {
@@ -433,7 +435,9 @@ struct AddCapsuleModal: View {
                     
                     // 验证持久化后的文件
                     print("📁 持久化文件存在：\(FileManager.default.fileExists(atPath: permanentURL.path))")
-                    print("📁 持久化文件大小：\(FileManager.default.fileSize(atPath: permanentURL.path) ?? 0) bytes")
+                    let permAttributes = try? FileManager.default.attributesOfItem(atPath: permanentURL.path)
+                    let permFileSize = permAttributes?[.size] as? Int ?? 0
+                    print("📁 持久化文件大小：\(permFileSize) bytes")
                     
                     // 2. 上传到服务器（如果已登录）
                     if UserDefaults.standard.string(forKey: "userToken") != nil {
@@ -628,7 +632,8 @@ struct EditCapsuleModal: View {
         // 验证文件
         if let url = url {
             let fileExists = FileManager.default.fileExists(atPath: url.path)
-            let fileSize = FileManager.default.fileSize(atPath: url.path) ?? 0
+            let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let fileSize = attributes?[.size] as? Int ?? 0
             let isReadable = FileManager.default.isReadableFile(atPath: url.path)
             
             print("📁 文件验证:")

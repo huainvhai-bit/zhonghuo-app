@@ -449,7 +449,9 @@ extension Recorder: AVCaptureFileOutputRecordingDelegate {
         } else {
             print("✅ 录像完成：\(outputFileURL.lastPathComponent)")
             print("✅ 文件路径：\(outputFileURL.path)")
-            print("✅ 文件大小：\(FileManager.default.fileSize(atPath: outputFileURL.path) ?? 0) bytes")
+            let attributes = try? FileManager.default.attributesOfItem(atPath: outputFileURL.path)
+            let fileSize = attributes?[.size] as? Int ?? 0
+            print("✅ 文件大小：\(fileSize) bytes")
             print("✅ 文件存在：\(FileManager.default.fileExists(atPath: outputFileURL.path))")
             
             // 验证文件可读性
