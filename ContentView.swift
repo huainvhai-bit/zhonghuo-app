@@ -298,49 +298,35 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Image(systemName: "house.fill")
-                            .renderingMode(.original)
-                        Text("首页")
-                            .foregroundColor(selectedTab == 0 ? Color(hex: "6366F1") : .gray)
+                        Label("首页", systemImage: "house.fill")
                     }
                     .tag(0)
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Image(systemName: "clock.fill")
-                            .renderingMode(.original)
-                        Text("时光胶囊")
-                            .foregroundColor(selectedTab == 1 ? Color(hex: "6366F1") : .gray)
+                        Label("时光胶囊", systemImage: "clock.fill")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Image(systemName: "doc.text.fill")
-                            .renderingMode(.original)
-                        Text("嘱托与资产")
-                            .foregroundColor(selectedTab == 2 ? Color(hex: "6366F1") : .gray)
+                        Label("嘱托与资产", systemImage: "doc.text.fill")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Image(systemName: "person.2.fill")
-                            .renderingMode(.original)
-                        Text("家人守护")
-                            .foregroundColor(selectedTab == 3 ? Color(hex: "6366F1") : .gray)
+                        Label("家人守护", systemImage: "person.2.fill")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "person.fill")
-                            .renderingMode(.original)
-                        Text("我的")
-                            .foregroundColor(selectedTab == 4 ? Color(hex: "6366F1") : .gray)
+                        Label("我的", systemImage: "person.fill")
                     }
                     .tag(4)
             }
+            .tint(Color(hex: "6366F1"))
             
         }
     }
