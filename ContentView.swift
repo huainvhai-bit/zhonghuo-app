@@ -326,8 +326,25 @@ struct ContentView: View {
                     }
                     .tag(4)
             }
-            .accentColor(Color(hex: "6366F1"))
+            .tint(Color(hex: "6366F1"))
             
+        }
+        .onAppear {
+            // 设置 Tab 栏样式
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = UIColor.white
+            
+            // 设置选中项颜色（紫色）
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(hex: "6366F1")
+            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(hex: "6366F1")]
+            
+            // 未选中项颜色（灰色）
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.gray
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.gray]
+            
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
         }
     }
 }
