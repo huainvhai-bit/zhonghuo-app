@@ -1088,7 +1088,7 @@ class DataManager: ObservableObject {
     
     /// 加载系统配置（后端可配置）
     func loadSystemConfig() async {
-        print("⚙️ ====== loadSystemConfig 开始 ======")
+        print("⚙️ ====== loadSystemConfig 开始 (GraphQL) ======")
         
         guard !DataManager.apiURL.isEmpty else {
             print("⚠️ 系统配置加载失败：API URL 为空")
@@ -1096,30 +1096,39 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/config_get.php")!
-            print("📡 请求系统配置：\(url)")
-            
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 系统配置响应状态码：\(httpResponse.statusCode)")
-            }
-            
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("📄 系统配置响应：\(jsonString)")
-                
-                let result = try JSONDecoder().decode(ConfigResponse.self, from: data)
-                
-                if result.status == "success" {
-                    systemConfig = result.data
-                    print("✅ 系统配置加载成功")
-                    print("   - 签到提醒阈值：\(systemConfig.checkinReminderThresholdHours) 小时")
-                    print("   - 签到提醒间隔：\(systemConfig.checkinReminderIntervalHours) 小时")
-                    print("   - 离线超时阈值：\(systemConfig.offlineTimeoutHours) 小时")
-                    print("   - 签到间隔：\(systemConfig.checkinIntervalHours) 小时")
-                } else {
-                    print("⚠️ 系统配置加载失败：\(result.message ?? "未知错误")")
+            let query = """
+            query {
+                getConfig {
+                    checkinIntervalHours
+                    notificationReminderThresholdHours
+                    notificationPushIntervalHours
+                    smsIsDevelopment
                 }
+            }
+            """
+            
+            let response = try await sendGraphQLQuery(query: query, variables: [:], baseURL: DataManager.apiURL)
+            
+            if let data = response["data"] as? [String: Any],
+               let configData = data["getConfig"] as? [String: Any] {
+                let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
+                let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
+                let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+                
+                systemConfig = SystemConfig(
+                    checkinReminderThresholdHours: Double(reminderHours),
+                    checkinReminderIntervalHours: Double(pushInterval),
+                    minimumEmergencyContacts: 2
+                )
+                
+                settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
+                
+                print("✅ 系统配置加载成功（GraphQL）")
+                print("   - 签到间隔：\(checkinHours) 小时")
+                print("   - 签到提醒阈值：\(reminderHours) 小时")
+                print("   - 签到提醒间隔：\(pushInterval) 小时")
+            } else {
+                print("⚠️ 系统配置加载失败：数据格式错误")
             }
         } catch {
             print("❌ 系统配置加载失败：\(error)")
