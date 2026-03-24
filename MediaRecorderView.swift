@@ -365,6 +365,7 @@ class Recorder: NSObject, ObservableObject {
     private func startRecording() {
         print("🎬 startRecording 开始")
         let filename = "capsule_" + UUID().uuidString + (videoOutput != nil ? ".mov" : ".m4a")
+        
         // 使用稳定的文档目录路径，确保文件持久化
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let capsulesFolder = documentsPath.appendingPathComponent("TimeCapsules")
@@ -377,8 +378,10 @@ class Recorder: NSObject, ObservableObject {
         
         let url = capsulesFolder.appendingPathComponent(filename)
         recordedURL = url
-        print("📁 录制文件路径：\(url.path)")
-        print("📁 文件名将保存为：\(filename)")
+        print("📁 录制文件路径（持久化）：\(url.path)")
+        print("📁 文件名：\(filename)")
+        print("📁 文件夹存在：\(FileManager.default.fileExists(atPath: capsulesFolder.path))")
+        print("📁 可写权限：\(FileManager.default.isWritableFile(atPath: capsulesFolder.path))")
         
         if videoOutput != nil {
             print("📹 开始录像...")
@@ -439,8 +442,23 @@ extension Recorder: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         if let error = error {
             print("❌ 录像失败：\(error)")
+            DispatchQueue.main.async { [weak self] in
+                self?.alertMessage = "录像失败：\(error.localizedDescription)"
+                self?.showAlert = true
+            }
         } else {
             print("✅ 录像完成：\(outputFileURL.lastPathComponent)")
+            print("✅ 文件路径：\(outputFileURL.path)")
+            print("✅ 文件大小：\(FileManager.default.fileSize(atPath: outputFileURL.path) ?? 0) bytes")
+            print("✅ 文件存在：\(FileManager.default.fileExists(atPath: outputFileURL.path))")
+            
+            // 验证文件可读性
+            if FileManager.default.isReadableFile(atPath: outputFileURL.path) {
+                print("✅ 文件可读")
+            } else {
+                print("⚠️ 文件不可读，尝试修复权限")
+                try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: outputFileURL.path)
+            }
         }
     }
 }

@@ -1191,22 +1191,63 @@ class DataManager: ObservableObject {
         }
     }
     
-    /// 持久化媒体文件（临时实现）
+    /// 持久化媒体文件（确保文件保存在 Documents 目录）
     func persistMediaFile(_ tempURL: URL) async -> URL? {
-        // 移动到 Documents 目录
+        print("📁 持久化媒体文件：\(tempURL.path)")
+        
+        // 检查源文件是否存在
+        guard FileManager.default.fileExists(atPath: tempURL.path) else {
+            print("❌ 源文件不存在：\(tempURL.path)")
+            return nil
+        }
+        
+        // 使用稳定的文档目录路径
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let permanentURL = documents.appendingPathComponent(tempURL.lastPathComponent)
+        let capsulesFolder = documents.appendingPathComponent("TimeCapsules")
+        
+        // 创建胶囊文件夹（如果不存在）
+        if !FileManager.default.fileExists(atPath: capsulesFolder.path) {
+            do {
+                try FileManager.default.createDirectory(at: capsulesFolder, withIntermediateDirectories: true, attributes: nil)
+                print("📁 创建胶囊文件夹：\(capsulesFolder.path)")
+            } catch {
+                print("❌ 创建文件夹失败：\(error)")
+                return nil
+            }
+        }
+        
+        // 生成新的文件名（避免冲突）
+        let filename = "capsule_" + UUID().uuidString + tempURL.pathExtension
+        let permanentURL = capsulesFolder.appendingPathComponent(filename)
         
         do {
+            // 如果目标文件已存在，先删除
             if FileManager.default.fileExists(atPath: permanentURL.path) {
                 try FileManager.default.removeItem(at: permanentURL)
+                print("🗑️ 删除旧文件：\(permanentURL.path)")
             }
+            
+            // 复制文件到持久化目录
             try FileManager.default.copyItem(at: tempURL, to: permanentURL)
+            
+            // 验证文件
+            let fileSize = FileManager.default.fileSize(atPath: permanentURL.path) ?? 0
+            let isReadable = FileManager.default.isReadableFile(atPath: permanentURL.path)
+            
             print("✅ 媒体文件已持久化：\(permanentURL.path)")
+            print("✅ 文件大小：\(fileSize) bytes")
+            print("✅ 文件可读：\(isReadable)")
+            
+            if fileSize == 0 {
+                print("⚠️ 警告：文件大小为 0，可能损坏")
+                return nil
+            }
+            
             return permanentURL
         } catch {
             print("❌ 媒体文件持久化失败：\(error)")
-            return tempURL
+            print("❌ 错误详情：\(error.localizedDescription)")
+            return nil
         }
     }
     

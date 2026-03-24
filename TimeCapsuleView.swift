@@ -422,12 +422,18 @@ struct AddCapsuleModal: View {
             let mediaFileURL = selectedType == .audio ? recordedAudioURL : recordedVideoURL
             
             if let tempURL = mediaFileURL {
-                print("📁 处理媒体文件：\(tempURL)")
+                print("📁 处理媒体文件：\(tempURL.path)")
+                print("📁 文件存在：\(FileManager.default.fileExists(atPath: tempURL.path))")
+                print("📁 文件大小：\(FileManager.default.fileSize(atPath: tempURL.path) ?? 0) bytes")
                 
                 // 1. 移动到持久化目录
                 if let permanentURL = await DataManager.shared.persistMediaFile(tempURL) {
-                    print("✅ 媒体文件已持久化：\(permanentURL)")
+                    print("✅ 媒体文件已持久化：\(permanentURL.path)")
                     capsuleContent = permanentURL.absoluteString
+                    
+                    // 验证持久化后的文件
+                    print("📁 持久化文件存在：\(FileManager.default.fileExists(atPath: permanentURL.path))")
+                    print("📁 持久化文件大小：\(FileManager.default.fileSize(atPath: permanentURL.path) ?? 0) bytes")
                     
                     // 2. 上传到服务器（如果已登录）
                     if UserDefaults.standard.string(forKey: "userToken") != nil {
@@ -435,9 +441,19 @@ struct AddCapsuleModal: View {
                         if let serverURL = await DataManager.shared.uploadMediaToServer(permanentURL, type: selectedType) {
                             print("✅ 媒体文件已上传：\(serverURL)")
                             mediaURL = serverURL
+                        } else {
+                            print("⚠️ 上传失败，但本地文件仍可用")
                         }
+                    } else {
+                        print("⚠️ 未登录，仅保存本地文件")
                     }
+                } else {
+                    print("❌ 持久化失败，无法创建胶囊")
+                    return
                 }
+            } else {
+                print("❌ 未找到媒体文件")
+                return
             }
         }
         
@@ -587,20 +603,59 @@ struct EditCapsuleModal: View {
     
     /// 解析媒体文件 URL
     private func parseMediaURL(from path: String) -> URL? {
+        print("🔍 解析媒体文件路径：\(path)")
+        
+        var url: URL?
+        
         // 如果已经是完整 URL，直接返回
         if path.hasPrefix("file://") {
-            return URL(string: path)
+            url = URL(string: path)
+            print("📍 使用 file:// URL: \(url?.path ?? "nil")")
         }
-        
         // 如果是绝对路径
-        if path.hasPrefix("/") {
-            return URL(fileURLWithPath: path)
+        else if path.hasPrefix("/") {
+            url = URL(fileURLWithPath: path)
+            print("📍 使用绝对路径：\(url?.path ?? "nil")")
+        }
+        // 如果是相对路径（只包含文件名），构建完整路径
+        else {
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
+            let capsulesFolder = URL(fileURLWithPath: documentsPath).appendingPathComponent("TimeCapsules")
+            url = capsulesFolder.appendingPathComponent(path)
+            print("📍 构建路径：\(url?.path ?? "nil")")
         }
         
-        // 如果是相对路径（只包含文件名），构建完整路径
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
-        let capsulesFolder = URL(fileURLWithPath: documentsPath).appendingPathComponent("TimeCapsules")
-        return capsulesFolder.appendingPathComponent(path)
+        // 验证文件
+        if let url = url {
+            let fileExists = FileManager.default.fileExists(atPath: url.path)
+            let fileSize = FileManager.default.fileSize(atPath: url.path) ?? 0
+            let isReadable = FileManager.default.isReadableFile(atPath: url.path)
+            
+            print("📁 文件验证:")
+            print("   - 存在：\(fileExists)")
+            print("   - 大小：\(fileSize) bytes")
+            print("   - 可读：\(isReadable)")
+            
+            if !fileExists {
+                print("❌ 文件不存在！")
+                return nil
+            }
+            
+            if fileSize == 0 {
+                print("❌ 文件大小为 0，已损坏！")
+                return nil
+            }
+            
+            if !isReadable {
+                print("❌ 文件不可读！")
+                return nil
+            }
+            
+            print("✅ 文件验证通过")
+            return url
+        }
+        
+        return nil
     }
 }
 
