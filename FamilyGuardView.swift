@@ -462,9 +462,9 @@ struct FamilyGuardView: View {
         do {
             print("🔵 开始获取邀请码（GraphQL）...")
             
-            // 使用 GraphQL getInviteCode mutation
+            // 使用 GraphQL getInviteCode query
             let query = """
-            mutation {
+            query {
                 getInviteCode {
                     success
                     message
