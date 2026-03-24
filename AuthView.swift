@@ -467,7 +467,16 @@ struct AuthView: View {
                 }
             }
         } catch {
-            errorMessage = "❌ 注册失败：\(error.localizedDescription)"
+            print("❌ 注册失败：\(error.localizedDescription)")
+            // 显示友好错误提示（只显示中文）
+            let errorMsg = error.localizedDescription
+            if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
+                errorMessage = "账号已注册请登陆"
+            } else if errorMsg.contains("手机号") {
+                errorMessage = "手机号格式错误"
+            } else {
+                errorMessage = "注册失败，请稍后重试"
+            }
             showingError = true
         }
     }
@@ -578,7 +587,7 @@ struct AuthView: View {
             print("❌ 登录失败：\(error.localizedDescription)")
             // 显示友好错误提示（只显示中文）
             let errorMsg = error.localizedDescription
-            if errorMsg.contains("用户不存在") {
+            if errorMsg.contains("账号不存在") || errorMsg.contains("用户不存在") {
                 errorMessage = "账号不存在，请先注册"
             } else if errorMsg.contains("密码错误") {
                 errorMessage = "密码错误"
