@@ -1252,4 +1252,42 @@ class DataManager: ObservableObject {
         }
     }
     
+    // 🔧 重置所有数据（调试用）
+    func reset() {
+        print("🔧 DataManager.reset() - 重置所有数据")
+        
+        // 重置用户状态
+        currentUser = nil
+        
+        // 重置胶囊数据
+        capsules = []
+        
+        // 重置遗嘱模块
+        willModules = []
+        
+        // 重置资产
+        assets = []
+        
+        // 重置见证人
+        witnesses = []
+        
+        // 重置待办清单
+        checklistItems = []
+        
+        // 重置设置（使用默认值）
+        settings.name = ""
+        settings.emergencyContact = nil
+        settings.emergencyContacts = []
+        settings.checkInInterval = .twoDays
+        settings.notificationsEnabled = true
+        settings.cloudSyncEnabled = true
+        settings.lastCheckInDate = nil
+        
+        // 清除 API 配置
+        DataManager.apiURL = ""
+        DataManager.baseURL = ""
+        
+        print("✅ DataManager 已重置")
+    }
+    
 }

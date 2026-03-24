@@ -303,6 +303,20 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, 8)
                     }
+                    
+                    // 🔧 调试功能：清除所有数据
+                    Button(action: clearAllData) {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "trash.fill")
+                                .foregroundColor(.orange)
+                            Text("🔧 清除所有数据（调试）")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.orange)
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                    }
                 }
             }
             .navigationTitle("我的")
@@ -517,6 +531,32 @@ struct SettingsView: View {
         print("✅ 退出登录完成")
         print("   userManager.isLoggedIn: \(userManager.isLoggedIn)")
         print("   UserDefaults.isLoggedIn: \(UserDefaults.standard.bool(forKey: "isLoggedIn"))")
+    }
+    
+    // MARK: - 🔧 清除所有数据（调试用）
+    private func clearAllData() {
+        print("🔧 开始清除所有数据...")
+        
+        // 清除 Keychain
+        let keychainManager = KeychainManager.shared
+        keychainManager.deleteToken()
+        
+        // 清除 UserDefaults
+        UserDefaults.standard.removeObject(forKey: "userToken")
+        UserDefaults.standard.removeObject(forKey: "userId")
+        UserDefaults.standard.removeObject(forKey: "isLoggedIn")
+        UserDefaults.standard.removeObject(forKey: "apiConfigLoaded")
+        UserDefaults.standard.synchronize()
+        
+        // 清除 DataManager 单例状态
+        DataManager.shared.reset()
+        
+        print("✅ 所有数据已清除")
+        print("   请重启 App 以重新开始")
+        
+        // 显示提示
+        errorMessage = "数据已清除！请重启 App"
+        showingError = true
     }
     
     // MARK: - 更新签到间隔
