@@ -178,7 +178,7 @@ struct ContentView: View {
         case serverError  // 服务器错误（保持登录）
     }
     
-    /// 验证后端 Token 是否有效
+    /// 验证后端 Token 是否有效（GraphQL）
     private func validateToken() async -> ValidateTokenResult {
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
             return .unauthorized
@@ -189,9 +189,24 @@ struct ContentView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
-            var request = URLRequest(url: url)
+            // 使用 GraphQL validateUser query
+            let query = """
+            query {
+                validateUser(userId: "") {
+                    success
+                    message
+                    data { id name phone }
+                }
+            }
+            """
+            
+            var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/graphql.php")!)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let body: [String: Any] = ["query": query]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
@@ -199,8 +214,13 @@ struct ContentView: View {
                 switch httpResponse.statusCode {
                 case 200:
                     let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    let success = json?["success"] as? Bool ?? false
-                    return success ? .success : .unauthorized
+                    // GraphQL 响应格式：{"data": {"validateUser": {"success": true, ...}}}
+                    if let dataObj = json?["data"] as? [String: Any],
+                       let validateUser = dataObj["validateUser"] as? [String: Any],
+                       let success = validateUser["success"] as? Bool {
+                        return success ? .success : .unauthorized
+                    }
+                    return .serverError
                 case 401:
                     print("❌ Token 无效（401）")
                     return .unauthorized
