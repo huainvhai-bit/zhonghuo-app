@@ -599,8 +599,16 @@ struct AuthView: View {
             return
         }
         
-        let token = data["token"] as? String ?? ""
-        let userId = data["user_id"] as? String ?? ""
+        // 🔧 修复：从 login 或 register 中获取数据
+        let authData = data["login"] as? [String: Any] ?? data["register"] as? [String: Any] ?? [:]
+        
+        guard !authData.isEmpty else {
+            print("❌ 错误：login 和 register 数据都为空")
+            return
+        }
+        
+        let token = authData["token"] as? String ?? ""
+        let userId = authData["user_id"] as? String ?? ""
         
         print("🔑 Token: \(token.prefix(20))...")
         print("👤 User ID: \(userId)")
@@ -625,7 +633,7 @@ struct AuthView: View {
         }
         
         // 创建用户数据
-        if let userDict = data["user"] as? [String: Any] {
+        if let userDict = authData["user"] as? [String: Any] {
             print("📝 用户数据：\(userDict)")
             
             let name = userDict["name"] as? String ?? "用户"
