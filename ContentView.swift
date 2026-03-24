@@ -305,28 +305,28 @@ struct ContentView: View {
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Image(systemName: "hourglass")
+                        Image(systemName: "clock.fill")
                         Text("时光胶囊")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Image(systemName: "signature")
+                        Image(systemName: "doc.text.fill")
                         Text("嘱托与资产")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Image(systemName: "heart.fill")
+                        Image(systemName: "person.2.fill")
                         Text("家人守护")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "gearshape.fill")
+                        Image(systemName: "person.fill")
                         Text("我的")
                     }
                     .tag(4)
