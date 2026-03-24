@@ -298,42 +298,35 @@ struct ContentView: View {
             TabView(selection: $selectedTab) {
                 HomeStatusView()
                     .tabItem {
-                        Image(systemName: "house")
-                        Text("首页")
+                        Label("首页", systemImage: "house.fill")
                     }
                     .tag(0)
                 
                 TimeCapsuleView()
                     .tabItem {
-                        Image(systemName: "hourglass")
-                        Text("时光胶囊")
+                        Label("时光胶囊", systemImage: "hourglass")
                     }
                     .tag(1)
                 
                 WillAssetsView()
                     .tabItem {
-                        Image(systemName: "signature")
-                        Text("嘱托与资产")
+                        Label("嘱托与资产", systemImage: "signature")
                     }
                     .tag(2)
                 
                 FamilyGuardView()
                     .tabItem {
-                        Image(systemName: "heart")
-                        Text("家人守护")
+                        Label("家人守护", systemImage: "heart.fill")
                     }
                     .tag(3)
                 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "gearshape")
-                        Text("我的")
+                        Label("我的", systemImage: "gearshape.fill")
                     }
                     .tag(4)
             }
-            .onAppear {
-                UITabBar.appearance().tintColor = UIColor(hex: "6366F1")
-            }
+            .accentColor(Color(hex: "6366F1"))
             
         }
     }
