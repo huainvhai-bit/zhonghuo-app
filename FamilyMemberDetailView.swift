@@ -434,51 +434,102 @@ struct FamilyMemberDetailView: View {
     
     private func acceptInvite() {
         Task {
-            let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=accept_invite")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["relation_id": member.relationId]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            _ = try? await URLSession.shared.data(for: request)
+            do {
+                // 使用 GraphQL acceptFamilyInvite mutation
+                let query = """
+                mutation($relationId: String!) {
+                    acceptFamilyInvite(relationId: $relationId) {
+                        success
+                        message
+                    }
+                }
+                """
+                
+                let variables: [String: Any] = ["relationId": member.relationId]
+                let result = try await GraphQLClient.shared.query(query, variables: variables)
+                print("📡 GraphQL 接受邀请响应：\(result)")
+                
+                if let data = result["data"] as? [String: Any],
+                   let acceptFamilyInvite = data["acceptFamilyInvite"] as? [String: Any] {
+                    let success = acceptFamilyInvite["success"] as? Bool ?? false
+                    if success {
+                        print("✅ 接受邀请成功")
+                    } else {
+                        let message = acceptFamilyInvite["message"] as? String ?? "接受失败"
+                        print("❌ 接受邀请失败：\(message)")
+                    }
+                }
+            } catch {
+                print("❌ 接受邀请失败：\(error)")
+            }
             dismiss()
         }
     }
     
     private func rejectInvite() {
         Task {
-            let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=reject_invite")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["relation_id": member.relationId]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            _ = try? await URLSession.shared.data(for: request)
+            do {
+                // 使用 GraphQL rejectFamilyInvite mutation
+                let query = """
+                mutation($relationId: String!) {
+                    rejectFamilyInvite(relationId: $relationId) {
+                        success
+                        message
+                    }
+                }
+                """
+                
+                let variables: [String: Any] = ["relationId": member.relationId]
+                let result = try await GraphQLClient.shared.query(query, variables: variables)
+                print("📡 GraphQL 拒绝邀请响应：\(result)")
+                
+                if let data = result["data"] as? [String: Any],
+                   let rejectFamilyInvite = data["rejectFamilyInvite"] as? [String: Any] {
+                    let success = rejectFamilyInvite["success"] as? Bool ?? false
+                    if success {
+                        print("✅ 拒绝邀请成功")
+                    } else {
+                        let message = rejectFamilyInvite["message"] as? String ?? "拒绝失败"
+                        print("❌ 拒绝邀请失败：\(message)")
+                    }
+                }
+            } catch {
+                print("❌ 拒绝邀请失败：\(error)")
+            }
             dismiss()
         }
     }
     
     private func removeFamily() {
         Task {
-            let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["relation_id": member.relationId]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            _ = try? await URLSession.shared.data(for: request)
+            do {
+                // 使用 GraphQL removeFamily mutation
+                let query = """
+                mutation($relationId: String!) {
+                    removeFamily(relationId: $relationId) {
+                        success
+                        message
+                    }
+                }
+                """
+                
+                let variables: [String: Any] = ["relationId": member.relationId]
+                let result = try await GraphQLClient.shared.query(query, variables: variables)
+                print("📡 GraphQL 移除家人响应：\(result)")
+                
+                if let data = result["data"] as? [String: Any],
+                   let removeFamily = data["removeFamily"] as? [String: Any] {
+                    let success = removeFamily["success"] as? Bool ?? false
+                    if success {
+                        print("✅ 移除家人成功")
+                    } else {
+                        let message = removeFamily["message"] as? String ?? "移除失败"
+                        print("❌ 移除家人失败：\(message)")
+                    }
+                }
+            } catch {
+                print("❌ 移除家人失败：\(error)")
+            }
             dismiss()
         }
     }

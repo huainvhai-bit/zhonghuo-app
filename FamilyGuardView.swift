@@ -380,15 +380,65 @@ struct FamilyGuardView: View {
         guard !DataManager.apiURL.isEmpty else { return }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            // 使用 GraphQL family query
+            let query = """
+            query {
+                family {
+                    success
+                    message
+                    data {
+                        members {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
+                        invited {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
+                    }
+                }
+            }
+            """
             
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+            let result = try await GraphQLClient.shared.query(query)
+            print("📡 GraphQL 家人列表响应：\(result)")
             
-            if result.success {
-                familyList = result.data?.list ?? []
+            if let data = result["data"] as? [String: Any],
+               let familyResult = data["family"] as? [String: Any],
+               let success = familyResult["success"] as? Bool,
+               success {
+                if let familyData = familyResult["data"] as? [String: Any] {
+                    // 解析 members
+                    if let members = familyData["members"] as? [[String: Any]] {
+                        familyList = members.compactMap { member in
+                            FamilyMember(
+                                id: member["id"] as? String ?? "",
+                                relationId: member["id"] as? String ?? "",
+                                name: member["name"] as? String ?? "",
+                                phone: member["phone"] as? String ?? "",
+                                avatar: member["avatar"] as? String ?? "",
+                                relationship: member["relation"] as? String ?? "",
+                                status: .accepted,
+                                statusText: "已绑定",
+                                createdAt: Date(),
+                                deviceInfo: nil
+                            )
+                        }
+                    }
+                    
+                    print("✅ 家人列表加载成功：\(familyList.count) 人")
+                }
+            } else if let familyResult = (result["data"] as? [String: Any])?["family"] as? [String: Any] {
+                let message = familyResult["message"] as? String ?? "加载失败"
+                print("❌ 家人列表加载失败：\(message)")
             }
         } catch {
             print("❌ 加载家人列表失败：\(error)")
@@ -507,29 +557,46 @@ struct FamilyGuardView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["invite_code": inviteCode]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
-                    
-                    if result.success {
-                        await loadFamilyListAsync()
-                        return
-                    } else {
-                        errorMessage = result.message ?? "绑定失败"
+            // 使用 GraphQL bindFamilyByInviteCode mutation
+            let query = """
+            mutation($inviteCode: String!) {
+                bindFamilyByInviteCode(inviteCode: $inviteCode) {
+                    success
+                    message
+                    data {
+                        members {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
+                        invited {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
                     }
+                }
+            }
+            """
+            
+            let variables: [String: Any] = ["inviteCode": inviteCode]
+            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            print("📡 GraphQL 绑定家人响应：\(result)")
+            
+            if let data = result["data"] as? [String: Any],
+               let bindFamilyByInviteCode = data["bindFamilyByInviteCode"] as? [String: Any] {
+                let success = bindFamilyByInviteCode["success"] as? Bool ?? false
+                if success {
+                    await loadFamilyListAsync()
+                    return
                 } else {
-                    errorMessage = "网络错误：\(httpResponse.statusCode)"
+                    errorMessage = bindFamilyByInviteCode["message"] as? String ?? "绑定失败"
                 }
             }
         } catch {
@@ -841,20 +908,30 @@ struct FamilyMemberCard: View {
         
         Task {
             do {
-                let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=remove_family")!
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                // 使用 GraphQL removeFamily mutation
+                let query = """
+                mutation($relationId: String!) {
+                    removeFamily(relationId: $relationId) {
+                        success
+                        message
+                    }
+                }
+                """
                 
-                let body: [String: String] = ["relation_id": member.relationId]
-                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                let variables: [String: Any] = ["relationId": member.relationId]
+                let result = try await GraphQLClient.shared.query(query, variables: variables)
+                print("📡 GraphQL 删除家人响应：\(result)")
                 
-                let (data, _) = try await URLSession.shared.data(for: request)
-                let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
-                
-                if result.success {
-                    onDelete()
+                if let data = result["data"] as? [String: Any],
+                   let removeFamily = data["removeFamily"] as? [String: Any] {
+                    let success = removeFamily["success"] as? Bool ?? false
+                    if success {
+                        print("✅ 删除家人成功")
+                        onDelete()
+                    } else {
+                        let message = removeFamily["message"] as? String ?? "删除失败"
+                        print("❌ 删除家人失败：\(message)")
+                    }
                 }
             } catch {
                 print("❌ 删除失败：\(error)")

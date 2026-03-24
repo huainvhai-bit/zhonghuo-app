@@ -200,31 +200,40 @@ struct BindFamilyView: View {
         }
         
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["invite_code": inviteCode]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
-                    
-                    if result.status == "success" {
-                        // 绑定成功后，自动添加到紧急联系人
-                        await addEmergencyContactIfNeeded()
-                        showingSuccess = true
-                        return
-                    } else {
-                        errorMessage = result.message ?? "绑定失败"
+            // 使用 GraphQL bindFamilyByInviteCode mutation
+            let query = """
+            mutation($inviteCode: String!) {
+                bindFamilyByInviteCode(inviteCode: $inviteCode) {
+                    success
+                    message
+                    data {
+                        members {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
                     }
+                }
+            }
+            """
+            
+            let variables: [String: Any] = ["inviteCode": inviteCode]
+            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            print("📡 GraphQL 绑定家人响应：\(result)")
+            
+            if let data = result["data"] as? [String: Any],
+               let bindFamilyByInviteCode = data["bindFamilyByInviteCode"] as? [String: Any] {
+                let success = bindFamilyByInviteCode["success"] as? Bool ?? false
+                if success {
+                    // 绑定成功后，自动添加到紧急联系人
+                    await addEmergencyContactIfNeeded()
+                    showingSuccess = true
+                    return
                 } else {
-                    errorMessage = "网络错误：\(httpResponse.statusCode)"
+                    errorMessage = bindFamilyByInviteCode["message"] as? String ?? "绑定失败"
                 }
             }
         } catch {
@@ -265,37 +274,44 @@ struct BindFamilyView: View {
         }
         
         do {
-            // 获取家人列表
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=list_family")!
-            var request = URLRequest(url: url)
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            // 使用 GraphQL family query 获取家人列表
+            let query = """
+            query {
+                family {
+                    success
+                    message
+                    data {
+                        members {
+                            id
+                            name
+                            phone
+                            relation
+                            status
+                            createdAt
+                        }
+                    }
+                }
+            }
+            """
             
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
+            let result = try await GraphQLClient.shared.query(query)
+            print("📡 GraphQL 家人列表响应：\(result)")
             
-            if result.status == "success", let familyList = result.data?.list, !familyList.isEmpty {
-                // 获取最后一个绑定的家人
-                let lastMember = familyList.last!
-                
-                // 添加到紧急联系人
-                let emergencyURL = URL(string: "\(DataManager.apiURL)/api/emergency_contacts.php?action=add")!
-                var emergencyRequest = URLRequest(url: emergencyURL)
-                emergencyRequest.httpMethod = "POST"
-                emergencyRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                emergencyRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let body: [String: Any] = [
-                    "name": lastMember.name,
-                    "phone": lastMember.phone,
-                    "relationship": lastMember.relationship.isEmpty ? "家人" : lastMember.relationship
-                ]
-                emergencyRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
-                
-                let (emergencyData, _) = try await URLSession.shared.data(for: emergencyRequest)
-                let emergencyResult = try JSONDecoder().decode(EmergencyContactAddResponse.self, from: emergencyData)
-                
-                if emergencyResult.status == "success" {
-                    print("✅ 紧急联系人自动添加成功：\(lastMember.name)")
+            if let data = result["data"] as? [String: Any],
+               let familyResult = data["family"] as? [String: Any],
+               let success = familyResult["success"] as? Bool,
+               success {
+                if let familyData = familyResult["data"] as? [String: Any],
+                   let members = familyData["members"] as? [[String: Any]],
+                   !members.isEmpty {
+                    // 获取最后一个绑定的家人
+                    let lastMember = members.last!
+                    let name = lastMember["name"] as? String ?? ""
+                    let phone = lastMember["phone"] as? String ?? ""
+                    let relation = lastMember["relation"] as? String ?? "家人"
+                    
+                    // TODO: 使用 GraphQL addEmergencyContact mutation
+                    print("✅ 家人绑定成功：\(name)，紧急联系人功能待迁移到 GraphQL")
                 }
             }
         } catch {
