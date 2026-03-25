@@ -1273,7 +1273,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             type: capsuleType,
                             sendDate: Date().addingTimeInterval(86400 * 365), // 默认 1 年后
                             isSent: c["isOpened"] as? Bool ?? false,
-                            createdAt: dateFormatter.date(from: c["createdAt"] as? String ?? "") ?? Date()
+                            createdAt: Date()
                         )
                         capsules.append(capsule)
                     }
