@@ -1380,20 +1380,31 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.checkEmergencyContacts()
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    // ⚠️ 只在数量不同时更新，避免重复触发视图刷新
-                    if DataManager.shared.emergencyContacts.count != emergencyContacts.count {
+                    // ⚠️ 关键修复：不能用服务器的空数组覆盖本地数据！
+                    // 只有当服务器有数据且本地没有时，才使用服务器数据
+                    
+                    // 紧急联系人：服务器有数据且本地没有 → 使用服务器数据
+                    if emergencyContacts.count > 0 && DataManager.shared.emergencyContacts.isEmpty {
                         DataManager.shared.emergencyContacts = emergencyContacts
                     }
-                    if DataManager.shared.witnesses.count != witnesses.count {
+                    
+                    // 见证人：服务器有数据且本地没有 → 使用服务器数据
+                    if witnesses.count > 0 && DataManager.shared.witnesses.isEmpty {
                         DataManager.shared.witnesses = witnesses
                     }
-                    if DataManager.shared.capsules.count != capsules.count {
+                    
+                    // 胶囊：服务器有数据且本地没有 → 使用服务器数据
+                    if capsules.count > 0 && DataManager.shared.capsules.isEmpty {
                         DataManager.shared.capsules = capsules
                     }
-                    if DataManager.shared.willModules.count != wills.count {
+                    
+                    // 遗嘱：服务器有数据且本地没有 → 使用服务器数据
+                    if wills.count > 0 && DataManager.shared.willModules.isEmpty {
                         DataManager.shared.willModules = wills
                     }
-                    if DataManager.shared.assets.count != assets.count {
+                    
+                    // 资产：服务器有数据且本地没有 → 使用服务器数据
+                    if assets.count > 0 && DataManager.shared.assets.isEmpty {
                         DataManager.shared.assets = assets
                     }
                     
