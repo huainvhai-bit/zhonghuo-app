@@ -364,9 +364,14 @@ struct SettingsView: View {
     // MARK: - 用户信息卡片
     @ViewBuilder
     private var statsCard: some View {
-        // 🔍 调试：打印 currentUser 状态
-        let _ = print("🔍 SettingsView statsCard: currentUser=\(userManager.currentUser != nil ? "存在" : "nil")")
-        let _ = print("🔍 SettingsView statsCard: 统计信息 - 紧急=\(userManager.currentUser?.emergencyContactsCount ?? -999), 见证=\(userManager.currentUser?.witnessesCount ?? -999), 胶囊=\(userManager.currentUser?.capsulesCount ?? -999), 嘱托=\(userManager.currentUser?.willModulesCount ?? -999)")
+        // ✅ 从本地 DataManager 获取数据（不依赖云端）
+        let emergencyCount = DataManager.shared.emergencyContacts.count
+        let witnessesCount = DataManager.shared.witnesses.count
+        let capsulesCount = DataManager.shared.capsules.count
+        let willsCount = DataManager.shared.willModules.count
+        // 家人：暂时没有本地数据，使用 0
+        let familyCount = 0
+        let checkinCount = userManager.currentUser?.checkinCount ?? 0
         
         VStack(spacing: 12) {
             Text("我的数据")
@@ -379,21 +384,21 @@ struct SettingsView: View {
                 StatItemView(
                     icon: "person.crop.circle.badge.exclamationmark",
                     color: Color(hex: "FF3B30"),
-                    count: userManager.currentUser?.emergencyContactsCount ?? 0,
+                    count: emergencyCount,
                     label: "紧急联系人"
                 )
                 
                 StatItemView(
                     icon: "checkmark.shield.fill",
                     color: Color(hex: "FF9500"),
-                    count: userManager.currentUser?.witnessesCount ?? 0,
+                    count: witnessesCount,
                     label: "见证人"
                 )
                 
                 StatItemView(
                     icon: "capsule.fill",
                     color: Color(hex: "AF52DE"),
-                    count: userManager.currentUser?.capsulesCount ?? 0,
+                    count: capsulesCount,
                     label: "胶囊"
                 )
             }
@@ -402,21 +407,21 @@ struct SettingsView: View {
                 StatItemView(
                     icon: "doc.text.fill",
                     color: Color(hex: "FF2D55"),
-                    count: userManager.currentUser?.willModulesCount ?? 0,
+                    count: willsCount,
                     label: "嘱托"
                 )
                 
                 StatItemView(
                     icon: "person.2.fill",
                     color: Color(hex: "007AFF"),
-                    count: userManager.currentUser?.familyCount ?? 0,
+                    count: familyCount,
                     label: "家人"
                 )
                 
                 StatItemView(
                     icon: "calendar.badge.checkmark",
                     color: Color(hex: "34C759"),
-                    count: userManager.currentUser?.checkinCount ?? 0,
+                    count: checkinCount,
                     label: "签到"
                 )
             }
