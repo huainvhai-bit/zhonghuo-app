@@ -1235,6 +1235,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 // 🔍 调试：打印 userDict 的所有 key
                 print("🔍 userDict 包含的 keys: \(userDict.keys.sorted())")
                 
+                // 🔍 强制打印 stats 原始数据
+                let statsRaw = userDict["stats"]
+                print("🔍 stats 原始数据：\(statsRaw ?? "nil")")
+                print("🔍 stats 类型：\(type(of: statsRaw))")
+                
                 if let stats = userDict["stats"] as? [String: Any] {
                     print("✅ stats 存在：\(stats)")
                     emergencyContactsCount = stats["emergencyContactsCount"] as? Int ?? 0
@@ -1243,8 +1248,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     willModulesCount = stats["willModulesCount"] as? Int ?? 0
                     familyCount = stats["familyCount"] as? Int ?? 0
                     assetsCount = stats["assetsCount"] as? Int ?? 0
+                    print("✅ 解析后的统计：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount), 家人=\(familyCount)")
                 } else {
-                    print("❌ stats 不存在于 userDict 中！")
+                    print("❌ stats 不存在于 userDict 中！或者类型转换失败")
+                    print("❌ userDict[\"stats\"] 实际类型：\(type(of: userDict["stats"]))")
                 }
                 
                 // 🔥 解析紧急联系人列表
@@ -1375,9 +1382,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 )
                 
                 await MainActor.run {
+                    print("🔍 设置 currentUser 前的统计：紧急=\(user.emergencyContactsCount), 见证=\(user.witnessesCount), 胶囊=\(user.capsulesCount), 嘱托=\(user.willModulesCount)")
+                    
                     self.currentUser = user
                     self.checkInInterval = user.checkInInterval
                     self.checkEmergencyContacts()
+                    
+                    print("🔍 设置 currentUser 后的统计：紧急=\(self.currentUser?.emergencyContactsCount ?? -1), 见证=\(self.currentUser?.witnessesCount ?? -1), 胶囊=\(self.currentUser?.capsulesCount ?? -1), 嘱托=\(self.currentUser?.willModulesCount ?? -1)")
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
                     // ⚠️ 关键修复：不能用服务器的空数组覆盖本地数据！
@@ -1415,6 +1426,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("   - 嘱托：\(wills.count) 个")
                     print("   - 资产：\(assets.count) 个")
                     print("   - 统计信息：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount), 家人=\(familyCount), 签到=\(checkinCount)")
+                    print("   - currentUser 统计：紧急=\(self.currentUser?.emergencyContactsCount ?? -1), 见证=\(self.currentUser?.witnessesCount ?? -1), 胶囊=\(self.currentUser?.capsulesCount ?? -1), 嘱托=\(self.currentUser?.willModulesCount ?? -1)")
                     
                     // ✅ 标记加载完成
                     isFetchingUserData = false

@@ -364,6 +364,10 @@ struct SettingsView: View {
     // MARK: - 用户信息卡片
     @ViewBuilder
     private var statsCard: some View {
+        // 🔍 调试：打印 currentUser 状态
+        let _ = print("🔍 SettingsView statsCard: currentUser=\(userManager.currentUser != nil ? "存在" : "nil")")
+        let _ = print("🔍 SettingsView statsCard: 统计信息 - 紧急=\(userManager.currentUser?.emergencyContactsCount ?? -999), 见证=\(userManager.currentUser?.witnessesCount ?? -999), 胶囊=\(userManager.currentUser?.capsulesCount ?? -999), 嘱托=\(userManager.currentUser?.willModulesCount ?? -999)")
+        
         VStack(spacing: 12) {
             Text("我的数据")
                 .font(.system(size: 16, weight: .bold))
