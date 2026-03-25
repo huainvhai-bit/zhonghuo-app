@@ -1359,20 +1359,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.checkEmergencyContacts()
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    // ⚠️ 使用 replaceSubrange 避免 @Published 触发不必要的视图刷新
-                    if DataManager.shared.emergencyContacts != emergencyContacts {
+                    // ⚠️ 只在数量不同时更新，避免重复触发视图刷新
+                    if DataManager.shared.emergencyContacts.count != emergencyContacts.count {
                         DataManager.shared.emergencyContacts = emergencyContacts
                     }
-                    if DataManager.shared.witnesses != witnesses {
+                    if DataManager.shared.witnesses.count != witnesses.count {
                         DataManager.shared.witnesses = witnesses
                     }
-                    if DataManager.shared.capsules != capsules {
+                    if DataManager.shared.capsules.count != capsules.count {
                         DataManager.shared.capsules = capsules
                     }
-                    if DataManager.shared.willModules != wills {
+                    if DataManager.shared.willModules.count != wills.count {
                         DataManager.shared.willModules = wills
                     }
-                    if DataManager.shared.assets != assets {
+                    if DataManager.shared.assets.count != assets.count {
                         DataManager.shared.assets = assets
                     }
                     
