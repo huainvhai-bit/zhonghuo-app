@@ -1241,53 +1241,65 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 
                 // 🔥 解析见证人列表
-                var witnesses: [User.Witness] = []
+                var witnesses: [Witness] = []
                 if let witnessesArray = userDict["witnesses"] as? [[String: Any]] {
                     for w in witnessesArray {
-                        let witness = User.Witness(
+                        let witness = Witness(
                             id: w["id"] as? String ?? "",
                             name: w["name"] as? String ?? "",
+                            role: w["relationship"] as? String ?? "",
                             phone: w["phone"] as? String ?? "",
-                            relationship: w["relationship"] as? String ?? "",
                             isConfirmed: w["isConfirmed"] as? Bool ?? false,
-                            confirmedAt: nil
+                            order: 0
                         )
                         witnesses.append(witness)
                     }
                 }
                 
                 // 🔥 解析胶囊列表
-                var capsules: [User.TimeCapsule] = []
+                var capsules: [TimeCapsule] = []
                 if let capsulesArray = userDict["capsules"] as? [[String: Any]] {
                     for c in capsulesArray {
-                        let capsule = User.TimeCapsule(
+                        // 解析 type 字符串为枚举
+                        let typeStr = c["type"] as? String ?? "text"
+                        var capsuleType = TimeCapsule.CapsuleType.text
+                        if typeStr == "语音" || typeStr == "audio" { capsuleType = .audio }
+                        else if typeStr == "视频" || typeStr == "video" { capsuleType = .video }
+                        
+                        let capsule = TimeCapsule(
                             id: c["id"] as? String ?? "",
                             title: c["title"] as? String ?? "",
-                            type: c["type"] as? String ?? "text",
-                            mediaType: c["mediaType"] as? String ?? "text",
                             content: c["content"] as? String ?? "",
-                            openAt: nil,
-                            isOpened: c["isOpened"] as? Bool ?? false,
-                            createdAt: Date(),
-                            updatedAt: nil
+                            type: capsuleType,
+                            sendDate: Date().addingTimeInterval(86400 * 365), // 默认 1 年后
+                            isSent: c["isOpened"] as? Bool ?? false,
+                            createdAt: dateFormatter.date(from: c["createdAt"] as? String ?? "") ?? Date()
                         )
                         capsules.append(capsule)
                     }
                 }
                 
                 // 🔥 解析遗嘱列表
-                var wills: [User.WillModule] = []
+                var wills: [WillModule] = []
                 if let willsArray = userDict["wills"] as? [[String: Any]] {
                     for w in willsArray {
-                        let will = User.WillModule(
+                        // 解析 type 字符串为枚举
+                        let typeStr = w["type"] as? String ?? "遗嘱"
+                        var willType = WillModule.WillType.otherInstructions
+                        for t in WillModule.WillType.allCases {
+                            if t.rawValue == typeStr {
+                                willType = t
+                                break
+                            }
+                        }
+                        
+                        let will = WillModule(
                             id: w["id"] as? String ?? "",
-                            type: w["type"] as? String ?? "遗嘱",
+                            type: willType,
                             title: w["title"] as? String ?? "",
                             subtitle: w["subtitle"] as? String ?? "",
                             content: w["content"] as? String ?? "",
-                            isCompleted: w["isCompleted"] as? Bool ?? false,
-                            orderNum: w["orderNum"] as? Int ?? 0,
-                            createdAt: Date()
+                            isCompleted: w["isCompleted"] as? Bool ?? false
                         )
                         wills.append(will)
                     }
