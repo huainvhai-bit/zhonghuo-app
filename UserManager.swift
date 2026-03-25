@@ -1473,8 +1473,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             
             // 🔥 自动更新所有统计信息（让 SettingsView 立即显示）
             self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
-            self.currentUser?.witnessesCount = user.witnesses.count
-            self.currentUser?.familyCount = user.family.count
+            // witnesses 和 family 是独立管理的，这里不更新
+            // self.currentUser?.witnessesCount = user.witnesses.count
+            // self.currentUser?.familyCount = user.family.count
             
             self.checkEmergencyContacts()  // 保存后重新检查
             
@@ -1483,7 +1484,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             UserDefaults.standard.set(user.id, forKey: "userId")
             
             print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
-            print("   统计信息：紧急=\(user.emergencyContacts.count), 见证=\(user.witnesses.count), 家人=\(user.family.count)")
+            print("   统计信息：紧急=\(user.emergencyContacts.count)")
             print("   isLoggedIn: \(self.isLoggedIn)")
             return true
         } catch {

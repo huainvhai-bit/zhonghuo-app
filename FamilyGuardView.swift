@@ -41,9 +41,24 @@ struct FamilyGuardView: View {
             .onAppear {
                 setupNavigationBar()
                 
+                // 🔥 防止重复加载
+                guard !isLoading else {
+                    print("⚠️ 家人守护页面正在加载中，跳过")
+                    return
+                }
+                
+                print("🔵 家人守护页面 onAppear")
+                
                 Task {
-                    await loadFamilyListAsync()
-                    await generateInviteCode()
+                    // 并行加载，提高速度
+                    await withTaskGroup(of: Void.self) { group in
+                        group.addTask {
+                            await self.loadFamilyListAsync()
+                        }
+                        group.addTask {
+                            await self.generateInviteCode()
+                        }
+                    }
                 }
             }
             .toolbar {
@@ -380,9 +395,20 @@ struct FamilyGuardView: View {
     
     @MainActor
     private func loadFamilyListAsync() async {
+        // 🔥 防止重复加载
+        guard !isLoading else {
+            print("⚠️ 家人列表正在加载中，跳过")
+            return
+        }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         guard !token.isEmpty else { return }
         guard !DataManager.apiURL.isEmpty else { return }
+        
+        print("🔵 开始加载家人列表...")
         
         do {
             // 使用 GraphQL family query
@@ -463,6 +489,8 @@ struct FamilyGuardView: View {
             print("❌ API URL 为空")
             return
         }
+        
+        print("🔵 开始生成邀请码...")
         
         do {
             print("🔵 开始获取邀请码（GraphQL）...")

@@ -1035,6 +1035,8 @@ enum APIError: LocalizedError {
     case deleteFailed
     case networkError
     case unauthorized
+    case invalidURL
+    case decodingError
     
     var errorDescription: String? {
         switch self {
@@ -1043,6 +1045,8 @@ enum APIError: LocalizedError {
         case .deleteFailed: return "删除失败"
         case .networkError: return "网络错误"
         case .unauthorized: return "未授权"
+        case .invalidURL: return "无效的 URL"
+        case .decodingError: return "解码失败"
         }
     }
 }
