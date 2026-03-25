@@ -43,6 +43,7 @@ class DataManager: ObservableObject {
     
     // MARK: - 用户数据
     @Published var currentUser: User?
+    @Published var emergencyContacts: [User.EmergencyContact] = []
     @Published var capsules: [TimeCapsule] = []
     @Published var willModules: [WillModule] = []
     @Published var assets: [Asset] = []

@@ -1305,6 +1305,30 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     }
                 }
                 
+                // 🔥 解析资产列表
+                var assets: [Asset] = []
+                if let assetsArray = userDict["assets"] as? [[String: Any]] {
+                    for a in assetsArray {
+                        let typeStr = a["type"] as? String ?? ""
+                        var assetType = Asset.AssetType.bank
+                        if let foundType = Asset.AssetType.allCases.first(where: { $0.rawValue == typeStr }) {
+                            assetType = foundType
+                        }
+                        
+                        let asset = Asset(
+                            id: a["id"] as? String ?? "",
+                            type: assetType,
+                            name: a["name"] as? String ?? "",
+                            institution: a["institution"] as? String ?? "",
+                            balance: Double(a["balance"] as? String ?? "0") ?? 0,
+                            accountNumber: a["accountNumber"] as? String ?? "",
+                            details: [:],
+                            createdAt: Date()
+                        )
+                        assets.append(asset)
+                    }
+                }
+                
                 // 日期格式化
                 let dateFormatter = ISO8601DateFormatter()
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
