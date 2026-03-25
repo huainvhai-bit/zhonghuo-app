@@ -256,9 +256,32 @@ struct CapsuleCard: View {
             
             // 内容
             VStack(alignment: .leading, spacing: 4) {
-                Text(capsule.title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.primary)
+                HStack(spacing: 6) {
+                    Text(capsule.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    // 🔥 云存储状态
+                    if !capsule.content.isEmpty && capsule.type == .text {
+                        CloudStorageButton(
+                            status: capsule.cloudBackupStatus,
+                            url: capsule.mediaServerURL,
+                            backupAt: capsule.cloudBackupAt,
+                            onRetry: {
+                                // 重试同步
+                                Task {
+                                    await DataManager.shared.batchSyncCapsules()
+                                }
+                            },
+                            onViewCloud: {
+                                // 查看云端内容
+                                if let url = URL(string: capsule.mediaServerURL) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        )
+                    }
+                }
                 
                 HStack(spacing: 6) {
                     Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")

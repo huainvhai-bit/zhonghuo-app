@@ -964,6 +964,13 @@ class DataManager: ObservableObject {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         
+        // 🔥 标记为上传中
+        for i in 0..<capsules.count {
+            if capsules[i].cloudBackupStatus == .pending {
+                capsules[i].cloudBackupStatus = .uploading
+            }
+        }
+        
         let inputs = capsules.map { capsule in
             CapsuleInput(
                 id: capsule.id,
@@ -977,9 +984,30 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncCapsules(inputs)
             print("✅ 胶囊同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            
+            // 🔥 同步成功后标记为已备份
+            Task { @MainActor in
+                for i in 0..<self.capsules.count {
+                    if self.capsules[i].cloudBackupStatus == .uploading {
+                        self.capsules[i].cloudBackupStatus = .backedUp
+                        self.capsules[i].cloudBackupAt = Date()
+                    }
+                }
+            }
+            
             return (result.total, result.created, result.updated)
         } catch {
             print("❌ 胶囊同步失败：\(error)")
+            
+            // 🔥 同步失败标记为失败
+            Task { @MainActor in
+                for i in 0..<self.capsules.count {
+                    if self.capsules[i].cloudBackupStatus == .uploading {
+                        self.capsules[i].cloudBackupStatus = .failed
+                    }
+                }
+            }
+            
             return nil
         }
     }

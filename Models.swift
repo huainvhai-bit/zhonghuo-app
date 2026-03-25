@@ -81,12 +81,41 @@ struct TimeCapsule: Identifiable, Codable {
     var content: String
     var type: CapsuleType
     var mediaURL: String = ""          // 本地媒体文件 URL
-    var mediaServerURL: String = ""    // 服务器媒体文件 URL
+    var mediaServerURL: String = ""    // 服务器媒体文件 URL（云存储）
     var mediaDuration: Double = 0      // 媒体时长（秒）
     var sendDate: Date
     var isSent: Bool
     var createdAt: Date
     var deletedAt: Date? = nil  // 删除标记
+    
+    // 🔥 云存储状态
+    var cloudBackupStatus: CloudBackupStatus = .pending
+    var cloudBackupAt: Date? = nil
+    
+    enum CloudBackupStatus: String, Codable {
+        case pending = "待备份"
+        case uploading = "上传中"
+        case backedUp = "已备份"
+        case failed = "失败"
+        
+        var icon: String {
+            switch self {
+            case .pending: return "⏳"
+            case .uploading: return "☁️"
+            case .backedUp: return "✅"
+            case .failed: return "❌"
+            }
+        }
+        
+        var color: String {
+            switch self {
+            case .pending: return "FF9500"
+            case .uploading: return "007AFF"
+            case .backedUp: return "34C759"
+            case .failed: return "FF3B30"
+            }
+        }
+    }
     
     enum CapsuleType: String, Codable {
         case text = "文字"
@@ -128,6 +157,11 @@ struct WillModule: Identifiable, Codable {
     var content: String
     var isCompleted: Bool
     var template: String?
+    
+    // 🔥 云存储状态
+    var cloudBackupStatus: TimeCapsule.CloudBackupStatus = .pending
+    var cloudBackupAt: Date? = nil
+    var cloudURL: String = ""  // 云存储 URL
     
     enum WillType: String, Codable, CaseIterable {
         case property = "财产分配"
