@@ -783,45 +783,60 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    // 同步签到到服务器
+    // 同步签到到服务器（使用 GraphQL）
     @MainActor
     private func syncCheckInToServer(isAuto: Bool) async {
-        guard let userId = currentUser?.id,
-              let token = UserDefaults.standard.string(forKey: "userToken"),
+        guard let token = UserDefaults.standard.string(forKey: "userToken"),
               !DataManager.apiURL.isEmpty else {
             print("❌ 签到同步：缺少必要参数")
             return
         }
         
-        let url = URL(string: "\(DataManager.apiURL)/api/checkin.php?action=record")!
-        var request = URLRequest(url: url)
+        print("🔵 开始 GraphQL 签到...")
+        
+        // GraphQL Mutation
+        let mutation = """
+        mutation {
+            checkIn(isAuto: \(isAuto ? "true" : "false")) {
+                success
+                checkInTime
+            }
+        }
+        """
+        
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/graphql.php")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        var body: [String: Any] = [
-            "user_id": userId,
-            "is_auto": isAuto
-        ]
-        
-        // 添加位置信息（如果有）
-        if let location = locationManager.location {
-            body["location_lat"] = location.coordinate.latitude
-            body["location_lng"] = location.coordinate.longitude
-        }
-        
+        let body: [String: Any] = ["query": mutation]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 GraphQL 签到响应状态码：\(httpResponse.statusCode)")
+            }
+            
+            let responseText = String(data: data, encoding: .utf8) ?? "无法解析"
+            print("📡 GraphQL 签到响应：\(responseText)")
+            
             if let httpResponse = response as? HTTPURLResponse,
-               (200...299).contains(httpResponse.statusCode) {
-                if let json = try? JSONDecoder().decode(ServerResponse.self, from: data),
-                   json.success {
-                    print("✅ 签到同步成功")
-                } else {
-                    print("⚠️ 签到同步返回失败")
+               (200...299).contains(httpResponse.statusCode),
+               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let dataDict = json["data"] as? [String: Any],
+               let checkInResult = dataDict["checkIn"] as? [String: Any],
+               let success = checkInResult["success"] as? Bool, success {
+                print("✅ 签到同步成功")
+                
+                // 重新拉取用户数据，更新签到次数
+                await fetchUserData()
+            } else {
+                print("⚠️ 签到同步返回失败")
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errors = json["errors"] as? [[String: Any]] {
+                    print("❌ GraphQL errors: \(errors)")
                 }
             }
         } catch {
