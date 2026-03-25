@@ -1083,7 +1083,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 id
                 name
                 phone
+                avatarUrl
+                gender
+                birthday
+                lastLoginAt
+                lastLoginIp
+                lastCheckInDate
                 checkinCount
+                createdAt
+                updatedAt
                 stats {
                     emergencyContactsCount
                     witnessesCount
@@ -1118,7 +1126,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let userId = userDict["id"] as? String ?? ""
                 let name = userDict["name"] as? String ?? "用户"
                 let phone = userDict["phone"] as? String ?? ""
+                let avatarUrl = userDict["avatarUrl"] as? String ?? ""
+                let gender = userDict["gender"] as? Int ?? 0
+                let birthday = userDict["birthday"] as? String ?? ""
+                let lastLoginAt = userDict["lastLoginAt"] as? String ?? ""
+                let lastLoginIp = userDict["lastLoginIp"] as? String ?? ""
+                let lastCheckInDate = userDict["lastCheckInDate"] as? String ?? ""
                 let checkinCount = userDict["checkinCount"] as? Int ?? 0
+                let createdAt = userDict["createdAt"] as? String ?? ""
+                let updatedAt = userDict["updatedAt"] as? String ?? ""
                 
                 // 解析统计信息
                 var emergencyContactsCount = 0
@@ -1137,18 +1153,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     assetsCount = stats["assetsCount"] as? Int ?? 0
                 }
                 
+                // 日期格式化
+                let dateFormatter = ISO8601DateFormatter()
+                dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                
                 let user = User(
                     id: userId,
                     name: name,
                     phone: phone,
-                    createdAt: Date(),
+                    createdAt: dateFormatter.date(from: createdAt) ?? Date(),
                     emergencyContacts: [],
                     checkInInterval: .twoDays,
                     notificationsEnabled: true,
                     cloudSyncEnabled: true,
-                    lastCheckInDate: nil,
-                    lastLoginAt: nil,
-                    lastLoginIp: nil,
+                    lastCheckInDate: dateFormatter.date(from: lastCheckInDate) ?? nil,
+                    lastLoginAt: dateFormatter.date(from: lastLoginAt) ?? nil,
+                    lastLoginIp: lastLoginIp.isEmpty ? nil : lastLoginIp,
                     checkinCount: checkinCount,
                     emergencyContactsCount: emergencyContactsCount,
                     witnessesCount: witnessesCount,
