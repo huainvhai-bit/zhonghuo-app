@@ -1359,11 +1359,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.checkEmergencyContacts()
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    DataManager.shared.emergencyContacts = emergencyContacts
-                    DataManager.shared.witnesses = witnesses
-                    DataManager.shared.capsules = capsules
-                    DataManager.shared.willModules = wills
-                    DataManager.shared.assets = assets
+                    // ⚠️ 使用 replaceSubrange 避免 @Published 触发不必要的视图刷新
+                    if DataManager.shared.emergencyContacts != emergencyContacts {
+                        DataManager.shared.emergencyContacts = emergencyContacts
+                    }
+                    if DataManager.shared.witnesses != witnesses {
+                        DataManager.shared.witnesses = witnesses
+                    }
+                    if DataManager.shared.capsules != capsules {
+                        DataManager.shared.capsules = capsules
+                    }
+                    if DataManager.shared.willModules != wills {
+                        DataManager.shared.willModules = wills
+                    }
+                    if DataManager.shared.assets != assets {
+                        DataManager.shared.assets = assets
+                    }
                     
                     print("✅ 从服务器加载用户成功：\(user.name)")
                     print("   - 紧急联系人：\(emergencyContacts.count) 个")
