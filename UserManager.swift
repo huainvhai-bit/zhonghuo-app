@@ -1029,10 +1029,18 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // ✅ 性能优化：避免重复加载
     private var isUserLoaded = false
+    private var isFetchingUserData = false
     
     func loadUser() {
         // ✅ 如果已加载，直接返回（避免重复）
         if isUserLoaded && currentUser != nil {
+            print("✅ 用户数据已加载，跳过重复加载")
+            return
+        }
+        
+        // ✅ 防止重复加载
+        if isFetchingUserData {
+            print("⚠️ 正在加载用户数据，跳过重复请求")
             return
         }
         
@@ -1078,6 +1086,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     /// 从服务器拉取用户数据（使用 GraphQL）
     func fetchUserData() async {
+        // ✅ 防止重复加载
+        guard !isFetchingUserData else {
+            print("⚠️ 正在加载用户数据，跳过重复请求")
+            return
+        }
+        
         guard let token = UserDefaults.standard.string(forKey: "userToken"),
               !token.isEmpty else {
             return
@@ -1090,6 +1104,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         print("🌐 从服务器拉取用户数据（GraphQL）...")
+        isFetchingUserData = true
         
         // 🔥 一次性查询所有用户数据（紧急联系人、见证人、胶囊、遗嘱、家人）
         let query = """
@@ -1382,6 +1397,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("   - 胶囊：\(capsules.count) 个")
                     print("   - 嘱托：\(wills.count) 个")
                     print("   - 资产：\(assets.count) 个")
+                    
+                    // ✅ 标记加载完成
+                    isFetchingUserData = false
+                    isUserLoaded = true
                 }
                 
                 // 保存本地缓存
@@ -1401,9 +1420,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("❌ GraphQL errors: \(errors)")
                 }
                 print("⚠️ 服务器返回失败，使用本地缓存")
+                
+                // ✅ 失败时也要重置标志
+                isFetchingUserData = false
             }
         } catch {
             print("❌ 拉取用户数据失败：\(error)")
+            isFetchingUserData = false
             print("   错误详情：\(error.localizedDescription)")
             print("   使用本地缓存")
         }
