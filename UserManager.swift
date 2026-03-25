@@ -1232,13 +1232,19 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 var familyCount = 0
                 var assetsCount = 0
                 
+                // 🔍 调试：打印 userDict 的所有 key
+                print("🔍 userDict 包含的 keys: \(userDict.keys.sorted())")
+                
                 if let stats = userDict["stats"] as? [String: Any] {
+                    print("✅ stats 存在：\(stats)")
                     emergencyContactsCount = stats["emergencyContactsCount"] as? Int ?? 0
                     witnessesCount = stats["witnessesCount"] as? Int ?? 0
                     capsulesCount = stats["capsulesCount"] as? Int ?? 0
                     willModulesCount = stats["willModulesCount"] as? Int ?? 0
                     familyCount = stats["familyCount"] as? Int ?? 0
                     assetsCount = stats["assetsCount"] as? Int ?? 0
+                } else {
+                    print("❌ stats 不存在于 userDict 中！")
                 }
                 
                 // 🔥 解析紧急联系人列表
@@ -1397,6 +1403,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("   - 胶囊：\(capsules.count) 个")
                     print("   - 嘱托：\(wills.count) 个")
                     print("   - 资产：\(assets.count) 个")
+                    print("   - 统计信息：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount), 家人=\(familyCount), 签到=\(checkinCount)")
                     
                     // ✅ 标记加载完成
                     isFetchingUserData = false
