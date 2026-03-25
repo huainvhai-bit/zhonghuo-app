@@ -1116,6 +1116,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
+            // 🔍 详细日志
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 GraphQL 响应状态码：\(httpResponse.statusCode)")
+                let responseText = String(data: data, encoding: .utf8) ?? "无法解析"
+                print("📡 GraphQL 响应内容：\(responseText.prefix(500))")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse,
                (200...299).contains(httpResponse.statusCode),
                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -1188,10 +1195,24 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 saveUser(user)
                 
             } else {
+                // 🔍 详细错误日志
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("❌ GraphQL 请求失败 - 状态码：\(httpResponse.statusCode)")
+                }
+                if let responseText = String(data: data, encoding: .utf8) {
+                    print("❌ GraphQL 响应内容：\(responseText)")
+                }
+                // 检查是否有 GraphQL errors
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errors = json["errors"] as? [[String: Any]] {
+                    print("❌ GraphQL errors: \(errors)")
+                }
                 print("⚠️ 服务器返回失败，使用本地缓存")
             }
         } catch {
-            print("❌ 拉取用户数据失败：\(error)，使用本地缓存")
+            print("❌ 拉取用户数据失败：\(error)")
+            print("   错误详情：\(error.localizedDescription)")
+            print("   使用本地缓存")
         }
     }
     
