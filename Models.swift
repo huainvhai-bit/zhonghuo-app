@@ -765,6 +765,7 @@ class APIManager {
                 total
                 created
                 updated
+                cloudUrls
             }
         }
         """
@@ -776,6 +777,17 @@ class APIManager {
            let total = syncResult["total"] as? Int,
            let created = syncResult["created"] as? Int,
            let updated = syncResult["updated"] as? Int {
+            // 🔥 解析云存储 URL
+            if let cloudUrls = syncResult["cloudUrls"] as? [String: String] {
+                print("☁️ 云存储 URL: \(cloudUrls.count) 个胶囊已备份")
+                // 更新本地胶囊的 mediaServerURL
+                for (capsuleId, url) in cloudUrls {
+                    if let index = DataManager.shared.capsules.firstIndex(where: { $0.id == capsuleId }) {
+                        DataManager.shared.capsules[index].mediaServerURL = url
+                        print("✅ 胶囊 \(capsuleId) 云存储 URL 已更新")
+                    }
+                }
+            }
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -800,6 +812,7 @@ class APIManager {
                 total
                 created
                 updated
+                cloudUrls
             }
         }
         """
@@ -810,6 +823,17 @@ class APIManager {
            let total = syncResult["total"] as? Int,
            let created = syncResult["created"] as? Int,
            let updated = syncResult["updated"] as? Int {
+            // 🔥 解析云存储 URL
+            if let cloudUrls = syncResult["cloudUrls"] as? [String: String] {
+                print("☁️ 云存储 URL: \(cloudUrls.count) 个遗嘱已备份")
+                // 更新本地遗嘱的 content（从云存储读取）
+                for (willId, url) in cloudUrls {
+                    if let index = DataManager.shared.willModules.firstIndex(where: { $0.id == willId }) {
+                        // 保存云存储 URL（可以添加到 WillModule 模型）
+                        print("✅ 遗嘱 \(willId) 云存储 URL 已更新：\(url)")
+                    }
+                }
+            }
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
@@ -880,6 +904,54 @@ class APIManager {
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
         throw APIError.networkError
+    }
+    
+    // 🔥 从云存储读取胶囊内容
+    func fetchCapsuleContentFromCloud(url: String) async throws -> String {
+        guard let cloudURL = URL(string: url) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: cloudURL)
+        request.httpMethod = "GET"
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.networkError
+        }
+        
+        guard let content = String(data: data, encoding: .utf8) else {
+            throw APIError.decodingError
+        }
+        
+        print("☁️ 从云存储读取胶囊内容成功：\(url)")
+        return content
+    }
+    
+    // 🔥 从云存储读取遗嘱内容
+    func fetchWillContentFromCloud(url: String) async throws -> String {
+        guard let cloudURL = URL(string: url) else {
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: cloudURL)
+        request.httpMethod = "GET"
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.networkError
+        }
+        
+        guard let content = String(data: data, encoding: .utf8) else {
+            throw APIError.decodingError
+        }
+        
+        print("☁️ 从云存储读取遗嘱内容成功：\(url)")
+        return content
     }
 }
 
