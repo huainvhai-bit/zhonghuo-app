@@ -48,6 +48,7 @@ class DataManager: ObservableObject {
     @Published var willModules: [WillModule] = []
     @Published var assets: [Asset] = []
     @Published var witnesses: [Witness] = []
+    @Published var familyMembers: [FamilyMember] = []  // ✅ 家人成员
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
     @Published var systemConfig: SystemConfig = SystemConfig()  // 系统配置

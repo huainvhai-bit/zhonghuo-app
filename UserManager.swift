@@ -1355,6 +1355,22 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     }
                 }
                 
+                // 🔥 解析家人列表
+                var familyMembers: [FamilyInfo] = []
+                if let familyArray = userDict["family"] as? [[String: Any]] {
+                    for f in familyArray {
+                        let member = FamilyInfo(
+                            id: f["id"] as? String ?? "",
+                            relationType: f["relationType"] as? String ?? "",
+                            relatedUserId: f["relatedUserId"] as? String ?? "",
+                            relatedUserName: f["relatedUserName"] as? String,
+                            relatedUserPhone: f["relatedUserPhone"] as? String
+                        )
+                        familyMembers.append(member)
+                    }
+                }
+                print("✅ 家人列表：\(familyMembers.count) 个")
+                
                 // 日期格式化
                 let dateFormatter = ISO8601DateFormatter()
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1415,6 +1431,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     // 资产：服务器有数据且本地没有 → 使用服务器数据
                     if assets.count > 0 && DataManager.shared.assets.isEmpty {
                         DataManager.shared.assets = assets
+                    }
+                    
+                    // 家人：服务器有数据且本地没有 → 使用服务器数据
+                    if familyMembers.count > 0 && DataManager.shared.familyMembers.isEmpty {
+                        DataManager.shared.familyMembers = familyMembers
                     }
                     
                     print("✅ 从服务器加载用户成功：\(user.name)")

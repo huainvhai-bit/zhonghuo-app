@@ -369,8 +369,7 @@ struct SettingsView: View {
         let witnessesCount = DataManager.shared.witnesses.count
         let capsulesCount = DataManager.shared.capsules.count
         let willsCount = DataManager.shared.willModules.count
-        // 家人：暂时没有本地数据，使用 0
-        let familyCount = 0
+        let familyCount = DataManager.shared.familyMembers.count  // ✅ 家人
         let checkinCount = userManager.currentUser?.checkinCount ?? 0
         
         VStack(spacing: 12) {
