@@ -1091,7 +1091,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("🌐 从服务器拉取用户数据（GraphQL）...")
         
-        // 使用 GraphQL 查询用户数据和统计信息
+        // 🔥 一次性查询所有用户数据（紧急联系人、见证人、胶囊、遗嘱、家人）
         let query = """
         query {
             user {
@@ -1115,6 +1115,57 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     familyCount
                     assetsCount
                     checkinCount
+                }
+                # 🔥 直接获取所有数据列表
+                emergencyContacts {
+                    id
+                    name
+                    phone
+                    relationship
+                }
+                witnesses {
+                    id
+                    name
+                    phone
+                    relationship
+                    isConfirmed
+                    confirmedAt
+                }
+                capsules {
+                    id
+                    title
+                    type
+                    mediaType
+                    content
+                    openAt
+                    isOpened
+                    createdAt
+                    updatedAt
+                }
+                wills {
+                    id
+                    type
+                    title
+                    subtitle
+                    content
+                    isCompleted
+                    orderNum
+                    createdAt
+                }
+                family {
+                    members {
+                        id
+                        name
+                        phone
+                        relationType
+                    }
+                    invited {
+                        id
+                        name
+                        phone
+                        inviteCode
+                        status
+                    }
                 }
             }
         }
@@ -1175,6 +1226,73 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     assetsCount = stats["assetsCount"] as? Int ?? 0
                 }
                 
+                // 🔥 解析紧急联系人列表
+                var emergencyContacts: [User.EmergencyContact] = []
+                if let contacts = userDict["emergencyContacts"] as? [[String: Any]] {
+                    for contact in contacts {
+                        let c = User.EmergencyContact(
+                            id: contact["id"] as? String ?? "",
+                            name: contact["name"] as? String ?? "",
+                            phone: contact["phone"] as? String ?? "",
+                            relationship: contact["relationship"] as? String ?? ""
+                        )
+                        emergencyContacts.append(c)
+                    }
+                }
+                
+                // 🔥 解析见证人列表
+                var witnesses: [User.Witness] = []
+                if let witnessesArray = userDict["witnesses"] as? [[String: Any]] {
+                    for w in witnessesArray {
+                        let witness = User.Witness(
+                            id: w["id"] as? String ?? "",
+                            name: w["name"] as? String ?? "",
+                            phone: w["phone"] as? String ?? "",
+                            relationship: w["relationship"] as? String ?? "",
+                            isConfirmed: w["isConfirmed"] as? Bool ?? false,
+                            confirmedAt: nil
+                        )
+                        witnesses.append(witness)
+                    }
+                }
+                
+                // 🔥 解析胶囊列表
+                var capsules: [User.TimeCapsule] = []
+                if let capsulesArray = userDict["capsules"] as? [[String: Any]] {
+                    for c in capsulesArray {
+                        let capsule = User.TimeCapsule(
+                            id: c["id"] as? String ?? "",
+                            title: c["title"] as? String ?? "",
+                            type: c["type"] as? String ?? "text",
+                            mediaType: c["mediaType"] as? String ?? "text",
+                            content: c["content"] as? String ?? "",
+                            openAt: nil,
+                            isOpened: c["isOpened"] as? Bool ?? false,
+                            createdAt: Date(),
+                            updatedAt: nil
+                        )
+                        capsules.append(capsule)
+                    }
+                }
+                
+                // 🔥 解析遗嘱列表
+                var wills: [User.WillModule] = []
+                if let willsArray = userDict["wills"] as? [[String: Any]] {
+                    for w in willsArray {
+                        let will = User.WillModule(
+                            id: w["id"] as? String ?? "",
+                            type: w["type"] as? String ?? "遗嘱",
+                            title: w["title"] as? String ?? "",
+                            subtitle: w["subtitle"] as? String ?? "",
+                            content: w["content"] as? String ?? "",
+                            isCompleted: w["isCompleted"] as? Bool ?? false,
+                            orderNum: w["orderNum"] as? Int ?? 0,
+                            createdAt: Date()
+                        )
+                        wills.append(will)
+                    }
+                }
+                
                 // 日期格式化
                 let dateFormatter = ISO8601DateFormatter()
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1184,7 +1302,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     name: name,
                     phone: phone,
                     createdAt: dateFormatter.date(from: createdAt) ?? Date(),
-                    emergencyContacts: [],
+                    emergencyContacts: emergencyContacts,
                     checkInInterval: .twoDays,
                     notificationsEnabled: true,
                     cloudSyncEnabled: true,
@@ -1203,7 +1321,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.currentUser = user
                     self.checkInInterval = user.checkInInterval
                     self.checkEmergencyContacts()
-                    print("✅ 从服务器加载用户成功：\(user.name) (胶囊:\(capsulesCount), 嘱托:\(willModulesCount), 见证人:\(witnessesCount))")
+                    print("✅ 从服务器加载用户成功：\(user.name)")
+                    print("   - 紧急联系人：\(emergencyContacts.count) 个")
+                    print("   - 见证人：\(witnesses.count) 个")
+                    print("   - 胶囊：\(capsules.count) 个")
+                    print("   - 嘱托：\(wills.count) 个")
                 }
                 
                 // 保存本地缓存
