@@ -1150,41 +1150,39 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     id
                     title
                     type
-                    mediaType
                     content
                     openAt
                     isOpened
                     createdAt
-                    updatedAt
                 }
-                wills {
+                wills: willModules {
                     id
                     type
                     title
                     subtitle
                     content
                     isCompleted
-                    orderNum
-                    createdAt
+                }
+                assets {
+                    id
+                    type
+                    name
+                    institution
+                    balance
+                    accountNumber
                 }
                 family {
-                    members {
-                        id
-                        name
-                        phone
-                        relationType
-                    }
-                    invited {
-                        id
-                        name
-                        phone
-                        inviteCode
-                        status
-                    }
+                    id
+                    name
+                    phone
+                    relationType
+                    status
                 }
             }
         }
         """
+        
+        print("🔍 GraphQL 查询语句：\(query)")  // 🔥 打印完整查询
         
         var request = URLRequest(url: URL(string: "\(apiURL)/api/graphql.php")!)
         request.httpMethod = "POST"
@@ -1201,7 +1199,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             if let httpResponse = response as? HTTPURLResponse {
                 print("📡 GraphQL 响应状态码：\(httpResponse.statusCode)")
                 let responseText = String(data: data, encoding: .utf8) ?? "无法解析"
-                print("📡 GraphQL 响应内容：\(responseText.prefix(500))")
+                print("📡 GraphQL 完整响应：\(responseText)")  // 🔥 打印完整响应
             }
             
             if let httpResponse = response as? HTTPURLResponse,
