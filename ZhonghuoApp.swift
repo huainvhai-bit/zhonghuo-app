@@ -420,14 +420,11 @@ class RealTimeSyncManager: ObservableObject {
 // MARK: - AppDelegate
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // 🔴 关键：同步设置默认 API URL（使用域名配置）
-        // 🔴 重要：部署时替换为实际域名
-        let domainURL = "http://api.zhonghuo.cn"
-        DataManager.apiURL = domainURL
-        DataManager.baseURL = domainURL
-        UserDefaults.standard.set(domainURL, forKey: "apiURL")
-        print("🔵 API URL 已设置（域名配置）: \(DataManager.apiURL)")
-        print("   💡 提示：更换服务器时，修改 DNS 解析即可，无需重新编译")
+        // 🔴 关键：同步设置默认 API URL（在后台任务注册前）
+        DataManager.apiURL = "http://8.136.41.211:3395"
+        DataManager.baseURL = "http://8.136.41.211:3395"
+        UserDefaults.standard.set("http://8.136.41.211:3395", forKey: "apiURL")
+        print("🔵 API URL 已设置：\(DataManager.apiURL)")
         
         // 异步更新配置（从服务器获取最新配置）
         Task {
@@ -513,12 +510,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     private func initializeAPIConfig() async {
-        // 🔴 关键：立即设置默认值（使用域名配置）
-        // 🔴 重要：部署时替换为实际域名
-        let domainURL = "http://api.zhonghuo.cn"
+        // 🔴 关键：立即设置默认值（同步，确保在异步操作前就设置好）
         await MainActor.run {
-            DataManager.apiURL = domainURL
-            DataManager.baseURL = domainURL
+            DataManager.apiURL = "http://8.136.41.211:3395"
+            DataManager.baseURL = "http://8.136.41.211:3395"
         }
         
         do {
@@ -532,9 +527,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 return
             }
             
-            // 从服务器获取配置（超时 3 秒，使用域名）
+            // 从服务器获取配置（超时 3 秒）
+            let baseURL = "http://8.136.41.211:3395"
             try await withTimeout(seconds: 3) {
-                try await DataManager.shared.fetchServerConfig(from: domainURL)
+                try await DataManager.shared.fetchServerConfig(from: baseURL)
             }
             print("🔵 API URL 已从服务器获取：\(DataManager.apiURL)")
         } catch {
