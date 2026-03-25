@@ -1333,11 +1333,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     self.currentUser = user
                     self.checkInInterval = user.checkInInterval
                     self.checkEmergencyContacts()
+                    
+                    // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
+                    DataManager.shared.emergencyContacts = emergencyContacts
+                    DataManager.shared.witnesses = witnesses
+                    DataManager.shared.capsules = capsules
+                    DataManager.shared.willModules = wills
+                    DataManager.shared.assets = assets
+                    
                     print("✅ 从服务器加载用户成功：\(user.name)")
                     print("   - 紧急联系人：\(emergencyContacts.count) 个")
                     print("   - 见证人：\(witnesses.count) 个")
                     print("   - 胶囊：\(capsules.count) 个")
                     print("   - 嘱托：\(wills.count) 个")
+                    print("   - 资产：\(assets.count) 个")
                 }
                 
                 // 保存本地缓存
