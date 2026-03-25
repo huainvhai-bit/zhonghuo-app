@@ -804,6 +804,11 @@ class APIManager {
         }
         """
         
+        // 🔥 调试：打印完整查询
+        print("🔍 batchSyncCapsules GraphQL Query:")
+        print(query)
+        print("---")
+        
         let response = try await client.query(query)
         // GraphQL 响应格式：{"data": {"batchSyncCapsules": {...}}}
         if let data = response["data"] as? [String: Any],
