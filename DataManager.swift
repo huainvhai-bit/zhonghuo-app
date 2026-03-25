@@ -142,14 +142,16 @@ class DataManager: ObservableObject {
     
     /// 初始化 API 配置（同步版本 - 立即设置默认值）
     func initializeAPIConfig() {
-        // 立即设置默认值，确保 API 立即可用
-        DataManager.baseURL = "http://8.136.41.211:3395"
-        DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
+        // 使用域名配置（更换服务器时只需修改 DNS 解析）
+        // 🔴 重要：部署时替换为实际域名
+        DataManager.baseURL = "http://api.zhonghuo.cn"  // ← 修改为你的域名
+        DataManager.apiURL = "http://api.zhonghuo.cn"   // ← 修改为你的域名
         self.isBackendOnline = true
         
-        print("🔵 API 已初始化（默认地址）")
+        print("🔵 API 已初始化（域名配置）")
         print("   Base URL: \(DataManager.baseURL)")
         print("   API URL: \(DataManager.apiURL)")
+        print("   💡 提示：更换服务器时，修改 DNS 解析即可，无需重新编译")
         
         // 异步尝试获取最新配置
         Task {
@@ -159,10 +161,14 @@ class DataManager: ObservableObject {
     
     /// 异步刷新 API 配置（后台静默更新）
     func refreshAPIConfig() async {
-        // 尝试顺序：保存的地址 > 默认地址
+        // 使用域名配置（更换服务器时只需修改 DNS 解析）
+        // 🔴 重要：部署时替换为实际域名
+        let domainURL = "http://api.zhonghuo.cn"  // ← 修改为你的域名
+        
+        // 尝试顺序：保存的地址 > 域名配置
         let candidates = [
             UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "",
-            "http://8.136.41.211:3395"
+            domainURL
         ].filter { !$0.isEmpty }
         
         for baseURL in candidates {
@@ -187,12 +193,13 @@ class DataManager: ObservableObject {
             return
         }
         
-        // 如果未初始化，使用默认地址
+        // 如果未初始化，使用域名配置
         if DataManager.apiURL.isEmpty {
-            DataManager.baseURL = "http://8.136.41.211:3395"
-            DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
+            // 🔴 重要：部署时替换为实际域名
+            DataManager.baseURL = "http://api.zhonghuo.cn"
+            DataManager.apiURL = "http://api.zhonghuo.cn"
             self.isBackendOnline = true
-            print("⚠️ API 未初始化，使用默认地址：\(DataManager.apiURL)")
+            print("⚠️ API 未初始化，使用域名配置：\(DataManager.apiURL)")
             return
         }
     }
@@ -231,7 +238,8 @@ class DataManager: ObservableObject {
     
     /// 检查网络连通性
     func checkNetworkConnectivity() async -> Bool {
-        guard let url = URL(string: "http://8.136.41.211:3395/api/check-config.php") else {
+        // 🔴 重要：部署时替换为实际域名
+        guard let url = URL(string: "http://api.zhonghuo.cn/api/check-config.php") else {
             return false
         }
         

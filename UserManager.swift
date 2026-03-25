@@ -376,7 +376,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// 发送带 Token 的 GraphQL 请求（静态方法）
     /// ✅ 支持自动刷新 Token（永久登录）
     static func sendGraphQLQueryWithToken(query: String, variables: [String: Any]) async throws -> [String: Any] {
-        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "http://8.136.41.211:3395"
+        // 🔴 重要：部署时替换为实际域名
+        let defaultDomain = "http://api.zhonghuo.cn"
+        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? defaultDomain
         guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
