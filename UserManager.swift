@@ -1470,6 +1470,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             try data.write(to: userFileURL)
             self.currentUser = user
             self.isLoggedIn = true  // 确保登录状态保持
+            
+            // 🔥 自动更新所有统计信息（让 SettingsView 立即显示）
+            self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
+            self.currentUser?.witnessesCount = user.witnesses.count
+            self.currentUser?.familyCount = user.family.count
+            
             self.checkEmergencyContacts()  // 保存后重新检查
             
             // 同步到 UserDefaults
@@ -1477,6 +1483,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             UserDefaults.standard.set(user.id, forKey: "userId")
             
             print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
+            print("   统计信息：紧急=\(user.emergencyContacts.count), 见证=\(user.witnesses.count), 家人=\(user.family.count)")
             print("   isLoggedIn: \(self.isLoggedIn)")
             return true
         } catch {
@@ -1489,6 +1496,46 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let pattern = "^1[3-9]\\d{9}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
         return predicate.evaluate(with: phone)
+    }
+    
+    // 🔥 更新胶囊数量（让 SettingsView 立即显示）
+    func updateCapsulesCount(_ count: Int) {
+        DispatchQueue.main.async {
+            self.currentUser?.capsulesCount = count
+            print("📊 胶囊数量已更新：\(count)")
+        }
+    }
+    
+    // 🔥 更新遗嘱数量（让 SettingsView 立即显示）
+    func updateWillModulesCount(_ count: Int) {
+        DispatchQueue.main.async {
+            self.currentUser?.willModulesCount = count
+            print("📊 遗嘱数量已更新：\(count)")
+        }
+    }
+    
+    // 🔥 更新紧急联系人数量（让 SettingsView 立即显示）
+    func updateEmergencyContactsCount(_ count: Int) {
+        DispatchQueue.main.async {
+            self.currentUser?.emergencyContactsCount = count
+            print("📊 紧急联系人数量已更新：\(count)")
+        }
+    }
+    
+    // 🔥 更新见证人数量（让 SettingsView 立即显示）
+    func updateWitnessesCount(_ count: Int) {
+        DispatchQueue.main.async {
+            self.currentUser?.witnessesCount = count
+            print("📊 见证人数量已更新：\(count)")
+        }
+    }
+    
+    // 🔥 更新家人数量（让 SettingsView 立即显示）
+    func updateFamilyCount(_ count: Int) {
+        DispatchQueue.main.async {
+            self.currentUser?.familyCount = count
+            print("📊 家人数量已更新：\(count)")
+        }
     }
     
     enum Error: LocalizedError {

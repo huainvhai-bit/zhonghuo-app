@@ -757,22 +757,29 @@ class DataManager: ObservableObject {
     
     func updateWillModule(_ module: WillModule) {
         if let index = willModules.firstIndex(where: { $0.id == module.id }) {
+            // 更新现有模块
             willModules[index] = module
-            saveWillModulesToFile()
-            print("📜 遗嘱模块已更新到本地，准备同步到服务器...")
-            print("📊 当前 willModules.count: \(willModules.count)")
-            print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
-            
-            // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
-            
-            // 异步同步到服务器
-            Task {
-                if let result = await batchSyncWills() {
-                    print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                } else {
-                    print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
-                }
+        } else {
+            // 添加新模块
+            willModules.append(module)
+        }
+        saveWillModulesToFile()
+        print("📜 遗嘱模块已保存到本地，准备同步到服务器...")
+        print("📊 当前 willModules.count: \(willModules.count)")
+        print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
+        
+        // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
+        UserManager.shared.updateWillModulesCount(willModules.count)
+        
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
+        
+        // 异步同步到服务器
+        Task {
+            if let result = await batchSyncWills() {
+                print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
             }
         }
     }
@@ -781,6 +788,9 @@ class DataManager: ObservableObject {
         willModules.removeAll { $0.id == module.id }
         saveWillModulesToFile()
         print("📜 遗嘱模块已从本地删除，准备同步到服务器...")
+        
+        // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
+        UserManager.shared.updateWillModulesCount(willModules.count)
         
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
@@ -793,7 +803,6 @@ class DataManager: ObservableObject {
                 print("⚠️ 遗嘱删除同步失败")
             }
         }
-        // TODO: 同步删除到服务器
     }
     
     func getWillProgress() -> Double {
@@ -818,12 +827,29 @@ class DataManager: ObservableObject {
     
     func deleteCapsule(_ capsule: TimeCapsule) {
         capsules.removeAll { $0.id == capsule.id }
+        saveCapsulesToFile()
+        
+        // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示新数量）
+        UserManager.shared.updateCapsulesCount(capsules.count)
+        
+        // 发送数据变更通知（触发实时同步）
+        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+        
+        // 异步同步到服务器
+        Task {
+            if let result = await batchSyncCapsules() {
+                print("✅ 胶囊同步成功：总计 \(result.total) 个，删除 1 个")
+            }
+        }
     }
     
     func addCapsule(_ capsule: TimeCapsule) {
         capsules.append(capsule)
         saveCapsulesToFile()
         print("📦 胶囊已添加到本地，准备同步到服务器...")
+        
+        // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示新数量）
+        UserManager.shared.updateCapsulesCount(capsules.count)
         
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
