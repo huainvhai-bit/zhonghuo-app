@@ -914,6 +914,9 @@ class APIManager {
             parts.append("name: \"\(c.name.replacingOccurrences(of: "\"", with: "\\\""))\"")
             parts.append("phone: \"\(c.phone)\"")
             parts.append("relationship: \"\(c.relationship.replacingOccurrences(of: "\"", with: "\\\""))\"")
+            if let deletedAt = c.deletedAt {
+                parts.append("deletedAt: \"\(deletedAt)\"")
+            }
             return "{ \(parts.joined(separator: ", ")) }"
         }.joined(separator: ", ")
         
@@ -1039,11 +1042,13 @@ struct WillInput {
     let content: String?
 }
 
+/// 🔧 紧急联系人 API 输入
 struct ContactInput {
     let id: String
     let name: String
     let phone: String
     let relationship: String
+    let deletedAt: String?
 }
 
 struct WitnessInput {

@@ -900,6 +900,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         user.emergencyContacts.append(contact)
         self.currentUser = user
         
+        // 🔧 修复：同时更新 DataManager
+        DataManager.shared.emergencyContacts.append(contact)
+        
         if saveUser(user) {
             print("📞 紧急联系人已添加到本地，准备同步到服务器...")
             
@@ -926,11 +929,18 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return .failure(Error.userNotLoggedIn)
         }
         
-        user.emergencyContacts.removeAll { $0.id == id }
+        // 🔧 修复：标记删除而不是直接删除（用于同步到服务器）
+        if let index = user.emergencyContacts.firstIndex(where: { $0.id == id }) {
+            user.emergencyContacts[index].deletedAt = Date()
+        }
+        
+        // 从 DataManager 中移除（UI 立即更新）
+        DataManager.shared.emergencyContacts.removeAll { $0.id == id }
+        
         self.currentUser = user
         
         if saveUser(user) {
-            print("📞 紧急联系人已从本地删除，准备同步到服务器...")
+            print("📞 紧急联系人已标记删除，准备同步到服务器...")
             
             // 发送数据变更通知（触发实时同步）
             NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
@@ -1405,13 +1415,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔍 设置 currentUser 后的统计：紧急=\(self.currentUser?.emergencyContactsCount ?? -1), 见证=\(self.currentUser?.witnessesCount ?? -1), 胶囊=\(self.currentUser?.capsulesCount ?? -1), 嘱托=\(self.currentUser?.willModulesCount ?? -1)")
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    // ⚠️ 关键修复：不能用服务器的空数组覆盖本地数据！
-                    // 只有当服务器有数据且本地没有时，才使用服务器数据
-                    
-                    // 紧急联系人：服务器有数据且本地没有 → 使用服务器数据
-                    if emergencyContacts.count > 0 && DataManager.shared.emergencyContacts.isEmpty {
-                        DataManager.shared.emergencyContacts = emergencyContacts
-                    }
+                    // 🔧 修复：始终使用服务器数据更新 DataManager
+                    DataManager.shared.emergencyContacts = emergencyContacts
+                    print("🔄 DataManager.emergencyContacts 已更新：\(emergencyContacts.count) 个")
                     
                     // 见证人：服务器有数据且本地没有 → 使用服务器数据
                     if witnesses.count > 0 && DataManager.shared.witnesses.isEmpty {

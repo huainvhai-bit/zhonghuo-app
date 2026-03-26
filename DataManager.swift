@@ -1032,9 +1032,40 @@ class DataManager: ObservableObject {
     }
     
     func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
-        print("📞 紧急联系人同步：暂无本地数据")
-        return (0, 0, 0)
-        // TODO: 添加紧急联系人数据源后实现同步
+        // 🔧 修复：从 currentUser 读取数据
+        guard let userId = UserManager.shared.currentUser?.id else {
+            print("⚠️ 紧急联系人同步：用户未登录")
+            return nil
+        }
+        
+        // 使用 currentUser 的 emergencyContacts
+        let contacts = UserManager.shared.currentUser?.emergencyContacts ?? []
+        
+        print("📞 开始同步紧急联系人：共 \(contacts.count) 个")
+        guard !contacts.isEmpty else { 
+            print("📞 紧急联系人：无数据需要同步")
+            return (0, 0, 0) 
+        }
+        
+        // 转换为 API 输入格式
+        let inputs = contacts.map { contact in
+            ContactInput(
+                id: contact.id,
+                name: contact.name,
+                phone: contact.phone,
+                relationship: contact.relationship,
+                deletedAt: contact.deletedAt != nil ? ISO8601DateFormatter().string(from: contact.deletedAt!) : nil
+            )
+        }
+        
+        do {
+            let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs)
+            print("✅ 紧急联系人同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            return (result.total, result.created, result.updated)
+        } catch {
+            print("❌ 紧急联系人同步失败：\(error)")
+            return nil
+        }
     }
     
     func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
