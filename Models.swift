@@ -965,11 +965,9 @@ class APIManager {
             var dict: [String: Any] = [
                 "id": w.id,
                 "name": w.name,
+                "phone": w.phone,
                 "relationship": w.relationship
             ]
-            if let phone = w.phone {
-                dict["phone"] = phone
-            }
             if let status = w.status {
                 dict["status"] = status
             }
