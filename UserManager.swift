@@ -800,10 +800,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 🕐 当前时间戳（秒级）
         let checkinTimestamp = Int(Date().timeIntervalSince1970)
         
+        // 🔧 修复：传入用户设定的签到间隔（由前端控制）
+        let checkInIntervalHours = checkInInterval.hours
+        
         // GraphQL Mutation
         let mutation = """
         mutation {
-            checkIn(isAuto: \(isAuto ? "true" : "false"), checkinTimestamp: \(checkinTimestamp)) {
+            checkIn(isAuto: \(isAuto ? "true" : "false"), checkinTimestamp: \(checkinTimestamp), checkInIntervalHours: \(checkInIntervalHours)) {
                 success
                 checkInTime
                 expireTimestamp
