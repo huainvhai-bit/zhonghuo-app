@@ -362,63 +362,34 @@ struct HomeStatusView: View {
         dataManager.lastCheckInDate = UserManager.shared.lastCheckInDate
         let status = getCheckInStatus()
         isSafe = status.isSafe
-        secondsRemaining = status.secondsRemaining  // 🕐 使用精确秒数
+        secondsRemaining = status.hoursRemaining * 3600
         print("🔄 updateStatus: secondsRemaining=\(secondsRemaining), isSafe=\(isSafe)")
         
         // 📱 安排签到提醒（使用后端配置的阈值和间隔）
-        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.secondsRemaining / 3600)
+        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
     }
     
-    private func getCheckInStatus() -> (isSafe: Bool, secondsRemaining: Double) {
+    private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
         let hours = dataManager.settings.checkInInterval.hours
-        let intervalSeconds = Double(hours * 3600)
         
         // 📱 使用后端配置的离线阈值（默认 24 小时）
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
         
-        // 🕐 优先使用服务器时间计算倒计时
-        if let user = UserManager.shared.currentUser,
-           let lastCheckIn = dataManager.lastCheckInDate,
-           user.serverTimestamp > 0 {
-            
-            // 计算服务器时间与本地时间的差值
-            let serverTime = Date(timeIntervalSince1970: Double(user.serverTimestamp) / 1000)
-            let timeOffset = serverTime.timeIntervalSince(Date())
-            
-            // 使用服务器时间 + 偏移量计算当前时间
-            let adjustedNow = Date().addingTimeInterval(timeOffset)
-            let elapsed = adjustedNow.timeIntervalSince(lastCheckIn)
-            let remaining = intervalSeconds - elapsed
-            
-            print("🕐 使用服务器时间计算倒计时：")
-            print("   - 服务器时间：\(user.serverTime)")
-            print("   - 服务器 timestamp: \(user.serverTimestamp)")
-            print("   - 本地时间偏移：\(String(format: "%.2f", timeOffset))s")
-            print("   - 上次签到：\(lastCheckIn)")
-            print("   - 已过去：\(String(format: "%.1f", elapsed))s")
-            print("   - 剩余：\(String(format: "%.1f", remaining))s")
-            
-            // 🔴 安全状态判断
-            if remaining > 0 {
-                return (true, max(0, remaining))  // 绿色
-            } else if remaining > -(offlineThreshold * 3600) {
-                return (true, max(0, remaining))  // 橙色（警告但还安全）
-            } else {
-                return (false, 0)  // 红色（危险）
-            }
-        }
-        
-        // 降级方案：使用本地时间计算
+        // 如果没有签到记录，返回完整的签到间隔时间
         guard let lastCheckIn = dataManager.lastCheckInDate else {
-            return (true, intervalSeconds)
+            return (true, Double(hours))
         }
         
-        let elapsed = Date().timeIntervalSince(lastCheckIn)
-        let remaining = intervalSeconds - elapsed
+        let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
+        let remaining = Double(hours) - elapsed
         
+        // 🔴 安全状态判断：
+        // - 剩余时间 > 0：绿色（安全）
+        // - 剩余时间 <= 0 但 < 离线阈值：橙色（警告）
+        // - 剩余时间 <= -离线阈值：红色（危险）
         if remaining > 0 {
             return (true, max(0, remaining))  // 绿色
-        } else if remaining > -(offlineThreshold * 3600) {
+        } else if remaining > -offlineThreshold {
             return (true, max(0, remaining))  // 橙色（警告但还安全）
         } else {
             return (false, 0)  // 红色（危险）
