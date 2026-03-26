@@ -1415,42 +1415,86 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔍 设置 currentUser 后的统计：紧急=\(self.currentUser?.emergencyContactsCount ?? -1), 见证=\(self.currentUser?.witnessesCount ?? -1), 胶囊=\(self.currentUser?.capsulesCount ?? -1), 嘱托=\(self.currentUser?.willModulesCount ?? -1)")
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    // 🔧 修复：只在服务器有数据时才覆盖，避免覆盖本地新添加的数据
-                    if !emergencyContacts.isEmpty {
-                        DataManager.shared.emergencyContacts = emergencyContacts
-                        print("🔄 DataManager.emergencyContacts 已更新：\(emergencyContacts.count) 个（服务器数据）")
-                    } else if DataManager.shared.emergencyContacts.isEmpty {
-                        // 服务器和本地都为空，使用服务器返回的空数组
-                        DataManager.shared.emergencyContacts = emergencyContacts
-                        print("🔄 DataManager.emergencyContacts 已更新：0 个（服务器确认无数据）")
-                    } else {
-                        print("🔄 DataManager.emergencyContacts 保持本地数据：\(DataManager.shared.emergencyContacts.count) 个（服务器无数据）")
+                    // 🔧 修复：合并服务器数据和本地数据，以本地数据为准（避免覆盖新添加的数据）
+                    let localContacts = DataManager.shared.emergencyContacts
+                    let serverContacts = emergencyContacts
+                    
+                    // 合并策略：本地有但服务器没有 → 保留；服务器有但本地没有 → 添加
+                    var mergedContacts = localContacts
+                    for serverContact in serverContacts {
+                        // 服务器有的，但本地没有 → 添加
+                        if !mergedContacts.contains(where: { $0.id == serverContact.id }) {
+                            mergedContacts.append(serverContact)
+                        }
                     }
                     
-                    // 见证人：服务器有数据且本地没有 → 使用服务器数据
-                    if witnesses.count > 0 && DataManager.shared.witnesses.isEmpty {
-                        DataManager.shared.witnesses = witnesses
+                    // 移除本地标记删除但服务器还有的（说明删除未同步成功）
+                    mergedContacts = mergedContacts.filter { localContact in
+                        !localContacts.contains(where: { $0.id == localContact.id && $0.deletedAt != nil }) ||
+                        serverContacts.contains(where: { $0.id == localContact.id })
                     }
                     
-                    // 胶囊：服务器有数据且本地没有 → 使用服务器数据
-                    if capsules.count > 0 && DataManager.shared.capsules.isEmpty {
-                        DataManager.shared.capsules = capsules
-                    }
+                    DataManager.shared.emergencyContacts = mergedContacts
+                    self.currentUser?.emergencyContacts = mergedContacts
                     
-                    // 遗嘱：服务器有数据且本地没有 → 使用服务器数据
-                    if wills.count > 0 && DataManager.shared.willModules.isEmpty {
-                        DataManager.shared.willModules = wills
-                    }
+                    print("🔄 紧急联系人合并完成：本地 \(localContacts.count) + 服务器 \(serverContacts.count) = 合并后 \(mergedContacts.count) 个")
                     
-                    // 资产：服务器有数据且本地没有 → 使用服务器数据
-                    if assets.count > 0 && DataManager.shared.assets.isEmpty {
-                        DataManager.shared.assets = assets
-                    }
+                    // 🔧 修复：所有数据类型都使用合并策略
                     
-                    // 家人：服务器有数据且本地没有 → 使用服务器数据
-                    if familyMembers.count > 0 && DataManager.shared.familyMembers.isEmpty {
-                        DataManager.shared.familyMembers = familyMembers
+                    // 见证人合并
+                    let localWitnesses = DataManager.shared.witnesses
+                    var mergedWitnesses = localWitnesses
+                    for serverWitness in witnesses {
+                        if !mergedWitnesses.contains(where: { $0.id == serverWitness.id }) {
+                            mergedWitnesses.append(serverWitness)
+                        }
                     }
+                    DataManager.shared.witnesses = mergedWitnesses
+                    print("🔄 见证人合并完成：本地 \(localWitnesses.count) + 服务器 \(witnesses.count) = 合并后 \(mergedWitnesses.count) 个")
+                    
+                    // 胶囊合并
+                    let localCapsules = DataManager.shared.capsules
+                    var mergedCapsules = localCapsules
+                    for serverCapsule in capsules {
+                        if !mergedCapsules.contains(where: { $0.id == serverCapsule.id }) {
+                            mergedCapsules.append(serverCapsule)
+                        }
+                    }
+                    DataManager.shared.capsules = mergedCapsules
+                    print("🔄 胶囊合并完成：本地 \(localCapsules.count) + 服务器 \(capsules.count) = 合并后 \(mergedCapsules.count) 个")
+                    
+                    // 遗嘱合并
+                    let localWills = DataManager.shared.willModules
+                    var mergedWills = localWills
+                    for serverWill in wills {
+                        if !mergedWills.contains(where: { $0.id == serverWill.id }) {
+                            mergedWills.append(serverWill)
+                        }
+                    }
+                    DataManager.shared.willModules = mergedWills
+                    print("🔄 遗嘱合并完成：本地 \(localWills.count) + 服务器 \(wills.count) = 合并后 \(mergedWills.count) 个")
+                    
+                    // 资产合并
+                    let localAssets = DataManager.shared.assets
+                    var mergedAssets = localAssets
+                    for serverAsset in assets {
+                        if !mergedAssets.contains(where: { $0.id == serverAsset.id }) {
+                            mergedAssets.append(serverAsset)
+                        }
+                    }
+                    DataManager.shared.assets = mergedAssets
+                    print("🔄 资产合并完成：本地 \(localAssets.count) + 服务器 \(assets.count) = 合并后 \(mergedAssets.count) 个")
+                    
+                    // 家人合并
+                    let localFamily = DataManager.shared.familyMembers
+                    var mergedFamily = localFamily
+                    for serverMember in familyMembers {
+                        if !mergedFamily.contains(where: { $0.id == serverMember.id }) {
+                            mergedFamily.append(serverMember)
+                        }
+                    }
+                    DataManager.shared.familyMembers = mergedFamily
+                    print("🔄 家人合并完成：本地 \(localFamily.count) + 服务器 \(familyMembers.count) = 合并后 \(mergedFamily.count) 个")
                     
                     print("✅ 从服务器加载用户成功：\(user.name)")
                     print("   - 紧急联系人：\(emergencyContacts.count) 个")
