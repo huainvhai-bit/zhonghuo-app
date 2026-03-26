@@ -1406,7 +1406,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 )
                 
                 await MainActor.run {
+                    // 🔧 修复：在覆盖 currentUser 之前，先保存本地数据（避免丢失新添加的数据）
+                    let localContactsBeforeOverride = DataManager.shared.emergencyContacts
+                    let localWitnessesBeforeOverride = DataManager.shared.witnesses
+                    let localCapsulesBeforeOverride = DataManager.shared.capsules
+                    let localWillsBeforeOverride = DataManager.shared.willModules
+                    let localAssetsBeforeOverride = DataManager.shared.assets
+                    let localFamilyBeforeOverride = DataManager.shared.familyMembers
+                    
                     print("🔍 设置 currentUser 前的统计：紧急=\(user.emergencyContactsCount), 见证=\(user.witnessesCount), 胶囊=\(user.capsulesCount), 嘱托=\(user.willModulesCount)")
+                    print("🔍 本地数据备份：紧急=\(localContactsBeforeOverride.count), 见证=\(localWitnessesBeforeOverride.count), 胶囊=\(localCapsulesBeforeOverride.count), 嘱托=\(localWillsBeforeOverride.count)")
                     
                     self.currentUser = user
                     self.checkInInterval = user.checkInInterval
@@ -1416,7 +1425,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
                     // 🔧 修复：合并服务器数据和本地数据，以本地数据为准（避免覆盖新添加的数据）
-                    let localContacts = DataManager.shared.emergencyContacts
+                    let localContacts = localContactsBeforeOverride
                     let serverContacts = emergencyContacts
                     
                     // 合并策略：本地有但服务器没有 → 保留；服务器有但本地没有 → 添加
@@ -1439,10 +1448,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     
                     print("🔄 紧急联系人合并完成：本地 \(localContacts.count) + 服务器 \(serverContacts.count) = 合并后 \(mergedContacts.count) 个")
                     
-                    // 🔧 修复：所有数据类型都使用合并策略
+                    // 🔧 修复：所有数据类型都使用合并策略（使用备份的本地数据）
                     
                     // 见证人合并
-                    let localWitnesses = DataManager.shared.witnesses
+                    let localWitnesses = localWitnessesBeforeOverride
                     var mergedWitnesses = localWitnesses
                     for serverWitness in witnesses {
                         if !mergedWitnesses.contains(where: { $0.id == serverWitness.id }) {
@@ -1453,7 +1462,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔄 见证人合并完成：本地 \(localWitnesses.count) + 服务器 \(witnesses.count) = 合并后 \(mergedWitnesses.count) 个")
                     
                     // 胶囊合并
-                    let localCapsules = DataManager.shared.capsules
+                    let localCapsules = localCapsulesBeforeOverride
                     var mergedCapsules = localCapsules
                     for serverCapsule in capsules {
                         if !mergedCapsules.contains(where: { $0.id == serverCapsule.id }) {
@@ -1464,7 +1473,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔄 胶囊合并完成：本地 \(localCapsules.count) + 服务器 \(capsules.count) = 合并后 \(mergedCapsules.count) 个")
                     
                     // 遗嘱合并
-                    let localWills = DataManager.shared.willModules
+                    let localWills = localWillsBeforeOverride
                     var mergedWills = localWills
                     for serverWill in wills {
                         if !mergedWills.contains(where: { $0.id == serverWill.id }) {
@@ -1475,7 +1484,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔄 遗嘱合并完成：本地 \(localWills.count) + 服务器 \(wills.count) = 合并后 \(mergedWills.count) 个")
                     
                     // 资产合并
-                    let localAssets = DataManager.shared.assets
+                    let localAssets = localAssetsBeforeOverride
                     var mergedAssets = localAssets
                     for serverAsset in assets {
                         if !mergedAssets.contains(where: { $0.id == serverAsset.id }) {
@@ -1486,7 +1495,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔄 资产合并完成：本地 \(localAssets.count) + 服务器 \(assets.count) = 合并后 \(mergedAssets.count) 个")
                     
                     // 家人合并
-                    let localFamily = DataManager.shared.familyMembers
+                    let localFamily = localFamilyBeforeOverride
                     var mergedFamily = localFamily
                     for serverMember in familyMembers {
                         if !mergedFamily.contains(where: { $0.id == serverMember.id }) {
