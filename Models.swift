@@ -785,24 +785,25 @@ class APIManager {
             print("🔍 第一个胶囊：id=\(first.id), title=\(first.title), type=\(first.type)")
         }
         
-        // 构建胶囊输入
-        let capsulesInput = capsules.map { c in
-            var parts: [String] = []
-            parts.append("id: \"\(c.id)\"")
-            parts.append("title: \"\(c.title.replacingOccurrences(of: "\"", with: "\\\""))\"")
-            parts.append("type: \"\(c.type)\"")
+        // 🔧 使用标准 GraphQL variables 格式
+        let capsulesInput = capsules.map { c -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": c.id,
+                "title": c.title,
+                "type": c.type
+            ]
             if let content = c.content {
-                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "\n", with: "\\n"))\"")
+                dict["content"] = content
             }
             if let openAt = c.openAt {
-                parts.append("openAt: \"\(openAt)\"")
+                dict["openAt"] = openAt
             }
-            return "{ \(parts.joined(separator: ", ")) }"
-        }.joined(separator: ", ")
+            return dict
+        }
         
         let query = """
-        mutation {
-            batchSyncCapsules(capsules: [\(capsulesInput)]) {
+        mutation($capsules: [CapsuleInput!]!) {
+            batchSyncCapsules(capsules: $capsules) {
                 total
                 created
                 updated
@@ -811,12 +812,15 @@ class APIManager {
         }
         """
         
+        let variables: [String: Any] = ["capsules": capsulesInput]
+        
         // 🔥 调试：打印完整查询
         print("🔍 batchSyncCapsules GraphQL Query:")
         print(query)
+        print("🔍 Variables: \(capsulesInput)")
         print("---")
         
-        let response = try await client.query(query)
+        let response = try await client.query(query, variables: variables)
         print("🔍 响应：\(response)")
         
         // GraphQL 响应格式：{"data": {"batchSyncCapsules": {...}}}
@@ -864,20 +868,22 @@ class APIManager {
     func batchSyncWills(_ wills: [WillInput]) async throws -> BatchSyncResult {
         print("🔍 batchSyncWills 开始同步 \(wills.count) 个遗嘱")
         
-        let willsInput = wills.map { w in
-            var parts: [String] = []
-            parts.append("id: \"\(w.id)\"")
-            parts.append("type: \"\(w.type)\"")
-            parts.append("title: \"\(w.title.replacingOccurrences(of: "\"", with: "\\\""))\"")
+        // 🔧 使用标准 GraphQL variables 格式
+        let willsInput = wills.map { w -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": w.id,
+                "type": w.type,
+                "title": w.title
+            ]
             if let content = w.content {
-                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\""))\"")
+                dict["content"] = content
             }
-            return "{ \(parts.joined(separator: ", ")) }"
-        }.joined(separator: ", ")
+            return dict
+        }
         
         let query = """
-        mutation {
-            batchSyncWills(wills: [\(willsInput)]) {
+        mutation($wills: [WillInput!]!) {
+            batchSyncWills(wills: $wills) {
                 total
                 created
                 updated
@@ -886,11 +892,14 @@ class APIManager {
         }
         """
         
+        let variables: [String: Any] = ["wills": willsInput]
+        
         print("🔍 batchSyncWills GraphQL Query:")
         print(query)
+        print("🔍 Variables: \(willsInput)")
         print("---")
         
-        let response = try await client.query(query)
+        let response = try await client.query(query, variables: variables)
         if let data = response["data"] as? [String: Any],
            let syncResult = data["batchSyncWills"] as? [String: Any],
            let total = syncResult["total"] as? Int,
@@ -951,21 +960,25 @@ class APIManager {
     func batchSyncWitnesses(_ witnesses: [WitnessInput]) async throws -> BatchSyncResult {
         print("🔍 batchSyncWitnesses 开始同步 \(witnesses.count) 个见证人")
         
-        let witnessesInput = witnesses.map { w in
-            var parts: [String] = []
-            parts.append("id: \"\(w.id)\"")
-            parts.append("name: \"\(w.name.replacingOccurrences(of: "\"", with: "\\\""))\"")
-            parts.append("phone: \"\(w.phone)\"")
-            parts.append("relationship: \"\(w.relationship.replacingOccurrences(of: "\"", with: "\\\""))\"")
-            if let status = w.status {
-                parts.append("status: \"\(status)\"")
+        // 🔧 使用标准 GraphQL variables 格式
+        let witnessesInput = witnesses.map { w -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": w.id,
+                "name": w.name,
+                "relationship": w.relationship
+            ]
+            if let phone = w.phone {
+                dict["phone"] = phone
             }
-            return "{ \(parts.joined(separator: ", ")) }"
-        }.joined(separator: ", ")
+            if let status = w.status {
+                dict["status"] = status
+            }
+            return dict
+        }
         
         let query = """
-        mutation {
-            batchSyncWitnesses(witnesses: [\(witnessesInput)]) {
+        mutation($witnesses: [WitnessInput!]!) {
+            batchSyncWitnesses(witnesses: $witnesses) {
                 total
                 created
                 updated
@@ -973,11 +986,14 @@ class APIManager {
         }
         """
         
+        let variables: [String: Any] = ["witnesses": witnessesInput]
+        
         print("🔍 batchSyncWitnesses GraphQL Query:")
         print(query)
+        print("🔍 Variables: \(witnessesInput)")
         print("---")
         
-        let response = try await client.query(query)
+        let response = try await client.query(query, variables: variables)
         if let data = response["data"] as? [String: Any],
            let syncResult = data["batchSyncWitnesses"] as? [String: Any],
            let total = syncResult["total"] as? Int,
