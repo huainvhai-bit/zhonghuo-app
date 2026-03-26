@@ -83,11 +83,20 @@ struct ContentView: View {
             // ✅ 从后台进入前台时，自动签到 + 刷新用户数据
             if newPhase == .active && userManager.isLoggedIn && userManager.currentUser != nil {
                 print("🔵 App 从后台进入前台，触发自动签到...")
+                
+                // 📢 通知所有页面场景已激活（刷新倒计时）
+                NotificationCenter.default.post(name: NSNotification.Name("SceneDidBecomeActive"), object: nil)
+                
+                // 🎯 执行自动签到
                 Task {
                     await self.userManager.performAutoSignIn()
                 }
-                // 从本地重新加载用户数据
+                
+                // 📥 从本地重新加载用户数据
                 _ = UserManager.shared.currentUser
+            } else if newPhase == .background {
+                // 🌙 App 进入后台，保存当前状态
+                print("🌙 App 进入后台，倒计时继续（本地通知）")
             }
         }
         .alert("账号验证失败", isPresented: $showingLogoutAlert) {

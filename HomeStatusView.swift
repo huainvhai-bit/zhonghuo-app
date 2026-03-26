@@ -152,10 +152,20 @@ struct HomeStatusView: View {
                 
                 // 然后更新倒计时显示
                 updateStatus()
+                
+                // 🔔 监听签到完成通知（刷新倒计时）
+                NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
+                    print("🔔 收到签到完成通知，刷新倒计时")
+                    updateStatus()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoCheckIn"))) { _ in
                 print("🔔 收到自动签到通知（从后台进入前台）")
                 handleAutoCheckIn()
+                updateStatus()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SceneDidBecomeActive"))) { _ in
+                print("🔔 收到场景激活通知，刷新倒计时")
                 updateStatus()
             }
             // 🔴 不在这里处理 scenePhase！

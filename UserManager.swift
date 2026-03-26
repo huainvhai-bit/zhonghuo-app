@@ -533,6 +533,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let newHoursRemaining = Double(intervalHours)
             scheduleCheckInReminder(hoursRemaining: newHoursRemaining)
             writeLog("🔔 已安排推送提醒：剩余 \(Int(newHoursRemaining)) 小时开始提醒")
+            
+            // 🔄 通知 HomeStatusView 刷新倒计时
+            NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
         } else {
             writeLog("❌ 自动签到失败：\(result)")
         }
