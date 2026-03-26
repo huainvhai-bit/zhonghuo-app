@@ -300,65 +300,54 @@ struct ContentView: View {
     }
     
     private var mainTabView: some View {
-        ZStack {
-            Color(hex: "F5F5F7")
-                .ignoresSafeArea()
-            
-            TabView(selection: $selectedTab) {
-                // 🚀 懒加载：只在选中时创建视图
-                Group {
-                    if selectedTab == 0 {
-                        HomeStatusView()
-                    }
-                }
-                .tabItem {
-                    Label("首页", systemImage: "house.fill")
-                }
-                .tag(0)
-                
-                Group {
-                    if selectedTab == 1 {
-                        TimeCapsuleView()
-                    }
-                }
-                .tabItem {
-                    Label("时光胶囊", systemImage: "clock.fill")
-                }
-                .tag(1)
-                
-                Group {
-                    if selectedTab == 2 {
-                        WillAssetsView()
-                    }
-                }
-                .tabItem {
-                    Label("嘱托与资产", systemImage: "doc.text.fill")
-                }
-                .tag(2)
-                
-                Group {
-                    if selectedTab == 3 {
-                        FamilyGuardView()
-                    }
-                }
-                .tabItem {
-                    Label("家人守护", systemImage: "person.2.fill")
-                }
-                .tag(3)
-                
-                Group {
-                    if selectedTab == 4 {
-                        SettingsView()
-                    }
-                }
-                .tabItem {
-                    Label("我的", systemImage: "person.fill")
-                }
-                .tag(4)
+        TabView(selection: $selectedTab) {
+            // 🚀 懒加载：使用 NavigationView 包装，延迟视图创建（iOS 15 兼容）
+            NavigationView {
+                HomeStatusView()
+                    .navigationBarHidden(true)
             }
-            .tint(Color(hex: "6366F1"))
+            .tabItem {
+                Label("首页", systemImage: "house.fill")
+            }
+            .tag(0)
             
+            NavigationView {
+                TimeCapsuleView()
+                    .navigationBarHidden(true)
+            }
+            .tabItem {
+                Label("时光胶囊", systemImage: "clock.fill")
+            }
+            .tag(1)
+            
+            NavigationView {
+                WillAssetsView()
+                    .navigationBarHidden(true)
+            }
+            .tabItem {
+                Label("嘱托与资产", systemImage: "doc.text.fill")
+            }
+            .tag(2)
+            
+            NavigationView {
+                FamilyGuardView()
+                    .navigationBarHidden(true)
+            }
+            .tabItem {
+                Label("家人守护", systemImage: "person.2.fill")
+            }
+            .tag(3)
+            
+            NavigationView {
+                SettingsView()
+                    .navigationBarHidden(true)
+            }
+            .tabItem {
+                Label("我的", systemImage: "person.fill")
+            }
+            .tag(4)
         }
+        .tint(Color(hex: "6366F1"))
     }
 }
 
