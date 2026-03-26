@@ -192,13 +192,8 @@ struct ContentView: View {
     }
     
     /// 验证后端 Token 是否有效（GraphQL）
-    /// 🔴 2026-03-26 临时禁用：修复前端卡死问题
+    /// ✅ 2026-03-27 恢复：添加超时配置防止卡死
     private func validateToken() async -> ValidateTokenResult {
-        // 🔴 临时禁用 Token 验证，避免卡死
-        print("⚠️ Token 验证已临时禁用，直接使用本地登录状态")
-        return .success
-        
-        /* 原始代码（临时禁用）
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
             return .unauthorized
         }
@@ -227,7 +222,7 @@ struct ContentView: View {
             let body: [String: Any] = ["query": query]
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
-            // 🔴 添加超时配置（10 秒）
+            // ✅ 添加超时配置（10 秒请求超时，30 秒资源超时）
             var config = URLSessionConfiguration.default
             config.timeoutIntervalForRequest = 10
             config.timeoutIntervalForResource = 30
@@ -272,7 +267,6 @@ struct ContentView: View {
         
         // 默认保持登录
         return .networkError
-        */
     }
     
     private func writeLogToFile(_ message: String) {
