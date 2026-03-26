@@ -778,6 +778,13 @@ class APIManager {
     
     /// 批量同步胶囊
     func batchSyncCapsules(_ capsules: [CapsuleInput]) async throws -> BatchSyncResult {
+        // 🔍 调试日志
+        print("🔍 batchSyncCapsules 开始同步")
+        print("🔍 胶囊数量：\(capsules.count)")
+        if let first = capsules.first {
+            print("🔍 第一个胶囊：id=\(first.id), title=\(first.title), type=\(first.type)")
+        }
+        
         // 构建胶囊输入
         let capsulesInput = capsules.map { c in
             var parts: [String] = []
@@ -785,7 +792,7 @@ class APIManager {
             parts.append("title: \"\(c.title.replacingOccurrences(of: "\"", with: "\\\""))\"")
             parts.append("type: \"\(c.type)\"")
             if let content = c.content {
-                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\""))\"")
+                parts.append("content: \"\(content.replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "\n", with: "\\n"))\"")
             }
             if let openAt = c.openAt {
                 parts.append("openAt: \"\(openAt)\"")
@@ -810,12 +817,24 @@ class APIManager {
         print("---")
         
         let response = try await client.query(query)
+        print("🔍 响应：\(response)")
+        
         // GraphQL 响应格式：{"data": {"batchSyncCapsules": {...}}}
         if let data = response["data"] as? [String: Any],
-           let syncResult = data["batchSyncCapsules"] as? [String: Any],
-           let total = syncResult["total"] as? Int,
-           let created = syncResult["created"] as? Int,
-           let updated = syncResult["updated"] as? Int {
+           let syncResult = data["batchSyncCapsules"] as? [String: Any] {
+            
+            // 🔧 检查是否有错误
+            if let error = syncResult["error"] as? String {
+                print("❌ 同步失败：\(error)")
+                throw APIError.unauthorized
+            }
+            
+            let total = syncResult["total"] as? Int ?? 0
+            let created = syncResult["created"] as? Int ?? 0
+            let updated = syncResult["updated"] as? Int ?? 0
+            
+            print("✅ 胶囊同步结果：总计 \(total), 创建 \(created), 更新 \(updated)")
+            
             // 🔥 解析云存储 URL
             if let cloudUrls = syncResult["cloudUrls"] as? [String: String] {
                 print("☁️ 云存储 URL: \(cloudUrls.count) 个胶囊已备份")
@@ -827,8 +846,17 @@ class APIManager {
                     }
                 }
             }
+            
+            // 🔧 警告：同步结果为 0
+            if total == 0 && created == 0 && updated == 0 {
+                print("⚠️ 警告：同步结果为 0，可能解析失败或无数据")
+                // 不抛异常，返回空结果
+            }
+            
             return BatchSyncResult(total: total, created: created, updated: updated)
         }
+        
+        print("❌ 响应解析失败")
         throw APIError.networkError
     }
     
