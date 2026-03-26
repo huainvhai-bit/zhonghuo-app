@@ -645,17 +645,28 @@ class DataManager: ObservableObject {
     }
     
     func deleteWitness(_ witness: Witness) {
-        witnesses.removeAll { $0.id == witness.id }
+        // 🔧 修复：先标记 deletedAt，再同步到服务器（让后端执行删除）
+        var deletedWitness = witness
+        deletedWitness.deletedAt = Date()
+        
+        if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
+            witnesses[index] = deletedWitness
+        }
         saveWitnessesToFile()
-        print("👥 见证人已删除，准备同步到服务器...")
+        print("👥 见证人已标记删除，准备同步到服务器...")
         
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
         
-        // 异步同步到服务器
+        // 异步同步到服务器（会发送 deletedAt 标记）
         Task {
             if let result = await batchSyncWitnesses() {
                 print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                // 同步成功后再从本地移除
+                await MainActor.run {
+                    self.witnesses.removeAll { $0.id == witness.id }
+                    self.saveWitnessesToFile()
+                }
             } else {
                 print("⚠️ 见证人同步失败（可能无网络或未登录）")
             }
@@ -1070,15 +1081,24 @@ class DataManager: ObservableObject {
     
     func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
         print("👥 开始同步见证人：共 \(witnesses.count) 个")
-        guard !witnesses.isEmpty else { return (0, 0, 0) }
         
-        let inputs = witnesses.map { witness in
-            WitnessInput(
+        // 🔧 修复：包含已标记删除的见证人（deletedAt != nil）
+        let witnessesToSync = witnesses.filter { !$0.id.isEmpty }
+        guard !witnessesToSync.isEmpty else { return (0, 0, 0) }
+        
+        let inputs = witnessesToSync.map { witness in
+            var deletedAtStr: String? = nil
+            if let deletedAt = witness.deletedAt {
+                let formatter = ISO8601DateFormatter()
+                deletedAtStr = formatter.string(from: deletedAt)
+            }
+            return WitnessInput(
                 id: witness.id,
                 name: witness.name,
                 phone: witness.phone,
                 relationship: witness.relationship,
-                status: nil
+                status: nil,
+                deletedAt: deletedAtStr
             )
         }
         

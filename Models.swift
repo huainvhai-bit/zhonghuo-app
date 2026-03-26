@@ -1094,6 +1094,7 @@ struct WitnessInput {
     let phone: String
     let relationship: String
     let status: String?
+    let deletedAt: String?  // 删除时间戳（ISO 8601）
 }
 
 struct BatchSyncResult {
