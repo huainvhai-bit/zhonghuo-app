@@ -278,45 +278,6 @@ struct ContentView: View {
         print("⚠️ validateToken: Default fallback to networkError")
         return .networkError
     }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                switch httpResponse.statusCode {
-                case 200:
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    // GraphQL 响应格式：{"data": {"validateUser": {"success": true, ...}}}
-                    if let dataObj = json?["data"] as? [String: Any],
-                       let validateUser = dataObj["validateUser"] as? [String: Any],
-                       let success = validateUser["success"] as? Bool {
-                        return success ? .success : .unauthorized
-                    }
-                    return .serverError
-                case 401:
-                    print("❌ Token 无效（401）")
-                    return .unauthorized
-                case 404:
-                    print("❌ 用户不存在（404）")
-                    return .unauthorized
-                case 500, 502, 503:
-                    print("⚠️ 服务器错误（\(httpResponse.statusCode)），保持登录状态")
-                    return .serverError
-                default:
-                    print("⚠️ 未知状态码（\(httpResponse.statusCode)），保持登录状态")
-                    return .serverError
-                }
-            }
-        } catch let urlError as URLError {
-            // 网络错误（无网络、超时等）
-            print("⚠️ 网络错误：\(urlError.localizedDescription)，保持登录状态")
-            return .networkError
-        } catch {
-            // 其他错误
-            print("⚠️ 未知错误：\(error)，保持登录状态")
-            return .networkError
-        }
-        
-        // 默认保持登录
-        return .networkError
-    }
     
     private func writeLogToFile(_ message: String) {
         let fileManager = FileManager.default
