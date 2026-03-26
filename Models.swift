@@ -923,21 +923,25 @@ class APIManager {
     
     /// 批量同步紧急联系人
     func batchSyncEmergencyContacts(_ contacts: [ContactInput]) async throws -> BatchSyncResult {
-        let contactsInput = contacts.map { c in
-            var parts: [String] = []
-            parts.append("id: \"\(c.id)\"")
-            parts.append("name: \"\(c.name.replacingOccurrences(of: "\"", with: "\\\""))\"")
-            parts.append("phone: \"\(c.phone)\"")
-            parts.append("relationship: \"\(c.relationship.replacingOccurrences(of: "\"", with: "\\\""))\"")
+        print("🔍 batchSyncEmergencyContacts 开始同步 \(contacts.count) 个紧急联系人")
+        
+        // 🔧 使用标准 GraphQL variables 格式
+        let contactsInput = contacts.map { c -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": c.id,
+                "name": c.name,
+                "phone": c.phone,
+                "relationship": c.relationship
+            ]
             if let deletedAt = c.deletedAt {
-                parts.append("deletedAt: \"\(deletedAt)\"")
+                dict["deletedAt"] = deletedAt
             }
-            return "{ \(parts.joined(separator: ", ")) }"
-        }.joined(separator: ", ")
+            return dict
+        }
         
         let query = """
-        mutation {
-            batchSyncEmergencyContacts(contacts: [\(contactsInput)]) {
+        mutation($contacts: [ContactInput!]!) {
+            batchSyncEmergencyContacts(contacts: $contacts) {
                 total
                 created
                 updated
@@ -945,7 +949,14 @@ class APIManager {
         }
         """
         
-        let response = try await client.query(query)
+        let variables: [String: Any] = ["contacts": contactsInput]
+        
+        print("🔍 batchSyncEmergencyContacts GraphQL Query:")
+        print(query)
+        print("🔍 Variables: \(contactsInput)")
+        print("---")
+        
+        let response = try await client.query(query, variables: variables)
         if let data = response["data"] as? [String: Any],
            let syncResult = data["batchSyncEmergencyContacts"] as? [String: Any],
            let total = syncResult["total"] as? Int,
