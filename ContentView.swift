@@ -192,15 +192,23 @@ struct ContentView: View {
     }
     
     /// 验证后端 Token 是否有效（GraphQL）
-    /// ✅ 2026-03-27 恢复：添加超时配置防止卡死
+    /// ✅ 2026-03-27 永久方案：超时 + 错误处理 + 日志
     private func validateToken() async -> ValidateTokenResult {
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+            print("⚠️ validateToken: No token found")
             return .unauthorized
         }
         
         guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ validateToken: API URL is empty")
             return .networkError
         }
+        
+        // ✅ 使用带超时的 URLSession（5 秒请求超时，15 秒资源超时）
+        var config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5
+        config.timeoutIntervalForResource = 15
+        let session = URLSession(configuration: config)
         
         do {
             // 使用 GraphQL validateUser query
@@ -222,13 +230,54 @@ struct ContentView: View {
             let body: [String: Any] = ["query": query]
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
-            // ✅ 添加超时配置（10 秒请求超时，30 秒资源超时）
-            var config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 10
-            config.timeoutIntervalForResource = 30
-            let session = URLSession(configuration: config)
+            print("🔍 validateToken: Sending request to \(DataManager.apiURL)/api/graphql.php")
             
             let (data, response) = try await session.data(for: request)
+            
+            print("🔍 validateToken: Response received, status: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                switch httpResponse.statusCode {
+                case 200:
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    // GraphQL 响应格式：{"data": {"validateUser": {"success": true, ...}}}
+                    if let dataObj = json?["data"] as? [String: Any],
+                       let validateUser = dataObj["validateUser"] as? [String: Any],
+                       let success = validateUser["success"] as? Bool {
+                        print("✅ validateToken: success=\(success)")
+                        return success ? .success : .unauthorized
+                    } else {
+                        print("❌ validateToken: Invalid response format")
+                        return .serverError
+                    }
+                case 401:
+                    print("❌ validateToken: Token invalid (401)")
+                    return .unauthorized
+                case 404:
+                    print("❌ validateToken: User not found (404)")
+                    return .unauthorized
+                case 500, 502, 503:
+                    print("⚠️ validateToken: Server error (\(httpResponse.statusCode)), keeping login")
+                    return .serverError
+                default:
+                    print("⚠️ validateToken: Unknown status (\(httpResponse.statusCode)), keeping login")
+                    return .serverError
+                }
+            }
+        } catch let urlError as URLError {
+            // 网络错误（无网络、超时等）
+            print("⚠️ validateToken: Network error: \(urlError.localizedDescription), keeping login")
+            return .networkError
+        } catch {
+            // 其他错误
+            print("⚠️ validateToken: Unknown error: \(error), keeping login")
+            return .networkError
+        }
+        
+        // 默认保持登录
+        print("⚠️ validateToken: Default fallback to networkError")
+        return .networkError
+    }
             
             if let httpResponse = response as? HTTPURLResponse {
                 switch httpResponse.statusCode {
