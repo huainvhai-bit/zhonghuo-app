@@ -1415,9 +1415,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("🔍 设置 currentUser 后的统计：紧急=\(self.currentUser?.emergencyContactsCount ?? -1), 见证=\(self.currentUser?.witnessesCount ?? -1), 胶囊=\(self.currentUser?.capsulesCount ?? -1), 嘱托=\(self.currentUser?.willModulesCount ?? -1)")
                     
                     // 🔥 同步到 DataManager（HomeStatusView 使用的是 DataManager）
-                    // 🔧 修复：始终使用服务器数据更新 DataManager
-                    DataManager.shared.emergencyContacts = emergencyContacts
-                    print("🔄 DataManager.emergencyContacts 已更新：\(emergencyContacts.count) 个")
+                    // 🔧 修复：只在服务器有数据时才覆盖，避免覆盖本地新添加的数据
+                    if !emergencyContacts.isEmpty {
+                        DataManager.shared.emergencyContacts = emergencyContacts
+                        print("🔄 DataManager.emergencyContacts 已更新：\(emergencyContacts.count) 个（服务器数据）")
+                    } else if DataManager.shared.emergencyContacts.isEmpty {
+                        // 服务器和本地都为空，使用服务器返回的空数组
+                        DataManager.shared.emergencyContacts = emergencyContacts
+                        print("🔄 DataManager.emergencyContacts 已更新：0 个（服务器确认无数据）")
+                    } else {
+                        print("🔄 DataManager.emergencyContacts 保持本地数据：\(DataManager.shared.emergencyContacts.count) 个（服务器无数据）")
+                    }
                     
                     // 见证人：服务器有数据且本地没有 → 使用服务器数据
                     if witnesses.count > 0 && DataManager.shared.witnesses.isEmpty {
