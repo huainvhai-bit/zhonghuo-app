@@ -305,35 +305,56 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             TabView(selection: $selectedTab) {
-                HomeStatusView()
-                    .tabItem {
-                        Label("首页", systemImage: "house.fill")
+                // 🚀 懒加载：只在选中时创建视图
+                Group {
+                    if selectedTab == 0 {
+                        HomeStatusView()
                     }
-                    .tag(0)
+                }
+                .tabItem {
+                    Label("首页", systemImage: "house.fill")
+                }
+                .tag(0)
                 
-                TimeCapsuleView()
-                    .tabItem {
-                        Label("时光胶囊", systemImage: "clock.fill")
+                Group {
+                    if selectedTab == 1 {
+                        TimeCapsuleView()
                     }
-                    .tag(1)
+                }
+                .tabItem {
+                    Label("时光胶囊", systemImage: "clock.fill")
+                }
+                .tag(1)
                 
-                WillAssetsView()
-                    .tabItem {
-                        Label("嘱托与资产", systemImage: "doc.text.fill")
+                Group {
+                    if selectedTab == 2 {
+                        WillAssetsView()
                     }
-                    .tag(2)
+                }
+                .tabItem {
+                    Label("嘱托与资产", systemImage: "doc.text.fill")
+                }
+                .tag(2)
                 
-                FamilyGuardView()
-                    .tabItem {
-                        Label("家人守护", systemImage: "person.2.fill")
+                Group {
+                    if selectedTab == 3 {
+                        FamilyGuardView()
                     }
-                    .tag(3)
+                }
+                .tabItem {
+                    Label("家人守护", systemImage: "person.2.fill")
+                }
+                .tag(3)
                 
-                SettingsView()
-                    .tabItem {
-                        Label("我的", systemImage: "person.fill")
+                Group {
+                    if selectedTab == 4 {
+                        SettingsView()
                     }
-                    .tag(4)
+                }
+                .tabItem {
+                    Label("我的", systemImage: "person.fill")
+                }
+                .tag(4)
             }
             .tint(Color(hex: "6366F1"))
             
