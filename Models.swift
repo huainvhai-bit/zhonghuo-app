@@ -374,6 +374,10 @@ struct User: Codable, Identifiable {
     var willModulesCount: Int = 0
     var familyCount: Int = 0
     
+    // 🕐 服务器时间同步（用于精确倒计时）
+    var serverTimestamp: Int64 = 0  // 服务器毫秒时间戳
+    var serverTime: String = ""     // 服务器时间字符串
+    
     struct EmergencyContact: Codable, Identifiable {
         var id: String = UUID().uuidString
         var name: String

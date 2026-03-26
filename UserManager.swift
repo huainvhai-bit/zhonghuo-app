@@ -1121,6 +1121,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // 🔥 优化：只查询基础用户信息 + 统计（不查详细数据列表）
         // 详细数据通过 batchSync 按需同步，避免启动时大量数据传输
+        // 🕐 添加服务器时间戳，用于精确倒计时同步
         let query = """
         query {
             user {
@@ -1145,6 +1146,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     assetsCount
                     checkinCount
                 }
+                serverTimestamp
+                serverTime
             }
         }
         """
@@ -1219,6 +1222,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("❌ userDict[\"stats\"] 实际类型：\(type(of: userDict["stats"]))")
                 }
                 
+                // 🕐 解析服务器时间
+                let serverTimestamp = userDict["serverTimestamp"] as? Int64 ?? 0
+                let serverTime = userDict["serverTime"] as? String ?? ""
+                
                 // 日期格式化
                 let dateFormatter = ISO8601DateFormatter()
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1235,9 +1242,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         currentUser.lastCheckInDate = dateFormatter.date(from: lastCheckInDate) ?? currentUser.lastCheckInDate
                         currentUser.lastLoginAt = dateFormatter.date(from: lastLoginAt) ?? currentUser.lastLoginAt
                         currentUser.lastLoginIp = lastLoginIp.isEmpty ? currentUser.lastLoginIp : lastLoginIp
+                        // 🕐 保存服务器时间戳（用于精确倒计时）
+                        currentUser.serverTimestamp = serverTimestamp
+                        currentUser.serverTime = serverTime
                         self.currentUser = currentUser
                         
                         print("✅ 用户统计信息已更新：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount)")
+                        print("🕐 服务器时间：\(serverTime) (timestamp: \(serverTimestamp))")
                     }
                     
                     // ✅ 标记加载完成
