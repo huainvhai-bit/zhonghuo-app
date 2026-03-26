@@ -1145,6 +1145,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         }
         """
+                    institution
+                    balance
+                    accountNumber
+                }
+                family {
+                    id
+                    name
+                    phone
+                    relationType
+                    status
+                }
+            }
+        }
+        """
         
         print("🔍 GraphQL 查询语句：\(query)")  // 🔥 打印完整查询
         
