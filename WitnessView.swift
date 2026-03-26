@@ -295,7 +295,7 @@ struct WitnessCard: View {
         .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
-        .confirmationDialog("删除见证人", isPresented: $showingDeleteConfirm) {
+        .alert("删除见证人", isPresented: $showingDeleteConfirm) {
             Button("删除", role: .destructive) {
                 onDelete()
             }
