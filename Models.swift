@@ -862,6 +862,8 @@ class APIManager {
     
     /// 批量同步遗嘱
     func batchSyncWills(_ wills: [WillInput]) async throws -> BatchSyncResult {
+        print("🔍 batchSyncWills 开始同步 \(wills.count) 个遗嘱")
+        
         let willsInput = wills.map { w in
             var parts: [String] = []
             parts.append("id: \"\(w.id)\"")
@@ -883,6 +885,10 @@ class APIManager {
             }
         }
         """
+        
+        print("🔍 batchSyncWills GraphQL Query:")
+        print(query)
+        print("---")
         
         let response = try await client.query(query)
         if let data = response["data"] as? [String: Any],
@@ -943,6 +949,8 @@ class APIManager {
     
     /// 批量同步见证人
     func batchSyncWitnesses(_ witnesses: [WitnessInput]) async throws -> BatchSyncResult {
+        print("🔍 batchSyncWitnesses 开始同步 \(witnesses.count) 个见证人")
+        
         let witnessesInput = witnesses.map { w in
             var parts: [String] = []
             parts.append("id: \"\(w.id)\"")
@@ -964,6 +972,10 @@ class APIManager {
             }
         }
         """
+        
+        print("🔍 batchSyncWitnesses GraphQL Query:")
+        print(query)
+        print("---")
         
         let response = try await client.query(query)
         if let data = response["data"] as? [String: Any],
