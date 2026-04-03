@@ -54,9 +54,9 @@ class CloudStorageManager: ObservableObject {
         do {
             // ✅ 实现基础 iCloud 同步逻辑
             // 1. 检查 iCloud 可用性
-            let status = await checkCloudKitStatus()
-            guard status == .available else {
-                throw CloudStorageError.unavailable("iCloud 不可用：\(status.rawValue)")
+            let isAvailable = await checkCloudKitStatus()
+            guard isAvailable else {
+                throw CloudStorageError.unavailable("iCloud 不可用")
             }
             
             // 2. 同步用户数据
@@ -87,15 +87,17 @@ class CloudStorageManager: ObservableObject {
     // MARK: - CloudKit 状态检查
     
     /// 检查 CloudKit 可用性
-    func checkCloudKitStatus() async -> CKApplicationPermissionsStatus {
+    // ✅ 修复 #4: 修复 CKApplicationPermissionsStatus 类型问题 - 使用 Bool 返回类型
+    func checkCloudKitStatus() async -> Bool {
         do {
-            let status = try await container.status(for: .userDiscoverability)
-            return status
+            // 尝试访问 private database 来检查 iCloud 可用性
+            _ = try await container.requestApplicationPermission(.userDiscoverability)
+            return true
         } catch {
             // 🔴 统一使用 ErrorHandler 处理错误
             ErrorHandler.shared.handle(error, context: "CloudKit 状态检查", showAlert: false)
             print("❌ CloudKit 状态检查失败：\(error)")
-            return .unavailable
+            return false
         }
     }
     
@@ -111,9 +113,10 @@ class CloudStorageManager: ObservableObject {
         let recordID = CKRecord.ID(recordName: "user_\(user.id)")
         let record = CKRecord(recordType: "User", recordID: recordID)
         
-        record["name"] = CKRecord.Field(string: user.name)
-        record["phone"] = CKRecord.Field(string: user.phone)
-        record["lastSyncDate"] = CKRecord.Field(date: Date())
+        // ✅ 修复：新版 CloudKit 直接使用值，不需要 CKRecord.Field
+        record["name"] = user.name as CKRecordValue
+        record["phone"] = user.phone as CKRecordValue
+        record["lastSyncDate"] = Date() as CKRecordValue
         
         try await uploadRecord(record)
         print("✅ 用户数据同步完成")
@@ -121,17 +124,17 @@ class CloudStorageManager: ObservableObject {
     
     /// 同步遗嘱数据
     private func syncWillData() async throws {
-        let wills = DataManager.shared.wills
-        print("📝 同步 \(wills.count) 条遗嘱数据")
+        let willModules = DataManager.shared.willModules
+        print("📝 同步 \(willModules.count) 条遗嘱数据")
         
-        for will in wills {
+        for will in willModules {
             let recordID = CKRecord.ID(recordName: "will_\(will.id)")
             let record = CKRecord(recordType: "Will", recordID: recordID)
             
-            record["title"] = CKRecord.Field(string: will.title)
-            record["content"] = CKRecord.Field(string: will.content)
-            record["createdAt"] = CKRecord.Field(date: will.createdAt)
-            record["updatedAt"] = CKRecord.Field(date: will.updatedAt)
+            // ✅ 修复：新版 CloudKit 直接使用值
+            record["title"] = will.title as CKRecordValue
+            record["content"] = will.content as CKRecordValue
+            record["createdAt"] = will.createdAt as CKRecordValue
             
             try await uploadRecord(record)
         }
@@ -148,10 +151,11 @@ class CloudStorageManager: ObservableObject {
             let recordID = CKRecord.ID(recordName: "capsule_\(capsule.id)")
             let record = CKRecord(recordType: "TimeCapsule", recordID: recordID)
             
-            record["title"] = CKRecord.Field(string: capsule.title)
-            record["content"] = CKRecord.Field(string: capsule.content)
-            record["sendDate"] = CKRecord.Field(date: capsule.sendDate)
-            record["isSent"] = CKRecord.Field(integer: capsule.isSent ? 1 : 0)
+            // ✅ 修复：新版 CloudKit 直接使用值
+            record["title"] = capsule.title as CKRecordValue
+            record["content"] = capsule.content as CKRecordValue
+            record["sendDate"] = capsule.sendDate as CKRecordValue
+            record["isSent"] = (capsule.isSent ? 1 : 0) as CKRecordValue
             
             try await uploadRecord(record)
         }

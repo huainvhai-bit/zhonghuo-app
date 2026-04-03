@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// 数据管理中心 - 全局单例
 /// 

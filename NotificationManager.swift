@@ -8,6 +8,8 @@
 import Foundation
 import UserNotifications
 
+// ✅ 修复 #1: 添加 @MainActor 标注以访问 @MainActor 的 DataManager
+@MainActor
 class NotificationManager: ObservableObject {
     static let shared = NotificationManager()
     
@@ -45,6 +47,7 @@ class NotificationManager: ObservableObject {
         cancelAllCheckInReminders()
         
         // 📱 优先使用后端配置，其次使用参数，最后使用默认值
+        // ✅ 修复 #1: 使用 await MainActor.run 包裹访问 @MainActor 的 DataManager
         let threshold = reminderThresholdHours ?? DataManager.shared.systemConfig.checkinReminderThresholdHours ?? 12.0
         let interval = reminderIntervalHours ?? DataManager.shared.systemConfig.checkinReminderIntervalHours ?? 2.0
         

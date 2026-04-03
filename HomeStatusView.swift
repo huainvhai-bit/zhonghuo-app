@@ -8,6 +8,13 @@
 import SwiftUI
 import MessageUI
 
+// MARK: - CheckInStatus 枚举（✅ 修复 #2: 定义签到状态枚举）
+enum CheckInStatus {
+    case safe
+    case warning
+    case danger
+}
+
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
     @Environment(\.scenePhase) var scenePhase
@@ -464,10 +471,6 @@ struct HomeStatusView: View {
     private func getCurrentCheckInState() -> (colors: [Color], shadowColor: Color, status: CheckInStatus) {
         let hoursRemaining = secondsRemaining / 3600
         let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours
-        
-        enum CheckInStatus {
-            case safe, warning, danger
-        }
         
         if hoursRemaining > reminderThreshold {
             let colors: [Color] = [Color(hex: "34C759"), Color(hex: "28A74A")]
