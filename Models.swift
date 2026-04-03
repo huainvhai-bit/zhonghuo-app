@@ -777,7 +777,7 @@ class APIManager {
     // MARK: - 批量同步
     
     /// 批量同步胶囊
-    func batchSyncCapsules(_ capsules: [CapsuleInput]) async throws -> BatchSyncResult {
+    @MainActor func batchSyncCapsules(_ capsules: [CapsuleInput]) async throws -> BatchSyncResult {
         // 🔍 调试日志
         print("🔍 batchSyncCapsules 开始同步")
         print("🔍 胶囊数量：\(capsules.count)")
@@ -865,7 +865,7 @@ class APIManager {
     }
     
     /// 批量同步遗嘱
-    func batchSyncWills(_ wills: [WillInput]) async throws -> BatchSyncResult {
+    @MainActor func batchSyncWills(_ wills: [WillInput]) async throws -> BatchSyncResult {
         print("🔍 batchSyncWills 开始同步 \(wills.count) 个遗嘱")
         
         // 🔧 使用标准 GraphQL variables 格式

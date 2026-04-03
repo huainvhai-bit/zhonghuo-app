@@ -36,8 +36,8 @@ class DataManager: ObservableObject {
     
     // MARK: - API 地址（动态获取，初始值为空）
     // ✅ P2 修复 #1: API 地址使用配置文件
-    static var baseURL: String = ""
-    static var apiURL: String = ""
+    static nonisolated var baseURL: String = ""
+    static nonisolated var apiURL: String = ""
     static let defaultAPIURL = AppConfig.defaultAPIURL
     
     // MARK: - 配置

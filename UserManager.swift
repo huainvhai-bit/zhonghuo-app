@@ -139,6 +139,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var continuousUploadTimer: Timer?  // 定时上传定时器
     private var locationUpdateCount = 0  // 位置更新次数（用于模拟精度提升）
     
+    @MainActor
     func uploadLocation() {
         print("🔵 ====== uploadLocation 开始 ======")
         print("   - currentUser: \(currentUser?.name ?? "nil")")
@@ -589,6 +590,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     // 推送签到提醒
+    @MainActor
     private func scheduleCheckInReminder(hoursRemaining: Double) {
         let hoursLeft = Int(hoursRemaining)
         let message = "您的签到还剩 \(hoursLeft) 小时，请及时签到"
@@ -706,6 +708,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    @MainActor
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
         print("🔵 ====== recordCheckIn 开始 ======")
         print("   - isAuto: \(isAuto)")
@@ -897,6 +900,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("✅ 退出登录完成，所有状态已清除")
     }
     
+    @MainActor
     func addEmergencyContact(name: String, phone: String, relationship: String) -> Result<User.EmergencyContact, Error> {
         guard var user = currentUser else {
             return .failure(Error.userNotLoggedIn)
@@ -938,6 +942,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    @MainActor
     func deleteEmergencyContact(id: String) -> Result<Void, Error> {
         guard var user = currentUser else {
             return .failure(Error.userNotLoggedIn)
@@ -974,6 +979,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    @MainActor
     func updateEmergencyContact(_ contact: User.EmergencyContact) -> Result<Void, Error> {
         guard var user = currentUser,
               let index = user.emergencyContacts.firstIndex(where: { $0.id == contact.id }) else {
