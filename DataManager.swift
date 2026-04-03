@@ -1002,6 +1002,8 @@ class DataManager: ObservableObject {
     }
     
     /// 批量同步胶囊到服务器
+    /// ✅ 修复：标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
+    @MainActor
     func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
         print("📦 开始同步胶囊：共 \(capsules.count) 个")
         guard !capsules.isEmpty else { return (0, 0, 0) }
@@ -1009,7 +1011,7 @@ class DataManager: ObservableObject {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         
-        // 🔥 标记为上传中
+        // 🔥 标记为上传中（✅ 现在在 @MainActor 中执行，安全）
         for i in 0..<capsules.count {
             if capsules[i].cloudBackupStatus == .pending {
                 capsules[i].cloudBackupStatus = .uploading
@@ -1030,13 +1032,11 @@ class DataManager: ObservableObject {
             let result = try await APIManager.shared.batchSyncCapsules(inputs)
             print("✅ 胶囊同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
             
-            // 🔥 同步成功后标记为已备份
-            Task { @MainActor in
-                for i in 0..<self.capsules.count {
-                    if self.capsules[i].cloudBackupStatus == .uploading {
-                        self.capsules[i].cloudBackupStatus = .backedUp
-                        self.capsules[i].cloudBackupAt = Date()
-                    }
+            // 🔥 同步成功后标记为已备份（✅ 已在 @MainActor 中，无需额外 Task）
+            for i in 0..<capsules.count {
+                if capsules[i].cloudBackupStatus == .uploading {
+                    capsules[i].cloudBackupStatus = .backedUp
+                    capsules[i].cloudBackupAt = Date()
                 }
             }
             
@@ -1044,12 +1044,10 @@ class DataManager: ObservableObject {
         } catch {
             print("❌ 胶囊同步失败：\(error)")
             
-            // 🔥 同步失败标记为失败
-            Task { @MainActor in
-                for i in 0..<self.capsules.count {
-                    if self.capsules[i].cloudBackupStatus == .uploading {
-                        self.capsules[i].cloudBackupStatus = .failed
-                    }
+            // 🔥 同步失败标记为失败（✅ 已在 @MainActor 中，无需额外 Task）
+            for i in 0..<capsules.count {
+                if capsules[i].cloudBackupStatus == .uploading {
+                    capsules[i].cloudBackupStatus = .failed
                 }
             }
             
@@ -1280,6 +1278,8 @@ class DataManager: ObservableObject {
     // MARK: - 临时方法（待迁移到 GraphQL）
     
     /// 下载所有数据（临时实现）
+    /// ✅ 修复：确保所有 @Published 属性更新在主线程执行
+    @MainActor
     func downloadAllData() async {
         print("📥 开始从云端下载数据...")
         
@@ -1287,41 +1287,39 @@ class DataManager: ObservableObject {
             let apiManager = APIManager.shared
             let result = try await apiManager.fetchUserData()
             
-            // 从字典中解析数据
-            await MainActor.run {
-                // 解析胶囊数据
-                if let capsulesArray = result["capsules"] as? [[String: Any]] {
-                    capsules = capsulesArray.compactMap { dict -> TimeCapsule? in
-                        guard let id = dict["id"] as? String,
-                              let title = dict["title"] as? String,
-                              let type = dict["type"] as? String else { return nil }
-                        return TimeCapsule(
-                            id: id,
-                            title: title,
-                            content: dict["content"] as? String ?? "",
-                            type: TimeCapsule.CapsuleType(rawValue: type) ?? .text,
-                            sendDate: Date(),
-                            isSent: false,
-                            createdAt: Date()
-                        )
-                    }
+            // ✅ 修复：整个方法标记为 @MainActor，确保所有 @Published 更新在主线程
+            // 解析胶囊数据
+            if let capsulesArray = result["capsules"] as? [[String: Any]] {
+                capsules = capsulesArray.compactMap { dict -> TimeCapsule? in
+                    guard let id = dict["id"] as? String,
+                          let title = dict["title"] as? String,
+                          let type = dict["type"] as? String else { return nil }
+                    return TimeCapsule(
+                        id: id,
+                        title: title,
+                        content: dict["content"] as? String ?? "",
+                        type: TimeCapsule.CapsuleType(rawValue: type) ?? .text,
+                        sendDate: Date(),
+                        isSent: false,
+                        createdAt: Date()
+                    )
                 }
-                
-                // 解析遗嘱数据
-                if let willsArray = result["wills"] as? [[String: Any]] {
-                    willModules = willsArray.compactMap { dict -> WillModule? in
-                        guard let id = dict["id"] as? String,
-                              let typeStr = dict["type"] as? String,
-                              let title = dict["title"] as? String else { return nil }
-                        return WillModule(
-                            id: id,
-                            type: WillModule.WillType(rawValue: typeStr) ?? .property,
-                            title: title,
-                            subtitle: "",
-                            content: dict["content"] as? String ?? "",
-                            isCompleted: false
-                        )
-                    }
+            }
+            
+            // 解析遗嘱数据
+            if let willsArray = result["wills"] as? [[String: Any]] {
+                willModules = willsArray.compactMap { dict -> WillModule? in
+                    guard let id = dict["id"] as? String,
+                          let typeStr = dict["type"] as? String,
+                          let title = dict["title"] as? String else { return nil }
+                    return WillModule(
+                        id: id,
+                        type: WillModule.WillType(rawValue: typeStr) ?? .property,
+                        title: title,
+                        subtitle: "",
+                        content: dict["content"] as? String ?? "",
+                        isCompleted: false
+                    )
                 }
             }
             

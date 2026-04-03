@@ -126,18 +126,22 @@ struct HomeStatusView: View {
                 }
             }
             .onReceive(timer) { _ in
+                // ✅ 修复：确保所有状态更新在主线程（Timer 已在 .main 上运行）
                 // 每秒递减倒计时
                 if secondsRemaining > 0 {
                     secondsRemaining -= 1
                     
                     // 检查是否刚进入危险状态（倒计时归零）
-                    if secondsRemaining == 0 && !hasSentOverdueAlert {
+                    if secondsRemaining <= 0 && !hasSentOverdueAlert {
                         // 倒计时结束，发送 iMessage 通知紧急联系人
                         sendOverdueAlertToEmergencyContacts()
                     }
                 } else {
                     // 倒计时结束，检查是否需要签到
-                    updateStatus()
+                    // ✅ 修复：确保 updateStatus 在主线程调用
+                    Task { @MainActor in
+                        updateStatus()
+                    }
                 }
             }
             .onAppear {
@@ -190,6 +194,8 @@ struct HomeStatusView: View {
         }
     }
     
+    // ✅ 修复：标记为 @MainActor，确保所有状态更新在主线程
+    @MainActor
     private func handleAutoCheckIn() {
         let userManager = UserManager.shared
         guard userManager.isLoggedIn else {
@@ -366,6 +372,8 @@ struct HomeStatusView: View {
         }
     }
     
+    // ✅ 修复：确保所有状态更新在主线程执行
+    @MainActor
     private func updateStatus() {
         // 确保使用最新的签到间隔
         dataManager.settings.checkInInterval = UserManager.shared.checkInInterval
