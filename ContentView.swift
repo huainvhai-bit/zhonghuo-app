@@ -193,6 +193,7 @@ struct ContentView: View {
     
     /// 验证后端 Token 是否有效（GraphQL）
     /// ✅ 2026-03-27 永久方案：超时 + 错误处理 + 日志
+    /// 🔧 修复：更清晰地区分网络错误和服务器错误
     private func validateToken() async -> ValidateTokenResult {
         guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
             print("⚠️ validateToken: No token found")
@@ -239,44 +240,74 @@ struct ContentView: View {
             if let httpResponse = response as? HTTPURLResponse {
                 switch httpResponse.statusCode {
                 case 200:
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    // 🔧 修复：解析响应体，区分成功和服务器错误
+                    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                        print("❌ validateToken: Failed to parse JSON response (server error)")
+                        return .serverError
+                    }
+                    
                     // GraphQL 响应格式：{"data": {"validateUser": {"success": true, ...}}}
-                    if let dataObj = json?["data"] as? [String: Any],
+                    if let dataObj = json["data"] as? [String: Any],
                        let validateUser = dataObj["validateUser"] as? [String: Any],
                        let success = validateUser["success"] as? Bool {
                         print("✅ validateToken: success=\(success)")
                         return success ? .success : .unauthorized
+                    } else if let errors = json["errors"] as? [[String: Any]] {
+                        // GraphQL 返回错误，检查是否是认证错误
+                        print("❌ validateToken: GraphQL errors: \(errors)")
+                        return .unauthorized
                     } else {
-                        print("❌ validateToken: Invalid response format")
+                        print("❌ validateToken: Invalid response format (server error)")
                         return .serverError
                     }
                 case 401:
-                    print("❌ validateToken: Token invalid (401)")
+                    // 🔧 修复：明确 401 为认证失败
+                    print("❌ validateToken: Token invalid (401 Unauthorized)")
                     return .unauthorized
                 case 404:
-                    print("❌ validateToken: User not found (404)")
+                    // 🔧 修复：明确 404 为用户不存在
+                    print("❌ validateToken: User not found (404 Not Found)")
                     return .unauthorized
-                case 500, 502, 503:
+                case 500, 502, 503, 504:
+                    // 🔧 修复：明确 5xx 为服务器错误，保持登录
                     print("⚠️ validateToken: Server error (\(httpResponse.statusCode)), keeping login")
                     return .serverError
+                case 400, 403, 405, 408, 429:
+                    // 🔧 修复：其他客户端错误，保持登录（可能是临时问题）
+                    print("⚠️ validateToken: Client error (\(httpResponse.statusCode)), keeping login")
+                    return .networkError
                 default:
+                    // 🔧 修复：未知状态码，保持登录
                     print("⚠️ validateToken: Unknown status (\(httpResponse.statusCode)), keeping login")
                     return .serverError
                 }
+            } else {
+                // 🔧 修复：没有 HTTP 响应，可能是网络问题
+                print("⚠️ validateToken: No HTTP response received")
+                return .networkError
             }
         } catch let urlError as URLError {
-            // 网络错误（无网络、超时等）
-            print("⚠️ validateToken: Network error: \(urlError.localizedDescription), keeping login")
+            // 🔧 修复：明确区分网络错误类型
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                print("⚠️ validateToken: No network connection, keeping login")
+            case .timedOut:
+                print("⚠️ validateToken: Request timed out, keeping login")
+            case .cannotFindHost, .cannotConnectToHost:
+                print("⚠️ validateToken: Cannot reach server, keeping login")
+            default:
+                print("⚠️ validateToken: Network error (\(urlError.code)): \(urlError.localizedDescription), keeping login")
+            }
             return .networkError
+        } catch let decodingError as DecodingError {
+            // 🔧 修复：JSON 解析错误，可能是服务器返回格式错误
+            print("⚠️ validateToken: JSON decoding error: \(decodingError.localizedDescription), keeping login")
+            return .serverError
         } catch {
-            // 其他错误
-            print("⚠️ validateToken: Unknown error: \(error), keeping login")
+            // 🔧 修复：其他未知错误，保持登录
+            print("⚠️ validateToken: Unknown error: \(type(of: error)) - \(error.localizedDescription), keeping login")
             return .networkError
         }
-        
-        // 默认保持登录
-        print("⚠️ validateToken: Default fallback to networkError")
-        return .networkError
     }
     
     private func writeLogToFile(_ message: String) {

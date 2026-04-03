@@ -3,6 +3,8 @@
 //  终活
 //
 //  遗嘱 PDF 导出功能
+//  ✅ P2 修复 #5: 添加自动分页逻辑
+//  ✅ P2 修复 #8: 魔法数字定义为常量
 //
 
 import UIKit
@@ -10,9 +12,17 @@ import PDFKit
 
 class PDFGenerator {
     
+    // MARK: - PDF 配置常量（✅ P2 修复 #8）
+    private static let pdfPageWidth: CGFloat = AppConfig.pdfPageWidth
+    private static let pdfPageHeight: CGFloat = AppConfig.pdfPageHeight
+    private static let pdfMargin: CGFloat = AppConfig.pdfMargin
+    private static let pdfPageBreakThreshold: CGFloat = AppConfig.pdfPageBreakThreshold
+    private static let pdfFooterY: CGFloat = 800
+    
     /// 导出遗嘱模块为 PDF
+    // ✅ P2 修复 #5: 添加自动分页逻辑
     static func exportWillModulesToPDF(modules: [WillModule], witnesses: [Witness], assets: [Asset]) -> Data? {
-        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842)) // A4 size
+        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pdfPageWidth, height: pdfPageHeight))
         
         let data = pdfRenderer.pdfData { ctx in
             ctx.beginPage()
@@ -24,7 +34,7 @@ class PDFGenerator {
                 .foregroundColor: UIColor.black
             ]
             let titleSize = title.size(withAttributes: titleAttributes)
-            title.draw(at: CGPoint(x: (595 - titleSize.width) / 2, y: 50))
+            title.draw(at: CGPoint(x: (pdfPageWidth - titleSize.width) / 2, y: 50))
             
             // 生成时间
             let dateStr = "生成时间：\(formatDate(Date()))"
@@ -32,28 +42,26 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 12),
                 .foregroundColor: UIColor.gray
             ]
-            dateStr.draw(at: CGPoint(x: (595 - dateStr.size(withAttributes: dateAttributes).width) / 2, y: 85))
+            dateStr.draw(at: CGPoint(x: (pdfPageWidth - dateStr.size(withAttributes: dateAttributes).width) / 2, y: 85))
             
             // 分隔线
-            drawLine(ctx: ctx, from: CGPoint(x: 50, y: 100), to: CGPoint(x: 545, y: 100))
+            drawLine(ctx: ctx, from: CGPoint(x: pdfMargin, y: 100), to: CGPoint(x: pdfPageWidth - pdfMargin, y: 100))
             
             var currentY: CGFloat = 130
             
             // 遗嘱模块内容
             for module in modules where module.isCompleted {
+                // ✅ P2 修复 #5: 检查是否需要分页
+                currentY = checkPageBreak(ctx: ctx, currentY: currentY, moduleHeight: estimateModuleHeight(module))
                 currentY = drawModuleSection(ctx: ctx, module: module, startY: currentY)
-                
-                // 如果接近页面底部，开始新页面
-                if currentY > 750 {
-                    ctx.beginPage()
-                    currentY = 50
-                }
             }
             
             // 见证人信息
+            currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
             currentY = drawWitnessSection(ctx: ctx, witnesses: witnesses, startY: currentY + 30)
             
             // 资产信息
+            currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
             currentY = drawAssetSection(ctx: ctx, assets: assets, startY: currentY + 30)
             
             // 页脚
@@ -63,8 +71,40 @@ class PDFGenerator {
         return data
     }
     
+    // ✅ P2 修复 #5: 检查是否需要分页
+    private static func checkPageBreak(ctx: UIGraphicsPDFRendererContext, currentY: CGFloat, moduleHeight: CGFloat? = nil, sectionHeight: CGFloat? = nil) -> CGFloat {
+        let neededHeight = moduleHeight ?? sectionHeight ?? 100
+        if currentY + neededHeight > pdfPageBreakThreshold {
+            ctx.beginPage()
+            return 50  // 新页面起始位置
+        }
+        return currentY
+    }
+    
+    // ✅ P2 修复 #5: 估算模块高度用于分页判断
+    private static func estimateModuleHeight(_ module: WillModule) -> CGFloat {
+        let titleHeight: CGFloat = 30
+        let contentAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14),
+            .paragraphStyle: {
+                let style = NSMutableParagraphStyle()
+                style.lineBreakMode = .byWordWrapping
+                style.lineHeightMultiple = 1.4
+                return style
+            }()
+        ]
+        let contentSize = module.content.boundingRect(
+            with: CGSize(width: pdfPageWidth - 2 * pdfMargin, height: CGFloat.greatestFiniteMagnitude),
+            options: .usesLineFragmentOrigin,
+            attributes: contentAttributes,
+            context: nil
+        )
+        return titleHeight + contentSize.height + 20
+    }
+    
     private static func drawModuleSection(ctx: UIGraphicsPDFRendererContext, module: WillModule, startY: CGFloat) -> CGFloat {
         var currentY = startY
+        let contentWidth = pdfPageWidth - 2 * pdfMargin
         
         // 模块标题
         let titleAttributes: [NSAttributedString.Key: Any] = [
@@ -72,7 +112,7 @@ class PDFGenerator {
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
         let title = module.title
-        title.draw(at: CGPoint(x: 50, y: currentY))
+        title.draw(at: CGPoint(x: pdfMargin, y: currentY))
         currentY += 30
         
         // 模块内容
@@ -87,17 +127,21 @@ class PDFGenerator {
             }()
         ]
         
-        let contentRect = CGRect(x: 50, y: currentY, width: 495, height: 0)
-        let contentSize = module.content.boundingRect(with: CGSize(width: 495, height: CGFloat.greatestFiniteMagnitude),
-                                                       options: .usesLineFragmentOrigin,
-                                                       attributes: contentAttributes,
-                                                       context: nil)
+        let contentSize = module.content.boundingRect(
+            with: CGSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude),
+            options: .usesLineFragmentOrigin,
+            attributes: contentAttributes,
+            context: nil
+        )
         
-        module.content.draw(in: CGRect(x: 50, y: currentY, width: 495, height: contentSize.height), withAttributes: contentAttributes)
+        module.content.draw(
+            in: CGRect(x: pdfMargin, y: currentY, width: contentWidth, height: contentSize.height),
+            withAttributes: contentAttributes
+        )
         currentY += contentSize.height + 20
         
         // 分隔线
-        drawLine(ctx: ctx, from: CGPoint(x: 50, y: currentY), to: CGPoint(x: 545, y: currentY))
+        drawLine(ctx: ctx, from: CGPoint(x: pdfMargin, y: currentY), to: CGPoint(x: pdfPageWidth - pdfMargin, y: currentY))
         currentY += 20
         
         return currentY
@@ -111,7 +155,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        "见证人信息".draw(at: CGPoint(x: 50, y: currentY))
+        "见证人信息".draw(at: CGPoint(x: pdfMargin, y: currentY))
         currentY += 30
         
         if witnesses.isEmpty {
@@ -119,7 +163,7 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 14),
                 .foregroundColor: UIColor.gray
             ]
-            "暂无见证人".draw(at: CGPoint(x: 50, y: currentY))
+            "暂无见证人".draw(at: CGPoint(x: pdfMargin, y: currentY))
             currentY += 25
         } else {
             for witness in witnesses {
@@ -128,7 +172,7 @@ class PDFGenerator {
                     .font: UIFont.systemFont(ofSize: 14),
                     .foregroundColor: UIColor.black
                 ]
-                witnessStr.draw(at: CGPoint(x: 50, y: currentY))
+                witnessStr.draw(at: CGPoint(x: pdfMargin, y: currentY))
                 currentY += 22
             }
         }
@@ -144,7 +188,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        "资产信息".draw(at: CGPoint(x: 50, y: currentY))
+        "资产信息".draw(at: CGPoint(x: pdfMargin, y: currentY))
         currentY += 30
         
         if assets.isEmpty {
@@ -152,7 +196,7 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 14),
                 .foregroundColor: UIColor.gray
             ]
-            "暂无资产记录".draw(at: CGPoint(x: 50, y: currentY))
+            "暂无资产记录".draw(at: CGPoint(x: pdfMargin, y: currentY))
             currentY += 25
         } else {
             for asset in assets {
@@ -161,7 +205,7 @@ class PDFGenerator {
                     .font: UIFont.systemFont(ofSize: 14),
                     .foregroundColor: UIColor.black
                 ]
-                assetStr.draw(at: CGPoint(x: 50, y: currentY))
+                assetStr.draw(at: CGPoint(x: pdfMargin, y: currentY))
                 currentY += 22
             }
         }
@@ -173,7 +217,7 @@ class PDFGenerator {
         let path = UIBezierPath()
         path.move(to: from)
         path.addLine(to: to)
-        path.lineWidth = 0.5
+        path.lineWidth = 0.5  // ✅ P2 修复 #8: 魔法数字，但此处为行业标准线宽，保留
         UIColor.gray.setStroke()
         path.stroke()
     }
@@ -186,7 +230,7 @@ class PDFGenerator {
         
         let footerText = "本文件由终活 App 生成 • 仅供个人参考"
         let footerSize = footerText.size(withAttributes: footerAttributes)
-        footerText.draw(at: CGPoint(x: (595 - footerSize.width) / 2, y: 800))
+        footerText.draw(at: CGPoint(x: (pdfPageWidth - footerSize.width) / 2, y: pdfFooterY))
     }
     
     private static func formatDate(_ date: Date) -> String {

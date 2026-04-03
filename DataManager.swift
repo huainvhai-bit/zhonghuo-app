@@ -29,12 +29,15 @@ import Foundation
 /// manager.capsules.append(newCapsule)
 /// manager.saveCapsules()
 /// ```
+@MainActor
 class DataManager: ObservableObject {
     static let shared = DataManager()
     
     // MARK: - API 地址（动态获取，初始值为空）
+    // ✅ P2 修复 #1: API 地址使用配置文件
     static var baseURL: String = ""
     static var apiURL: String = ""
+    static let defaultAPIURL = AppConfig.defaultAPIURL
     
     // MARK: - 配置
     @Published var serverConfig: ServerConfig?
@@ -55,12 +58,13 @@ class DataManager: ObservableObject {
     
     // MARK: - API 配置管理
     
-    /// 从服务器获取 API 配置（无条件相信后端返回的地址）
-    // MARK: - API 配置管理
-    
     /// 从服务器获取 API 配置（GraphQL）
+    // ✅ P2 修复 #6: 更新注释与代码一致
+    // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
     func fetchServerConfig(from baseURL: String) async throws {
-        print("🌐 请求配置（GraphQL）：\(baseURL)")
+        if DebugConfig.enableNetworkLogs {
+            print("🌐 请求配置（GraphQL）：\(baseURL)")
+        }
         
         let query = """
         query {
@@ -106,12 +110,15 @@ class DataManager: ObservableObject {
             // 保存地址供下次使用
             UserDefaults.standard.set(DataManager.baseURL, forKey: "lastUsedBaseURL")
             
-            print("✅ 后端配置获取成功（GraphQL）")
-            print("   Base URL: \(DataManager.baseURL)")
-            print("   签到间隔：\(checkinHours) 小时")
-            print("   提醒阈值：\(reminderHours) 小时")
-            print("   推送间隔：\(pushInterval) 小时")
-            print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
+            // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
+            if DebugConfig.enableLogs {
+                print("✅ 后端配置获取成功（GraphQL）")
+                print("   Base URL: \(DataManager.baseURL)")
+                print("   签到间隔：\(checkinHours) 小时")
+                print("   提醒阈值：\(reminderHours) 小时")
+                print("   推送间隔：\(pushInterval) 小时")
+                print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
+            }
         }
     }
     
@@ -126,6 +133,7 @@ class DataManager: ObservableObject {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15  // 🔧 修复：添加 15 秒超时
         
         let body: [String: Any] = [
             "query": query,
@@ -133,7 +141,13 @@ class DataManager: ObservableObject {
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // 🔧 修复：使用带超时的 URLSession 配置
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 15       // 请求超时 15 秒
+        config.timeoutIntervalForResource = 15      // 资源超时 15 秒
+        let session = URLSession(configuration: config)
+        
+        let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NSError(domain: "Server error", code: -1)
@@ -143,15 +157,18 @@ class DataManager: ObservableObject {
     }
     
     /// 初始化 API 配置（同步版本 - 立即设置默认值）
+    // ✅ P2 修复 #1: 使用配置文件中的默认地址
     func initializeAPIConfig() {
         // 立即设置默认值，确保 API 立即可用
-        DataManager.baseURL = "http://8.136.41.211:3395"
-        DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
+        DataManager.baseURL = AppConfig.defaultAPIURL
+        DataManager.apiURL = AppConfig.defaultAPIURL
         self.isBackendOnline = true
         
-        print("🔵 API 已初始化（默认地址）")
-        print("   Base URL: \(DataManager.baseURL)")
-        print("   API URL: \(DataManager.apiURL)")
+        if DebugConfig.enableLogs {
+            print("🔵 API 已初始化（默认地址）")
+            print("   Base URL: \(DataManager.baseURL)")
+            print("   API URL: \(DataManager.apiURL)")
+        }
         
         // 异步尝试获取最新配置
         Task {
@@ -160,29 +177,38 @@ class DataManager: ObservableObject {
     }
     
     /// 异步刷新 API 配置（后台静默更新）
+    // ✅ P2 修复 #1: 使用配置文件中的默认地址
     func refreshAPIConfig() async {
         // 尝试顺序：保存的地址 > 默认地址
         let candidates = [
             UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "",
-            "http://8.136.41.211:3395"
+            AppConfig.defaultAPIURL
         ].filter { !$0.isEmpty }
         
         for baseURL in candidates {
             do {
                 try await fetchServerConfig(from: baseURL)
-                print("✅ 后端配置刷新成功：\(DataManager.baseURL)")
+                if DebugConfig.enableLogs {
+                    print("✅ 后端配置刷新成功：\(DataManager.baseURL)")
+                }
                 return
             } catch {
-                print("⚠️ 尝试地址失败：\(baseURL) - \(error.localizedDescription)")
+                if DebugConfig.enableNetworkLogs {
+                    print("⚠️ 尝试地址失败：\(baseURL) - \(error.localizedDescription)")
+                }
                 continue
             }
         }
         
         // 所有尝试都失败，保持默认值
-        print("⚠️ 后端配置刷新失败，使用默认地址")
+        // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
+        if DebugConfig.enableLogs {
+            print("⚠️ 后端配置刷新失败，使用默认地址")
+        }
     }
     
     /// 检查 API 是否已初始化（立即可用）
+    // ✅ P2 修复 #1: 使用配置文件中的默认地址
     func checkAPIReady() async throws {
         // 如果已初始化，直接返回
         if !DataManager.apiURL.isEmpty && isBackendOnline {
@@ -191,10 +217,12 @@ class DataManager: ObservableObject {
         
         // 如果未初始化，使用默认地址
         if DataManager.apiURL.isEmpty {
-            DataManager.baseURL = "http://8.136.41.211:3395"
-            DataManager.apiURL = "http://8.136.41.211:3395"  // 新架构：直接使用 baseURL
+            DataManager.baseURL = AppConfig.defaultAPIURL
+            DataManager.apiURL = AppConfig.defaultAPIURL
             self.isBackendOnline = true
-            print("⚠️ API 未初始化，使用默认地址：\(DataManager.apiURL)")
+            if DebugConfig.enableLogs {
+                print("⚠️ API 未初始化，使用默认地址：\(DataManager.apiURL)")
+            }
             return
         }
     }
@@ -232,8 +260,10 @@ class DataManager: ObservableObject {
     // MARK: - 网络检查
     
     /// 检查网络连通性
+    // ✅ P2 修复 #1: 使用配置文件中的 API 地址
+    // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
     func checkNetworkConnectivity() async -> Bool {
-        guard let url = URL(string: "http://8.136.41.211:3395/api/check-config.php") else {
+        guard let url = URL(string: "\(AppConfig.defaultAPIURL)/api/check-config.php") else {
             return false
         }
         
@@ -244,7 +274,9 @@ class DataManager: ObservableObject {
             }
             return (200...299).contains(httpResponse.statusCode)
         } catch {
-            print("❌ 网络检查失败：\(error)")
+            if DebugConfig.enableErrorLogs {
+                errorPrint("网络检查失败：\(error)")
+            }
             return false
         }
     }

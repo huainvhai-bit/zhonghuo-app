@@ -117,26 +117,32 @@ class DeviceMonitor: ObservableObject {
         }
     }
     
+    // 🔴 使用 Set 存储观察者 token，便于正确移除
     private var updateTimer: Timer?
+    private var notificationTokens: [NSObjectProtocol] = []
     
     init() {
         // 启用电池监控
         device.isBatteryMonitoringEnabled = true
         
-        // 监听电池状态变化
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(batteryStatusDidChange),
-            name: UIDevice.batteryLevelDidChangeNotification,
-            object: nil
-        )
+        // 监听电池状态变化 - 🔴 使用 token 存储以便移除
+        let token1 = NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryLevelDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.batteryStatusDidChange()
+        }
+        notificationTokens.append(token1)
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(batteryStatusDidChange),
-            name: UIDevice.batteryStateDidChangeNotification,
-            object: nil
-        )
+        let token2 = NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryStateDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.batteryStatusDidChange()
+        }
+        notificationTokens.append(token2)
         
         // 初始化电池信息
         updateBatteryInfo()
@@ -145,7 +151,9 @@ class DeviceMonitor: ObservableObject {
     deinit {
         stopMonitoring()
         device.isBatteryMonitoringEnabled = false
-        NotificationCenter.default.removeObserver(self)
+        // 🔴 正确移除所有观察者
+        notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
+        notificationTokens.removeAll()
     }
     
     // MARK: - 监控控制
@@ -259,7 +267,8 @@ class DeviceMonitor: ObservableObject {
     
     // MARK: - 通知处理
     
-    @objc private func batteryStatusDidChange(_ notification: Notification) {
+    // 🔴 已改用闭包方式处理通知，此方法保留兼容性
+    @objc private func batteryStatusDidChange() {
         updateBatteryInfo()
         print("🔋 电池状态变化")
     }

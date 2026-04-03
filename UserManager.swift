@@ -16,16 +16,18 @@ import CoreLocation
 /// 
 /// 核心功能：
 /// - 用户注册/登录/退出
-/// - 位置服务（查找我的 iPhone 风格精度动画）
+/// - 位置服务（使用真实 GPS 精度）
 /// - 紧急联系人管理
 /// - 家人绑定与邀请码
 /// - 本地数据持久化
 /// 
 /// 技术要点：
 /// - 单例模式：`UserManager.shared`
-/// - 位置精度：1000m → 500m → 200m → 100m → 50m → 10m（每 3 秒）
+/// - 位置精度：使用真实 horizontalAccuracy
 /// - 数据持久化：user.json 本地存储
-/// - API 调用：REST API + GraphQL 混合架构
+/// - API 调用：GraphQL 架构
+/// 
+/// ✅ P2 修复 #6: 更新注释与代码一致
 class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = UserManager()
     
@@ -85,15 +87,18 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func requestAlwaysAuthorizationIfNeeded() {
-        // Bug 3: 如果用户修改了签到间隔，请求后台定位
+        // ✅ P2 修复 #6: 更新注释
+        // 如果用户修改了签到间隔（不是测试模式），请求后台定位
         guard let user = currentUser,
-              user.checkInInterval != .oneMinute, // 不是测试模式
+              user.checkInInterval != .oneMinute,
               locationAuthStatus == .authorizedWhenInUse else {
             return
         }
         
+        if DebugConfig.enableLogs {
+            print("🔔 请求后台定位权限")
+        }
         locationManager.requestAlwaysAuthorization()
-        print("🔔 请求后台定位权限")
     }
     
     func startUpdatingLocation() {
@@ -161,25 +166,23 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 持续定位
     
-    /// 开始持续定位并上传（模拟查找我的 iPhone 风格精度动画）
+    /// 开始持续定位并上传（使用真实 GPS 精度）
     /// 
     /// 功能说明：
     /// - 每 3 秒上传一次位置
-    /// - 模拟精度提升过程：1000m → 500m → 200m → 100m → 50m → 10m
-    /// - 精度计数器：`locationUpdateCount`
+    /// - 使用真实 horizontalAccuracy
     /// 
     /// 技术实现：
     /// - 使用 Timer 定时触发（每 3 秒）
-    /// - 每次定时器触发时递增计数器
-    /// - `didUpdateLocations` 调用时不递增（避免用户静止时无法提升精度）
+    /// - 使用 CLLocation 的 actualAccuracy
     /// 
     /// 后端地图效果：
     /// - 蓝色半透明圆圈 + 脉冲动画
     /// - 每 5 秒自动刷新用户位置
-    /// - 精度变化平滑过渡动画
+    /// - 显示真实精度范围
     /// 
-    /// 相关文档：
-    /// - 📖 终活 App 技术开发文档.md - 7.4 家人守护模块
+    /// ✅ P2 修复 #4: 使用真实精度，不再模拟
+    /// ✅ P2 修复 #6: 更新注释与代码一致
     func startContinuousLocationUpdates() {
         guard !isContinuouslyUpdating else {
             print("⚠️ 已经在持续定位中")
@@ -199,8 +202,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // 定时上传：每 3 秒上传一次（模拟精度提升）
         continuousUploadTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            self?.uploadLatestLocation()
+            guard let self = self else { return }
+            self.uploadLatestLocation()
         }
+        // 添加到 RunLoop 避免循环引用
+        RunLoop.current.add(continuousUploadTimer!, forMode: .default)
         
         // 首次立即上传（大范围）
         uploadLatestLocation()
@@ -212,6 +218,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         continuousUploadTimer?.invalidate()
         continuousUploadTimer = nil
         locationManager.stopUpdatingLocation()
+        locationManager.delegate = nil  // 释放代理引用
         print("⏹️ 停止持续定位")
     }
     
@@ -226,10 +233,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         handleLocationUpdate(location, fromTimer: true)
     }
     
-    /// 处理位置更新（模拟查找我的 iPhone：精度从大到小）
+    /// 处理位置更新（使用真实 GPS 精度）
     /// - Parameters:
     ///   - location: 位置信息
-    ///   - fromTimer: 是否来自定时器触发（true 时才递增计数器）
+    ///   - fromTimer: 是否来自定时器触发
+    // ✅ P2 修复 #4: 使用真实 accuracy
+    // ✅ P2 修复 #6: 更新注释
+    // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
     private func handleLocationUpdate(_ location: CLLocation, fromTimer: Bool = false) {
         guard let user = currentUser else { return }
         
@@ -238,52 +248,38 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let actualAccuracy = location.horizontalAccuracy
         let age = Date().timeIntervalSince(location.timestamp)
         
-        print("📍 获取位置：\(latitude), \(longitude)")
-        print("📊 实际精度：\(actualAccuracy)米，年龄：\(String(format: "%.1f", age))秒")
+        if DebugConfig.enableNetworkLogs {
+            print("📍 获取位置：\(latitude), \(longitude)")
+            print("📊 实际精度：\(actualAccuracy)米，年龄：\(String(format: "%.1f", age))秒")
+        }
         
-        // 🔴 检查位置有效性
+        // 检查位置有效性
         if actualAccuracy < 0 || latitude == 0 || longitude == 0 {
-            print("⚠️ 位置数据无效，跳过")
+            if DebugConfig.enableErrorLogs {
+                errorPrint("位置数据无效，跳过")
+            }
             return
         }
         
-        // 🔴 检查位置年龄（超过 2 分钟的位置不用）
-        if age > 120 {
-            print("⚠️ 位置太旧（\(String(format: "%.0f", age))秒），跳过")
+        // 检查位置年龄（使用配置文件中的常量）
+        if age > AppConfig.maxLocationAge {
+            if DebugConfig.enableLogs {
+                print("⚠️ 位置太旧（\(String(format: "%.0f", age))秒），跳过")
+            }
             return
         }
         
-        // 🎯 模拟查找我的 iPhone：精度从大到小（1000 米 → 500 米 → 200 米 → 100 米 → 50 米 → 10 米）
-        // 🔧 修复：只在定时器触发时递增计数器
-        if fromTimer {
-            locationUpdateCount += 1
-            print("🔢 计数器 +1 = \(locationUpdateCount)")
-        }
-        let simulatedAccuracy: Double
-        switch locationUpdateCount {
-        case 1:
-            simulatedAccuracy = 1000  // 首次：1km 范围
-            print("🎯 第\(locationUpdateCount)次：大范围定位（±\(Int(simulatedAccuracy))米）")
-        case 2:
-            simulatedAccuracy = 500   // 3 秒后：500m
-            print("🎯 第\(locationUpdateCount)次：中范围定位（±\(Int(simulatedAccuracy))米）")
-        case 3:
-            simulatedAccuracy = 200   // 6 秒后：200m
-            print("🎯 第\(locationUpdateCount)次：中小范围定位（±\(Int(simulatedAccuracy))米）")
-        case 4:
-            simulatedAccuracy = 100   // 9 秒后：100m
-            print("🎯 第\(locationUpdateCount)次：小范围定位（±\(Int(simulatedAccuracy))米）")
-        case 5:
-            simulatedAccuracy = 50    // 12 秒后：50m
-            print("🎯 第\(locationUpdateCount)次：精确范围定位（±\(Int(simulatedAccuracy))米）")
-        default:
-            // 使用实际精度（但不低于 10 米）
-            simulatedAccuracy = max(actualAccuracy, 10)
-            print("🎯 第\(locationUpdateCount)次：精确定位（±\(Int(simulatedAccuracy))米）")
+        // ✅ P2 修复 #4: 使用真实 accuracy，不再模拟精度
+        // 后端地图使用真实精度显示范围圈
+        let accuracyToUpload = actualAccuracy
+        if DebugConfig.enableLogs {
+            print("📍 位置更新 #\(locationUpdateCount): 精度=±\(Int(actualAccuracy))米")
         }
         
-        // ✅ 上传模拟精度的位置（让后端显示范围圈）
-        print("✅ 准备上传（模拟精度：±\(Int(simulatedAccuracy))米，实际精度：±\(Int(actualAccuracy))米）")
+        // ✅ 上传真实精度的位置（让后端显示真实范围圈）
+        if DebugConfig.enableNetworkLogs {
+            print("✅ 准备上传（真实精度：±\(Int(accuracyToUpload))米）")
+        }
         
         // 逆地理编码获取地址
         let geocoder = CLGeocoder()
@@ -298,9 +294,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 address = parts.joined(separator: " ")
             }
             
-            // 上传原始 GPS 坐标（WGS84）
+            // ✅ P2 修复 #4: 上传真实精度
             Task {
-                await self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: simulatedAccuracy)
+                await self.uploadLocationToServer(userId: user.id, latitude: latitude, longitude: longitude, address: address, accuracy: accuracyToUpload)
             }
         }
     }
@@ -317,20 +313,28 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // locationManager(_:didUpdateLocations:) 已移到上面，在持续定位模式下处理
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: any Swift.Error) {
-        print("❌ 定位失败：\(error)")
+        // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
+        if DebugConfig.enableErrorLogs {
+            errorPrint("定位失败：\(error)")
+        }
     }
     
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) async {
+        // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
         // 获取 token
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         if token.isEmpty {
-            print("⚠️ 无 token，跳过位置上传")
+            if DebugConfig.enableErrorLogs {
+                errorPrint("无 token，跳过位置上传")
+            }
             return
         }
         
-        // 如果没有传入精度，使用默认值（模拟查找我的 iPhone：从大到小）
+        // 使用传入的精度或默认值
         let accuracyValue = accuracy ?? 1000.0
-        print("📍 准备上传位置（GraphQL）：\(latitude), \(longitude), 精度：\(accuracyValue)米")
+        if DebugConfig.enableNetworkLogs {
+            print("📍 准备上传位置（GraphQL）：\(latitude), \(longitude), 精度：\(accuracyValue)米")
+        }
         
         let query = """
         mutation($latitude: Float!, $longitude: Float!, $accuracy: Float, $address: String) {
@@ -1047,20 +1051,36 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return currentUser?.emergencyContacts.count ?? 0
     }
     
+    // ✅ P2 修复 #3: 添加加载锁，防止重复请求
     // ✅ 性能优化：避免重复加载
     private var isUserLoaded = false
     private var isFetchingUserData = false
+    private let userLoadLock = NSLock()  // 加载锁
     
+    // ✅ P2 修复 #3: 使用加载锁防止重复请求
     func loadUser() {
         // ✅ 如果已加载，直接返回（避免重复）
         if isUserLoaded && currentUser != nil {
-            print("✅ 用户数据已加载，跳过重复加载")
+            if DebugConfig.enableLogs {
+                print("✅ 用户数据已加载，跳过重复加载")
+            }
             return
         }
         
+        // ✅ 使用锁防止并发加载
+        guard userLoadLock.try() else {
+            if DebugConfig.enableLogs {
+                print("⚠️ 正在加载用户数据，跳过重复请求")
+            }
+            return
+        }
+        defer { userLoadLock.unlock() }
+        
         // ✅ 防止重复加载
         if isFetchingUserData {
-            print("⚠️ 正在加载用户数据，跳过重复请求")
+            if DebugConfig.enableLogs {
+                print("⚠️ 正在加载用户数据，跳过重复请求")
+            }
             return
         }
         
@@ -1105,10 +1125,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     /// 从服务器拉取用户数据（使用 GraphQL）
+    // ✅ P2 修复 #3: 使用加载锁防止重复请求
+    // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
     func fetchUserData() async {
         // ✅ 防止重复加载
         guard !isFetchingUserData else {
-            print("⚠️ 正在加载用户数据，跳过重复请求")
+            if DebugConfig.enableLogs {
+                print("⚠️ 正在加载用户数据，跳过重复请求")
+            }
             return
         }
         
@@ -1392,5 +1416,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             case .phoneMismatch: return "手机号不匹配"
             }
         }
+    }
+    
+    // MARK: - 清理
+    
+    deinit {
+        continuousUploadTimer?.invalidate()
+        continuousUploadTimer = nil
+        locationManager.delegate = nil
+        locationManager.stopUpdatingLocation()
+        print("♻️ UserManager 已释放")
     }
 }

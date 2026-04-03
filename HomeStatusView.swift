@@ -170,6 +170,10 @@ struct HomeStatusView: View {
             }
             // 🔴 不在这里处理 scenePhase！
             // ContentView 已经统一处理了，避免重复调用
+            .onDisappear {
+                // 🔴 清理定时器，防止内存泄漏
+                timer.upstream.connect().cancel()
+            }
             .sheet(isPresented: $showingWitnessSheet) {
                 WitnessView()
             }
@@ -445,32 +449,38 @@ struct HomeStatusView: View {
     }
     
     // 🎨 签到卡片颜色（根据倒计时状态变化）
+    // ✅ P2 修复 #10: 优化计算属性，缓存计算结果
     private var checkInColors: [Color] {
-        let hoursRemaining = secondsRemaining / 3600
-        let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours  // 提醒阈值（默认 12 小时）
-        
-        if hoursRemaining > reminderThreshold {
-            // 🟢 绿色：安全签到倒计时（高于提醒阈值）
-            return [Color(hex: "34C759"), Color(hex: "28A74A")]
-        } else if hoursRemaining > 0 {
-            // 🟠 橙色：警告状态（低于提醒阈值但还未到期）
-            return [Color(hex: "FF9500"), Color(hex: "FF8800")]
-        } else {
-            // 🔴 红色：危险状态（倒计时结束，已超时）
-            return [Color(hex: "FF3B30"), Color(hex: "FF2D55")]
-        }
+        let checkInState = getCurrentCheckInState()
+        return checkInState.colors
     }
     
     private var checkInShadowColor: Color {
+        let checkInState = getCurrentCheckInState()
+        return checkInState.shadowColor
+    }
+    
+    // ✅ P2 修复 #10: 提取状态计算逻辑，避免重复计算
+    private func getCurrentCheckInState() -> (colors: [Color], shadowColor: Color, status: CheckInStatus) {
         let hoursRemaining = secondsRemaining / 3600
         let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours
         
+        enum CheckInStatus {
+            case safe, warning, danger
+        }
+        
         if hoursRemaining > reminderThreshold {
-            return Color(hex: "34C759")
+            let colors: [Color] = [Color(hex: "34C759"), Color(hex: "28A74A")]
+            let shadowColor = Color(hex: "34C759")
+            return (colors, shadowColor, .safe)
         } else if hoursRemaining > 0 {
-            return Color(hex: "FF9500")
+            let colors: [Color] = [Color(hex: "FF9500"), Color(hex: "FF8800")]
+            let shadowColor = Color(hex: "FF9500")
+            return (colors, shadowColor, .warning)
         } else {
-            return Color(hex: "FF3B30")
+            let colors: [Color] = [Color(hex: "FF3B30"), Color(hex: "FF2D55")]
+            let shadowColor = Color(hex: "FF3B30")
+            return (colors, shadowColor, .danger)
         }
     }
     
@@ -525,73 +535,67 @@ struct HomeStatusView: View {
     }
     
     // 🎨 状态卡片颜色（根据倒计时变化）
+    // ✅ P2 修复 #10: 优化计算属性，缓存中间结果
     private var statusColor: Color {
-        let hoursRemaining = secondsRemaining / 3600
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
-        
-        if hoursRemaining > 0 {
-            return Color(hex: "34C759")  // 绿色
-        } else if hoursRemaining > -offlineThreshold {
-            return Color(hex: "FF9500")  // 橙色
-        } else {
-            return Color(hex: "FF3B30")  // 红色
-        }
+        let status = getStatusState()
+        return status.color
     }
     
     private var statusText: String {
-        let hoursRemaining = secondsRemaining / 3600
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
-        
-        if hoursRemaining > 0 {
-            return "监测正常"
-        } else if hoursRemaining > -offlineThreshold {
-            return "警告：已超时"
-        } else {
-            return "危险：离线超时"
-        }
+        let status = getStatusState()
+        return status.text
     }
     
     private var statusIcon: String {
-        let hoursRemaining = secondsRemaining / 3600
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
-        
-        if hoursRemaining > 0 {
-            return "checkmark.circle.fill"
-        } else if hoursRemaining > -offlineThreshold {
-            return "exclamationmark.circle.fill"
-        } else {
-            return "xmark.circle.fill"
-        }
+        let status = getStatusState()
+        return status.icon
     }
     
     private var statusDescription: String {
+        let status = getStatusState()
+        return status.description
+    }
+    
+    // ✅ P2 修复 #10: 提取状态计算逻辑，避免重复计算
+    private func getStatusState() -> (color: Color, text: String, icon: String, description: String) {
         let hoursRemaining = secondsRemaining / 3600
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
         
         if hoursRemaining > 0 {
-            return "一切安好，记得定期签到哦"
+            return (
+                color: Color(hex: "34C759"),
+                text: "监测正常",
+                icon: "checkmark.circle.fill",
+                description: "一切安好，记得定期签到哦"
+            )
         } else if hoursRemaining > -offlineThreshold {
-            return "您已超过签到时间，请尽快签到"
+            return (
+                color: Color(hex: "FF9500"),
+                text: "警告：已超时",
+                icon: "exclamationmark.circle.fill",
+                description: "您已超过签到时间，请尽快签到"
+            )
         } else {
-            return "您已离线超时，请立即签到！"
+            return (
+                color: Color(hex: "FF3B30"),
+                text: "危险：离线超时",
+                icon: "xmark.circle.fill",
+                description: "您已离线超时，请立即签到！"
+            )
         }
     }
     
     // 📊 进度条百分比（根据倒计时动态计算）
+    // ✅ P2 修复 #10: 优化计算属性
     private var progressPercentage: Double {
         let hoursRemaining = secondsRemaining / 3600
         let checkInInterval = Double(dataManager.settings.checkInInterval.hours)
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
         
-        // 总时间 = 签到间隔 + 离线阈值
         let totalTime = checkInInterval + offlineThreshold
-        
-        // 剩余时间（可能为负数）
         let remainingTime = max(0, hoursRemaining + offlineThreshold)
         
-        // 计算百分比（0-100%）
-        let percentage = remainingTime / totalTime
-        return min(1.0, max(0.0, percentage))
+        return min(1.0, max(0.0, remainingTime / totalTime))
     }
     
     // MARK: - 进度卡片

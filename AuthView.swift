@@ -222,6 +222,11 @@ struct AuthView: View {
                 // 🔴 登录前不初始化 API，等到登录时再初始化
                 // ✅ 性能优化：避免 onAppear 中重复执行
             }
+            .onDisappear {
+                // 🔴 清理定时器，防止内存泄漏
+                timer?.invalidate()
+                timer = nil
+            }
             .onChange(of: isRegistering) { _ in
                 // ✅ 切换登录/注册模式时重置状态
                 name = ""
@@ -467,6 +472,9 @@ struct AuthView: View {
                 }
             }
         } catch {
+            // 🔴 统一使用 ErrorHandler 处理错误
+            ErrorHandler.shared.handle(error, context: "注册", showAlert: false)
+            
             print("❌ 注册失败：\(error.localizedDescription)")
             // 显示友好错误提示（只显示中文）
             let errorMsg = error.localizedDescription
@@ -584,6 +592,9 @@ struct AuthView: View {
                 }
             }
         } catch {
+            // 🔴 统一使用 ErrorHandler 处理错误
+            ErrorHandler.shared.handle(error, context: "登录", showAlert: false)
+            
             print("❌ 登录失败：\(error.localizedDescription)")
             // 显示友好错误提示（只显示中文）
             let errorMsg = error.localizedDescription
@@ -894,7 +905,9 @@ struct ResetPasswordView: View {
                 )
             }
             .onDisappear {
+                // 🔴 清理定时器，防止内存泄漏
                 timer?.invalidate()
+                timer = nil
             }
         }
     }
@@ -948,6 +961,9 @@ struct ResetPasswordView: View {
                     }
                 }
             } catch {
+                // 🔴 统一使用 ErrorHandler 处理错误
+                ErrorHandler.shared.handle(error, context: "发送验证码", showAlert: false)
+                
                 await MainActor.run {
                     isSendingCode = false
                     errorMessage = "网络错误，请稍后重试"
@@ -1004,6 +1020,9 @@ struct ResetPasswordView: View {
                 }
             }
         } catch {
+            // 🔴 统一使用 ErrorHandler 处理错误
+            ErrorHandler.shared.handle(error, context: "重置密码", showAlert: false)
+            
             await MainActor.run {
                 isLoading = false
                 errorMessage = "网络错误，请稍后重试"

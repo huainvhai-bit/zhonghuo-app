@@ -40,13 +40,14 @@ class KeychainManager {
         // 先删除旧的（如果有）
         deleteToken()
         
-        // 创建新的查询
+        // 🔧 修复：使用 kSecAttrAccessibleWhenUnlockedThisDeviceOnly 提高安全性
+        // 仅在设备解锁时可用，且仅限当前设备（不通过 iCloud 备份）
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: tokenKey,
             kSecValueData as String: token.data(using: .utf8)!,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         
         // 添加到 Keychain
@@ -148,12 +149,14 @@ class KeychainManager {
         // 先删除旧的
         deleteItem(key: key)
         
+        // 🔧 修复：使用 kSecAttrAccessibleWhenUnlockedThisDeviceOnly 提高安全性
+        // 仅在设备解锁时可用，且仅限当前设备（不通过 iCloud 备份）
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: serviceName,
             kSecAttrAccount as String: key,
             kSecValueData as String: value.data(using: .utf8)!,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         
         let status = SecItemAdd(query as CFDictionary, nil)
