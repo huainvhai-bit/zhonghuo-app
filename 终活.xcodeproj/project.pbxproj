@@ -45,6 +45,8 @@
 		A1000036 /* HelpPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036 /* HelpPolicyView.swift */; };
 		A1000037 /* MediaRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000037 /* MediaRecorderView.swift */; };
 		A1075845 /* EmergencyContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2010F25 /* EmergencyContactsView.swift */; };
+		A1000040 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000040 /* AppConfig.swift */; };
+		A1000041 /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000041 /* DebugConfig.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -98,6 +100,8 @@
 		A2000036 /* HelpPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpPolicyView.swift; sourceTree = SOURCE_ROOT; };
 		A2000037 /* MediaRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRecorderView.swift; sourceTree = SOURCE_ROOT; };
 		A2010F25 /* EmergencyContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyContactsView.swift; sourceTree = SOURCE_ROOT; };
+		A2000040 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = SOURCE_ROOT; };
+		A2000041 /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F297D03473770EF79D0 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -159,6 +163,8 @@
 				A2000035 /* WillPreviewView.swift */,
 				A2000036 /* HelpPolicyView.swift */,
 				A2000037 /* MediaRecorderView.swift */,
+				A2000040 /* AppConfig.swift */,
+				A2000041 /* DebugConfig.swift */,
 				D5AD1F297D03473770EF79D0 /* KeychainManager.swift */,
 				33DE7DDB2F6D480800F8677E /* Recovered References */,
 			);
@@ -274,6 +280,8 @@
 				A1000035 /* WillPreviewView.swift in Sources */,
 				A1000036 /* HelpPolicyView.swift in Sources */,
 				A1000037 /* MediaRecorderView.swift in Sources */,
+				A1000040 /* AppConfig.swift in Sources */,
+				A1000041 /* DebugConfig.swift in Sources */,
 				334C2F04C944C07197FE8DE5 /* KeychainManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

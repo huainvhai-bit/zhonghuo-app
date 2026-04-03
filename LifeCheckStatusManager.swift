@@ -356,7 +356,7 @@ class LifeCheckStatusManager: ObservableObject {
     /// 通知所有监护人
     func notifyGuardians() async {
         // 获取当前用户
-        guard let user = DataManager.shared.currentUser else {
+        guard let user = await DataManager.shared.currentUser else {
             print("❌ 无用户数据，无法通知监护人")
             return
         }

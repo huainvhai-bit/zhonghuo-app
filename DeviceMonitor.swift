@@ -276,10 +276,12 @@ class DeviceMonitor: ObservableObject {
     // MARK: - 设备信息上传
     
     /// 上传设备信息到服务器（GraphQL）
+    @MainActor
     func uploadDeviceInfo() async {
         print("☁️ 上传设备信息（GraphQL）...")
         
-        guard !DataManager.apiURL.isEmpty else {
+        let apiURL = DataManager.apiURL
+        guard !apiURL.isEmpty else {
             print("⚠️ 上传失败：API URL 为空")
             return
         }

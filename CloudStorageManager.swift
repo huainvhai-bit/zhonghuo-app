@@ -124,7 +124,9 @@ class CloudStorageManager: ObservableObject {
     
     /// 同步遗嘱数据
     private func syncWillData() async throws {
-        let willModules = DataManager.shared.willModules
+        let willModules = await MainActor.run {
+            DataManager.shared.willModules
+        }
         print("📝 同步 \(willModules.count) 条遗嘱数据")
         
         for will in willModules {
@@ -134,7 +136,7 @@ class CloudStorageManager: ObservableObject {
             // ✅ 修复：新版 CloudKit 直接使用值
             record["title"] = will.title as CKRecordValue
             record["content"] = will.content as CKRecordValue
-            record["createdAt"] = will.createdAt as CKRecordValue
+            record["updatedAt"] = Date() as CKRecordValue
             
             try await uploadRecord(record)
         }
@@ -144,7 +146,9 @@ class CloudStorageManager: ObservableObject {
     
     /// 同步胶囊数据
     private func syncCapsuleData() async throws {
-        let capsules = DataManager.shared.capsules
+        let capsules = await MainActor.run {
+            DataManager.shared.capsules
+        }
         print("📦 同步 \(capsules.count) 条胶囊数据")
         
         for capsule in capsules {
