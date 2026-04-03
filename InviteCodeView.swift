@@ -15,6 +15,7 @@ struct InviteCodeView: View {
     @State private var isLoading = true
     @State private var errorMessage = ""
     @State private var copied = false
+    @State private var showingBindFamily = false
     
     var body: some View {
         NavigationView {
@@ -43,6 +44,12 @@ struct InviteCodeView: View {
             }
             .onAppear {
                 loadInviteCode()
+            }
+            .sheet(isPresented: $showingBindFamily) {
+                BindFamilyView(onBound: {
+                    loadInviteCode()
+                    dismiss()
+                })
             }
             .alert("错误", isPresented: .constant(!errorMessage.isEmpty)) {
                 Button("确定") {
@@ -188,6 +195,21 @@ struct InviteCodeView: View {
                         .frame(height: 1)
                 }
                 .padding(.horizontal, 40)
+                
+                // 立即绑定按钮
+                Button(action: { showingBindFamily = true }) {
+                    HStack {
+                        Image(systemName: "link")
+                        Text("立即绑定")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.indigo)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 30)
                 
                 // 使用说明
                 VStack(alignment: .leading, spacing: 12) {

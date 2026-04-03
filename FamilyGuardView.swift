@@ -28,7 +28,10 @@ struct FamilyGuardView: View {
             ZStack {
                 Color(hex: "F5F5F7").ignoresSafeArea()
                 
-                if familyList.isEmpty && !isLoading {
+                if isLoading {
+                    // 加载状态
+                    loadingState
+                } else if familyList.isEmpty {
                     // 空状态
                     emptyState
                 } else {
@@ -41,14 +44,9 @@ struct FamilyGuardView: View {
             .onAppear {
                 setupNavigationBar()
                 
-                // 🔥 防止重复加载
-                guard !isLoading else {
-                    print("⚠️ 家人守护页面正在加载中，跳过")
-                    return
-                }
-                
                 print("🔵 家人守护页面 onAppear")
                 
+                // 🔥 首次点击快速响应：先设置加载状态，再异步加载数据
                 Task {
                     // 并行加载，提高速度
                     await withTaskGroup(of: Void.self) { group in
@@ -120,6 +118,18 @@ struct FamilyGuardView: View {
                 await loadFamilyListAsync()
             }
         }
+    }
+    
+    // MARK: - 加载状态
+    private var loadingState: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+            Text("正在加载家人列表...")
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - 空状态
@@ -395,18 +405,18 @@ struct FamilyGuardView: View {
     
     @MainActor
     private func loadFamilyListAsync() async {
-        // 🔥 防止重复加载
-        guard !isLoading else {
-            print("⚠️ 家人列表正在加载中，跳过")
-            return
-        }
-        
         isLoading = true
         defer { isLoading = false }
         
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else { return }
-        guard !DataManager.apiURL.isEmpty else { return }
+        guard !token.isEmpty else {
+            isLoading = false
+            return
+        }
+        guard !DataManager.apiURL.isEmpty else {
+            isLoading = false
+            return
+        }
         
         print("🔵 开始加载家人列表...")
         

@@ -389,9 +389,23 @@ struct AddCapsuleModal: View {
                             }
                         }
                         .sheet(isPresented: $showingPlayer) {
-                            // 优先使用录制的 URL
+                            // 🔥 优先使用录制的 URL，确保文件存在
                             if let url = recordedAudioURL ?? recordedVideoURL {
-                                AVPlayerView(player: AVPlayer(url: url))
+                                // 🔥 验证文件存在性
+                                let fileExists = FileManager.default.fileExists(atPath: url.path)
+                                print("🔍 播放前检查 - 文件存在：\(fileExists), 路径：\(url.path)")
+                                
+                                if fileExists {
+                                    let player = AVPlayer(url: url)
+                                    AVPlayerView(player: player)
+                                } else {
+                                    // 文件不存在，显示提示
+                                    Text("媒体文件不存在")
+                                        .foregroundColor(.red)
+                                }
+                            } else {
+                                Text("未找到媒体文件")
+                                    .foregroundColor(.secondary)
                             }
                         }
                     }
@@ -615,8 +629,43 @@ struct EditCapsuleModal: View {
                 }
             }
             .sheet(isPresented: $showingPlayer) {
-                if let url = parseMediaURL(from: content) {
-                    AVPlayerView(player: AVPlayer(url: url))
+                Group {
+                    if let url = parseMediaURL(from: content) {
+                        // 🔥 验证文件存在性和可读性
+                        let fileExists = FileManager.default.fileExists(atPath: url.path)
+                        let isReadable = FileManager.default.isReadableFile(atPath: url.path)
+                        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+                        let fileSize = attributes?[.size] as? Int ?? 0
+                        
+                        print("🔍 播放前检查 - 路径：\(url.path)")
+                        print("🔍 文件存在：\(fileExists), 可读：\(isReadable), 大小：\(fileSize) bytes")
+                        
+                        if fileExists && isReadable && fileSize > 0 {
+                            // 🔥 使用 AVPlayer 正确加载本地文件
+                            let playerItem = AVPlayerItem(url: url)
+                            let player = AVPlayer(playerItem: playerItem)
+                            
+                            // 🔥 预加载避免白屏
+                            playerItem.automaticallyLoadsAssetData = true
+                            player.play()
+                            
+                            AVPlayerView(player: player)
+                        } else {
+                            VStack(spacing: 16) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.orange)
+                                Text("媒体文件无法播放")
+                                    .font(.headline)
+                                Text("文件可能已损坏或不存在")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                        }
+                    } else {
+                        Text("未找到媒体文件")
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }

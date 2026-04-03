@@ -499,12 +499,35 @@ struct CameraPreview: UIViewRepresentable {
 // MARK: - 播放器
 struct AVPlayerView: UIViewControllerRepresentable {
     let player: AVPlayer
+    @Environment(\.dismiss) private var dismiss
     
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
         controller.player = player
+        
+        // 🔥 预加载媒体文件，避免白屏
+        player.actionAtItemEnd = .none
+        
+        // 添加播放结束通知
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem,
+            queue: .main
+        ) { _ in
+            player.seek(to: .zero)
+        }
+        
         return controller
     }
     
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
+        // 🔥 确保视图更新时重新加载
+        if uiViewController.player != player {
+            uiViewController.player = player
+        }
+    }
+    
+    static func dismantleUIViewController(_ uiViewController: AVPlayerViewController, coordinator: ()) {
+        NotificationCenter.default.removeObserver(uiViewController)
+    }
 }
