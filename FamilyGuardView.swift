@@ -47,6 +47,7 @@ struct FamilyGuardView: View {
                 print("🔵 家人守护页面 onAppear")
                 
                 // 🔥 首次点击快速响应：先设置加载状态，再异步加载数据
+                isLoading = true
                 Task {
                     // 并行加载，提高速度
                     await withTaskGroup(of: Void.self) { group in

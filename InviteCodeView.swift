@@ -197,7 +197,10 @@ struct InviteCodeView: View {
                 .padding(.horizontal, 40)
                 
                 // 立即绑定按钮
-                Button(action: { showingBindFamily = true }) {
+                Button(action: { 
+                    print("🔵 点击立即绑定按钮")
+                    showingBindFamily = true 
+                }) {
                     HStack {
                         Image(systemName: "link")
                         Text("立即绑定")
@@ -209,6 +212,8 @@ struct InviteCodeView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.horizontal, 30)
                 
                 // 使用说明

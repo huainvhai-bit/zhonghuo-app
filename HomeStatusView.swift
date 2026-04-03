@@ -136,13 +136,9 @@ struct HomeStatusView: View {
                         // 倒计时结束，发送 iMessage 通知紧急联系人
                         sendOverdueAlertToEmergencyContacts()
                     }
-                } else {
-                    // 倒计时结束，检查是否需要签到
-                    // ✅ 修复：确保 updateStatus 在主线程调用
-                    Task { @MainActor in
-                        updateStatus()
-                    }
                 }
+                // ✅ 修复：倒计时归零后不再反复调用 updateStatus，避免重置倒计时
+                // 只有在 onAppear 或收到通知时才调用 updateStatus 刷新状态
             }
             .onAppear {
                 // 📥 加载系统配置（后端可配置）
