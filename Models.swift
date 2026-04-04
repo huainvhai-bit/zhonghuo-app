@@ -278,7 +278,7 @@ struct Witness: Identifiable, Codable {
     var createdAt: Date = Date()
     var deletedAt: Date? = nil  // 删除标记
     
-    // 兼容 relationship 字段（别名）
+    // 兼容 relationship 字段（计算属性，不参与 Codable）
     var relationship: String {
         get { role }
         set { role = newValue }
@@ -290,6 +290,11 @@ struct Witness: Identifiable, Codable {
     
     var statusColor: String {
         isConfirmed ? "34C759" : "FF9500"
+    }
+    
+    // MARK: - Codable 自定义实现（排除计算属性）
+    enum CodingKeys: String, CodingKey {
+        case id, name, role, phone, isConfirmed, order, idNumber, notes, confirmedAt, createdAt, deletedAt
     }
 }
 
@@ -1143,7 +1148,7 @@ class GraphQLClient {
     
     init() {
         self.baseURL = UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL
-        self.token = UserDefaults.standard.string(forKey: "userToken")
+        self.token = KeychainManager.shared.getToken()
     }
     
     /// 执行 GraphQL 查询并返回字典（返回完整响应，包含 success/message/data）
@@ -1157,7 +1162,7 @@ class GraphQLClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // 动态读取 token（确保使用最新的 token）
-        let currentToken = UserDefaults.standard.string(forKey: "userToken") ?? token
+        let currentToken = KeychainManager.shared.getToken() ?? token
         if let token = currentToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }

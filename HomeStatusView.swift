@@ -256,7 +256,7 @@ struct HomeStatusView: View {
         print("🔄 ====== 打开 App 智能同步数据 ======")
         print("🎯 同步策略：比对本地和云端，保持数据一致")
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+        guard let token = KeychainManager.shared.getToken(), !token.isEmpty else {
             print("⚠️ 同步失败：无 token")
             return
         }

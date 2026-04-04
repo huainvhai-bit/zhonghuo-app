@@ -365,7 +365,7 @@ struct FamilyGuardView: View {
         
         isLoading = true
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             print("⚠️ 加载家人列表失败：Token 为空")
             return
@@ -446,7 +446,7 @@ struct FamilyGuardView: View {
     
     @MainActor
     private func generateInviteCode() async {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             print("❌ Token 为空")
             return
@@ -534,7 +534,7 @@ struct FamilyGuardView: View {
     // ✅ 扫码绑定邀请码
     @MainActor
     private func bindInviteCode(_ inviteCode: String) async {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"
             showingError = true
@@ -841,7 +841,7 @@ struct FamilyMemberCard: View {
     }
     
     private func deleteMember() {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else { return }
         guard !DataManager.apiURL.isEmpty else { return }
         

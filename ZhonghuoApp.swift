@@ -130,83 +130,40 @@ struct ZhonghuoApp: App {
             return ValidationResult(isValid: false, shouldLogout: false, reason: "API 地址未配置")
         }
         
-        let storedPassword = UserDefaults.standard.string(forKey: "userPassword") ?? ""
-        
+        // ✅ 安全修复：不再使用密码验证，仅使用 Token 验证
         do {
-            // 优先使用密码验证（更准确）
-            if !storedPassword.isEmpty {
-                let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=validate")!
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let body: [String: Any] = ["phone": user.phone, "password": storedPassword]
-                request.httpBody = try JSONSerialization.data(withJSONObject: body)
-                
-                let (data, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
-                    case 200:
-                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                        let success = json?["success"] as? Bool ?? false
-                        if success {
-                            return ValidationResult(isValid: true, shouldLogout: false, reason: "")
-                        } else {
-                            // 密码错误 → 需要退出
-                            let code = json?["code"] as? String ?? ""
-                            let shouldLogout = (code == "INVALID_PASSWORD")
-                            let reason = json?["message"] as? String ?? "密码错误"
-                            return ValidationResult(isValid: false, shouldLogout: shouldLogout, reason: reason)
-                        }
-                        
-                    case 401:
-                        // Token 无效 → 需要退出
-                        return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
-                        
-                    case 404, 500:
-                        // 服务器错误 → 不退出，允许本地使用
-                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
-                        
-                    default:
-                        return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
+            let token = KeychainManager.shared.getToken() ?? ""
+            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                switch httpResponse.statusCode {
+                case 200:
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    let success = json?["success"] as? Bool ?? false
+                    if success,
+                       let data = json?["data"] as? [String: Any],
+                       let phone = data["phone"] as? String,
+                       phone == user.phone {
+                        return ValidationResult(isValid: true, shouldLogout: false, reason: "")
+                    } else {
+                        // 账号不存在 → 需要退出
+                        return ValidationResult(isValid: false, shouldLogout: true, reason: "账号不存在")
                     }
-                }
-            } else {
-                // 兼容旧版本：使用 Token 验证
-                let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-                let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
-                var request = URLRequest(url: url)
-                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                
-                let (data, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    switch httpResponse.statusCode {
-                    case 200:
-                        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                        let success = json?["success"] as? Bool ?? false
-                        if success,
-                           let data = json?["data"] as? [String: Any],
-                           let phone = data["phone"] as? String,
-                           phone == user.phone {
-                            return ValidationResult(isValid: true, shouldLogout: false, reason: "")
-                        } else {
-                            // 账号不存在 → 需要退出
-                            return ValidationResult(isValid: false, shouldLogout: true, reason: "账号不存在")
-                        }
-                        
-                    case 401:
-                        // Token 无效 → 需要退出
-                        return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
-                        
-                    case 404, 500:
-                        // 服务器错误 → 不退出，允许本地使用
-                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
-                        
-                    default:
-                        return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
-                    }
+                    
+                case 401:
+                    // Token 无效 → 需要退出
+                    return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
+                    
+                case 404, 500:
+                    // 服务器错误 → 不退出，允许本地使用
+                    return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
+                    
+                default:
+                    return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
                 }
             }
         } catch {
@@ -421,9 +378,9 @@ class RealTimeSyncManager: ObservableObject {
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // 🔴 关键：同步设置默认 API URL（在后台任务注册前）
-        DataManager.apiURL = "http://8.136.41.211:3395"
-        DataManager.baseURL = "http://8.136.41.211:3395"
-        UserDefaults.standard.set("http://8.136.41.211:3395", forKey: "apiURL")
+        DataManager.apiURL = "https://8.136.41.211:3395"
+        DataManager.baseURL = "https://8.136.41.211:3395"
+        UserDefaults.standard.set("https://8.136.41.211:3395", forKey: "apiURL")
         print("🔵 API URL 已设置：\(DataManager.apiURL)")
         
         // 异步更新配置（从服务器获取最新配置）
@@ -512,8 +469,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     private func initializeAPIConfig() async {
         // 🔴 关键：立即设置默认值（同步，确保在异步操作前就设置好）
         await MainActor.run {
-            DataManager.apiURL = "http://8.136.41.211:3395"
-            DataManager.baseURL = "http://8.136.41.211:3395"
+            DataManager.apiURL = "https://8.136.41.211:3395"
+            DataManager.baseURL = "https://8.136.41.211:3395"
         }
         
         do {
@@ -528,7 +485,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
             
             // 从服务器获取配置（超时 3 秒）
-            let baseURL = "http://8.136.41.211:3395"
+            let baseURL = "https://8.136.41.211:3395"
             try await withTimeout(seconds: 3) {
                 try await DataManager.shared.fetchServerConfig(from: baseURL)
             }

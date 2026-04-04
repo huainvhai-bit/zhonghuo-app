@@ -11,7 +11,7 @@ struct AppConfig {
     // MARK: - API 配置
     
     /// 默认 API 服务器地址
-    static let defaultAPIURL = "http://8.136.41.211:3395"
+    static let defaultAPIURL = "https://8.136.41.211:3395"
     
     /// API 请求超时时间（秒）
     static let apiRequestTimeout: TimeInterval = 15

@@ -768,6 +768,7 @@ class DataManager: ObservableObject {
     // MARK: - 服务器同步
     
     /// 同步资产到服务器
+    /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func syncAssetToServer(_ asset: Asset) async {
         guard !DataManager.apiURL.isEmpty else { return }
         
@@ -775,7 +776,7 @@ class DataManager: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
+        if let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
@@ -932,6 +933,7 @@ class DataManager: ObservableObject {
     // MARK: - 批量同步到服务器
     
     /// 同步签到状态（App 启动时调用）
+    /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func syncCheckInStatus() async -> (isSafe: Bool, hoursRemaining: Double, autoCheckInPerformed: Bool)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
@@ -939,7 +941,7 @@ class DataManager: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
+        if let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
@@ -1143,6 +1145,8 @@ class DataManager: ObservableObject {
         }
     }
     
+    /// 上传媒体文件到服务器
+    /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
         print("☁️ ====== uploadMediaToServer 开始 ======")
         
@@ -1151,7 +1155,7 @@ class DataManager: ObservableObject {
             return nil
         }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         if token.isEmpty {
             print("⚠️ 上传失败：无 token")
             return nil

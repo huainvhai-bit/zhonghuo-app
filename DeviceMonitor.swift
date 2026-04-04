@@ -296,7 +296,7 @@ class DeviceMonitor: ObservableObject {
             return
         }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         if token.isEmpty {
             print("⚠️ 上传失败：无 token")
             return

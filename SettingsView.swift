@@ -591,7 +591,7 @@ struct SettingsView: View {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // 添加 token
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
+        if let token = KeychainManager.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         

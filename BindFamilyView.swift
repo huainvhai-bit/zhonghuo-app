@@ -184,7 +184,7 @@ struct BindFamilyView: View {
     
     @MainActor
     private func bindFamilyAsync() async {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"
             showingError = true
@@ -268,7 +268,7 @@ struct BindFamilyView: View {
             return
         }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             return
         }

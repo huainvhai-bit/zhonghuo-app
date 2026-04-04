@@ -195,7 +195,7 @@ struct ContentView: View {
     /// ✅ 2026-03-27 永久方案：超时 + 错误处理 + 日志
     /// 🔧 修复：更清晰地区分网络错误和服务器错误
     private func validateToken() async -> ValidateTokenResult {
-        guard let token = UserDefaults.standard.string(forKey: "userToken"), !token.isEmpty else {
+        guard let token = KeychainManager.shared.getToken(), !token.isEmpty else {
             print("⚠️ validateToken: No token found")
             return .unauthorized
         }

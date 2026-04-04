@@ -26,10 +26,18 @@ struct AuthView: View {
     @State private var isLoading = false
     @Environment(\.dismiss) private var dismiss  // 🔴 添加 dismiss 用于登录后关闭登录页
     
+    // ✅ 密码验证：至少 8 位，包含字母和数字
+    private func isValidPassword(_ password: String) -> Bool {
+        guard password.count >= 8 else { return false }
+        let hasLetter = password.rangeOfCharacter(from: .letters) != nil
+        let hasNumber = password.rangeOfCharacter(from: .decimalDigits) != nil
+        return hasLetter && hasNumber
+    }
+    
     // ✅ 计算属性：表单是否有效
     private var isFormValid: Bool {
         if isRegistering {
-            return !phone.isEmpty && !name.isEmpty && !password.isEmpty && password.count >= 6
+            return !phone.isEmpty && !name.isEmpty && !password.isEmpty && isValidPassword(password)
         } else {
             if loginType == "password" {
                 return !phone.isEmpty && !password.isEmpty
@@ -274,7 +282,8 @@ struct AuthView: View {
         print("   isRegistering: \(isRegistering)")
         print("   loginType: \(loginType)")
         print("   phone: \(phone)")
-        print("   password: \(password)")
+        // 🔒 P0 修复 #1: 禁止打印密码到日志
+        // print("   password: \(password)")
         print("   verifyCode: \(verifyCode)")
         print("   isLoading: \(isLoading)")
         
@@ -290,8 +299,8 @@ struct AuthView: View {
                 showingError = true
                 return
             }
-            if password.isEmpty || password.count < 6 {
-                errorMessage = "密码至少 6 位"
+            if password.isEmpty || !isValidPassword(password) {
+                errorMessage = "密码至少 8 位，且必须包含字母和数字"
                 showingError = true
                 return
             }
@@ -446,13 +455,14 @@ struct AuthView: View {
             print("✅ 注册成功，处理用户数据...")
             
             // 保存 Token 和用户信息
+            // ✅ P0 修复 #3: 仅使用 Keychain 存储 Token（安全存储）
             if let token = registerData["token"] as? String {
-                UserDefaults.standard.set(token, forKey: "userToken")
+                KeychainManager.shared.saveToken(token)
             }
             
             if let user = registerData["user"] as? [String: Any],
                let userId = user["id"] as? String {
-                UserDefaults.standard.set(userId, forKey: "userId")
+                KeychainManager.shared.saveUserId(userId)
             }
             
             // 🔴 先处理用户数据（在主线程更新状态）
@@ -551,13 +561,14 @@ struct AuthView: View {
             print("✅ 登录成功，处理用户数据...")
             
             // 保存 Token 和用户信息
+            // ✅ P0 修复 #3: 仅使用 Keychain 存储 Token（安全存储）
             if let token = loginData["token"] as? String {
-                UserDefaults.standard.set(token, forKey: "userToken")
+                KeychainManager.shared.saveToken(token)
             }
             
             if let user = loginData["user"] as? [String: Any],
                let userId = user["id"] as? String {
-                UserDefaults.standard.set(userId, forKey: "userId")
+                KeychainManager.shared.saveUserId(userId)
             }
             
             // 🔴 先处理用户数据（在主线程更新状态）
@@ -632,26 +643,17 @@ struct AuthView: View {
         let token = authData["token"] as? String ?? ""
         let userId = authData["user_id"] as? String ?? ""
         
-        print("🔑 Token: \(token.prefix(20))...")
+        // 🔒 P0 修复 #4: 禁止打印 Token 到日志（改用 Logger 或完全移除）
+        // print("🔑 Token: \(token.prefix(20))...")
         print("👤 User ID: \(userId)")
         
-        // 保存 token
-        UserDefaults.standard.set(token, forKey: "userToken")
-        UserDefaults.standard.set(userId, forKey: "userId")
-        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-        
-        // ✅ 修复：保存 Token 到 Keychain（永久登录）
+        // ✅ P0 修复 #3: 仅使用 Keychain 存储 Token（安全存储）
         KeychainManager.shared.saveToken(token)
         KeychainManager.shared.saveUserId(userId)
+        KeychainManager.shared.saveUserPhone(phone)
         print("🔐 Token 已保存到 Keychain（永久登录）")
         
-        // 保存密码（用于后续启动时验证）
-        if loginType == "password" && !password.isEmpty {
-            UserDefaults.standard.set(password, forKey: "userPassword")
-            print("✅ 密码已保存（用于启动验证）")
-        }
-        
-        print("✅ Token 已保存")
+        // ✅ 密码不存储（安全考虑），用户下次登录需重新输入
         
         // 🔴 关键修复：在主线程更新 UserManager，确保 UI 刷新
         await MainActor.run {

@@ -470,7 +470,7 @@ struct AddCapsuleModal: View {
                     print("📁 持久化文件大小：\(permFileSize) bytes")
                     
                     // 2. 上传到服务器（如果已登录）
-                    if UserDefaults.standard.string(forKey: "userToken") != nil {
+                    if KeychainManager.shared.getToken() != nil {
                         print("☁️ 上传媒体文件到服务器...")
                         if let serverURL = await DataManager.shared.uploadMediaToServer(permanentURL, type: selectedType) {
                             print("✅ 媒体文件已上传：\(serverURL)")

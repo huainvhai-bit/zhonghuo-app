@@ -419,7 +419,12 @@ class NetworkService {
         Logger.debug("[\(fileName):\(line)] 文件大小：\(fileSize) bytes", file: fileName, line: line)
         
         // 构建 multipart/form-data 请求
-        var urlRequest = URLRequest(url: URL(string: DataManager.apiURL + endpoint)!)
+        guard let url = URL(string: DataManager.apiURL + endpoint) else {
+            let error = AppError.invalidParameter("URL 构建失败：\(endpoint)")
+            Logger.error("[\(fileName):\(line)] \(error.userMessage)", file: fileName, line: line)
+            throw error
+        }
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         
         let boundary = UUID().uuidString

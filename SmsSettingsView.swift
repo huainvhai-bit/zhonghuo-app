@@ -12,13 +12,14 @@ struct SmsSettingsView: View {
     @AppStorage("sms_use_aliyun") private var useAliyunSms = false
     @AppStorage("sms_use_tencent") private var useTencentSms = false
     
-    @AppStorage("aliyun_access_key_id") private var aliyunAccessKeyId = ""
-    @AppStorage("aliyun_access_key_secret") private var aliyunAccessKeySecret = ""
+    // 🔒 安全修复：敏感密钥使用 Keychain 存储，非敏感配置使用 @AppStorage
+    @State private var aliyunAccessKeyId = ""
+    @State private var aliyunAccessKeySecret = ""
     @AppStorage("aliyun_sign_name") private var aliyunSignName = "终活科技"
     @AppStorage("aliyun_template_code") private var aliyunTemplateCode = ""
     
-    @AppStorage("tencent_secret_id") private var tencentSecretId = ""
-    @AppStorage("tencent_secret_key") private var tencentSecretKey = ""
+    @State private var tencentSecretId = ""
+    @State private var tencentSecretKey = ""
     @AppStorage("tencent_app_id") private var tencentAppId = ""
     @AppStorage("tencent_sign_name") private var tencentSignName = "终活科技"
     @AppStorage("tencent_template_id") private var tencentTemplateId = ""
@@ -43,7 +44,9 @@ struct SmsSettingsView: View {
                 if useAliyunSms {
                     DisclosureGroup("阿里云配置") {
                         TextField("AccessKey ID", text: $aliyunAccessKeyId)
+                            .onChange(of: aliyunAccessKeyId) { _ in saveAliyunCredentials() }
                         SecureField("AccessKey Secret", text: $aliyunAccessKeySecret)
+                            .onChange(of: aliyunAccessKeySecret) { _ in saveAliyunCredentials() }
                         TextField("签名", text: $aliyunSignName)
                         TextField("模板 CODE", text: $aliyunTemplateCode)
                     }
@@ -56,7 +59,9 @@ struct SmsSettingsView: View {
                 if useTencentSms {
                     DisclosureGroup("腾讯云配置") {
                         TextField("SecretId", text: $tencentSecretId)
+                            .onChange(of: tencentSecretId) { _ in saveTencentCredentials() }
                         SecureField("SecretKey", text: $tencentSecretKey)
+                            .onChange(of: tencentSecretKey) { _ in saveTencentCredentials() }
                         TextField("AppID", text: $tencentAppId)
                         TextField("签名", text: $tencentSignName)
                         TextField("模板 ID", text: $tencentTemplateId)
@@ -80,6 +85,25 @@ struct SmsSettingsView: View {
             }
         }
         .navigationTitle("短信配置")
+        .onAppear {
+            // 🔒 从 Keychain 加载敏感密钥
+            aliyunAccessKeyId = KeychainManager.shared.getAliyunAccessKeyId() ?? ""
+            aliyunAccessKeySecret = KeychainManager.shared.getAliyunAccessKeySecret() ?? ""
+            tencentSecretId = KeychainManager.shared.getTencentSecretId() ?? ""
+            tencentSecretKey = KeychainManager.shared.getTencentSecretKey() ?? ""
+        }
+    }
+    
+    private func saveAliyunCredentials() {
+        // 🔒 保存到 Keychain
+        KeychainManager.shared.saveAliyunAccessKeyId(aliyunAccessKeyId)
+        KeychainManager.shared.saveAliyunAccessKeySecret(aliyunAccessKeySecret)
+    }
+    
+    private func saveTencentCredentials() {
+        // 🔒 保存到 Keychain
+        KeychainManager.shared.saveTencentSecretId(tencentSecretId)
+        KeychainManager.shared.saveTencentSecretKey(tencentSecretKey)
     }
     
     private func sendTestSms() {

@@ -30,6 +30,12 @@ class KeychainManager {
     private let userIdKey = "zhonghuo_user_id"
     private let userPhoneKey = "zhonghuo_user_phone"
     
+    // MARK: - 短信 API 密钥管理
+    private let aliyunAccessKeyIdKey = "zhonghuo_aliyun_access_key_id"
+    private let aliyunAccessKeySecretKey = "zhonghuo_aliyun_access_key_secret"
+    private let tencentSecretIdKey = "zhonghuo_tencent_secret_id"
+    private let tencentSecretKeyKey = "zhonghuo_tencent_secret_key"
+    
     // MARK: - Token 管理
     
     /// 保存 Token 到 Keychain
@@ -200,6 +206,48 @@ class KeychainManager {
         SecItemDelete(query as CFDictionary)
     }
     
+    // MARK: - 短信 API 密钥管理
+    
+    /// 保存阿里云 AccessKey ID
+    func saveAliyunAccessKeyId(_ keyId: String) {
+        saveItem(key: aliyunAccessKeyIdKey, value: keyId)
+    }
+    
+    /// 读取阿里云 AccessKey ID
+    func getAliyunAccessKeyId() -> String? {
+        return getItem(key: aliyunAccessKeyIdKey)
+    }
+    
+    /// 保存阿里云 AccessKey Secret
+    func saveAliyunAccessKeySecret(_ secret: String) {
+        saveItem(key: aliyunAccessKeySecretKey, value: secret)
+    }
+    
+    /// 读取阿里云 AccessKey Secret
+    func getAliyunAccessKeySecret() -> String? {
+        return getItem(key: aliyunAccessKeySecretKey)
+    }
+    
+    /// 保存腾讯云 SecretId
+    func saveTencentSecretId(_ secretId: String) {
+        saveItem(key: tencentSecretIdKey, value: secretId)
+    }
+    
+    /// 读取腾讯云 SecretId
+    func getTencentSecretId() -> String? {
+        return getItem(key: tencentSecretIdKey)
+    }
+    
+    /// 保存腾讯云 SecretKey
+    func saveTencentSecretKey(_ secretKey: String) {
+        saveItem(key: tencentSecretKeyKey, value: secretKey)
+    }
+    
+    /// 读取腾讯云 SecretKey
+    func getTencentSecretKey() -> String? {
+        return getItem(key: tencentSecretKeyKey)
+    }
+    
     // MARK: - 清空所有数据（退出登录时使用）
     
     /// 清空所有 Keychain 数据
@@ -207,6 +255,7 @@ class KeychainManager {
         deleteToken()
         deleteUserId()
         deleteUserPhone()
+        // 不清空短信 API 密钥（它们是配置，不是登录凭证）
         print("✅ Keychain: 所有数据已清空")
     }
 }

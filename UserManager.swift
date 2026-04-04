@@ -323,7 +323,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) async {
         // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
         // 获取 token
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         if token.isEmpty {
             if DebugConfig.enableErrorLogs {
                 errorPrint("无 token，跳过位置上传")
@@ -380,17 +380,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     /// 发送带 Token 的 GraphQL 请求（静态方法）
     /// ✅ 支持自动刷新 Token（永久登录）
+    /// ✅ P0 修复 #3: 仅使用 Keychain 存储 Token，移除 UserDefaults
     static func sendGraphQLQueryWithToken(query: String, variables: [String: Any]) async throws -> [String: Any] {
-        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "http://8.136.41.211:3395"
+        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "https://8.136.41.211:3395"
         guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
         }
         
-        // ✅ 优先从 Keychain 读取 Token
-        var token = KeychainManager.shared.getToken()
-        if token == nil {
-            token = UserDefaults.standard.string(forKey: "userToken")
-        }
+        // ✅ 仅从 Keychain 读取 Token（安全存储）
+        let token = KeychainManager.shared.getToken()
         
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
@@ -412,8 +410,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // ✅ 检查响应头中的新 Token（自动刷新）
         if let newToken = httpResponse.allHeaderFields["X-New-Token"] as? String {
             KeychainManager.shared.saveToken(newToken)
-            UserDefaults.standard.set(newToken, forKey: "userToken")
-            print("🔄 Token 已自动刷新（永久登录）")
+            print("🔄 Token 已自动刷新（永久登录，Keychain 存储）")
         }
         
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
@@ -475,9 +472,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("✅ 用户登录成功：\(user.name), 手机号：\(user.phone), 签到间隔：\(user.checkInInterval.rawValue)")
         
-        // ✅ 永久登录：保存 Token 到 Keychain
-        if let token = UserDefaults.standard.string(forKey: "userToken") {
-            KeychainManager.shared.saveToken(token)
+        // ✅ P0 修复 #3: 仅使用 Keychain 存储 Token（安全存储）
+        // 从 Keychain 读取 Token 并保存用户信息
+        if let token = KeychainManager.shared.getToken() {
             KeychainManager.shared.saveUserId(user.id)
             KeychainManager.shared.saveUserPhone(user.phone)
             print("🔐 Token 已保存到 Keychain（永久登录）")
@@ -676,8 +673,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func sendViaAliyunSms(phone: String, message: String) {
         print("☁️ [方案 2] 阿里云短信 API 发送短信")
         
-        let accessKeyId = UserDefaults.standard.string(forKey: "aliyun_access_key_id") ?? ""
-        let accessKeySecret = UserDefaults.standard.string(forKey: "aliyun_access_key_secret") ?? ""
+        // 🔒 安全修复：从 Keychain 读取密钥
+        let accessKeyId = KeychainManager.shared.getAliyunAccessKeyId() ?? ""
+        let accessKeySecret = KeychainManager.shared.getAliyunAccessKeySecret() ?? ""
         
         guard !accessKeyId.isEmpty && !accessKeySecret.isEmpty else {
             print("   ❌ 阿里云短信配置不完整，跳过发送")
@@ -694,8 +692,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func sendViaTencentSms(phone: String, message: String) {
         print("☁️ [方案 3] 腾讯云短信 API 发送短信")
         
-        let secretId = UserDefaults.standard.string(forKey: "tencent_secret_id") ?? ""
-        let secretKey = UserDefaults.standard.string(forKey: "tencent_secret_key") ?? ""
+        // 🔒 安全修复：从 Keychain 读取密钥
+        let secretId = KeychainManager.shared.getTencentSecretId() ?? ""
+        let secretKey = KeychainManager.shared.getTencentSecretKey() ?? ""
         
         guard !secretId.isEmpty && !secretKey.isEmpty else {
             print("   ❌ 腾讯云短信配置不完整，跳过发送")
@@ -715,7 +714,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("   - currentUser: \(currentUser?.name ?? "nil")")
         print("   - isLoggedIn: \(isLoggedIn)")
         print("   - API URL: \(DataManager.apiURL)")
-        print("   - Token: \(UserDefaults.standard.string(forKey: "userToken") ?? "nil")")
+        // 🔒 安全修复：不再打印 Token
         
         guard var user = currentUser else {
             print("❌ recordCheckIn 失败：currentUser 为 nil")
@@ -796,7 +795,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // 同步签到到服务器（使用 GraphQL）
     @MainActor
     private func syncCheckInToServer(isAuto: Bool) async {
-        guard let token = UserDefaults.standard.string(forKey: "userToken"),
+        guard let token = KeychainManager.shared.getToken(),
               !DataManager.apiURL.isEmpty else {
             print("❌ 签到同步：缺少必要参数")
             return
@@ -887,11 +886,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // 🗑️ 清除 Keychain 中的 Token（永久登录数据）
         KeychainManager.shared.clearAll()
-        
-        // 🗑️ 清除 UserDefaults 中的旧数据（兼容）
-        UserDefaults.standard.removeObject(forKey: "userPassword")
-        UserDefaults.standard.removeObject(forKey: "userToken")
-        UserDefaults.standard.removeObject(forKey: "userId")
         print("   ✅ 已清除所有登录数据")
         
         print("   currentUser: nil")
@@ -1095,9 +1089,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // ✅ 永久登录：优先从 Keychain 恢复 Token
         var token: String? = KeychainManager.shared.getToken()
         
-        // 降级方案：从 UserDefaults 读取（兼容旧版本）
+        // 降级方案：从 UserDefaults 读取（兼容旧版本），并迁移到 Keychain
         if token == nil {
-            token = UserDefaults.standard.string(forKey: "userToken")
+            if let oldToken = UserDefaults.standard.string(forKey: "userToken") {
+                token = oldToken
+                // 迁移到 Keychain
+                KeychainManager.shared.saveToken(oldToken)
+                // 清除 UserDefaults 中的旧 token
+                UserDefaults.standard.removeObject(forKey: "userToken")
+                print("🔄 Token 从 UserDefaults 迁移到 Keychain")
+            }
         }
         
         if let token = token, !token.isEmpty {
@@ -1142,7 +1143,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        guard let token = UserDefaults.standard.string(forKey: "userToken"),
+        guard let token = KeychainManager.shared.getToken(),
               !token.isEmpty else {
             return
         }
@@ -1347,9 +1348,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 self.checkEmergencyContacts()  // 保存后重新检查
                 
-                // 同步到 UserDefaults
-                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                UserDefaults.standard.set(user.id, forKey: "userId")
+                // ✅ P0 修复 #3: 仅使用 Keychain 存储用户 ID（安全存储）
+                KeychainManager.shared.saveUserId(user.id)
                 
                 print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
                 print("   统计信息：紧急=\(user.emergencyContacts.count)")

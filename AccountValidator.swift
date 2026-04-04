@@ -97,60 +97,10 @@ class AccountValidator: ObservableObject {
         return false
     }
     
-    /// 验证用户凭证
+    /// 验证用户凭证（使用 Token 验证，不再存储密码）
     private func validateUserCredentials(user: User) async -> Bool {
-        guard !dataManager.apiURL.isEmpty else {
-            validationError = "API 未初始化"
-            return false
-        }
-        
-        // 获取存储的密码（如果有）
-        let storedPassword = UserDefaults.standard.string(forKey: "userPassword") ?? ""
-        
-        do {
-            // 调用服务器验证 API
-            let url = URL(string: "\(dataManager.apiURL)/api/users.php?action=validate")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            // 构建请求体
-            let body: [String: Any] = [
-                "phone": user.phone,
-                "password": storedPassword
-            ]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 验证响应：\(httpResponse.statusCode)")
-                
-                if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(ValidateResponse.self, from: data)
-                    
-                    if result.status == "success" {
-                        return true
-                    } else {
-                        validationError = result.message ?? "账号验证失败"
-                        return false
-                    }
-                } else {
-                    validationError = "服务器错误：\(httpResponse.statusCode)"
-                    return false
-                }
-            }
-        } catch {
-            print("❌ 验证请求失败：\(error)")
-            validationError = error.localizedDescription
-        }
-        
-        // 如果没有密码（旧版本用户），尝试获取用户信息验证
-        if storedPassword.isEmpty {
-            return await validateByUserInfo(user: user)
-        }
-        
-        return false
+        // ✅ 安全修复：不再使用密码验证，仅使用 Token 验证
+        return await validateByUserInfo(user: user)
     }
     
     /// 通过获取用户信息验证（兼容旧版本）
@@ -160,7 +110,7 @@ class AccountValidator: ObservableObject {
             return false
         }
         
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         
         do {
             let url = URL(string: "\(dataManager.apiURL)/api/users.php?action=info")!
@@ -208,10 +158,8 @@ class AccountValidator: ObservableObject {
         // 清除用户数据
         userManager.logout()
         
-        // 清除存储的密码和 token
-        UserDefaults.standard.removeObject(forKey: "userPassword")
-        UserDefaults.standard.removeObject(forKey: "userToken")
-        UserDefaults.standard.removeObject(forKey: "userId")
+        // 清除 Keychain 中的 Token
+        KeychainManager.shared.clearAll()
         
         // 标记需要退出
         shouldLogout = true

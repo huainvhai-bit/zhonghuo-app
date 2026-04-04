@@ -266,7 +266,7 @@ struct InviteCodeView: View {
     
     @MainActor
     private func loadInviteCodeAsync() async {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
+        let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"
             isLoading = false
