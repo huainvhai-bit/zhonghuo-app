@@ -139,7 +139,7 @@ struct TimeCapsuleView: View {
     
     // MARK: - 胶囊列表
     private var capsuleList: some View {
-        VStack(spacing: 12) {
+        LazyVStack(spacing: 12) {
             ForEach(filteredCapsules) { capsule in
                 CapsuleCard(capsule: capsule, onEdit: {
                     editingCapsule = capsule

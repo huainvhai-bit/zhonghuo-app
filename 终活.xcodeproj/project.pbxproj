@@ -47,7 +47,11 @@
 		A1075845 /* EmergencyContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2010F25 /* EmergencyContactsView.swift */; };
 		A1000040 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000040 /* AppConfig.swift */; };
 		A1000041 /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000041 /* DebugConfig.swift */; };
-/* End PBXBuildFile section */
+
+		D5AD1F30 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F300 /* AppError.swift */; };
+		D5AD1F31 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F310 /* Logger.swift */; };
+		D5AD1F32 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F320 /* NetworkService.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		A7C9DEBA /* Embed Frameworks */ = {
@@ -103,7 +107,11 @@
 		A2000040 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		A2000041 /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F297D03473770EF79D0 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+
+		D5AD1F300 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = SOURCE_ROOT; };
+		D5AD1F310 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = SOURCE_ROOT; };
+		D5AD1F320 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = SOURCE_ROOT; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A7B4E810 /* Frameworks */ = {
@@ -152,6 +160,9 @@
 				A200000C /* AuthManager.swift */,
 				A200000D /* LifeCheckStatusManager.swift */,
 				A200000E /* AppStabilityManager.swift */,
+				D5AD1F300 /* AppError.swift */,
+				D5AD1F310 /* Logger.swift */,
+				D5AD1F320 /* NetworkService.swift */,
 				A200000F /* ErrorHandler.swift */,
 				A2000010 /* CloudStorageManager.swift */,
 				A2000011 /* SecureStorage.swift */,
@@ -283,6 +294,9 @@
 				A1000040 /* AppConfig.swift in Sources */,
 				A1000041 /* DebugConfig.swift in Sources */,
 				334C2F04C944C07197FE8DE5 /* KeychainManager.swift in Sources */,
+				D5AD1F30 /* AppError.swift in Sources */,
+				D5AD1F31 /* Logger.swift in Sources */,
+				D5AD1F32 /* NetworkService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
