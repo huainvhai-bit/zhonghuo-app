@@ -847,9 +847,917 @@ git commit -m "docs: 更新 API 文档"
 
 ---
 
-## 附录
+## 9. 测试策略
 
-### A. 常见问题 (FAQ)
+### 9.1 单元测试 (XCTest)
+
+**测试覆盖率目标**: 核心模块 > 80%
+
+```swift
+import XCTest
+@testable import zhonghuo
+
+final class DataManagerTests: XCTestCase {
+    var dataManager: DataManager!
+    
+    override func setUp() async throws {
+        dataManager = DataManager.shared
+        // 清理测试数据
+        dataManager.capsules.removeAll()
+    }
+    
+    func testAddCapsule() async throws {
+        let capsule = TimeCapsule(
+            id: "test-1",
+            title: "测试胶囊",
+            content: "测试内容",
+            type: .text,
+            sendDate: Date().addingTimeInterval(86400)
+        )
+        
+        dataManager.capsules.append(capsule)
+        XCTAssertEqual(dataManager.capsules.count, 1)
+        XCTAssertEqual(dataManager.capsules.first?.title, "测试胶囊")
+    }
+    
+    func testSaveCapsules() throws {
+        // 测试本地持久化
+        dataManager.saveCapsules()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: dataManager.capsulesPath))
+    }
+}
+```
+
+**测试命令**:
+```bash
+# 运行所有测试
+xcodebuild test -project 终活.xcodeproj -scheme 终活 \
+  -destination 'platform=iOS Simulator,name=iPhone 17'
+
+# 生成覆盖率报告
+xcodebuild test -project 终活.xcodeproj -scheme 终活 \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -resultBundlePath TestResults.xcresult
+```
+
+### 9.2 UI 测试
+
+```swift
+import XCTest
+
+final class zhonghuoUITests: XCTestCase {
+    func testLoginFlow() {
+        let app = XCUIApplication()
+        app.launch()
+        
+        // 输入手机号
+        let phoneField = app.textFields["手机号"]
+        phoneField.tap()
+        phoneField.typeText("13800138000")
+        
+        // 获取验证码
+        app.buttons["获取验证码"].tap()
+        
+        // 输入验证码
+        let codeField = app.textFields["验证码"]
+        codeField.tap()
+        codeField.typeText("123456")
+        
+        // 登录
+        app.buttons["登录"].tap()
+        
+        // 验证登录成功 (跳转到首页)
+        XCTAssertTrue(app.staticTexts["首页"].exists)
+    }
+}
+```
+
+### 9.3 后端测试 (PHPUnit)
+
+```php
+<?php
+use PHPUnit\Framework\TestCase;
+
+class UserManagerTest extends TestCase {
+    private $db;
+    
+    protected function setUp(): void {
+        $this->db = getTestDB();
+    }
+    
+    public function testLoginSuccess() {
+        $result = login('13800138000', '123456');
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('token', $result['data']);
+    }
+    
+    public function testLoginFailure() {
+        $result = login('13800138000', 'wrong_code');
+        $this->assertFalse($result['success']);
+        $this->assertEquals('验证码错误', $result['error']);
+    }
+}
+```
+
+**运行测试**:
+```bash
+cd zhonghuo-backend-php
+vendor/bin/phpunit tests/
+```
+
+### 9.4 API 接口测试
+
+使用 Postman 或 curl 测试 API:
+
+```bash
+# 测试版本检测 API
+curl https://api.zhonghuo.cn/api/version.php
+
+# 测试 GraphQL 查询
+curl -X POST https://api.zhonghuo.cn/api/graphql.php \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"query": "query { user { id name } }"}'
+```
+
+### 9.5 测试清单
+
+**发布前必测**:
+- [ ] 登录注册流程
+- [ ] 胶囊创建/编辑/删除
+- [ ] 家人邀请绑定
+- [ ] 每日签到
+- [ ] 紧急联系人设置
+- [ ] 云存储上传下载
+- [ ] 推送通知接收
+- [ ] 离线模式数据同步
+
+---
+
+## 10. 错误处理与日志规范
+
+### 10.1 统一错误类型 (前端)
+
+```swift
+// 统一错误类型
+enum AppError: LocalizedError {
+    case network(Error)
+    case auth(String)
+    case dataNotFound
+    case serverError(Int, String)
+    case localDatabase(Error)
+    case invalidParameter(String)
+    case permissionDenied
+    
+    var userMessage: String {
+        switch self {
+        case .network(let error):
+            return "网络连接失败：\(error.localizedDescription)"
+        case .auth(let message):
+            return "认证失败：\(message)"
+        case .dataNotFound:
+            return "数据不存在"
+        case .serverError(_, let msg):
+            return msg
+        case .localDatabase:
+            return "本地数据错误"
+        case .invalidParameter(let field):
+            return "参数错误：\(field)"
+        case .permissionDenied:
+            return "权限不足"
+        }
+    }
+    
+    var logMessage: String {
+        return "[\(self)] \(userMessage)"
+    }
+}
+
+// 使用示例
+func loadData() async throws {
+    do {
+        let result = try await GraphQLClient.shared.query(query)
+        // 处理结果
+    } catch let error as AppError {
+        Logger.error(error.logMessage)
+        showError(error.userMessage)
+    } catch {
+        Logger.error("未知错误：\(error)")
+        showError("发生未知错误，请稍后重试")
+    }
+}
+```
+
+### 10.2 统一错误类型 (后端)
+
+```php
+<?php
+class ApiException extends Exception {
+    private $statusCode;
+    private $userMessage;
+    
+    public function __construct(
+        string $message, 
+        int $statusCode = 500,
+        string $userMessage = '服务器错误'
+    ) {
+        parent::__construct($message);
+        $this->statusCode = $statusCode;
+        $this->userMessage = $userMessage;
+    }
+    
+    public function getResponse(): array {
+        return [
+            'success' => false,
+            'error' => $this->userMessage,
+            'code' => $this->statusCode,
+            'debug' => $this->getMessage() // 仅开发环境
+        ];
+    }
+}
+
+// 使用示例
+function getUserInfo(string $userId): array {
+    if (!validateUserId($userId)) {
+        throw new ApiException('无效的用户 ID', 400, '参数错误');
+    }
+    
+    $user = fetchUser($userId);
+    if (!$user) {
+        throw new ApiException('用户不存在', 404, '用户不存在');
+    }
+    
+    return $user;
+}
+
+// 全局错误处理
+set_exception_handler(function($e) {
+    if ($e instanceof ApiException) {
+        http_response_code($e->getStatusCode());
+        echo json_encode($e->getResponse(), JSON_UNESCAPED_UNICODE);
+    } else {
+        error_log("未捕获异常：{$e->getMessage()}");
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => '服务器错误']);
+    }
+});
+```
+
+### 10.3 日志规范 (前端)
+
+```swift
+// 统一日志工具
+enum Logger {
+    enum Level: String {
+        case debug = "🔍"
+        case info = "ℹ️"
+        case warning = "⚠️"
+        case error = "❌"
+    }
+    
+    static func log(_ message: String, level: Level = .info, file: String = #file, line: Int = #line) {
+        #if DEBUG
+        let fileName = (file as NSString).lastPathComponent
+        print("\(level.rawValue) [\(fileName):\(line)] \(message)")
+        #endif
+    }
+    
+    static func debug(_ message: String, file: String = #file, line: Int = #line) {
+        log(message, level: .debug, file: file, line: line)
+    }
+    
+    static func info(_ message: String, file: String = #file, line: Int = #line) {
+        log(message, level: .info, file: file, line: line)
+    }
+    
+    static func warning(_ message: String, file: String = #file, line: Int = #line) {
+        log(message, level: .warning, file: file, line: line)
+    }
+    
+    static func error(_ message: String, file: String = #file, line: Int = #line) {
+        log(message, level: .error, file: file, line: line)
+    }
+}
+
+// 使用示例
+Logger.info("用户登录成功")
+Logger.debug("API 响应：\(response)")
+Logger.warning("Token 即将过期")
+Logger.error("网络请求失败：\(error)")
+```
+
+### 10.4 日志规范 (后端)
+
+```php
+<?php
+class Logger {
+    const DEBUG = 'DEBUG';
+    const INFO = 'INFO';
+    const WARNING = 'WARNING';
+    const ERROR = 'ERROR';
+    
+    public static function log(string $message, string $level = self::INFO, string $context = '') {
+        $timestamp = date('Y-m-d H:i:s');
+        $logMessage = "[$timestamp] [$level] [$context] $message";
+        
+        // 开发环境输出到控制台
+        if (defined('DEBUG') && DEBUG) {
+            echo $logMessage . PHP_EOL;
+        }
+        
+        // 生产环境写入文件
+        $logFile = __DIR__ . '/../logs/' . date('Y-m-d') . '.log';
+        file_put_contents($logFile, $logMessage . PHP_EOL, FILE_APPEND);
+    }
+    
+    public static function debug(string $message, string $context = '') {
+        self::log($message, self::DEBUG, $context);
+    }
+    
+    public static function info(string $message, string $context = '') {
+        self::log($message, self::INFO, $context);
+    }
+    
+    public static function warning(string $message, string $context = '') {
+        self::log($message, self::WARNING, $context);
+    }
+    
+    public static function error(string $message, string $context = '') {
+        self::log($message, self::ERROR, $context);
+    }
+}
+
+// 使用示例
+Logger::info("用户登录成功", "auth");
+Logger::debug("SQL 查询：$sql", "database");
+Logger::warning("Token 即将过期", "auth");
+Logger::error("数据库连接失败：" . $e->getMessage(), "database");
+```
+
+### 10.5 日志级别说明
+
+| 级别 | 用途 | 示例 |
+|------|------|------|
+| DEBUG | 调试信息，仅开发环境 | API 请求/响应详情 |
+| INFO | 正常业务日志 | 用户登录、数据同步 |
+| WARNING | 警告信息，不影响功能 | 参数异常、降级处理 |
+| ERROR | 错误信息，需要处理 | 网络失败、数据库错误 |
+
+---
+
+## 11. 缓存与网络层
+
+### 11.1 缓存策略
+
+| 数据类型 | 存储位置 | 过期时间 | 同步策略 |
+|---------|---------|---------|---------|
+| Token | Keychain | 永久 | 登录/登出更新 |
+| 用户信息 | 内存 + 本地 JSON | 24 小时 | 启动时刷新 |
+| 胶囊列表 | 内存 + 本地 JSON | 实时 | 修改后立即同步 |
+| 遗嘱数据 | 内存 + 本地 JSON | 实时 | 修改后立即同步 |
+| 配置信息 | UserDefaults | 长期 | 启动时获取 |
+| 服务器配置 | 内存 | 24 小时 | 启动时获取 |
+
+### 11.2 网络层抽象
+
+```swift
+// 统一网络服务
+class NetworkService {
+    static let shared = NetworkService()
+    
+    // HTTP 方法
+    enum HTTPMethod: String {
+        case GET, POST, PUT, DELETE
+    }
+    
+    // 统一请求
+    func request<T: Decodable>(
+        endpoint: String,
+        method: HTTPMethod = .GET,
+        parameters: [String: Any]? = nil,
+        requiresAuth: Bool = true
+    ) async throws -> T {
+        // 1. 构建 URL
+        guard var urlComponents = URLComponents(string: DataManager.apiURL + endpoint) else {
+            throw AppError.invalidParameter("URL")
+        }
+        
+        // 2. 添加查询参数 (GET)
+        if method == .GET, let params = parameters {
+            urlComponents.queryItems = params.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+        }
+        
+        // 3. 创建请求
+        var request = URLRequest(url: urlComponents.url!)
+        request.httpMethod = method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // 4. 添加 Token
+        if requiresAuth {
+            if let token = KeychainManager.shared.getToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        
+        // 5. 添加请求体 (POST/PUT)
+        if method == .POST || method == .PUT {
+            request.httpBody = try? JSONSerialization.data(withJSONObject: parameters ?? [:])
+        }
+        
+        // 6. 发送请求
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // 7. 处理响应
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AppError.network(NSError(domain: "Network", code: -1, userInfo: nil))
+        }
+        
+        switch httpResponse.statusCode {
+        case 200...299:
+            return try JSONDecoder().decode(T.self, from: data)
+        case 401:
+            throw AppError.auth("Token 无效，请重新登录")
+        case 403:
+            throw AppError.permissionDenied
+        case 404:
+            throw AppError.dataNotFound
+        default:
+            throw AppError.serverError(httpResponse.statusCode, "服务器错误")
+        }
+    }
+    
+    // GraphQL 专用方法
+    func graphql<T: Decodable>(query: String, variables: [String: Any]? = nil) async throws -> T {
+        var params: [String: Any] = ["query": query]
+        if let variables = variables {
+            params["variables"] = variables
+        }
+        return try await request(endpoint: "/graphql.php", method: .POST, parameters: params)
+    }
+}
+
+// 使用示例
+let result: UserResponse = try await NetworkService.shared.graphql(query: "query { user { id name } }")
+```
+
+### 11.3 重试机制
+
+```swift
+// 网络重试
+func requestWithRetry<T: Decodable>(
+    endpoint: String,
+    maxRetries: Int = 3,
+    delay: TimeInterval = 1.0
+) async throws -> T {
+    var lastError: Error?
+    
+    for attempt in 1...maxRetries {
+        do {
+            return try await NetworkService.shared.request(endpoint: endpoint)
+        } catch {
+            lastError = error
+            Logger.warning("请求失败，第 \(attempt) 次重试：\(error)")
+            try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        }
+    }
+    
+    throw lastError ?? AppError.network(NSError(domain: "Retry", code: -1))
+}
+```
+
+---
+
+## 12. 性能优化
+
+### 12.1 前端性能优化
+
+**列表优化**:
+```swift
+// ✅ 使用 LazyVStack
+ScrollView {
+    LazyVStack {
+        ForEach(capsules) { capsule in
+            CapsuleRow(capsule: capsule)
+        }
+    }
+}
+
+// ❌ 避免使用 VStack (全部渲染)
+VStack {
+    ForEach(capsules) { capsule in
+        CapsuleRow(capsule: capsule)
+    }
+}
+```
+
+**图片懒加载**:
+```swift
+// 使用 AsyncImage
+AsyncImage(url: URL(string: mediaURL)) { image in
+    image.resizable().aspectRatio(contentMode: .fill)
+} placeholder: {
+    ProgressView()
+}
+```
+
+**避免不必要的 @Published 触发**:
+```swift
+// ✅ 批量更新
+func updateMultiple() {
+    $capsules.withTransaction {
+        capsules.append(newCapsule)
+        capsules.remove(at: 0)
+    }
+}
+
+// ❌ 多次触发
+capsules.append(newCapsule)  // 触发 1
+capsules.remove(at: 0)       // 触发 2
+```
+
+**大文件异步处理**:
+```swift
+// 视频压缩在后台线程
+func compressVideo(inputURL: URL, outputURL: URL) async throws {
+    try await withCheckedThrowingContinuation { continuation in
+        DispatchQueue.global(qos: .userInitiated).async {
+            // 压缩逻辑
+            continuation.resume()
+        }
+    }
+}
+```
+
+### 12.2 后端性能优化
+
+**数据库索引**:
+```sql
+-- 常用查询字段添加索引
+CREATE INDEX idx_user_created ON capsules(user_id, created_at);
+CREATE INDEX idx_status ON capsules(cloud_backup_status);
+CREATE INDEX idx_phone ON users(phone);
+CREATE INDEX idx_invite_code ON users(invite_code);
+```
+
+**查询优化**:
+```php
+// ✅ 使用 LIMIT 限制结果数
+$stmt = $db->prepare("SELECT * FROM capsules WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
+
+// ✅ 只查询需要的字段
+$stmt = $db->prepare("SELECT id, title, type FROM capsules WHERE user_id = ?");
+
+// ❌ 避免 SELECT *
+$stmt = $db->prepare("SELECT * FROM capsules WHERE user_id = ?");
+```
+
+**缓存热点数据**:
+```php
+// 使用 Redis 缓存用户信息
+function getCachedUser($userId) {
+    $redis = getRedis();
+    $key = "user:$userId";
+    
+    // 尝试从缓存获取
+    $cached = $redis->get($key);
+    if ($cached) {
+        return json_decode($cached, true);
+    }
+    
+    // 从数据库查询
+    $user = fetchUser($userId);
+    
+    // 写入缓存 (5 分钟)
+    $redis->setex($key, 300, json_encode($user));
+    
+    return $user;
+}
+```
+
+### 12.3 性能监控指标
+
+| 指标 | 目标值 | 监控方式 |
+|------|--------|---------|
+| App 启动时间 | < 2 秒 | Xcode Instruments |
+| 页面渲染时间 | < 300ms | Instruments |
+| API 响应时间 | < 200ms | 后端日志 |
+| 网络请求成功率 | > 99% | 客户端统计 |
+| 崩溃率 | < 0.1% | Crashlytics |
+
+---
+
+## 13. 安全规范
+
+### 13.1 前端安全
+
+**Token 存储**:
+```swift
+// ✅ 必须使用 Keychain
+KeychainManager.shared.saveToken(token)
+
+// ❌ 禁止使用 UserDefaults
+UserDefaults.standard.set(token, forKey: "token")  // 不安全!
+```
+
+**HTTPS 强制 (ATS 配置)**:
+```xml
+<!-- Info.plist -->
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+    <key>NSExceptionDomains</key>
+    <dict>
+        <key>api.zhonghuo.cn</key>
+        <dict>
+            <key>NSIncludesSubdomains</key>
+            <true/>
+            <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+            <false/>
+        </dict>
+    </dict>
+</dict>
+```
+
+**输入验证**:
+```swift
+// 手机号验证
+func validatePhone(_ phone: String) -> Bool {
+    let pattern = "^1[3-9]\\d{9}$"
+    let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+    return predicate.evaluate(with: phone)
+}
+
+// 邀请码验证
+func validateInviteCode(_ code: String) -> Bool {
+    return code.count == 6 && code.uppercased() == code
+}
+```
+
+**敏感数据不落日志**:
+```swift
+// ✅ 脱敏处理
+Logger.info("用户登录：\(phone.prefix(3))****\(phone.suffix(4))")
+
+// ❌ 禁止打印完整敏感信息
+Logger.info("用户 Token: \(token)")  // 禁止!
+```
+
+### 13.2 后端安全
+
+**SQL 预处理 (100% 覆盖)**:
+```php
+// ✅ 正确
+$stmt = $db->prepare("SELECT * FROM users WHERE phone = ?");
+$stmt->execute([$phone]);
+
+// ❌ 禁止字符串拼接
+$sql = "SELECT * FROM users WHERE phone = '$phone'";  // 禁止!
+```
+
+**XSS 防护**:
+```php
+// 输出转义
+echo htmlspecialchars($userInput, ENT_QUOTES, 'UTF-8');
+
+// JSON 输出
+header('Content-Type: application/json');
+echo json_encode($data, JSON_UNESCAPED_UNICODE);
+```
+
+**CSRF 防护**:
+```php
+// 生成 CSRF Token
+session_start();
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// 验证 CSRF Token
+if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    throw new ApiException('CSRF 验证失败', 403);
+}
+```
+
+**接口限流**:
+```php
+// 防止短信接口被刷
+function rateLimit($phone, $maxRequests = 5, $window = 3600) {
+    $redis = getRedis();
+    $key = "rate_limit:sms:$phone";
+    
+    $count = $redis->incr($key);
+    if ($count == 1) {
+        $redis->expire($key, $window);
+    }
+    
+    if ($count > $maxRequests) {
+        throw new ApiException('操作过于频繁', 429);
+    }
+}
+```
+
+**JWT Token 安全**:
+```php
+// Token 配置
+$tokenConfig = [
+    'exp' => time() + 86400,  // 24 小时过期
+    'iat' => time(),
+    'iss' => 'zhonghuo-api',
+    'sub' => $userId
+];
+
+// 敏感操作日志
+function logSensitiveAction($userId, $action, $ip) {
+    error_log("[$userId] $action from $ip");
+}
+
+// 使用示例
+logSensitiveAction($userId, 'login', $_SERVER['REMOTE_ADDR']);
+```
+
+### 13.3 安全清单
+
+**发布前检查**:
+- [ ] Token 使用 Keychain 存储
+- [ ] 所有 SQL 使用预处理
+- [ ] 输出内容 XSS 转义
+- [ ] 敏感接口限流
+- [ ] HTTPS 强制开启
+- [ ] 错误信息不泄露敏感数据
+- [ ] 敏感操作日志记录
+- [ ] JWT Token 过期时间 < 24h
+
+---
+
+## 14. 监控与告警
+
+### 14.1 前端监控
+
+**崩溃收集 (Firebase Crashlytics)**:
+```swift
+import FirebaseCrashlytics
+
+// 记录自定义日志
+Crashlytics.crashlytics().log("用户执行了敏感操作")
+
+// 记录非致命错误
+Crashlytics.crashlytics().record(error: error)
+
+// 设置用户标识
+Crashlytics.crashlytics().setUserID(userId)
+```
+
+**性能监控**:
+```swift
+import FirebasePerformance
+
+// 监控网络请求
+let metric = Performance.startHTTPTrace(url: url)
+// ... 请求完成
+metric?.stop()
+
+// 监控代码段
+let trace = Performance.startTrace(name: "数据同步")
+// ... 业务逻辑
+trace?.stop()
+```
+
+### 14.2 后端监控
+
+**API 响应时间监控**:
+```php
+// 中间件记录响应时间
+$start = microtime(true);
+
+// ... 处理请求
+
+$duration = microtime(true) - $duration;
+if ($duration > 1.0) {
+    Logger::warning("慢查询：{$duration}s", "performance");
+}
+
+// 写入监控日志
+file_put_contents('/var/log/zhonghuo/performance.log', 
+    "$duration\t$endpoint\t" . date('Y-m-d H:i:s') . PHP_EOL, 
+    FILE_APPEND);
+```
+
+**错误率监控**:
+```php
+// 统计错误率
+$errorRate = $errorCount / $totalRequests * 100;
+if ($errorRate > 5) {
+    sendAlert("错误率超过 5%: {$errorRate}%");
+}
+```
+
+**慢查询日志**:
+```php
+// MySQL 慢查询配置
+// my.cnf
+[mysqld]
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2  # 超过 2 秒的查询
+```
+
+### 14.3 告警配置
+
+**告警级别**:
+| 级别 | 条件 | 通知方式 |
+|------|------|---------|
+| P0 - 严重 | 服务不可用、数据丢失 | 短信 + 电话 |
+| P1 - 高 | 错误率 > 10%、响应时间 > 5s | 短信 + 飞书 |
+| P2 - 中 | 错误率 > 5%、响应时间 > 2s | 飞书通知 |
+| P3 - 低 | 警告信息、性能下降 | 邮件通知 |
+
+**告警渠道**:
+```php
+// 飞书机器人通知
+function sendFeishuAlert($message) {
+    $webhook = "https://open.feishu.cn/open-apis/bot/v2/hook/xxx";
+    $data = [
+        "msg_type" => "text",
+        "content" => ["text" => "🚨 终活 App 告警\n" . $message]
+    ];
+    
+    $ch = curl_init($webhook);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_exec($ch);
+}
+
+// 邮件告警
+function sendEmailAlert($subject, $message) {
+    mail('admin@zhonghuo.cn', $subject, $message);
+}
+```
+
+---
+
+## 15. 版本兼容与数据迁移
+
+### 15.1 版本兼容性
+
+**前端版本检查**:
+```swift
+// 系统版本检查
+if #available(iOS 17.0, *) {
+    // 使用新 API
+    if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+        // iOS 15+ API
+    }
+} else {
+    // 降级方案
+    if let window = UIApplication.shared.windows.first {
+        // 旧 API
+    }
+}
+
+// App 版本检查
+let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+```
+
+**后端 API 版本控制**:
+```
+# URL 版本化
+/api/v1/graphql.php
+/api/v2/graphql.php
+
+# 或 Header 版本化
+Accept: application/vnd.zhonghuo.v1+json
+```
+
+### 15.2 数据迁移流程
+
+**数据库变更原则**:
+1. **只增不减** - 不删除字段，只添加新字段
+2. **默认值兼容** - 新字段设置合理的默认值
+3. **双写过渡** - 新旧字段同时写入一段时间
+4. **向后兼容** - 旧版本 App 仍能正常使用
+
+**迁移脚本示例**:
+```sql
+-- migrate_v1.1.sql
+-- 添加新字段 (设置默认值)
+ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) DEFAULT '';
+ALTER TABLE users ADD COLUMN last_checkin_at DATETIME DEFAULT NULL;
+
+-- 数据迁移 (如有需要)
+UPDATE users SET last_checkin_at = created_at WHERE last_checkin_at IS NULL;
+```
+
+**迁移流程**:
+1. 创建迁移脚本 `migrate_vX.X.sql`
+2. 在测试环境验证
+3. 灰度发布 (10% 用户)
+4. 监控错误日志
+5. 全量发布
+6. 观察 24 小时无问题后完成
+
+---
+
+## 附录
 
 #### Q1: Token 读取失败 (-25300)
 
