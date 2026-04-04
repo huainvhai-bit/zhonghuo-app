@@ -47,7 +47,7 @@ struct FamilyGuardView: View {
                 print("🔵 家人守护页面 onAppear")
                 
                 // 🔥 首次点击快速响应：先设置加载状态，再异步加载数据
-                isLoading = true
+                // ✅ 修复：loadFamilyListAsync 内部会管理 isLoading 状态
                 Task {
                     // 并行加载，提高速度
                     await withTaskGroup(of: Void.self) { group in
@@ -406,16 +406,22 @@ struct FamilyGuardView: View {
     
     @MainActor
     private func loadFamilyListAsync() async {
+        // ✅ 修复：使用 defer 确保 isLoading 总是被重置
+        defer {
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
+        
         isLoading = true
-        defer { isLoading = false }
         
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
         guard !token.isEmpty else {
-            isLoading = false
+            print("⚠️ 加载家人列表失败：Token 为空")
             return
         }
         guard !DataManager.apiURL.isEmpty else {
-            isLoading = false
+            print("⚠️ 加载家人列表失败：API URL 为空")
             return
         }
         
@@ -460,7 +466,7 @@ struct FamilyGuardView: View {
                 if let familyData = familyResult["data"] as? [String: Any] {
                     // 解析 members
                     if let members = familyData["members"] as? [[String: Any]] {
-                        familyList = members.compactMap { member in
+                        let newFamilyList = members.compactMap { member in
                             FamilyMember(
                                 id: member["id"] as? String ?? "",
                                 relationId: member["id"] as? String ?? "",
@@ -474,6 +480,7 @@ struct FamilyGuardView: View {
                                 deviceInfo: nil
                             )
                         }
+                        self.familyList = newFamilyList
                     }
                     
                     print("✅ 家人列表加载成功：\(familyList.count) 人")
@@ -485,8 +492,6 @@ struct FamilyGuardView: View {
         } catch {
             print("❌ 加载家人列表失败：\(error)")
         }
-        
-        isLoading = false
     }
     
     @MainActor

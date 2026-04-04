@@ -1290,7 +1290,8 @@ class DataManager: ObservableObject {
             // ✅ 修复：整个方法标记为 @MainActor，确保所有 @Published 更新在主线程
             // 解析胶囊数据
             if let capsulesArray = result["capsules"] as? [[String: Any]] {
-                capsules = capsulesArray.compactMap { dict -> TimeCapsule? in
+                // ✅ 修复：确保数组操作也在主线程
+                let newCapsules = capsulesArray.compactMap { dict -> TimeCapsule? in
                     guard let id = dict["id"] as? String,
                           let title = dict["title"] as? String,
                           let type = dict["type"] as? String else { return nil }
@@ -1304,11 +1305,12 @@ class DataManager: ObservableObject {
                         createdAt: Date()
                     )
                 }
+                self.capsules = newCapsules
             }
             
             // 解析遗嘱数据
             if let willsArray = result["wills"] as? [[String: Any]] {
-                willModules = willsArray.compactMap { dict -> WillModule? in
+                let newWillModules = willsArray.compactMap { dict -> WillModule? in
                     guard let id = dict["id"] as? String,
                           let typeStr = dict["type"] as? String,
                           let title = dict["title"] as? String else { return nil }
@@ -1321,6 +1323,62 @@ class DataManager: ObservableObject {
                         isCompleted: false
                     )
                 }
+                self.willModules = newWillModules
+            }
+            
+            // 解析资产数据
+            if let assetsArray = result["assets"] as? [[String: Any]] {
+                let newAssets = assetsArray.compactMap { dict -> Asset? in
+                    // 解析资产数据
+                    guard let id = dict["id"] as? String,
+                          let typeStr = dict["type"] as? String,
+                          let name = dict["name"] as? String else { return nil }
+                    return Asset(
+                        id: id,
+                        type: Asset.AssetType(rawValue: typeStr) ?? .bank,
+                        name: name,
+                        institution: dict["institution"] as? String ?? "",
+                        balance: dict["balance"] as? Double ?? 0,
+                        accountNumber: dict["account_number"] as? String ?? "",
+                        details: dict["details"] as? [String: String] ?? [:],
+                        createdAt: Date()
+                    )
+                }
+                self.assets = newAssets
+            }
+            
+            // 解析见证人数据
+            if let witnessesArray = result["witnesses"] as? [[String: Any]] {
+                let newWitnesses = witnessesArray.compactMap { dict -> Witness? in
+                    guard let id = dict["id"] as? String,
+                          let name = dict["name"] as? String,
+                          let phone = dict["phone"] as? String else { return nil }
+                    return Witness(
+                        id: id,
+                        name: name,
+                        role: dict["relationship"] as? String ?? "",
+                        phone: phone,
+                        isConfirmed: false,
+                        order: 0
+                    )
+                }
+                self.witnesses = newWitnesses
+            }
+            
+            // 解析紧急联系人数据
+            if let contactsArray = result["emergencyContacts"] as? [[String: Any]] {
+                let newContacts = contactsArray.compactMap { dict -> User.EmergencyContact? in
+                    guard let id = dict["id"] as? String,
+                          let name = dict["name"] as? String,
+                          let phone = dict["phone"] as? String else { return nil }
+                    return User.EmergencyContact(
+                        id: id,
+                        name: name,
+                        phone: phone,
+                        relationship: dict["relationship"] as? String ?? ""
+                    )
+                }
+                self.emergencyContacts = newContacts
             }
             
             print("✅ 数据下载成功")

@@ -20,9 +20,8 @@ struct HomeStatusView: View {
     @Environment(\.scenePhase) var scenePhase
     @ObservedObject private var statusManager = LifeCheckStatusManager.shared
     @State private var showCheckInAnimation = false
-    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    @State private var secondsRemaining: Double = 0
     @State private var isSafe: Bool = true
+    @StateObject private var timerManager = CountdownTimerManager.shared
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
     @State private var navigateToWitness = false
@@ -125,21 +124,6 @@ struct HomeStatusView: View {
                     }
                 }
             }
-            .onReceive(timer) { _ in
-                // ✅ 修复：确保所有状态更新在主线程（Timer 已在 .main 上运行）
-                // 每秒递减倒计时
-                if secondsRemaining > 0 {
-                    secondsRemaining -= 1
-                    
-                    // 检查是否刚进入危险状态（倒计时归零）
-                    if secondsRemaining <= 0 && !hasSentOverdueAlert {
-                        // 倒计时结束，发送 iMessage 通知紧急联系人
-                        sendOverdueAlertToEmergencyContacts()
-                    }
-                }
-                // ✅ 修复：倒计时归零后不再反复调用 updateStatus，避免重置倒计时
-                // 只有在 onAppear 或收到通知时才调用 updateStatus 刷新状态
-            }
             .onAppear {
                 // 📥 加载系统配置（后端可配置）
                 Task {
@@ -160,11 +144,24 @@ struct HomeStatusView: View {
                 // 然后更新倒计时显示
                 updateStatus()
                 
+                // ✅ 修复：启动 Timer（切换界面后继续运行）
+                timerManager.start {
+                    // 检查是否刚进入危险状态（倒计时归零）
+                    if self.timerManager.secondsRemaining <= 0 && !self.hasSentOverdueAlert {
+                        // 倒计时结束，发送 iMessage 通知紧急联系人
+                        self.sendOverdueAlertToEmergencyContacts()
+                    }
+                }
+                
                 // 🔔 监听签到完成通知（刷新倒计时）
                 NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
                     print("🔔 收到签到完成通知，刷新倒计时")
                     updateStatus()
                 }
+            }
+            .onDisappear {
+                // ✅ 修复：视图消失时停止 timer，但管理器保持单例状态
+                timerManager.stop()
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoCheckIn"))) { _ in
                 print("🔔 收到自动签到通知（从后台进入前台）")
@@ -175,12 +172,7 @@ struct HomeStatusView: View {
                 print("🔔 收到场景激活通知，刷新倒计时")
                 updateStatus()
             }
-            // 🔴 不在这里处理 scenePhase！
-            // ContentView 已经统一处理了，避免重复调用
-            .onDisappear {
-                // 🔴 清理定时器，防止内存泄漏
-                timer.upstream.connect().cancel()
-            }
+            // ✅ 修复：不在 onDisappear 中取消 Timer，切换界面后继续运行
             .sheet(isPresented: $showingWitnessSheet) {
                 WitnessView()
             }
@@ -377,8 +369,9 @@ struct HomeStatusView: View {
         dataManager.lastCheckInDate = UserManager.shared.lastCheckInDate
         let status = getCheckInStatus()
         isSafe = status.isSafe
-        secondsRemaining = status.hoursRemaining * 3600
-        print("🔄 updateStatus: secondsRemaining=\(secondsRemaining), isSafe=\(isSafe)")
+        let seconds = status.hoursRemaining * 3600
+        timerManager.updateSeconds(seconds)
+        print("🔄 updateStatus: secondsRemaining=\(seconds), isSafe=\(isSafe)")
         
         // 📱 安排签到提醒（使用后端配置的阈值和间隔）
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
@@ -435,7 +428,7 @@ struct HomeStatusView: View {
                 .foregroundColor(.white.opacity(0.8))
             }
             
-            Text(formatCountdown(secondsRemaining))
+            Text(formatCountdown(timerManager.secondsRemaining))
                 .font(.system(size: 52, weight: .bold, design: .monospaced))
                 .foregroundColor(.white)
                 .monospacedDigit()
@@ -473,7 +466,7 @@ struct HomeStatusView: View {
     
     // ✅ P2 修复 #10: 提取状态计算逻辑，避免重复计算
     private func getCurrentCheckInState() -> (colors: [Color], shadowColor: Color, status: CheckInStatus) {
-        let hoursRemaining = secondsRemaining / 3600
+        let hoursRemaining = timerManager.secondsRemaining / 3600
         let reminderThreshold = dataManager.systemConfig.checkinReminderThresholdHours
         
         if hoursRemaining > reminderThreshold {
@@ -565,7 +558,7 @@ struct HomeStatusView: View {
     
     // ✅ P2 修复 #10: 提取状态计算逻辑，避免重复计算
     private func getStatusState() -> (color: Color, text: String, icon: String, description: String) {
-        let hoursRemaining = secondsRemaining / 3600
+        let hoursRemaining = timerManager.secondsRemaining / 3600
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
         
         if hoursRemaining > 0 {
@@ -595,7 +588,7 @@ struct HomeStatusView: View {
     // 📊 进度条百分比（根据倒计时动态计算）
     // ✅ P2 修复 #10: 优化计算属性
     private var progressPercentage: Double {
-        let hoursRemaining = secondsRemaining / 3600
+        let hoursRemaining = timerManager.secondsRemaining / 3600
         let checkInInterval = Double(dataManager.settings.checkInInterval.hours)
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
         
@@ -736,7 +729,6 @@ struct HomeStatusView: View {
         let secs = Int(seconds) % 60
         return String(format: "%02d:%02d:%02d", hrs, mins, secs)
     }
-    
 }
 
 // MARK: - 快捷操作项
@@ -885,6 +877,42 @@ extension HomeStatusView {
     UINavigationBar.appearance().standardAppearance = appearance
     UINavigationBar.appearance().scrollEdgeAppearance = appearance
     UINavigationBar.appearance().compactAppearance = appearance
+    }
+}
+
+// MARK: - 倒计时 Timer 管理器（✅ 修复：在后台持续运行）
+class CountdownTimerManager: ObservableObject {
+    static let shared = CountdownTimerManager()
+    
+    @Published var secondsRemaining: Double = 0
+    @Published var isRunning: Bool = false
+    
+    private var timer: Timer?
+    
+    private init() {}
+    
+    func start(onTick: @escaping () -> Void) {
+        // 如果已经在运行，先停止
+        stop()
+        
+        isRunning = true
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if self.secondsRemaining > 0 {
+                self.secondsRemaining -= 1
+                onTick()
+            }
+        }
+    }
+    
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        isRunning = false
+    }
+    
+    func updateSeconds(_ seconds: Double) {
+        secondsRemaining = seconds
     }
 }
 
