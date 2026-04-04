@@ -640,6 +640,11 @@ struct AuthView: View {
         UserDefaults.standard.set(userId, forKey: "userId")
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         
+        // ✅ 修复：保存 Token 到 Keychain（永久登录）
+        KeychainManager.shared.saveToken(token)
+        KeychainManager.shared.saveUserId(userId)
+        print("🔐 Token 已保存到 Keychain（永久登录）")
+        
         // 保存密码（用于后续启动时验证）
         if loginType == "password" && !password.isEmpty {
             UserDefaults.standard.set(password, forKey: "userPassword")
