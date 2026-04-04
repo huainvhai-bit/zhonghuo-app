@@ -1333,24 +1333,28 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             let data = try JSONEncoder().encode(user)
             try data.write(to: userFileURL)
-            self.currentUser = user
-            self.isLoggedIn = true  // 确保登录状态保持
             
-            // 🔥 自动更新所有统计信息（让 SettingsView 立即显示）
-            self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
-            // witnesses 和 family 是独立管理的，这里不更新
-            // self.currentUser?.witnessesCount = user.witnesses.count
-            // self.currentUser?.familyCount = user.family.count
-            
-            self.checkEmergencyContacts()  // 保存后重新检查
-            
-            // 同步到 UserDefaults
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            UserDefaults.standard.set(user.id, forKey: "userId")
-            
-            print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
-            print("   统计信息：紧急=\(user.emergencyContacts.count)")
-            print("   isLoggedIn: \(self.isLoggedIn)")
+            // ✅ 修复：确保在主线程修改@Published 属性
+            Task { @MainActor in
+                self.currentUser = user
+                self.isLoggedIn = true  // 确保登录状态保持
+                
+                // 🔥 自动更新所有统计信息（让 SettingsView 立即显示）
+                self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
+                // witnesses 和 family 是独立管理的，这里不更新
+                // self.currentUser?.witnessesCount = user.witnesses.count
+                // self.currentUser?.familyCount = user.family.count
+                
+                self.checkEmergencyContacts()  // 保存后重新检查
+                
+                // 同步到 UserDefaults
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                UserDefaults.standard.set(user.id, forKey: "userId")
+                
+                print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
+                print("   统计信息：紧急=\(user.emergencyContacts.count)")
+                print("   isLoggedIn: \(self.isLoggedIn)")
+            }
             return true
         } catch {
             print("❌ 保存用户失败：\(error)")

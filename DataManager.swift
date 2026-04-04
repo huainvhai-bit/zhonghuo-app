@@ -1412,8 +1412,8 @@ class DataManager: ObservableObject {
             }
         }
         
-        // 生成新的文件名（避免冲突）
-        let filename = "capsule_" + UUID().uuidString + tempURL.pathExtension
+        // 生成新的文件名（避免冲突）- pathExtension 不带点，需要手动添加
+        let filename = "capsule_" + UUID().uuidString + "." + tempURL.pathExtension
         let permanentURL = capsulesFolder.appendingPathComponent(filename)
         
         do {
