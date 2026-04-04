@@ -1,26 +1,22 @@
-# 终活 App 技术开发文档
+# 📖 终活 App 技术开发文档
 
-**版本**: v2.0  
-**最后更新**: 2026-03-24 12:00  
-**项目状态**: ✅ 生产就绪  
-**文档状态**: 🔄 持续更新
+> **版本**: v1.0.0  
+> **最后更新**: 2026-04-04  
+> **项目状态**: 开发中  
+> **团队**: 小皮 (前端) + 龙虾 (后端)
 
 ---
 
-## 📋 目录
+## 📑 目录
 
 1. [项目概述](#1-项目概述)
 2. [技术架构](#2-技术架构)
-3. [前端技术栈](#3-前端技术栈)
-4. [后端技术栈](#4-后端技术栈)
+3. [前端开发](#3-前端开发)
+4. [后端开发](#4-后端开发)
 5. [数据库设计](#5-数据库设计)
-6. [API 接口文档](#6-api-接口文档)
-7. [核心功能模块](#7-核心功能模块)
-8. [管理后台](#8-管理后台)
-9. [安全机制](#9-安全机制)
-10. [部署指南](#10-部署指南)
-11. [开发规范](#11-开发规范)
-12. [故障排查](#12-故障排查)
+6. [API 接口](#6-api-接口)
+7. [开发规范](#7-开发规范)
+8. [部署指南](#8-部署指南)
 
 ---
 
@@ -28,57 +24,60 @@
 
 ### 1.1 产品介绍
 
-**终活（Zhonghuo）** 是一款 end-of-life 规划应用，帮助用户提前规划身后事宜，包括遗嘱撰写、资产管理、时光胶囊、紧急联系人等功能。
+**终活 App** 是一款生命管理应用，帮助用户规划和管理生命中的重大事项，包括：
 
-### 1.2 核心功能
+- 📝 **遗嘱管理** - 记录和保存个人遗嘱
+- 💰 **资产管理** - 整理个人资产信息
+- 👥 **家人守护** - 关联家人，互相关爱守护
+- ⏰ **时光胶囊** - 定时发送消息给未来的自己或家人
+- ✅ **每日签到** - 安全打卡，家人可知
+- 🆘 **紧急联系人** - 设置紧急情况下的联系人
 
-| 模块 | 功能描述 | 状态 |
-|------|----------|------|
-| 首页 | 签到、48 小时倒计时、紧急通知 | ✅ 完成 |
-| 时光胶囊 | 文字/语音/视频胶囊、定时发送 | ✅ 完成 |
-| 嘱托与资产 | 10+ 遗嘱模板、资产管理、PDF 导出 | ✅ 完成 |
-| 家人守护 | 位置共享、邀请码、紧急联系人 | ✅ 完成 |
-| 见证人 | 见证人管理、确认状态跟踪 | ✅ 完成 |
-| 新手引导 | 5 屏滑动引导 | ✅ 完成 |
+### 1.2 项目信息
 
-### 1.3 技术亮点
+| 项目 | 信息 |
+|------|------|
+| 前端仓库 | https://github.com/huainvhai-bit/zhonghuo-app |
+| 后端仓库 | https://github.com/huainvhai-bit/zhonghuo-backend-php |
+| 前端技术 | Swift 5 + SwiftUI + iOS 15+ |
+| 后端技术 | PHP 8.0+ + MySQL 8.0 + GraphQL |
+| 开发工具 | Xcode 15+ |
 
-- **GraphQL API** - 统一查询语言，灵活高效
-- **精度动画** - 查找我的 iPhone 风格位置精度提升
-- **iMessage 紧急通知** - 倒计时结束自动通知紧急联系人
-- **开发者模式** - 短信验证码测试模式
-- **PDF 导出** - 遗嘱与资产一键导出
-- **本地加密存储** - 敏感数据安全存储
+### 1.3 核心功能模块
 
-### 1.4 项目仓库
-
-- **前端**: https://github.com/huainvhai-bit/zhonghuo-app
-- **后端**: https://github.com/huainvhai-bit/zhonghuo-backend-php
-- **Bundle ID**: `com.zhonghuo.app`
-- **前端文档**: `📖 终活 App 技术开发文档.md`
-- **后端文档**: `README.md`, `📚GraphQL API 文档.md`
-
-### 1.5 服务器信息
-
-| 项目 | 值 |
-|------|-----|
-| 服务器 IP | `8.136.41.211` |
-| SSH | `ssh root@8.136.41.211` |
-| Web 目录 | `/www/wwwroot/zhonghuo.cn` |
-| PHP 版本 | PHP 8.1-FPM |
-| 数据库 | MySQL 8.0 |
-| 端口 | 3395 |
-| 时区 | Asia/Shanghai |
-
-### 1.6 访问地址
-
-| 页面 | URL |
-|------|-----|
-| 前端 App | iOS 模拟器/真机 |
-| 后端 API | `http://8.136.41.211:3395/api/graphql.php` |
-| 管理后台 | `http://8.136.41.211:3395/admin/` |
-| 位置地图 | `http://8.136.41.211:3395/admin/map.php` |
-| 系统统计 | `http://8.136.41.211:3395/admin/stats.php` |
+```
+终活 App
+├── 首页模块
+│   ├── 签到打卡 (CheckIn)
+│   ├── 安全状态 (LifeCheckStatus)
+│   ├── 进度卡片 (ProgressCard)
+│   └── 胶囊预览 (CapsulePreview)
+├── 遗嘱模块
+│   ├── 遗嘱列表 (WillAssetsView)
+│   ├── 遗嘱编辑 (WillModuleEdit)
+│   ├── 资产管理 (AssetsView)
+│   └── 见证人管理 (WitnessView)
+├── 时光胶囊 (TimeCapsuleView)
+│   ├── 文字胶囊
+│   ├── 语音胶囊
+│   └── 视频胶囊
+├── 家人守护 (FamilyGuardView)
+│   ├── 家人列表
+│   ├── 邀请码绑定
+│   ├── 二维码分享
+│   └── 家人详情
+├── 我的 (SettingsView)
+│   ├── 个人信息
+│   ├── 统计信息
+│   ├── 设备信息
+│   ├── 设置
+│   └── 关于
+└── 通用功能
+    ├── 登录注册 (AuthView)
+    ├── 紧急联系人 (EmergencyContactsView)
+    ├── 云存储管理 (CloudStorageManager)
+    └── 消息通知 (NotificationManager)
+```
 
 ---
 
@@ -88,500 +87,534 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      iOS App (SwiftUI)                       │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │   首页   │ │ 时光胶囊 │ │ 嘱托资产 │ │ 家人守护 │       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│                      iOS 客户端 (SwiftUI)                    │
+├─────────────────────────────────────────────────────────────┤
+│  View 层          │  Manager 层       │  Model 层           │
+│  - HomeView       │  - DataManager    │  - User             │
+│  - WillView       │  - UserManager    │  - TimeCapsule      │
+│  - CapsuleView    │  - KeychainManager│  - WillModule       │
+│  - FamilyView     │  - CloudStorage   │  - FamilyMember     │
+│  - SettingsView   │  - AuthManager    │  - EmergencyContact │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              │ HTTPS / GraphQL
-                              ▼
+                              ↓
+                    HTTPS / GraphQL API
+                              ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    PHP Backend (API Server)                  │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                  GraphQL API Layer                    │   │
-│  │  /api/graphql.php - 统一 API 入口                     │   │
-│  └──────────────────────────────────────────────────────┘   │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │ 用户认证 │ │ 数据同步 │ │ 位置服务 │ │ 短信服务 │       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│                    PHP 后端服务器                            │
+├─────────────────────────────────────────────────────────────┤
+│  API 层            │  业务逻辑层       │  数据访问层         │
+│  - graphql.php    │  - UserManager    │  - DB.php (PDO)     │
+│  - version.php    │  - CapsuleManager │  - CloudStorage.php │
+│  - family.php     │  - FamilyManager  │  - SMSManager.php   │
+│  - auth.php       │  - AuthManager    │                     │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              │ MySQL
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    MySQL Database                            │
-│  14 张核心表：users, capsules, wills, assets, locations...  │
-└─────────────────────────────────────────────────────────────┘
+                              ↓
+                    ┌─────────────────┐
+                    │   MySQL 8.0     │
+                    │   Database      │
+                    └─────────────────┘
 ```
 
-### 2.2 数据流
+### 2.2 技术栈详情
 
-```
-用户操作 → SwiftUI View → DataManager → API Manager → GraphQL
-                                                    │
-                                                    ▼
-                                              PHP Backend
-                                                    │
-                                                    ▼
-                                              MySQL Database
-                                                    │
-                                                    ▼
-                                              响应返回 → UI 更新
-```
-
----
-
-## 3. 前端技术栈
-
-### 3.1 技术选型
+#### 前端 (iOS)
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
 | Swift | 5.9+ | 开发语言 |
-| SwiftUI | iOS 15+ | UI 框架 |
+| SwiftUI | 5.0+ | UI 框架 |
+| iOS | 15.0+ | 最低支持版本 |
 | Xcode | 15.0+ | 开发工具 |
-| iOS 目标版本 | iOS 15.0+ | 最低兼容版本 |
+| GraphQL | - | API 调用 |
+| Keychain | - | 安全存储 Token |
+| UserDefaults | - | 本地配置存储 |
+| FileManager | - | 本地文件管理 |
+| AVFoundation | - | 音视频录制播放 |
+| PDFKit | - | PDF 生成导出 |
 
-### 3.2 项目结构
+#### 后端 (PHP)
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| PHP | 8.0+ | 后端语言 |
+| MySQL | 8.0+ | 数据库 |
+| PDO | - | 数据库访问 (预处理) |
+| JWT | - | Token 认证 |
+| GraphQL | - | API 查询语言 |
+| OpenSSL | - | 加密解密 |
+| GD/ImageMagick | - | 图片处理 |
+
+### 2.3 项目结构
+
+#### 前端目录结构
 
 ```
 zhonghuo-app/
-├── ZhonghuoApp.swift          # App 入口
-├── ContentView.swift          # 主界面（TabView）
-├── Models.swift               # 数据模型定义
-├── DataManager.swift          # 数据管理（单例）
-├── UserManager.swift          # 用户管理（API 调用）
-├── AuthView.swift             # 登录/注册界面
-├── OnboardingView.swift       # 新手引导
-│
-├── # 核心功能模块
-├── HomeStatusView.swift       # 首页（签到、倒计时）
-├── TimeCapsuleView.swift      # 时光胶囊
-├── WillAssetsView.swift       # 遗嘱与资产
-├── FamilyGuardView.swift      # 家人守护
-│
-├── # 子功能模块
-├── EmergencyContactsView.swift    # 紧急联系人
-├── WitnessView.swift              # 见证人
-├── InviteCodeView.swift           # 邀请码
-├── BindFamilyView.swift           # 绑定家人
-├── SettingsView.swift             # 设置
-│
-├── # 工具类
-├── MessageManager.swift           # iMessage 管理
-├── NotificationManager.swift      # 通知管理
-├── PDFGenerator.swift             # PDF 导出
-├── MediaRecorderView.swift        # 录音录像
-├── QRCodeScannerView.swift        # 二维码扫描
-├── DeviceMonitor.swift            # 设备监控
-└── Info.plist                     # 配置文件
+├── zhonghuo/zhonghuo/          # 主应用目录
+│   ├── zhonghuoApp.swift       # 应用入口
+│   └── ContentView.swift       # 主视图
+├── Views/                       # 视图层
+│   ├── HomeStatusView.swift    # 首页
+│   ├── WillAssetsView.swift    # 遗嘱资产
+│   ├── TimeCapsuleView.swift   # 时光胶囊
+│   ├── FamilyGuardView.swift   # 家人守护
+│   ├── SettingsView.swift      # 设置
+│   ├── AuthView.swift          # 登录注册
+│   └── ...
+├── Managers/                    # 管理层
+│   ├── DataManager.swift       # 数据中心
+│   ├── UserManager.swift       # 用户管理
+│   ├── KeychainManager.swift   # Keychain 管理
+│   ├── CloudStorageManager.swift
+│   ├── NotificationManager.swift
+│   └── ...
+├── Models/                      # 数据模型
+│   ├── Models.swift            # 完整数据模型
+│   └── FamilyMember.swift      # 家人模型
+├── Utils/                       # 工具类
+│   ├── SecureStorage.swift     # 安全存储
+│   ├── Colors.swift            # 颜色定义
+│   ├── ErrorHandler.swift      # 错误处理
+│   └── ...
+└── Components/                  # 通用组件
+    ├── QRCodeScannerView.swift # 二维码扫描
+    └── ...
 ```
 
-### 3.3 核心组件说明
+#### 后端目录结构
 
-#### 3.3.1 DataManager（数据管理单例）
-
-```swift
-class DataManager: ObservableObject {
-    static let shared = DataManager()
-    
-    // 服务器配置
-    static let apiURL = "http://8.136.41.211:3395"
-    
-    // 本地数据
-    @Published var currentUser: User?
-    @Published var capsules: [TimeCapsule] = []
-    @Published var willModules: [WillModule] = []
-    @Published var assets: [Asset] = []
-    
-    // 数据持久化方法
-    func saveCapsules()
-    func loadCapsules()
-    func syncWithServer()
-}
 ```
-
-#### 3.3.2 UserManager（用户 API 管理）
-
-```swift
-class UserManager: ObservableObject {
-    static let shared = UserManager()
-    
-    // 用户认证
-    func login(phone: String, code: String) async
-    func register(phone: String, code: String) async
-    func sendSmsCode(phone: String, scene: String) async
-    
-    // 数据同步
-    func syncCapsules() async
-    func syncWillModules() async
-    func uploadLocation(latitude: Double, longitude: Double) async
-    
-    // 家人相关
-    func getInviteCode() async
-    func bindFamily(inviteCode: String) async
-}
-```
-
-### 3.4 数据模型（Models.swift）
-
-#### 核心模型
-
-```swift
-// 用户
-struct User: Codable {
-    var id: String
-    var name: String
-    var phone: String
-    var token: String
-    var checkInInterval: CheckInInterval
-}
-
-// 时光胶囊
-struct TimeCapsule: Identifiable, Codable {
-    var id: String
-    var title: String
-    var content: String
-    var type: CapsuleType  // 文字/语音/视频
-    var mediaURL: String
-    var sendDate: Date
-    var isSent: Bool
-}
-
-// 遗嘱模块
-struct WillModule: Identifiable, Codable {
-    var id: String
-    var type: WillType  // 财产分配/继承人指定/...
-    var title: String
-    var content: String
-    var isCompleted: Bool
-}
-
-// 资产
-struct Asset: Identifiable, Codable {
-    var id: String
-    var type: AssetType  // 银行存款/股票/房产/...
-    var name: String
-    var accountNumber: String
-    var value: Double
-}
-
-// 紧急联系人
-struct EmergencyContact: Identifiable, Codable {
-    var id: String
-    var name: String
-    var phone: String
-    var relationship: String
-}
-
-// 见证人
-struct WillWitness: Identifiable, Codable {
-    var id: String
-    var name: String
-    var phone: String
-    var isConfirmed: Bool
-}
+zhonghuo-backend-php/
+├── api/                         # API 接口
+│   ├── graphql.php             # GraphQL 统一接口
+│   ├── version.php             # 版本检测 API
+│   └── ...
+├── lib/                         # 核心库
+│   ├── DB.php                  # 数据库连接
+│   ├── CloudStorage.php        # 云存储
+│   ├── GraphQLClient.php       # GraphQL 客户端
+│   └── ...
+├── admin/                       # 后台管理
+│   ├── index.php               # 后台首页
+│   ├── users.php               # 用户管理
+│   ├── capsules.php            # 胶囊管理
+│   └── ...
+├── config.php                   # 配置文件
+├── database.sql                 # 数据库初始化脚本
+└── .htaccess                    # Apache 配置
 ```
 
 ---
 
-## 4. 后端技术栈
+## 3. 前端开发
 
-### 4.1 技术选型
+### 3.1 开发环境配置
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| PHP | 8.1+ | 后端语言 |
-| MySQL | 8.0+ | 数据库 |
-| GraphQL | - | API 查询语言 |
-| JWT | - | Token 认证 |
-| PHP-FPM | 8.1 | 进程管理器 |
+#### 系统要求
 
-### 4.2 项目结构
+- macOS 14.0+ (Sonoma)
+- Xcode 15.0+
+- iOS Simulator 17.0+ 或真机 iOS 15.0+
 
-```
-zhonghuo-backend-php/
-├── index.php                    # 首页
-├── database.sql                 # 数据库初始化脚本
-├── config.example.php           # 配置示例
-├── graphql-patch.php            # GraphQL 补丁
-│
-├── api/                         # API 目录
-│   ├── graphql.php              # GraphQL 统一入口
-│   ├── core.php                 # 核心函数
-│   ├── check-config.php         # 配置检查
-│   ├── config_get.php           # 获取配置
-│   └── sms.php                  # 短信服务
-│
-├── admin/                       # 管理后台
-│   ├── index.php                # 后台首页
-│   ├── map.php                  # 位置地图
-│   ├── users.php                # 用户管理
-│   └── ...                      # 其他管理页面
-│
-├── install/                     # 安装向导
-│   ├── index.php                # 安装入口
-│   └── .lock                    # 安装锁定文件
-│
-└── cron/                        # 定时任务
-    └── check-offline.php        # 离线检查
+#### 克隆项目
+
+```bash
+git clone https://github.com/huainvhai-bit/zhonghuo-app.git
+cd zhonghuo-app
 ```
 
-### 4.3 GraphQL API 层
+#### 配置文件
 
-#### 4.3.1 API 入口
+创建 `AppConfig.swift` (如不存在):
 
-**端点**: `POST /api/graphql.php`
-
-**请求格式**:
-```json
-{
-  "query": "query { user { id name phone } }"
+```swift
+struct AppConfig {
+    static let defaultAPIURL = "http://localhost:8080"
+    static let appVersion = "1.0.0"
 }
 ```
 
-**响应格式**:
-```json
-{
-  "data": {
-    "user": {
-      "id": "123",
-      "name": "张三",
-      "phone": "13800138000"
+### 3.2 核心类说明
+
+#### DataManager (数据中心)
+
+```swift
+@MainActor
+class DataManager: ObservableObject {
+    static let shared = DataManager()
+    
+    // API 地址
+    static var baseURL: String = ""
+    static var apiURL: String = ""
+    
+    // 用户数据
+    @Published var currentUser: User?
+    @Published var capsules: [TimeCapsule] = []
+    @Published var willModules: [WillModule] = []
+    @Published var assets: [WillAsset] = []
+    @Published var witnesses: [Witness] = []
+    @Published var emergencyContacts: [User.EmergencyContact] = []
+    
+    // 核心方法
+    func fetchServerConfig() async throws
+    func saveCapsules()
+    func syncWithBackend() async throws
+}
+```
+
+#### UserManager (用户管理)
+
+```swift
+@MainActor
+class UserManager: ObservableObject {
+    static let shared = UserManager()
+    
+    @Published var currentUser: User?
+    @Published var isLoggedIn: Bool = false
+    
+    // 登录注册
+    func login(phone: String, code: String) async throws
+    func register(phone: String, code: String, name: String) async throws
+    func logout()
+    
+    // 用户信息
+    func fetchUserInfo() async throws
+    func updateUserInfo() async throws
+}
+```
+
+#### KeychainManager (安全存储)
+
+```swift
+class KeychainManager {
+    static let shared = KeychainManager()
+    
+    func saveToken(_ token: String) -> OSStatus
+    func getToken() -> String?
+    func deleteToken() -> OSStatus
+    
+    func saveUserId(_ userId: String) -> OSStatus
+    func getUserId() -> String?
+}
+```
+
+### 3.3 视图开发规范
+
+#### 基本结构
+
+```swift
+struct XXXView: View {
+    // MARK: - 数据绑定
+    @ObservedObject var dataManager = DataManager.shared
+    @Environment(\.dismiss) private var dismiss
+    
+    // MARK: - 状态
+    @State private var isLoading = false
+    @State private var errorMessage = ""
+    @State private var showingAlert = false
+    
+    // MARK: - 主体视图
+    var body: some View {
+        NavigationView {
+            VStack {
+                // 内容
+            }
+            .navigationTitle("标题")
+            .onAppear {
+                loadData()
+            }
+        }
     }
-  }
+    
+    // MARK: - 方法
+    private func loadData() {
+        Task {
+            await loadAsync()
+        }
+    }
 }
 ```
 
-#### 4.3.2 认证方式
+#### @MainActor 标记
 
+**重要**: 所有 `ObservableObject` 类必须标记 `@MainActor`，避免后台线程修改 `@Published` 属性导致警告。
+
+```swift
+@MainActor
+class DataManager: ObservableObject {
+    @Published var capsules: [TimeCapsule] = []
+}
 ```
-Authorization: Bearer <JWT_TOKEN>
+
+### 3.4 GraphQL 调用
+
+```swift
+// 查询用户信息
+let query = """
+query {
+    user {
+        id
+        name
+        phone
+        stats {
+            capsulesCount
+            willsCount
+            checkInStreak
+        }
+    }
+}
+"""
+
+let result = try await GraphQLClient.shared.query(query)
 ```
 
-#### 4.3.3 核心 Queries
+### 3.5 编译与运行
 
-| Query | 描述 | 参数 |
-|-------|------|------|
-| `user` | 获取当前用户信息 | 无 |
-| `capsules` | 获取胶囊列表 | type（可选） |
-| `wills` | 获取遗嘱列表 | 无 |
-| `assets` | 获取资产列表 | 无 |
-| `family` | 获取家人列表 | 无 |
-| `emergencyContacts` | 获取紧急联系人 | 无 |
-| `witnesses` | 获取见证人 | 无 |
-| `locations` | 获取位置历史 | limit（可选） |
-| `stats` | 获取统计数据 | 无 |
-| `getInviteCode` | 获取邀请码 | 无 |
+```bash
+# 清理构建
+xcodebuild clean -project 终活.xcodeproj -scheme 终活
 
-#### 4.3.4 核心 Mutations
+# 编译
+xcodebuild -project 终活.xcodeproj -scheme 终活 \
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
 
-| Mutation | 描述 | 参数 |
-|----------|------|------|
-| `createCapsule` | 创建胶囊 | title, type, content, openAt |
-| `updateCapsule` | 更新胶囊 | id, title, content |
-| `deleteCapsule` | 删除胶囊 | id |
-| `createWill` | 创建遗嘱 | type, title, content |
-| `createAsset` | 创建资产 | name, type, value |
-| `uploadLocation` | 上传位置 | latitude, longitude, accuracy |
-| `checkin` | 签到 | 无 |
-| `sendSmsCode` | 发送验证码 | phone, scene |
-| `login` | 登录 | phone, code |
-| `register` | 注册 | phone, code, name |
+# 或使用 Xcode GUI
+# 打开 终活.xcodeproj，按 Cmd+R 运行
+```
+
+---
+
+## 4. 后端开发
+
+### 4.1 开发环境配置
+
+#### 系统要求
+
+- PHP 8.0+
+- MySQL 8.0+
+- Apache/Nginx
+- Composer (可选)
+
+#### 安装依赖
+
+```bash
+cd zhonghuo-backend-php
+composer install  # 如有 composer.json
+```
+
+#### 配置文件
+
+复制并编辑 `config.php`:
+
+```php
+<?php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'zhonghuo');
+define('DB_USER', 'root');
+define('DB_PASS', 'password');
+define('API_SECRET', 'your_secret_key');
+```
+
+### 4.2 核心库说明
+
+#### DB.php (数据库连接)
+
+```php
+function getDB(): PDO {
+    static $db = null;
+    if ($db === null) {
+        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+        $db = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+    }
+    return $db;
+}
+```
+
+#### graphql.php (统一 API 接口)
+
+```php
+// 支持 GraphQL 查询
+$query = $_POST['query'] ?? '';
+$variables = $_POST['variables'] ?? [];
+
+// 解析并执行查询
+$result = GraphQLClient::execute($query, $variables);
+
+// 返回 JSON 响应
+header('Content-Type: application/json');
+echo json_encode($result, JSON_UNESCAPED_UNICODE);
+```
+
+### 4.3 API 开发规范
+
+#### 响应格式
+
+所有 API 统一返回格式:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "操作成功"
+}
+```
+
+错误响应:
+
+```json
+{
+  "success": false,
+  "error": "错误信息",
+  "code": 400
+}
+```
+
+#### 预处理语句 (安全)
+
+**必须使用预处理语句**防止 SQL 注入:
+
+```php
+// ✅ 正确
+$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$user = $stmt->fetch();
+
+// ❌ 错误 (禁止)
+$user = $db->query("SELECT * FROM users WHERE id = $userId");
+```
+
+### 4.4 云存储集成
+
+支持三种存储方式:
+
+| 存储类型 | 配置项 | 用途 |
+|---------|--------|------|
+| local | `storage_type=local` | 本地存储 |
+| aliyun | `storage_type=aliyun` | 阿里云 OSS |
+| tencent | `storage_type=tencent` | 腾讯云 COS |
+
+配置项在 `system_config` 表中管理。
 
 ---
 
 ## 5. 数据库设计
 
-### 5.1 数据库表总览
+### 5.1 核心表结构
 
-| 表名 | 描述 | 核心字段 |
-|------|------|----------|
-| `users` | 用户表 | id, name, phone, token, checkin_count |
-| `capsules` | 时光胶囊 | id, user_id, type, title, content, open_at |
-| `will_modules` | 遗嘱模块 | id, user_id, type, title, content |
-| `will_assets` | 资产表 | id, user_id, name, type, value |
-| `witnesses` | 见证人 | id, user_id, name, phone, is_confirmed |
-| `emergency_contacts` | 紧急联系人 | id, user_id, name, phone, is_guardian |
-| `user_locations` | 用户位置 | id, user_id, latitude, longitude, accuracy |
-| `family_relations` | 家人关系 | id, user_id, related_user_id, relation_type |
-| `sms_codes` | 短信验证码 | id, phone, code, expire_at, used |
-| `system_config` | 系统配置 | config_key, config_value |
-| `admin_users` | 管理员 | id, username, password_hash |
-| `files` | 文件表 | id, user_id, file_key, file_url |
-| `login_attempts` | 登录尝试 | ip_address, username, attempt_time |
-| `captcha_codes` | 验证码 | code, ip_address, used |
+#### users (用户表)
 
-### 5.2 核心表结构
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 用户 ID (UUID) |
+| name | VARCHAR(100) | 姓名 |
+| phone | VARCHAR(20) | 手机号 |
+| password_hash | VARCHAR(255) | 密码哈希 |
+| invite_code | VARCHAR(10) | 邀请码 |
+| last_login_at | DATETIME | 最后登录时间 |
+| last_login_ip | VARCHAR(50) | 最后登录 IP |
+| created_at | DATETIME | 创建时间 |
 
-#### 5.2.1 users（用户表）
+#### capsules (时光胶囊表)
 
-```sql
-CREATE TABLE users (
-    id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(100),
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    password_hash VARCHAR(255),
-    token VARCHAR(255),
-    token_expires_at DATETIME,
-    checkin_interval_hours INT DEFAULT 48,
-    checkin_count INT DEFAULT 0,
-    last_checkin_at DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_phone (phone),
-    INDEX idx_token (token)
-);
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 胶囊 ID |
+| user_id | VARCHAR(36) | 用户 ID |
+| type | VARCHAR(50) | 类型 (text/audio/video) |
+| title | VARCHAR(255) | 标题 |
+| content | TEXT | 内容 |
+| media_url | VARCHAR(512) | 媒体文件 URL |
+| open_at | DATETIME | 开启时间 |
+| is_opened | TINYINT | 是否已开启 |
+| cloud_backup_status | ENUM | 云备份状态 |
+
+#### will_modules (遗嘱模块表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 模块 ID |
+| user_id | VARCHAR(36) | 用户 ID |
+| type | VARCHAR(50) | 类型 |
+| title | VARCHAR(255) | 标题 |
+| content | TEXT | 内容 |
+| media_url | VARCHAR(512) | 媒体 URL |
+| is_completed | TINYINT | 是否完成 |
+
+#### family_members (家人表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 成员 ID |
+| user_id | VARCHAR(36) | 用户 ID |
+| name | VARCHAR(100) | 姓名 |
+| relation | VARCHAR(50) | 关系 |
+| phone | VARCHAR(20) | 手机号 |
+| status | ENUM | 状态 (pending/accepted) |
+| invite_code | VARCHAR(10) | 邀请码 |
+
+#### emergency_contacts (紧急联系人表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 联系人 ID |
+| user_id | VARCHAR(36) | 用户 ID |
+| name | VARCHAR(100) | 姓名 |
+| relationship | VARCHAR(50) | 关系 |
+| phone | VARCHAR(20) | 手机号 |
+
+#### system_config (系统配置表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INT | 自增 ID |
+| config_key | VARCHAR(100) | 配置键 |
+| config_value | TEXT | 配置值 |
+| description | VARCHAR(255) | 描述 |
+
+### 5.2 表关系图
+
 ```
-
-#### 5.2.2 capsules（时光胶囊表）
-
-```sql
-CREATE TABLE capsules (
-    id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36) NOT NULL,
-    type VARCHAR(50) NOT NULL COMMENT '文字/语音/视频',
-    media_type VARCHAR(50) COMMENT 'text/audio/video',
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    media_url VARCHAR(512),
-    open_at DATETIME,
-    is_opened TINYINT(1) DEFAULT 0,
-    opened_at DATETIME DEFAULT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_open (open_at)
-);
-```
-
-#### 5.2.3 user_locations（用户位置表）
-
-```sql
-CREATE TABLE user_locations (
-    id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36) NOT NULL,
-    latitude DECIMAL(10,8),
-    longitude DECIMAL(11,8),
-    accuracy DECIMAL(10,2) COMMENT '精度（米）',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_time (created_at)
-);
-```
-
-### 5.3 系统配置表
-
-```sql
--- 短信配置
-INSERT INTO system_config (config_key, config_value) VALUES
-('sms_is_development', '1'),      -- 开发者模式：1=开启
-('sms_maintenance_mode', '1'),    -- 维护模式
-('sms_test_code', '123456'),      -- 测试验证码
-('sms_provider', 'aliyun');       -- 短信服务商
-
--- 告警配置
-INSERT INTO system_config (config_key, config_value) VALUES
-('alert_offline_timeout', '24'),  -- 离线超时（小时）
-('alert_abnormal_distance', '100'); -- 异常距离（公里）
+users (1) ──────< (N) capsules
+  │
+  ├──────< (N) will_modules
+  │
+  ├──────< (N) will_assets
+  │
+  ├──────< (N) witnesses
+  │
+  ├──────< (N) family_members
+  │
+  └──────< (N) emergency_contacts
 ```
 
 ---
 
-## 6. API 接口文档
+## 6. API 接口
 
-### 6.1 用户认证 API
+### 6.1 GraphQL 接口
 
-#### 6.1.1 发送验证码
-
-```graphql
-mutation {
-  sendSmsCode(phone: "13800138000", scene: "login") {
-    success
-    message
-    data {
-      code  # 开发者模式下返回验证码
-    }
-  }
-}
-```
-
-**响应**:
-```json
-{
-  "data": {
-    "sendSmsCode": {
-      "success": true,
-      "message": "验证码已发送",
-      "data": {
-        "code": "123456"
-      }
-    }
-  }
-}
-```
-
-#### 6.1.2 登录
+#### 查询用户信息
 
 ```graphql
-mutation {
-  login(phone: "13800138000", code: "123456") {
-    success
-    message
-    data {
-      token
-      user {
-        id
-        name
-        phone
-      }
+query {
+  user {
+    id
+    name
+    phone
+    stats {
+      capsulesCount
+      willsCount
+      checkInStreak
+      emergencyContactsCount
     }
   }
 }
 ```
 
-#### 6.1.3 注册
-
-```graphql
-mutation {
-  register(phone: "13800138000", code: "123456", name: "张三") {
-    success
-    message
-    data {
-      token
-      user {
-        id
-        name
-        phone
-      }
-    }
-  }
-}
-```
-
-### 6.2 签到 API
-
-#### 6.2.1 签到
-
-```graphql
-mutation {
-  checkin {
-    success
-    message
-    data {
-      isSafe
-      hoursRemaining
-      nextCheckIn
-      checkinCount
-    }
-  }
-}
-```
-
-### 6.3 时光胶囊 API
-
-#### 6.3.1 获取胶囊列表
+#### 查询胶囊列表
 
 ```graphql
 query {
@@ -589,806 +622,270 @@ query {
     id
     title
     type
-    content
-    mediaUrl
-    openAt
-    createdAt
+    sendDate
+    isSent
   }
 }
 ```
 
-#### 6.3.2 创建胶囊
+#### 绑定家人
 
 ```graphql
-mutation {
-  createCapsule(
-    title: "给未来的信"
-    type: "文字"
-    content: "这是内容..."
-    openAt: "2027-01-01 00:00:00"
-  ) {
+mutation($inviteCode: String!) {
+  bindFamilyByInviteCode(inviteCode: $inviteCode) {
     success
     message
     data {
-      id
+      members { id name relation status }
+      invited { id name relation status }
     }
   }
 }
 ```
 
-#### 6.3.3 上传胶囊媒体
+### 6.2 REST API
 
-```graphql
-mutation {
-  uploadCapsuleMedia(
-    capsuleId: "xxx"
-    base64: "data:audio/mp4;base64,..."
-  ) {
-    success
-    message
-    data {
-      mediaUrl
-    }
-  }
-}
-```
+#### 版本检测
 
-### 6.4 位置服务 API
+**GET** `/api/version.php`
 
-#### 6.4.1 上传位置
+响应:
 
-```graphql
-mutation {
-  uploadLocation(
-    latitude: 39.9042
-    longitude: 116.4074
-    accuracy: 10.5
-  ) {
-    success
-    message
-  }
-}
-```
-
-#### 6.4.2 获取位置历史
-
-```graphql
-query {
-  locations(limit: 100) {
-    id
-    latitude
-    longitude
-    accuracy
-    createdAt
-  }
-}
-```
-
-### 6.5 家人守护 API
-
-#### 6.5.1 获取邀请码
-
-```graphql
-query {
-  getInviteCode {
-    inviteCode
-    qrUrl
-    expiresAt
-  }
-}
-```
-
-#### 6.5.2 绑定家人
-
-```graphql
-mutation {
-  bindFamily(inviteCode: "ABC123") {
-    success
-    message
-    data {
-      familyMember {
-        id
-        name
-        relationType
-      }
-    }
-  }
-}
-```
-
----
-
-## 7. 核心功能模块
-
-### 7.1 首页模块
-
-#### 功能点
-- ✅ 用户签到（48 小时间隔）
-- ✅ 倒计时显示
-- ✅ 安全状态指示
-- ✅ iMessage 紧急通知（倒计时归零时）
-
-#### 关键代码
-
-**HomeStatusView.swift**:
-```swift
-// 签到逻辑
-func checkIn() {
-    Task {
-        let result = await UserManager.shared.checkIn()
-        if result.isSafe {
-            // 更新 UI
-            lastCheckInDate = Date()
-            hoursRemaining = result.hoursRemaining
-        }
-    }
-}
-
-// 倒计时归零触发 iMessage
-if hoursRemaining <= 0 && !notified {
-    MessageManager.shared.sendEmergencyNotification(
-        contacts: emergencyContacts,
-        userName: currentUser?.name ?? "用户"
-    )
-    notified = true
-}
-```
-
-### 7.2 时光胶囊模块
-
-#### 功能点
-- ✅ 文字胶囊
-- ✅ 语音胶囊（AVAudioRecorder）
-- ✅ 视频胶囊（AVCaptureSession）
-- ✅ 类型筛选
-- ✅ 定时发送
-
-#### 媒体录制
-
-**MediaRecorderView.swift**:
-```swift
-// 录音
-class AudioRecorder: ObservableObject {
-    var audioRecorder: AVAudioRecorder?
-    
-    func startRecording() {
-        let settings = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1
-        ]
-        audioRecorder = try? AVAudioRecorder(url: fileURL, settings: settings)
-        audioRecorder?.record()
-    }
-}
-
-// 录像
-class VideoRecorder: ObservableObject {
-    var captureSession: AVCaptureSession?
-    
-    func startRecording() {
-        captureSession = AVCaptureSession()
-        captureSession?.sessionPreset = .high
-        // 配置前置摄像头...
-    }
-}
-```
-
-### 7.3 遗嘱与资产模块
-
-#### 功能点
-- ✅ 10+ 遗嘱模板
-- ✅ 资产管理（银行/股票/房产/...）
-- ✅ PDF 导出
-- ✅ 本地加密存储
-
-#### PDF 导出
-
-**PDFGenerator.swift**:
-```swift
-func exportWillToPDF(willModules: [WillModule], assets: [Asset]) -> Data {
-    let renderer = UIGraphicsPDFRenderer(bounds: pageBounds)
-    let data = renderer.pdfData { ctx in
-        ctx.beginPage()
-        // 绘制遗嘱内容
-        // 绘制资产列表
-    }
-    return data
-}
-```
-
-### 7.4 家人守护模块
-
-#### 功能点
-- ✅ 位置共享（精度动画）
-- ✅ 邀请码生成
-- ✅ 二维码展示
-- ✅ 家人绑定
-- ✅ 紧急联系人管理
-
-#### 位置精度动画
-
-**前端实现**:
-```swift
-// 每 3 秒上传一次位置，模拟精度提升
-Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
-    locationUpdateCount += 1
-    let accuracy = max(10, 1000 / pow(2, Double(locationUpdateCount)))
-    uploadLocation(accuracy: accuracy)
-}
-```
-
-**后端地图** (OpenStreetMap + Leaflet):
-```javascript
-// 精度圆圈动画
-L.circle(userLocation, {
-    radius: accuracy,
-    color: '#3b82f6',
-    fillColor: '#3b82f6',
-    fillOpacity: 0.3
-}).addTo(map);
-```
-
----
-
-## 8. 管理后台
-
-### 8.1 管理后台架构
-
-管理后台提供完整的用户管理、数据统计、系统配置等功能。
-
-**技术栈**:
-- PHP 8.1 + HTML + CSS + JavaScript
-- Leaflet.js 地图库（OpenStreetMap）
-- Chart.js 数据可视化
-- JWT Token 认证
-
-### 8.2 管理后台功能模块
-
-| 页面 | 文件 | 功能描述 |
-|------|------|----------|
-| 登录页 | `admin/login.php` | 管理员登录、图形验证码 |
-| 仪表盘 | `admin/index.php` | 用户统计、系统状态、快速操作 |
-| 用户管理 | `admin/users.php` | 用户列表、搜索、详情、编辑 |
-| 用户详情 | `admin/user_detail.php` | 单个用户完整信息 |
-| 用户轨迹 | `admin/user_track.php` | 用户位置历史追踪 |
-| 位置地图 | `admin/map.php` | 实时位置地图（精度动画） |
-| 紧急联系人 | `admin/emergency_contacts.php` | 紧急联系人管理 |
-| 家人关系 | `admin/family.php` | 家人关系管理 |
-| 系统设置 | `admin/settings.php` | 系统配置、短信配置 |
-| 性能监控 | `admin/performance.php` | API 性能监控、慢查询 |
-| 数据统计 | `admin/stats.php` | 详细统计数据 |
-| 告警中心 | `admin/alerts.php` | 离线告警、异常位置告警 |
-
-### 8.3 位置地图功能
-
-**文件**: `admin/map.php`
-
-**功能**:
-- 实时显示所有用户位置
-- 精度圆圈动画（查找我的 iPhone 风格）
-- 每 5 秒自动刷新
-- 点击用户标记查看详情
-- 支持搜索和筛选
-
-**技术实现**:
-```javascript
-// 精度圆圈
-L.circle(userLocation, {
-    radius: accuracy,  // 精度（米）
-    color: '#3b82f6',
-    fillColor: '#3b82f6',
-    fillOpacity: 0.3
-}).addTo(map);
-
-// 自动刷新
-setInterval(() => {
-    fetch('/api/graphql.php', {
-        method: 'POST',
-        body: JSON.stringify({ query: '{ locations { id latitude longitude accuracy } }' })
-    }).then(updateMap);
-}, 5000);
-```
-
-### 8.4 管理员认证
-
-**登录流程**:
-```php
-// admin/login.php
-POST /admin/login.php
+```json
 {
-    "username": "admin",
-    "password": "password123",
-    "captcha": "ABCD"
+  "success": true,
+  "data": {
+    "ios": {
+      "version": "1.0.0",
+      "build": "1",
+      "updateUrl": "https://apps.apple.com/...",
+      "description": "Bug 修复和性能优化",
+      "forceUpdate": false
+    }
+  }
 }
-
-// 验证成功
-Set-Cookie: admin_token=eyJhbGc...; Path=/admin; HttpOnly
-
-// 重定向到仪表盘
-Location: /admin/index.php
 ```
 
-**权限检查**:
-```php
-// admin/check_auth.php
-require_once 'check_auth.php';
-// 未登录自动跳转到登录页
-```
+#### 短信验证码
 
-### 8.5 系统配置管理
+**POST** `/api/sms/send.php`
 
-**可配置项**:
-```sql
--- 短信配置
-sms_is_development      -- 开发者模式（1=开启）
-sms_provider            -- 服务商（aliyun/tencent）
-sms_test_code           -- 测试验证码
+请求:
 
--- 告警配置
-alert_offline_timeout   -- 离线超时（小时）
-alert_abnormal_distance -- 异常距离（公里）
-
--- 通知配置
-notify_checkin_interval -- 签到间隔（小时）
-notify_first_reminder   -- 首次提醒（小时）
-```
-
----
-
-## 9. 安全机制
-
-### 9.1 认证安全
-
-- **JWT Token**: 有效期 30 天
-- **Token 刷新**: 登录后自动刷新
-- **防爆破**: 登录失败 5 次锁定 30 分钟
-
-### 9.2 数据安全
-
-- **本地存储**: JSON 文件加密存储
-- **传输加密**: HTTPS/TLS
-- **敏感数据**: 密码哈希（password_hash）
-
-### 9.3 API 安全
-
-- **Token 验证**: 所有 API 需携带 Authorization header
-- **参数校验**: 严格校验输入参数
-- **SQL 注入防护**: 使用预处理语句
-
-### 9.4 短信安全
-
-```php
-// 开发者模式开关
-if ($config['sms_is_development'] == '1') {
-    // 返回验证码，不发送真实短信
-    return ['success' => true, 'code' => $code];
-} else {
-    // 调用阿里云/腾讯云发送真实短信
-    sendRealSms($phone, $message);
-    return ['success' => true];
+```json
+{
+  "phone": "13800138000",
+  "type": "login"
 }
 ```
 
 ---
 
-## 10. 部署指南
+## 7. 开发规范
 
-### 10.1 前端部署
+### 7.1 代码规范
 
-#### 10.1.1 编译构建
+#### Swift 命名规范
 
-```bash
-cd /Users/lishimin/Documents/zhonghuo-app
-
-# 清理缓存
-rm -rf ~/Library/Developer/Xcode/DerivedData/终活-*
-
-# 编译到模拟器
-xcodebuild -scheme 终活 \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  build
-
-# 安装到模拟器
-xcrun simctl install "iPhone 17 Pro" \
-  ~/Library/Developer/Xcode/DerivedData/终活-*/Build/Products/Debug-iphonesimulator/终活.app
-```
-
-#### 10.1.2 推送到 GitHub
-
-```bash
-git add -A
-git commit -m "描述"
-git push origin main
-```
-
-### 10.2 后端部署
-
-#### 10.2.1 服务器部署
-
-```bash
-# SSH 登录
-ssh root@8.136.41.211
-
-# 进入应用目录
-cd /www/wwwroot/zhonghuo.cn
-
-# 拉取最新代码
-git pull origin main
-
-# 执行数据库迁移（如有）
-mysql -u zhonghuo -pzhonghuo zhonghuo < migrate-database.sql
-
-# 重启 PHP-FPM
-systemctl restart php-fpm-81
-
-# 验证
-curl http://localhost:3395/api/check-config.php
-# 应返回：{"success":true,"message":"配置加载成功"}
-```
-
-#### 10.2.2 数据库初始化
-
-```bash
-# 首次安装
-mysql -u root -p
-CREATE DATABASE zhonghuo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'zhonghuo'@'localhost' IDENTIFIED BY 'zhonghuo';
-GRANT ALL PRIVILEGES ON zhonghuo.* TO 'zhonghuo'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-
-# 导入表结构
-mysql -u zhonghuo -pzhonghuo zhonghuo < database.sql
-```
-
-### 10.3 配置检查清单
-
-#### 后端配置
-- [ ] `config/database.php` 存在且正确
-- [ ] `install/.lock` 文件存在（安装后）
-- [ ] PHP-FPM 运行正常
-- [ ] 数据库连接正常
-- [ ] API 可访问
-
-#### 前端配置
-- [ ] `DataManager.apiURL` 指向正确服务器
-- [ ] 编译无错误无警告
-- [ ] 模拟器/真机可正常运行
-
----
-
-## 11. 开发规范
-
-### 11.1 代码规范
-
-#### 11.1.1 Swift 命名规范
 ```swift
 // 类名：大驼峰
-class DataManager {}
+class DataManager { }
 
 // 变量/函数：小驼峰
-var currentUser: User?
-func syncWithServer() {}
+private var currentUser: User?
+func loadData() { }
 
-// 常量：大驼峰
-enum CapsuleType {}
+// 常量：小驼峰
+let defaultAPIURL = "..."
 
-// 枚举值：小驼峰
-case audio, video
+// 枚举：大驼峰
+enum CheckInStatus { case safe, warning, danger }
 ```
 
-#### 11.1.2 PHP 命名规范
-```php
-// 函数：小写 + 下划线
-function send_sms_code() {}
+#### PHP 命名规范
 
+```php
 // 类名：大驼峰
-class UserManager {}
+class GraphQLClient { }
+
+// 函数：小写 + 下划线
+function get_db() { }
 
 // 常量：大写 + 下划线
-define('DB_HOST', 'localhost');
+define('API_SECRET', '...');
 ```
 
-### 11.2 Git 提交规范
+### 7.2 Git 提交规范
 
 ```bash
-# 格式：<emoji> <类型>: <描述>
+# 格式：<type>: <description>
+
+# 类型
+feat:     新功能
+fix:      Bug 修复
+docs:     文档更新
+style:    代码格式 (不影响功能)
+refactor: 重构
+test:     测试
+chore:    构建/工具
 
 # 示例
-git commit -m "🐛 修复位置上传 API 路径错误"
-git commit -m "✨ 新增 iMessage 紧急通知功能"
-git commit -m "🎨 优化导航栏背景色"
-git commit -m "📝 更新 API 文档"
+git commit -m "feat: 添加版本检测功能"
+git commit -m "fix: 修复 Keychain Token 读取失败"
+git commit -m "docs: 更新 API 文档"
 ```
 
-#### Emoji 含义
+### 7.3 开发流程
 
-| Emoji | 含义 |
-|-------|------|
-| ✨ | 新功能 |
-| 🐛 | Bug 修复 |
-| 🎨 | UI/样式 |
-| 📝 | 文档 |
-| 🔧 | 配置修改 |
-| 🚀 | 性能优化 |
-| 🔒 | 安全相关 |
-| 🗑️ | 删除代码 |
+1. **需求分析** - 明确功能需求和技术方案
+2. **分支开发** - 从 `main` 创建功能分支
+3. **本地测试** - 编译通过 + 功能测试
+4. **代码审查** - 审查助手检查代码质量
+5. **合并推送** - PR 合并到 `main` 并推送
 
-### 11.3 开发流程
+### 7.4 开发规则
 
-```
-收到需求 → 理解需求 → 审查关联性 → 提供选项（如有歧义）
-    ↓
-用户确认 → 执行修改 → 验证编译 → 推送 GitHub
-    ↓
-服务器部署 → 测试验证 → 更新文档
-```
-
-### 11.4 5 条铁律
-
-1. **不擅作主张添加功能** - 没让添加的绝不添加
-2. **修改前全面审查关联性** - 搜索所有调用处
-3. **新增文件必须被调用** - 确保有入口
-4. **没让删除的绝不删除** - 不能擅自删除
-5. **指令模棱两可时提供选择** - 不确定时列出选项
+1. **功能变更必须先请示** - 不允许私自修改功能逻辑
+2. **指令不明确时必须确认** - 模糊需求先澄清再执行
+3. **不要添加多余文件** - 直接修改源码，不添加 .sh/.md
+4. **分工明确** - 前端 (Swift) / 后端 (PHP) / 审查助手
+5. **使用 Claude Code 工具** - 代码修改通过工具执行
+6. **审查通过才能推送** - 所有代码必须经过审查
+7. **自主解决问题** - 有问题先自己排查，实在搞不定再汇报
+8. **进度列表汇报** - 任务进度用列表格式，30 秒刷新
+9. **自动安装技能** - 缺少技能时自动安装
+10. **规则分布记忆** - 规则分散在 memory 文件中
+11. **禁止私自推送** - 推送前必须确认
+12. **Memory 追加模式** - 更新 memory 时追加，不覆盖
+13. **主代理写 Memory** - 只有主代理可以修改 memory 文件
 
 ---
 
-## 12. 故障排查
+## 8. 部署指南
 
-### 12.1 常见问题（FAQ）
+### 8.1 前端部署 (iOS)
 
-#### Q1: 位置上传失败？
-**A**: 检查 `UserManager.swift` 中 API URL 是否为 `/api/location.php`
+#### App Store 发布流程
 
-#### Q2: 邀请码生成失败？
-**A**: 检查后端 `api/core.php` 的 error 函数是否返回 `success` 字段
+1. **准备发布**
+   ```bash
+   # 修改版本号
+   # Xcode: Project → Build Settings → Version
+   
+   # 归档
+   # Xcode: Product → Archive
+   ```
 
-#### Q3: 真机白屏？
-**A**: 检查 `Info.plist` 后台任务声明，确保在 `didFinishLaunchingWithOptions` 中注册
+2. **上传到 App Store Connect**
+   - 打开 Xcode Organizer
+   - 选择 Archive → Distribute App
+   - 选择 App Store Connect → Upload
 
-#### Q4: 短信验证码收不到？
-**A**: 检查 `system_config` 表中 `sms_is_development` 配置
+3. **App Store Connect 配置**
+   - 填写应用信息
+   - 上传截图
+   - 提交审核
 
-### 12.2 后端诊断工具
+### 8.2 后端部署 (PHP)
 
-#### 12.2.1 配置检查
+#### 服务器要求
 
-```bash
-# 访问配置检查 API
-curl http://8.136.41.211:3395/api/check-config.php
+- PHP 8.0+
+- MySQL 8.0+
+- Apache 2.4+ / Nginx 1.20+
+- SSL 证书 (推荐)
 
-# 预期响应
-{"success":true,"message":"配置加载成功"}
-```
+#### 部署步骤
 
-#### 12.2.2 数据库检查
+1. **上传代码**
+   ```bash
+   git clone https://github.com/huainvhai-bit/zhonghuo-backend-php.git
+   cd zhonghuo-backend-php
+   ```
 
-```bash
-# 访问数据库检查 API
-curl http://8.136.41.211:3395/api/check-db.php
+2. **配置数据库**
+   ```bash
+   # 创建数据库
+   mysql -u root -p -e "CREATE DATABASE zhonghuo CHARACTER SET utf8mb4"
+   
+   # 导入表结构
+   mysql -u root -p zhonghuo < database.sql
+   ```
 
-# 检查表完整性
-mysql -u zhonghuo -pzhonghuo zhonghuo < check-db-integrity.sql
-```
+3. **配置文件**
+   ```bash
+   cp config.example.php config.php
+   # 编辑 config.php 填入数据库信息
+   ```
 
-#### 12.2.3 全量诊断
+4. **设置权限**
+   ```bash
+   chmod 755 .
+   chmod 644 config.php
+   chown -R www-data:www-data .
+   ```
 
-```bash
-# 访问全量诊断 API
-curl http://8.136.41.211:3395/api/diagnose-all.php
+5. **验证部署**
+   ```bash
+   # 测试 API
+   curl https://your-domain.com/api/version.php
+   ```
 
-# 位置专项诊断
-curl http://8.136.41.211:3395/api/diagnose-location.php
-```
+### 8.3 环境变量配置
 
-### 12.3 前端诊断工具
+#### system_config 表配置项
 
-#### 12.3.1 调试模式
-
-在 `DebugConfig.swift` 中开启调试模式：
-
-```swift
-struct DebugConfig {
-    static let enableLogs = true
-    static let enableMockData = false
-    static let apiTimeout = 30.0
-}
-```
-
-#### 12.3.2 网络诊断
-
-```bash
-# 测试 API 连通性
-curl -v http://8.136.41.211:3395/api/graphql.php \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { user { id } }"}'
-```
-
-### 12.4 日志查看
-
-#### 12.4.1 PHP 日志
-
-```bash
-# PHP-FPM 日志
-tail -f /www/wwwlogs/php-fpm.log
-
-# Nginx 日志
-tail -f /www/wwwlogs/zhonghuo.cn.error.log
-tail -f /www/wwwlogs/zhonghuo.cn.access.log
-```
-
-#### 12.4.2 MySQL 日志
-
-```bash
-# 慢查询日志
-tail -f /var/log/mysql/slow.log
-
-# 错误日志
-tail -f /var/log/mysql/error.log
-```
-
-### 12.5 性能优化
-
-#### 12.5.1 数据库优化
-
-```sql
--- 添加索引
-ALTER TABLE capsules ADD INDEX idx_user_open (user_id, open_at);
-ALTER TABLE user_locations ADD INDEX idx_user_time (user_id, created_at);
-
--- 分析慢查询
-EXPLAIN SELECT * FROM capsules WHERE user_id = 'xxx' AND open_at > NOW();
-```
-
-#### 12.5.2 API 优化
-
-- 使用 GraphQL 按需查询，避免过度获取
-- 启用查询缓存
-- 批量操作代替单个操作
-
-### 12.6 备份与恢复
-
-#### 12.6.1 数据库备份
-
-```bash
-# 备份数据库
-mysqldump -u zhonghuo -pzhonghuo zhonghuo > backup_$(date +%Y%m%d).sql
-
-# 恢复数据库
-mysql -u zhonghuo -pzhonghuo zhonghuo < backup_20260324.sql
-```
-
-#### 12.6.2 代码备份
-
-```bash
-# 备份后端代码
-tar -czf backend_backup_$(date +%Y%m%d).tar.gz /www/wwwroot/zhonghuo.cn
-
-# 备份前端代码
-cd /Users/lishimin/Documents/zhonghuo-app
-git bundle create frontend_backup.bundle main
-```
+| 配置键 | 说明 | 默认值 |
+|--------|------|--------|
+| `sms_is_development` | 短信开发者模式 | 1 |
+| `sms_test_code` | 测试验证码 | 123456 |
+| `api_secret` | JWT 密钥 | (自定义) |
+| `storage_type` | 存储类型 | local |
+| `cloud_storage_enabled` | 云存储开关 | 0 |
+| `app_version_ios` | iOS 版本号 | 1.0.0 |
+| `app_update_url_ios` | iOS 更新地址 | App Store URL |
 
 ---
 
 ## 附录
 
-### A. 快速参考
+### A. 常见问题 (FAQ)
 
-#### A.1 常用命令速查
+#### Q1: Token 读取失败 (-25300)
 
-```bash
-# 前端编译
-xcodebuild -scheme 终活 -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+**原因**: Token 未保存到 Keychain
 
-# 前端推送
-cd /Users/lishimin/Documents/zhonghuo-app
-git add -A && git commit -m "描述" && git push origin main
-
-# 后端部署
-ssh root@8.136.41.211
-cd /www/wwwroot/zhonghuo.cn
-git pull origin main
-mysql -u zhonghuo -pzhonghuo zhonghuo < migrate-database.sql
-systemctl restart php-fpm-81
-
-# 数据库备份
-mysqldump -u zhonghuo -pzhonghuo zhonghuo > backup.sql
+**解决**: 在 `AuthView.swift` 中添加:
+```swift
+KeychainManager.shared.saveToken(token)
+KeychainManager.shared.saveUserId(userId)
 ```
 
-#### A.2 API 端点速查
+#### Q2: SQL 注入风险
 
-| 功能 | 端点 | 方法 |
-|------|------|------|
-| GraphQL API | `/api/graphql.php` | POST |
-| 配置检查 | `/api/check-config.php` | GET |
-| 数据库检查 | `/api/check-db.php` | GET |
-| 全量诊断 | `/api/diagnose-all.php` | GET |
-| 位置诊断 | `/api/diagnose-location.php` | GET |
-| 短信发送 | `/api/sms.php` | POST |
-| 管理后台 | `/admin/` | GET |
-| 位置地图 | `/admin/map.php` | GET |
+**预防**: 始终使用 PDO 预处理语句
+```php
+$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+```
 
-#### A.3 数据模型速查
+#### Q3: 后台线程修改@Published 警告
 
-| 模型 | 核心字段 |
-|------|----------|
-| User | id, name, phone, token, checkInInterval |
-| TimeCapsule | id, title, type, content, openAt, isSent |
-| WillModule | id, type, title, content, isCompleted |
-| Asset | id, type, name, value, accountNumber |
-| EmergencyContact | id, name, phone, relationship, isGuardian |
-| WillWitness | id, name, phone, isConfirmed, confirmedAt |
+**解决**: 给 ObservableObject 添加 `@MainActor` 标记
+```swift
+@MainActor
+class DataManager: ObservableObject { }
+```
 
-#### A.4 端口与路径
+### B. 相关文档
 
-| 项目 | 值 |
-|------|-----|
-| Web 端口 | 3395 |
-| SSH 端口 | 22 |
-| MySQL 端口 | 3306 |
-| 前端项目 | `/Users/lishimin/Documents/zhonghuo-app/` |
-| 后端项目 | `/Users/lishimin/Documents/zhonghuo-backend-php/` |
-| 服务器路径 | `/www/wwwroot/zhonghuo.cn` |
-
-### B. 常见问题（FAQ）
-
-#### Q1: 位置上传失败？
-**A**: 检查 `UserManager.swift` 中 API URL 是否为 `/api/location.php`
-
-#### Q2: 邀请码生成失败？
-**A**: 检查后端 `api/core.php` 的 error 函数是否返回 `success` 字段
-
-#### Q3: 真机白屏？
-**A**: 检查 `Info.plist` 后台任务声明，确保在 `didFinishLaunchingWithOptions` 中注册
-
-#### Q4: 短信验证码收不到？
-**A**: 检查 `system_config` 表中 `sms_is_development` 配置
-
-#### Q5: GraphQL 查询返回空数据？
-**A**: 检查 Authorization header 是否携带有效 Token
-
-#### Q6: 编译失败 DerivedData 缓存问题？
-**A**: 执行 `rm -rf ~/Library/Developer/Xcode/DerivedData/终活-*`
-
-### C. 相关文档
-
-- `/Users/lishimin/Documents/zhonghuo-app/📊前后端对接完整排查报告.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/✅前后端对接修复完成.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL API 文档.md`
-
-### C. 相关文档
-
-- `/Users/lishimin/Documents/zhonghuo-app/📊前后端对接完整排查报告.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/✅前后端对接修复完成.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL API 文档.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/📚GraphQL 使用指南.md`
-- `/Users/lishimin/Documents/zhonghuo-backend-php/🚀后端部署指南.md`
-
-### D. 项目链接
-
-| 项目 | 链接 |
-|------|------|
-| 前端 GitHub | https://github.com/huainvhai-bit/zhonghuo-app |
-| 后端 GitHub | https://github.com/huainvhai-bit/zhonghuo-backend-php |
-| 服务器 IP | http://8.136.41.211:3395 |
-| 管理后台 | http://8.136.41.211:3395/admin/ |
-| 位置地图 | http://8.136.41.211:3395/admin/map.php |
-
-### E. 版本历史
-
-| 版本 | 日期 | 更新内容 |
-|------|------|----------|
-| v2.0 | 2026-03-24 | 完整技术文档（12 章节） |
-| v1.0 | 2026-03-15 | 初始版本（基础功能） |
+- [GraphQL API 文档](📚GraphQL API 文档.md)
+- [后端部署指南](🚀后端部署指南.md)
+- [云存储使用指南](☁️云存储总开关使用指南.md)
+- [代码审查报告](CODE_REVIEW_REPORT.md)
 
 ---
 
-**文档版本**: v2.0  
-**最后更新**: 2026-03-24 12:00  
-**文档状态**: ✅ 生产就绪  
-**维护者**: 终活开发团队
-
-**📖 终活 App 技术开发文档 - 完**
+**文档维护**: 小皮  
+**联系方式**: support@zhonghuo.cn  
+**最后更新**: 2026-04-04
