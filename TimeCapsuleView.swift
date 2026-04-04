@@ -395,16 +395,16 @@ struct AddCapsuleModal: View {
                                 let fileExists = FileManager.default.fileExists(atPath: url.path)
                                 
                                 if fileExists {
+                                    // ✅ 修复 #4: 使用自定义 AVPlayerView，避免白屏
                                     let player = AVPlayer(url: url)
-                                    AVPlayerView(player: player)
+                                    player.actionAtItemEnd = .none
+                                    return AnyView(AVPlayerView(player: player))
                                 } else {
                                     // 文件不存在，显示提示
-                                    Text("媒体文件不存在")
-                                        .foregroundColor(.red)
+                                    return AnyView(Text("媒体文件不存在").foregroundColor(.red))
                                 }
                             } else {
-                                Text("未找到媒体文件")
-                                    .foregroundColor(.secondary)
+                                return AnyView(Text("未找到媒体文件").foregroundColor(.secondary))
                             }
                         }
                     }
@@ -545,6 +545,57 @@ struct PreviewButton: View {
     }
 }
 
+// ✅ 修复 #4: 自定义 AVPlayer 视图，避免白屏
+struct AVPlayerView: UIViewRepresentable {
+    let player: AVPlayer
+    
+    func makeUIView(context: Context) -> PlayerUIView {
+        let view = PlayerUIView()
+        view.player = player
+        view.autoresizesSubviews = true
+        view.backgroundColor = UIColor.black
+        return view
+    }
+    
+    func updateUIView(_ uiView: PlayerUIView, context: Context) {
+        uiView.player = player
+        // 确保播放
+        if player.rate == 0 {
+            player.play()
+        }
+    }
+}
+
+class PlayerUIView: UIView {
+    override class var layerClass: AnyClass {
+        AVPlayerLayer.self
+    }
+    
+    var player: AVPlayer? {
+        get { playerLayer.player }
+        set { playerLayer.player = newValue }
+    }
+    
+    var playerLayer: AVPlayerLayer {
+        layer as! AVPlayerLayer
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupLayer()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupLayer()
+    }
+    
+    private func setupLayer() {
+        playerLayer.videoGravity = .resizeAspect
+        playerLayer.backgroundColor = UIColor.black.cgColor
+    }
+}
+
 // MARK: - 编辑胶囊弹窗
 struct EditCapsuleModal: View {
     @ObservedObject var dataManager: DataManager
@@ -633,7 +684,7 @@ struct EditCapsuleModal: View {
         }
     }
     
-    private var capsulePlayerView: AnyView {
+    private var capsulePlayerView: some View {
         guard let url = parseMediaURL(from: content) else {
             return AnyView(
                 Text("未找到媒体文件")
@@ -657,9 +708,19 @@ struct EditCapsuleModal: View {
             )
         }
         
+        // ✅ 修复 #4: 创建播放器并立即播放，避免白屏
         let player = AVPlayer(url: url)
-        player.play()
-        return AnyView(AVPlayerView(player: player))
+        // 预加载，避免白屏
+        player.actionAtItemEnd = .none
+        player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+        
+        return AnyView(
+            AVPlayerView(player: player)
+                .onAppear {
+                    // 确保播放
+                    player.play()
+                }
+        )
     }
     
     /// 解析媒体文件 URL

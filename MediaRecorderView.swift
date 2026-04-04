@@ -188,6 +188,8 @@ struct MediaRecorderView: View {
 }
 
 // MARK: - 录制器
+// ✅ 修复 #5: 标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
+@MainActor
 class Recorder: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var formattedTime = "00:00"
@@ -197,12 +199,13 @@ class Recorder: NSObject, ObservableObject {
     @Published var alertMessage = ""
     @Published var recordedURL: URL?
     
-    var captureSession: AVCaptureSession?
-    private var audioRecorder: AVAudioRecorder?
-    private var videoOutput: AVCaptureMovieFileOutput?
-    private var timer: Timer?
-    private var recordingTime = 0
-    private var currentType: TimeCapsule.CapsuleType = .text
+    // ✅ 修复 #5: 标记为 nonisolated(unsafe)，允许在后台线程访问
+    nonisolated(unsafe) var captureSession: AVCaptureSession?
+    nonisolated(unsafe) private var audioRecorder: AVAudioRecorder?
+    nonisolated(unsafe) private var videoOutput: AVCaptureMovieFileOutput?
+    nonisolated(unsafe) private var timer: Timer?
+    nonisolated(unsafe) private var recordingTime = 0
+    nonisolated(unsafe) private var currentType: TimeCapsule.CapsuleType = .text
     
     override init() {
         super.init()
@@ -237,7 +240,8 @@ class Recorder: NSObject, ObservableObject {
         print("🎤 handleMicPermission: \(granted)")
         if granted {
             permissionGranted = true
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            // ✅ 修复 #5: 在后台线程设置音频会话
+            Task.detached { [weak self] in
                 self?.setupAudioSession()
             }
         } else {
@@ -250,7 +254,8 @@ class Recorder: NSObject, ObservableObject {
         print("📷 handleCameraPermission: \(granted)")
         if granted {
             permissionGranted = true
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            // ✅ 修复 #5: 在后台线程设置摄像头
+            Task.detached { [weak self] in
                 self?.setupCamera()
             }
         } else {
@@ -260,7 +265,8 @@ class Recorder: NSObject, ObservableObject {
     }
     
     // MARK: - 音频设置
-    private func setupAudioSession() {
+    // ✅ 修复 #5: 标记为非隔离，允许在后台线程执行
+    nonisolated private func setupAudioSession() {
         print("🎤 setupAudioSession 开始")
         do {
             let session = AVAudioSession.sharedInstance()
@@ -269,15 +275,16 @@ class Recorder: NSObject, ObservableObject {
             print("✅ 音频会话设置成功")
         } catch {
             print("❌ 音频会话失败：\(error)")
-            DispatchQueue.main.async {
-                self.alertMessage = "音频设置失败：\(error.localizedDescription)"
-                self.showAlert = true
+            Task { @MainActor [weak self] in
+                self?.alertMessage = "音频设置失败：\(error.localizedDescription)"
+                self?.showAlert = true
             }
         }
     }
     
     // MARK: - 摄像头设置
-    private func setupCamera() {
+    // ✅ 修复 #5: 标记为非隔离，允许在后台线程执行
+    nonisolated private func setupCamera() {
         print("📷 setupCamera 开始")
         do {
             captureSession = AVCaptureSession()
@@ -337,14 +344,14 @@ class Recorder: NSObject, ObservableObject {
                 print("📷 开始 startRunning...")
                 session.startRunning()
                 print("✅ 摄像头会话已启动")
-                DispatchQueue.main.async {
+                Task { @MainActor [weak self] in
                     self?.cameraReady = true
                     print("📷 cameraReady = true")
                 }
             }
         } catch {
             print("❌ 摄像头设置失败：\(error)")
-            DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
                 self?.alertMessage = "摄像头设置失败：\(error.localizedDescription)"
                 self?.showAlert = true
                 self?.permissionGranted = false
@@ -429,20 +436,22 @@ class Recorder: NSObject, ObservableObject {
     // MARK: - 计时器
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            self?.recordingTime += 1
-            let mins = (self?.recordingTime ?? 0) / 60
-            let secs = (self?.recordingTime ?? 0) % 60
-            self?.formattedTime = String(format: "%02d:%02d", mins, secs)
+            Task { @MainActor [weak self] in
+                self?.recordingTime += 1
+                let mins = self?.recordingTime ?? 0 / 60
+                let secs = (self?.recordingTime ?? 0) % 60
+                self?.formattedTime = String(format: "%02d:%02d", mins, secs)
+            }
         }
     }
 }
 
 // MARK: - AVCaptureFileOutputRecordingDelegate
 extension Recorder: AVCaptureFileOutputRecordingDelegate {
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+    nonisolated func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         if let error = error {
             print("❌ 录像失败：\(error)")
-            DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
                 self?.alertMessage = "录像失败：\(error.localizedDescription)"
                 self?.showAlert = true
             }
@@ -496,38 +505,4 @@ struct CameraPreview: UIViewRepresentable {
     }
 }
 
-// MARK: - 播放器
-struct AVPlayerView: UIViewControllerRepresentable {
-    let player: AVPlayer
-    @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let controller = AVPlayerViewController()
-        controller.player = player
-        
-        // 🔥 预加载媒体文件，避免白屏
-        player.actionAtItemEnd = .none
-        
-        // 添加播放结束通知
-        NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: player.currentItem,
-            queue: .main
-        ) { _ in
-            player.seek(to: .zero)
-        }
-        
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        // 🔥 确保视图更新时重新加载
-        if uiViewController.player != player {
-            uiViewController.player = player
-        }
-    }
-    
-    static func dismantleUIViewController(_ uiViewController: AVPlayerViewController, coordinator: ()) {
-        NotificationCenter.default.removeObserver(uiViewController)
-    }
-}
+// ✅ AVPlayerView 已在 TimeCapsuleView.swift 中定义，此处不再重复

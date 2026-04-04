@@ -16,6 +16,7 @@ struct InviteCodeView: View {
     @State private var errorMessage = ""
     @State private var copied = false
     @State private var showingBindFamily = false
+    @State private var bindFamilyTrigger = false  // ✅ 修复 #3: 用于触发绑定页面
     
     var body: some View {
         NavigationView {
@@ -199,7 +200,7 @@ struct InviteCodeView: View {
                 // 立即绑定按钮
                 Button(action: { 
                     print("🔵 点击立即绑定按钮")
-                    showingBindFamily = true 
+                    showingBindFamily = true
                 }) {
                     HStack {
                         Image(systemName: "link")
@@ -215,6 +216,15 @@ struct InviteCodeView: View {
                 .buttonStyle(.plain)
                 .contentShape(Rectangle())
                 .padding(.horizontal, 30)
+                
+                // ✅ 修复 #3: 隐藏的全局导航链接，确保绑定页面能正确打开
+                NavigationLink(destination: BindFamilyView(onBound: {
+                    loadInviteCode()
+                    dismiss()
+                }), isActive: $showingBindFamily) {
+                    EmptyView()
+                }
+                .opacity(0)
                 
                 // 使用说明
                 VStack(alignment: .leading, spacing: 12) {

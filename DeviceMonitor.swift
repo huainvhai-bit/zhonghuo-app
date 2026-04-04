@@ -11,6 +11,8 @@ import UIKit
 import SwiftUI
 
 /// 设备信息监控器
+// ✅ 修复 #5: 标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
+@MainActor
 class DeviceMonitor: ObservableObject {
     static let shared = DeviceMonitor()
     
@@ -149,7 +151,9 @@ class DeviceMonitor: ObservableObject {
     }
     
     deinit {
-        stopMonitoring()
+        // ✅ 修复：在 deinit 中直接访问，不需要 @MainActor
+        updateTimer?.invalidate()
+        updateTimer = nil
         device.isBatteryMonitoringEnabled = false
         // 🔴 正确移除所有观察者
         notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
@@ -159,6 +163,7 @@ class DeviceMonitor: ObservableObject {
     // MARK: - 监控控制
     
     /// 开始监控
+    @MainActor
     func startMonitoring() {
         guard !isMonitoring else { return }
         
@@ -169,10 +174,12 @@ class DeviceMonitor: ObservableObject {
         updateStepCount()
         updateBatteryInfo()
         
-        // 定时器更新（每 5 秒）
+        // 定时器更新（每 5 秒）- ✅ 修复：确保在主线程执行
         updateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.updateStepCount()
-            self?.updateBatteryInfo()
+            Task { @MainActor [weak self] in
+                self?.updateStepCount()
+                self?.updateBatteryInfo()
+            }
         }
         
         // 添加到 RunLoop
@@ -180,6 +187,7 @@ class DeviceMonitor: ObservableObject {
     }
     
     /// 停止监控
+    @MainActor
     func stopMonitoring() {
         isMonitoring = false
         updateTimer?.invalidate()
@@ -269,8 +277,10 @@ class DeviceMonitor: ObservableObject {
     
     // 🔴 已改用闭包方式处理通知，此方法保留兼容性
     @objc private func batteryStatusDidChange() {
-        updateBatteryInfo()
-        print("🔋 电池状态变化")
+        Task { @MainActor in
+            updateBatteryInfo()
+            print("🔋 电池状态变化")
+        }
     }
     
     // MARK: - 设备信息上传

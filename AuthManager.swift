@@ -5,6 +5,8 @@
 
 import Foundation
 
+// ✅ 修复 #5: 标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
+@MainActor
 class AuthManager: ObservableObject {
     static let shared = AuthManager()
     

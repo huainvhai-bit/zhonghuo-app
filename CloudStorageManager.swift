@@ -29,6 +29,8 @@ enum CloudStorageError: LocalizedError {
     }
 }
 
+// ✅ 修复 #5: 标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
+@MainActor
 class CloudStorageManager: ObservableObject {
     static let shared = CloudStorageManager()
     

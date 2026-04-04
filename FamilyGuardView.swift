@@ -14,7 +14,7 @@ struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @State private var familyList: [FamilyMember] = []
-    @State private var isLoading = false
+    @State private var isLoading = true  // ✅ 修复 #2: 初始状态为加载中
     @State private var showingBindFamily = false
     @State private var showingShareQR = false
     @State private var showingScanner = false
