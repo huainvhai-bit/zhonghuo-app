@@ -213,8 +213,17 @@ zhonghuo-backend-php/
 #### 系统要求
 
 - macOS 14.0+ (Sonoma)
-- Xcode 15.0+
+- **Xcode 15.0+** (前端开发主要工具)
 - iOS Simulator 17.0+ 或真机 iOS 15.0+
+
+#### 开发工具分工
+
+| 开发领域 | 主要工具 | 辅助工具 |
+|---------|---------|---------|
+| **前端 (iOS/Swift)** | Xcode 15+ | exec (编译测试) |
+| **后端 (PHP)** | Claude Code | exec/edit (文件操作) |
+| **代码审查** | 审查助手 | - |
+| **文档编写** | Markdown 编辑器 | - |
 
 #### 克隆项目
 
@@ -394,6 +403,16 @@ xcodebuild -project 终活.xcodeproj -scheme 终活 \
 - MySQL 8.0+
 - Apache/Nginx
 - Composer (可选)
+- **Claude Code** (后端开发主要工具)
+
+#### 开发工具分工
+
+| 开发领域 | 主要工具 | 辅助工具 |
+|---------|---------|---------|
+| **后端 (PHP)** | Claude Code | exec/edit (文件操作) |
+| **数据库** | MySQL CLI / phpMyAdmin | - |
+| **API 测试** | curl / Postman | - |
+| **代码审查** | 审查助手 | - |
 
 #### 安装依赖
 
@@ -749,7 +768,7 @@ git commit -m "docs: 更新 API 文档"
 2. **指令不明确时必须确认** - 模糊需求先澄清再执行
 3. **不要添加多余文件** - 直接修改源码，不添加 .sh/.md
 4. **分工明确** - 前端 (Swift) / 后端 (PHP) / 审查助手
-5. **使用 Claude Code 工具** - 代码修改通过工具执行
+5. **开发工具规范** - 前端用 Xcode，后端用 Claude Code
 6. **审查通过才能推送** - 所有代码必须经过审查
 7. **自主解决问题** - 有问题先自己排查，实在搞不定再汇报
 8. **进度列表汇报** - 任务进度用列表格式，30 秒刷新
@@ -758,12 +777,22 @@ git commit -m "docs: 更新 API 文档"
 11. **禁止私自推送** - 推送前必须确认
 12. **Memory 追加模式** - 更新 memory 时追加，不覆盖
 13. **主代理写 Memory** - 只有主代理可以修改 memory 文件
+14. **开发工具分工** - 前端 (Xcode) / 后端 (Claude Code) / 辅助工具 (exec/edit 等)
 
 ---
 
 ## 8. 部署指南
 
 ### 8.1 前端部署 (iOS)
+
+#### 开发工具
+
+**前端开发统一使用 Xcode**:
+- 代码编写：Xcode 编辑器
+- 界面设计：Interface Builder / SwiftUI Preview
+- 编译调试：Xcode Build & Debug
+- 性能分析：Instruments
+- 归档发布：Xcode Organizer
 
 #### App Store 发布流程
 
@@ -787,6 +816,14 @@ git commit -m "docs: 更新 API 文档"
    - 提交审核
 
 ### 8.2 后端部署 (PHP)
+
+#### 开发工具
+
+**后端开发统一使用 Claude Code**:
+- 代码编写：Claude Code 工具
+- 文件操作：exec/edit 辅助工具
+- 代码审查：审查助手
+- API 测试：curl / Postman
 
 #### 服务器要求
 
