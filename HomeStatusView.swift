@@ -33,9 +33,9 @@ struct HomeStatusView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // 背景色
+                // ✅ 修复 #5: 背景色全屏覆盖
                 Color(hex: "F5F5F7")
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(edges: .all)
                 
                 ScrollView {
                     VStack(spacing: 16) {

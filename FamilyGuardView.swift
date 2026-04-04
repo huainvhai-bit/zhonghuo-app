@@ -46,18 +46,10 @@ struct FamilyGuardView: View {
                 
                 print("🔵 家人守护页面 onAppear")
                 
-                // 🔥 首次点击快速响应：先设置加载状态，再异步加载数据
-                // ✅ 修复：loadFamilyListAsync 内部会管理 isLoading 状态
+                // ✅ 修复 #8: 只加载家人列表，不自动获取邀请码（避免卡顿）
+                // 邀请码只在点击"查看二维码"时才获取
                 Task {
-                    // 并行加载，提高速度
-                    await withTaskGroup(of: Void.self) { group in
-                        group.addTask {
-                            await self.loadFamilyListAsync()
-                        }
-                        group.addTask {
-                            await self.generateInviteCode()
-                        }
-                    }
+                    await loadFamilyListAsync()
                 }
             }
             .toolbar {
@@ -163,8 +155,19 @@ struct FamilyGuardView: View {
                         showingShareQR = true
                     }
                     
-                    // 3. 手动输入邀请码
-                    manualInputSection
+                    // 3. 手动输入邀请码 - ✅ 修复 #6: 改为导航到二级页面
+                    NavigationLink(destination: ManualInputInviteCodeView(onBound: {
+                        loadFamilyList()
+                    })) {
+                        actionCard(
+                            icon: "textformat",
+                            iconColor: Color(hex: "F59E0B"),
+                            title: "手动输入邀请码",
+                            subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
+                            buttonTitle: "立即输入",
+                            buttonColor: Color(hex: "F59E0B")
+                        ) { }
+                    }
                 }
                 
                 // 空状态提示卡片
@@ -242,8 +245,19 @@ struct FamilyGuardView: View {
                         showingShareQR = true
                     }
                     
-                    // 3. 手动输入邀请码
-                    manualInputSection
+                    // 3. 手动输入邀请码 - ✅ 修复 #6: 改为导航到二级页面
+                    NavigationLink(destination: ManualInputInviteCodeView(onBound: {
+                        loadFamilyList()
+                    })) {
+                        actionCard(
+                            icon: "textformat",
+                            iconColor: Color(hex: "F59E0B"),
+                            title: "手动输入邀请码",
+                            subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
+                            buttonTitle: "立即输入",
+                            buttonColor: Color(hex: "F59E0B")
+                        ) { }
+                    }
                 }
                 
                 // 4. 已关联家人列表
@@ -293,70 +307,6 @@ struct FamilyGuardView: View {
                     .background(buttonColor)
                     .foregroundColor(.white)
                     .cornerRadius(10)
-            }
-        }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-    }
-    
-    // MARK: - 手动输入邀请码
-    @State private var manualInviteCode = ""
-    @State private var isBinding = false
-    
-    private var manualInputSection: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 16) {
-                Image(systemName: "textformat")
-                    .font(.system(size: 32))
-                    .foregroundColor(Color(hex: "F59E0B"))
-                    .frame(width: 60, height: 60)
-                    .background(Color(hex: "F59E0B").opacity(0.1))
-                    .cornerRadius(12)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("手动输入邀请码")
-                        .font(.system(size: 17, weight: .semibold))
-                    
-                    Text("如果无法扫码，可以手动输入 6 位邀请码")
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-            }
-            
-            HStack(spacing: 12) {
-                TextField("6 位邀请码", text: $manualInviteCode)
-                    .font(.system(size: 20, weight: .medium, design: .monospaced))
-                    .textContentType(.oneTimeCode)
-                    .keyboardType(.asciiCapable)
-                    .autocapitalization(.allCharacters)
-                    .onChange(of: manualInviteCode) { newValue in
-                        if newValue.count > 6 {
-                            manualInviteCode = String(newValue.prefix(6))
-                        }
-                        manualInviteCode = newValue.uppercased()
-                    }
-                    .padding()
-                    .background(Color(hex: "F5F5F7"))
-                    .cornerRadius(10)
-                
-                Button(action: bindManualInviteCode) {
-                    if isBinding {
-                        ProgressView()
-                            .tint(.white)
-                            .scaleEffect(0.8)
-                    } else {
-                        Text("绑定")
-                            .font(.system(size: 15, weight: .semibold))
-                    }
-                }
-                .frame(width: 80, height: 50)
-                .background(manualInviteCode.count == 6 && !isBinding ? Color(hex: "F59E0B") : Color.gray)
-                .foregroundColor(.white)
-                .cornerRadius(10)
             }
         }
         .padding(20)
@@ -581,15 +531,7 @@ struct FamilyGuardView: View {
         return ""
     }
     
-    private func bindManualInviteCode() {
-        guard manualInviteCode.count == 6 else { return }
-        
-        isBinding = true
-        Task {
-            await bindManualInviteCodeAsync()
-        }
-    }
-    
+    // ✅ 扫码绑定邀请码
     @MainActor
     private func bindInviteCode(_ inviteCode: String) async {
         let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
@@ -606,29 +548,14 @@ struct FamilyGuardView: View {
         }
         
         do {
-            // 使用 GraphQL bindFamilyByInviteCode mutation
             let query = """
             mutation($inviteCode: String!) {
                 bindFamilyByInviteCode(inviteCode: $inviteCode) {
                     success
                     message
                     data {
-                        members {
-                            id
-                            name
-                            phone
-                            relation
-                            status
-                            createdAt
-                        }
-                        invited {
-                            id
-                            name
-                            phone
-                            relation
-                            status
-                            createdAt
-                        }
+                        members { id name phone relation status createdAt }
+                        invited { id name phone relation status createdAt }
                     }
                 }
             }
@@ -639,13 +566,13 @@ struct FamilyGuardView: View {
             print("📡 GraphQL 绑定家人响应：\(result)")
             
             if let data = result["data"] as? [String: Any],
-               let bindFamilyByInviteCode = data["bindFamilyByInviteCode"] as? [String: Any] {
-                let success = bindFamilyByInviteCode["success"] as? Bool ?? false
+               let bindFamily = data["bindFamilyByInviteCode"] as? [String: Any] {
+                let success = bindFamily["success"] as? Bool ?? false
                 if success {
                     await loadFamilyListAsync()
                     return
                 } else {
-                    errorMessage = bindFamilyByInviteCode["message"] as? String ?? "绑定失败"
+                    errorMessage = bindFamily["message"] as? String ?? "绑定失败"
                 }
             }
         } catch {
@@ -653,58 +580,6 @@ struct FamilyGuardView: View {
         }
         
         showingError = true
-    }
-    
-    @MainActor
-    private func bindManualInviteCodeAsync() async {
-        let token = UserDefaults.standard.string(forKey: "userToken") ?? ""
-        guard !token.isEmpty else {
-            errorMessage = "请先登录"
-            showingError = true
-            isBinding = false
-            return
-        }
-        
-        guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
-            showingError = true
-            isBinding = false
-            return
-        }
-        
-        do {
-            let url = URL(string: "\(DataManager.apiURL)/api/family.php?action=bind_family")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            
-            let body: [String: String] = ["invite_code": manualInviteCode]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(FamilyListResponse.self, from: data)
-                    
-                    if result.success {
-                        manualInviteCode = ""
-                        await loadFamilyListAsync()
-                        return
-                    } else {
-                        errorMessage = result.message ?? "绑定失败"
-                    }
-                } else {
-                    errorMessage = "网络错误：\(httpResponse.statusCode)"
-                }
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        
-        showingError = true
-        isBinding = false
     }
 }
 
@@ -1000,6 +875,119 @@ struct FamilyMemberCard: View {
             } catch {
                 print("❌ 删除失败：\(error)")
             }
+        }
+    }
+}
+
+// MARK: - 手动输入邀请码视图 (内联) - ✅ 修复 #6
+struct ManualInputInviteCodeView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var inviteCode = ""
+    @State private var isBinding = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    var onBound: (() -> Void)?
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "textformat")
+                        .font(.system(size: 24))
+                        .foregroundColor(Color(hex: "F59E0B"))
+                    Text("手动输入邀请码")
+                        .font(.system(size: 18, weight: .semibold))
+                }
+                Text("请输入家人分享给你的 6 位邀请码，完成绑定后你们将互相关爱守护。")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(Color(hex: "FFF9E6"))
+            .cornerRadius(12)
+            .padding(.horizontal)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("邀请码")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.secondary)
+                TextField("6 位邀请码", text: $inviteCode)
+                    .font(.system(size: 24, weight: .semibold, design: .monospaced))
+                    .textContentType(.oneTimeCode)
+                    .keyboardType(.asciiCapable)
+                    .autocapitalization(.allCharacters)
+                    .onChange(of: inviteCode) { newValue in
+                        if newValue.count > 6 { inviteCode = String(newValue.prefix(6)) }
+                        inviteCode = newValue.uppercased()
+                    }
+                    .padding()
+                    .background(Color(hex: "F5F5F7"))
+                    .cornerRadius(12)
+            }
+            .padding(.horizontal)
+            
+            Button(action: bindInviteCode) {
+                HStack {
+                    if isBinding {
+                        ProgressView().tint(.white).scaleEffect(0.8)
+                        Text("绑定中...")
+                    } else {
+                        Text("立即绑定").font(.system(size: 16, weight: .semibold))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(inviteCode.count == 6 && !isBinding ? Color(hex: "F59E0B") : Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            .disabled(inviteCode.count != 6 || isBinding)
+            .padding(.horizontal)
+            
+            Spacer()
+        }
+        .navigationTitle("手动输入邀请码")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
+            }
+        }
+        .alert("绑定失败", isPresented: $showError) {
+            Button("确定", role: .cancel) { }
+        } message: { Text(errorMessage) }
+    }
+    
+    private func bindInviteCode() {
+        guard inviteCode.count == 6 else { return }
+        isBinding = true
+        Task {
+            do {
+                let query = """
+                mutation($inviteCode: String!) {
+                    bindFamilyByInviteCode(inviteCode: $inviteCode) {
+                        success
+                        message
+                        data {
+                            members { id name phone relation status createdAt }
+                            invited { id name phone relation status createdAt }
+                        }
+                    }
+                }
+                """
+                let result = try await GraphQLClient.shared.query(query, variables: ["inviteCode": inviteCode])
+                if let data = result["data"] as? [String: Any],
+                   let bindFamily = data["bindFamilyByInviteCode"] as? [String: Any],
+                   let success = bindFamily["success"] as? Bool, success {
+                    await MainActor.run { onBound?(); dismiss() }
+                    return
+                }
+                throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "绑定失败"])
+            } catch {
+                await MainActor.run { errorMessage = error.localizedDescription; showError = true }
+            }
+            await MainActor.run { isBinding = false }
         }
     }
 }

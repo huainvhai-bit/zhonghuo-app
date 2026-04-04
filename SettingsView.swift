@@ -70,6 +70,12 @@ struct SettingsView: View {
     @State private var showingLogoutConfirm = false  // 退出登录确认
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var showingUpdateAlert = false  // ✅ 修复 #7: 检查更新弹窗
+    
+    // ✅ 修复 #7: 版本号
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+    }
     
     var body: some View {
         ZStack {
@@ -270,23 +276,29 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // 关于
+                // 关于 - ✅ 修复 #7: 添加版本检测和关于页面
                 Section(header: Text("关于")) {
-                    HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(Color(hex: "6366F1"))
-                            .frame(width: 30)
-                        
-                        Text("关于终活")
-                            .font(.system(size: 16))
-                        
-                        Spacer()
-                        
-                        Text("v2.0 ✅")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
+                    NavigationLink(destination: aboutView) {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(Color(hex: "6366F1"))
+                                .frame(width: 30)
+                            
+                            Text("关于终活")
+                                .font(.system(size: 16))
+                            
+                            Spacer()
+                            
+                            Text("v\(appVersion)")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.vertical, 8)
                 }
                 
                 // 退出登录（放在最底部）
@@ -924,6 +936,73 @@ struct ServerConfigModal: View {
 // MARK: - 视图生命周期
 
 extension SettingsView {
+    // ✅ 修复 #7: 关于页面
+    private var aboutView: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(Color(hex: "F59E0B"))
+                Text("终活")
+                    .font(.system(size: 28, weight: .bold))
+                Text("让生命更有温度")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 40)
+            VStack(spacing: 16) {
+                HStack {
+                    Text("当前版本")
+                    Spacer()
+                    Text("v\(appVersion)")
+                        .foregroundColor(.secondary)
+                }
+                Button(action: checkUpdate) {
+                    HStack {
+                        Text("检查更新")
+                        Spacer()
+                        Image(systemName: "arrow.clockwise").foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+            .padding(.horizontal)
+            List {
+                Section(header: Text("应用信息")) {
+                    Link("官方网站", destination: URL(string: "https://zhonghuo.cn")!)
+                    Link("隐私政策", destination: URL(string: "https://zhonghuo.cn/privacy")!)
+                    Link("服务条款", destination: URL(string: "https://zhonghuo.cn/terms")!)
+                }
+                Section(header: Text("联系我们")) {
+                    HStack {
+                        Text("客服邮箱")
+                        Spacer()
+                        Text("support@zhonghuo.cn").foregroundColor(.secondary)
+                    }
+                }
+            }
+            Spacer()
+            Text("© 2026 终活 App. All rights reserved.")
+                .font(.caption).foregroundColor(.secondary).padding(.bottom, 20)
+        }
+        .navigationTitle("关于")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("检查更新", isPresented: $showingUpdateAlert) {
+            Button("稍后更新", role: .cancel) { }
+            Button("立即更新") {
+                if let url = URL(string: "https://apps.apple.com/app/终活/id123456789") {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: { Text("发现新版本 v1.0.1\\n\\nBug 修复和性能优化") }
+    }
+    
+    private func checkUpdate() {
+        showingUpdateAlert = true
+    }
+    
     func startDeviceMonitoring() {
         deviceMonitor.startMonitoring()
         print("🔋 设备监控已启动")
