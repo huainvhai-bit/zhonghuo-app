@@ -17,6 +17,20 @@
 6. [API 接口](#6-api-接口)
 7. [开发规范](#7-开发规范)
 8. [部署指南](#8-部署指南)
+9. [测试策略](#9-测试策略)
+10. [错误处理与日志规范](#10-错误处理与日志规范)
+11. [缓存与网络层](#11-缓存与网络层)
+12. [性能优化](#12-性能优化)
+13. [安全规范](#13-安全规范)
+14. [监控与告警](#14-监控与告警)
+15. [版本兼容与数据迁移](#15-版本兼容与数据迁移)
+16. [CI/CD 流程](#16-cicd-流程)
+17. [第三方依赖](#17-第三方依赖)
+18. [数据模型详解](#18-数据模型详解)
+19. [API 完整参考](#19-api-完整参考)
+20. [故障排查指南](#20-故障排查指南)
+21. [版本历史](#21-版本历史)
+22. [术语表](#22-术语表)
 
 ---
 
@@ -1794,9 +1808,876 @@ UPDATE users SET last_checkin_at = created_at WHERE last_checkin_at IS NULL;
 
 ---
 
+## 16. CI/CD 流程
+
+### 16.1 前端 CI/CD
+
+#### GitHub Actions 配置
+
+创建 `.github/workflows/ios-ci.yml`:
+
+```yaml
+name: iOS CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.0.app/Contents/Developer
+    
+    - name: Build
+      run: |
+        xcodebuild -project 终活.xcodeproj \
+          -scheme 终活 \
+          -destination 'platform=iOS Simulator,name=iPhone 17,OS=17.0' \
+          build
+    
+    - name: Run Tests
+      run: |
+        xcodebuild test -project 终活.xcodeproj \
+          -scheme 终活 \
+          -destination 'platform=iOS Simulator,name=iPhone 17,OS=17.0'
+```
+
+#### 编译检查清单
+
+- [ ] Xcode 版本 >= 15.0
+- [ ] iOS 部署目标 >= 15.0
+- [ ] Swift 版本 >= 5.9
+- [ ] 所有 `@Published` 属性在 `@MainActor` 类中
+- [ ] 无编译警告
+
+### 16.2 后端 CI/CD
+
+#### GitHub Actions 配置
+
+创建 `.github/workflows/php-ci.yml`:
+
+```yaml
+name: PHP CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.0'
+    
+    - name: Lint PHP files
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" | xargs -n 1 php -l
+    
+    - name: Install dependencies
+      run: composer install --no-progress
+    
+    - name: Run tests
+      run: vendor/bin/phpunit tests/
+```
+
+#### 代码检查清单
+
+- [ ] PHP 版本 >= 8.0
+- [ ] 所有 SQL 使用预处理语句
+- [ ] 无 PHP 语法错误
+- [ ] 通过 PHPUnit 测试
+
+### 16.3 自动部署流程
+
+#### 前端发布流程
+
+```
+1. 测试通过 → 2. 修改版本号 → 3. Archive → 4. 上传 App Store Connect
+```
+
+**步骤**:
+1. CI 测试通过
+2. 手动修改 `Info.plist` 版本号
+3. Xcode: Product → Archive
+4. 上传到 App Store Connect
+5. 等待审核发布
+
+#### 后端部署流程
+
+```
+1. 推送到 main → 2. CI 检查 → 3. SSH 连接服务器 → 4. git pull → 5. 清理缓存
+```
+
+**部署脚本** (`deploy.sh`):
+```bash
+#!/bin/bash
+set -e
+
+echo "🚀 开始部署终活后端..."
+
+# SSH 连接服务器
+ssh user@server "
+  cd /var/www/zhonghuo-backend-php &&
+  git pull origin main &&
+  composer install --no-dev --optimize-autoloader &&
+  php -r \"opcache_reset();\" &&
+  echo '✅ 部署完成'
+"
+
+echo "✅ 本地部署脚本执行完成"
+```
+
+---
+
+## 17. 第三方依赖
+
+### 17.1 前端依赖
+
+#### Swift Package Manager
+
+| 包名 | 用途 | 版本 | 必需 |
+|------|------|------|------|
+| Firebase | 崩溃收集/性能监控 | 最新 | 推荐 |
+| (暂无其他) | - | - | - |
+
+#### 系统框架
+
+| 框架 | 用途 |
+|------|------|
+| SwiftUI | UI 框架 |
+| Combine | 响应式编程 |
+| AVFoundation | 音视频录制播放 |
+| PDFKit | PDF 生成导出 |
+| LocalAuthentication | 生物识别认证 |
+| UserNotifications | 推送通知 |
+| Photos | 相册访问 |
+| AVKit | 视频播放 |
+
+### 17.2 后端依赖
+
+#### Composer 包 (如使用)
+
+| 包名 | 用途 | 版本 |
+|------|------|------|
+| firebase/php-jwt | JWT Token 生成验证 | ^6.0 |
+| graham-campbell/manager | 管理器基类 | ^3.0 |
+
+#### PHP 扩展
+
+| 扩展 | 用途 |
+|------|------|
+| PDO | 数据库访问 |
+| OpenSSL | 加密解密 |
+| GD | 图片处理 |
+| JSON | JSON 处理 |
+| MBString | 多字节字符串 |
+
+---
+
+## 18. 数据模型详解
+
+### 18.1 前端 Swift 模型
+
+#### TimeCapsule (时光胶囊)
+
+```swift
+struct TimeCapsule: Identifiable, Codable {
+    var id: String                    // UUID
+    var title: String                 // 标题
+    var content: String               // 内容 (文字/转录文本)
+    var type: CapsuleType             // text/audio/video
+    var mediaURL: String              // 本地媒体文件 URL
+    var mediaServerURL: String        // 服务器媒体 URL (云存储)
+    var mediaDuration: Double         // 媒体时长 (秒)
+    var sendDate: Date                // 发送时间
+    var isSent: Bool                  // 是否已发送
+    var createdAt: Date               // 创建时间
+    var deletedAt: Date?              // 删除时间 (软删除)
+    var cloudBackupStatus: CloudBackupStatus  // 云备份状态
+    var cloudBackupAt: Date?          // 云备份时间
+}
+
+enum CapsuleType: String, Codable {
+    case text = "文字"
+    case audio = "语音"
+    case video = "视频"
+}
+
+enum CloudBackupStatus: String, Codable {
+    case pending = "待备份"
+    case uploading = "上传中"
+    case backedUp = "已备份"
+    case failed = "失败"
+}
+```
+
+#### WillModule (遗嘱模块)
+
+```swift
+struct WillModule: Identifiable, Codable {
+    var id: String                    // UUID
+    var userId: String                // 用户 ID
+    var type: WillType                // 遗嘱类型
+    var title: String                 // 标题
+    var subtitle: String?             // 副标题
+    var content: String               // 内容
+    var mediaURL: String?             // 媒体 URL
+    var isCompleted: Bool             // 是否完成
+    var createdAt: Date               // 创建时间
+    var updatedAt: Date               // 更新时间
+}
+
+enum WillType: String, Codable {
+    case financial = "财产遗嘱"
+    case message = "留言遗嘱"
+    case video = "视频遗嘱"
+    case letter = "信件遗嘱"
+}
+```
+
+#### User (用户)
+
+```swift
+struct User: Codable {
+    var id: String                    // UUID
+    var name: String                  // 姓名
+    var phone: String                 // 手机号
+    var avatarUrl: String?            // 头像 URL
+    var inviteCode: String            // 邀请码 (6 位)
+    var lastLoginAt: Date?            // 最后登录时间
+    var lastLoginIp: String?          // 最后登录 IP
+    var stats: UserStats              // 统计信息
+    var emergencyContacts: [EmergencyContact]  // 紧急联系人
+}
+
+struct UserStats: Codable {
+    var capsulesCount: Int            // 胶囊数量
+    var willsCount: Int               // 遗嘱数量
+    var assetsCount: Int              // 资产数量
+    var checkInStreak: Int            // 签到天数
+    var familyMembersCount: Int       // 家人数量
+    var emergencyContactsCount: Int   // 紧急联系人数量
+}
+
+struct EmergencyContact: Codable {
+    var id: String                    // UUID
+    var name: String                  // 姓名
+    var relationship: String          // 关系
+    var phone: String                 // 手机号
+}
+```
+
+#### FamilyMember (家人成员)
+
+```swift
+struct FamilyMember: Identifiable, Codable {
+    var id: String                    // UUID
+    var userId: String?               // 用户 ID (已注册用户)
+    var name: String                  // 姓名
+    var phone: String?                // 手机号
+    var relation: String              // 关系
+    var status: FamilyStatus          // 状态
+    var inviteCode: String?           // 邀请码
+    var createdAt: Date               // 创建时间
+}
+
+enum FamilyStatus: String, Codable {
+    case pending = "待接受"
+    case accepted = "已接受"
+    case rejected = "已拒绝"
+}
+```
+
+### 18.2 后端数据库表
+
+#### users 表
+
+| 字段 | 类型 | 长度 | 说明 | 索引 |
+|------|------|------|------|------|
+| id | VARCHAR | 36 | 用户 ID (UUID) | PRIMARY |
+| name | VARCHAR | 100 | 姓名 | - |
+| phone | VARCHAR | 20 | 手机号 | UNIQUE |
+| password_hash | VARCHAR | 255 | 密码哈希 | - |
+| invite_code | VARCHAR | 10 | 邀请码 | UNIQUE |
+| last_login_at | DATETIME | - | 最后登录时间 | - |
+| last_login_ip | VARCHAR | 50 | 最后登录 IP | - |
+| created_at | DATETIME | - | 创建时间 | - |
+| updated_at | DATETIME | - | 更新时间 | - |
+
+#### capsules 表
+
+| 字段 | 类型 | 长度 | 说明 | 索引 |
+|------|------|------|------|------|
+| id | VARCHAR | 36 | 胶囊 ID | PRIMARY |
+| user_id | VARCHAR | 36 | 用户 ID | INDEX |
+| type | VARCHAR | 50 | 类型 | - |
+| media_type | VARCHAR | 50 | 媒体类型 | - |
+| title | VARCHAR | 255 | 标题 | - |
+| content | TEXT | - | 内容 | - |
+| media_url | VARCHAR | 512 | 媒体 URL | - |
+| open_at | DATETIME | - | 开启时间 | INDEX |
+| is_opened | TINYINT | 1 | 是否已开启 | - |
+| cloud_backup_status | ENUM | - | 云备份状态 | INDEX |
+| cloud_backup_at | DATETIME | - | 云备份时间 | - |
+| created_at | DATETIME | - | 创建时间 | - |
+| updated_at | DATETIME | - | 更新时间 | - |
+
+#### will_modules 表
+
+| 字段 | 类型 | 长度 | 说明 | 索引 |
+|------|------|------|------|------|
+| id | VARCHAR | 36 | 模块 ID | PRIMARY |
+| user_id | VARCHAR | 36 | 用户 ID | INDEX |
+| type | VARCHAR | 50 | 类型 | - |
+| title | VARCHAR | 255 | 标题 | - |
+| subtitle | VARCHAR | 255 | 副标题 | - |
+| content | TEXT | - | 内容 | - |
+| media_url | VARCHAR | 512 | 媒体 URL | - |
+| is_completed | TINYINT | 1 | 是否完成 | INDEX |
+| cloud_backup_status | ENUM | - | 云备份状态 | INDEX |
+| created_at | DATETIME | - | 创建时间 | - |
+| updated_at | DATETIME | - | 更新时间 | - |
+
+---
+
+## 19. API 完整参考
+
+### 19.1 GraphQL Schema
+
+#### Query 类型
+
+```graphql
+type Query {
+  # 获取当前用户信息
+  user: UserResponse!
+  
+  # 获取胶囊列表
+  capsules(limit: Int = 50, offset: Int = 0): CapsuleListResponse!
+  
+  # 获取遗嘱模块列表
+  willModules: WillModuleListResponse!
+  
+  # 获取资产列表
+  assets: AssetListResponse!
+  
+  # 获取见证人列表
+  witnesses: WitnessListResponse!
+  
+  # 获取家人列表
+  familyMembers: FamilyMemberListResponse!
+  
+  # 获取紧急联系人列表
+  emergencyContacts: EmergencyContactListResponse!
+  
+  # 获取签到状态
+  checkInStatus: CheckInStatusResponse!
+  
+  # 获取服务器配置
+  serverConfig: ServerConfigResponse!
+}
+```
+
+#### Mutation 类型
+
+```graphql
+type Mutation {
+  # 发送短信验证码
+  sendSmsCode(phone: String!, type: SmsType!): SmsCodeResponse!
+  
+  # 登录
+  login(phone: String!, code: String!): AuthResponse!
+  
+  # 注册
+  register(phone: String!, code: String!, name: String!): AuthResponse!
+  
+  # 退出登录
+  logout: LogoutResponse!
+  
+  # 创建胶囊
+  createCapsule(input: CreateCapsuleInput!): CapsuleResponse!
+  
+  # 更新胶囊
+  updateCapsule(id: ID!, input: UpdateCapsuleInput!): CapsuleResponse!
+  
+  # 删除胶囊
+  deleteCapsule(id: ID!): DeleteResponse!
+  
+  # 绑定家人 (邀请码)
+  bindFamilyByInviteCode(inviteCode: String!): FamilyBindResponse!
+  
+  # 接受家人邀请
+  acceptFamilyInvite(memberId: ID!): FamilyMemberResponse!
+  
+  # 拒绝家人邀请
+  rejectFamilyInvite(memberId: ID!): FamilyMemberResponse!
+  
+  # 移除家人
+  removeFamilyMember(memberId: ID!): DeleteResponse!
+  
+  # 添加紧急联系人
+  addEmergencyContact(input: AddEmergencyContactInput!): EmergencyContactResponse!
+  
+  # 更新紧急联系人
+  updateEmergencyContact(id: ID!, input: UpdateEmergencyContactInput!): EmergencyContactResponse!
+  
+  # 删除紧急联系人
+  deleteEmergencyContact(id: ID!): DeleteResponse!
+  
+  # 签到
+  checkIn: CheckInResponse!
+}
+```
+
+### 19.2 查询示例
+
+#### 获取用户完整信息
+
+```graphql
+query {
+  user {
+    success
+    data {
+      id
+      name
+      phone
+      avatarUrl
+      inviteCode
+      lastLoginAt
+      stats {
+        capsulesCount
+        willsCount
+        assetsCount
+        checkInStreak
+        familyMembersCount
+        emergencyContactsCount
+      }
+      emergencyContacts {
+        id
+        name
+        relationship
+        phone
+      }
+    }
+  }
+}
+```
+
+#### 获取胶囊列表 (分页)
+
+```graphql
+query {
+  capsules(limit: 20, offset: 0) {
+    success
+    data {
+      capsules {
+        id
+        title
+        type
+        mediaType
+        sendDate
+        isSent
+        cloudBackupStatus
+        createdAt
+      }
+      total
+      hasMore
+    }
+  }
+}
+```
+
+#### 创建胶囊
+
+```graphql
+mutation($input: CreateCapsuleInput!) {
+  createCapsule(input: $input) {
+    success
+    message
+    data {
+      id
+      title
+      type
+      sendDate
+      createdAt
+    }
+  }
+}
+
+// 变量
+{
+  "input": {
+    "title": "给未来的自己",
+    "type": "text",
+    "content": "希望你一切都好...",
+    "sendDate": "2027-01-01T00:00:00Z"
+  }
+}
+```
+
+#### 绑定家人
+
+```graphql
+mutation($inviteCode: String!) {
+  bindFamilyByInviteCode(inviteCode: $inviteCode) {
+    success
+    message
+    data {
+      members {
+        id
+        name
+        phone
+        relation
+        status
+      }
+      invited {
+        id
+        name
+        phone
+        relation
+        status
+      }
+    }
+  }
+}
+```
+
+### 19.3 REST API
+
+#### GET /api/version.php - 版本检测
+
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "ios": {
+      "version": "1.0.0",
+      "build": "1",
+      "minVersion": "1.0.0",
+      "updateUrl": "https://apps.apple.com/app/idxxx",
+      "description": "Bug 修复和性能优化",
+      "forceUpdate": false
+    },
+    "android": {
+      "version": "1.0.0",
+      "build": "1",
+      "minVersion": "1.0.0",
+      "updateUrl": "",
+      "description": "Bug 修复和性能优化",
+      "forceUpdate": false
+    }
+  },
+  "serverTime": "2026-04-04 16:00:00"
+}
+```
+
+#### POST /api/sms/send.php - 发送验证码
+
+**请求**:
+```json
+{
+  "phone": "13800138000",
+  "type": "login"
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "验证码已发送",
+  "data": {
+    "expireIn": 300
+  }
+}
+```
+
+---
+
+## 20. 故障排查指南
+
+### 20.1 前端常见问题
+
+#### Q4: App 启动后一直加载
+
+**症状**: App 打开后显示加载动画，无法进入首页
+
+**排查步骤**:
+1. 检查网络连接
+   ```swift
+   // 控制台查看网络状态
+   Logger.info("网络状态：\(NetworkMonitor.shared.isConnected)")
+   ```
+2. 检查 API 地址配置
+   ```swift
+   Logger.info("API URL: \(DataManager.apiURL)")
+   ```
+3. 查看控制台日志，定位卡住位置
+4. 尝试重启 App 或重新安装
+
+**解决方案**:
+- 确保服务器可访问
+- 检查 `AppConfig.defaultAPIURL` 配置
+
+#### Q5: 图片/视频无法上传
+
+**症状**: 选择媒体文件后上传失败
+
+**排查步骤**:
+1. 检查云存储配置
+   ```swift
+   Logger.info("云存储开关：\(CloudStorageManager.shared.isEnabled)")
+   ```
+2. 检查文件大小限制
+   ```swift
+   let maxSize = 50 * 1024 * 1024  // 50MB
+   if fileSize > maxSize { /* 提示过大 */ }
+   ```
+3. 查看网络请求日志
+4. 检查服务器存储空间
+
+**解决方案**:
+- 配置云存储 (阿里云 OSS / 腾讯云 COS)
+- 确保文件大小在限制范围内
+
+#### Q6: Token 读取失败 (-25300)
+
+**症状**: 真机测试时 Token 无法读取，提示 `errSecItemNotFound`
+
+**原因**: Token 未保存到 Keychain
+
+**解决方案**:
+```swift
+// AuthView.swift 注册/登录成功后
+KeychainManager.shared.saveToken(token)
+KeychainManager.shared.saveUserId(userId)
+```
+
+#### Q7: 后台线程修改@Published 警告
+
+**症状**: 控制台打印警告 `Publishing changes from background threads...`
+
+**解决方案**:
+```swift
+// 给 ObservableObject 添加 @MainActor
+@MainActor
+class DataManager: ObservableObject {
+    @Published var capsules: [TimeCapsule] = []
+}
+
+// 或在修改时切换到主线程
+Task { @MainActor in
+    self.capsules.append(newCapsule)
+}
+```
+
+### 20.2 后端常见问题
+
+#### Q8: API 返回 500 错误
+
+**症状**: 前端请求返回 500 Internal Server Error
+
+**排查步骤**:
+1. 检查 PHP 错误日志
+   ```bash
+   tail -f /var/log/php/error.log
+   ```
+2. 检查数据库连接
+   ```php
+   // test-db.php
+   $db = getDB();
+   echo "数据库连接成功";
+   ```
+3. 检查 JWT Token 配置
+   ```php
+   // 确认 config.php 中 API_SECRET 配置正确
+   echo API_SECRET;
+   ```
+4. 检查 GraphQL 查询语法
+
+**解决方案**:
+- 修复 PHP 语法错误
+- 确保数据库连接正常
+- 确认 JWT 密钥配置一致
+
+#### Q9: 短信验证码收不到
+
+**症状**: 点击发送验证码后，手机未收到短信
+
+**排查步骤**:
+1. 检查短信服务商配置
+   ```sql
+   SELECT * FROM system_config WHERE config_key LIKE 'sms_%';
+   ```
+2. 检查开发者模式开关
+   ```sql
+   SELECT config_value FROM system_config WHERE config_key = 'sms_is_development';
+   ```
+3. 查看短信发送日志
+   ```php
+   Logger::info("发送短信到：$phone", "sms");
+   ```
+
+**解决方案**:
+- 开发者模式下，使用测试验证码 (默认 123456)
+- 生产环境配置短信服务商 (阿里云/腾讯云)
+
+#### Q10: 数据库连接失败
+
+**症状**: API 返回数据库连接错误
+
+**排查步骤**:
+1. 检查数据库服务状态
+   ```bash
+   systemctl status mysql
+   ```
+2. 检查配置文件
+   ```php
+   // config.php
+   echo DB_HOST . ':' . DB_NAME . ':' . DB_USER;
+   ```
+3. 测试数据库连接
+   ```bash
+   mysql -u root -p -e "SHOW DATABASES;"
+   ```
+
+**解决方案**:
+- 启动 MySQL 服务
+- 修正 config.php 配置
+- 确保数据库用户权限正确
+
+#### Q11: SQL 注入风险
+
+**症状**: 代码审查发现 SQL 注入风险
+
+**预防措施**:
+```php
+// ✅ 正确 - 使用预处理
+$stmt = $db->prepare("SELECT * FROM users WHERE phone = ?");
+$stmt->execute([$phone]);
+
+// ❌ 错误 - 禁止字符串拼接
+$sql = "SELECT * FROM users WHERE phone = '$phone'";
+```
+
+### 20.3 部署常见问题
+
+#### Q12: 前端编译失败
+
+**症状**: xcodebuild 报错
+
+**排查步骤**:
+1. 检查 Xcode 版本
+   ```bash
+   xcodebuild -version
+   ```
+2. 清理构建缓存
+   ```bash
+   xcodebuild clean -project 终活.xcodeproj -scheme 终活
+   ```
+3. 检查证书和描述文件
+
+**解决方案**:
+- 升级 Xcode 到 15.0+
+- 重新下载证书和描述文件
+
+#### Q13: 后端部署后 502
+
+**症状**: Nginx 返回 502 Bad Gateway
+
+**排查步骤**:
+1. 检查 PHP-FPM 状态
+   ```bash
+   systemctl status php-fpm
+   ```
+2. 检查 Nginx 配置
+   ```bash
+   nginx -t
+   ```
+3. 查看 Nginx 错误日志
+   ```bash
+   tail -f /var/log/nginx/error.log
+   ```
+
+**解决方案**:
+- 重启 PHP-FPM: `systemctl restart php-fpm`
+- 修正 Nginx 配置
+
+---
+
+## 21. 版本历史
+
+### 21.1 文档版本
+
+| 版本 | 日期 | 变更内容 | 作者 |
+|------|------|---------|------|
+| 1.0.0 | 2026-04-04 | 初始版本，包含完整开发文档 | 小皮 |
+| 1.0.1 | 2026-04-04 | 补充测试、错误处理、安全规范等 7 章 | 小皮 |
+| 1.0.2 | 2026-04-04 | 更新开发工具规范 (前端 Xcode/后端 Claude Code) | 小皮 |
+| 1.0.3 | 2026-04-04 | 完善 CI/CD、数据模型、API 参考、故障排查 | 小皮 |
+
+### 21.2 App 版本
+
+| 版本 | 日期 | 类型 | 变更内容 |
+|------|------|------|---------|
+| 1.0.0 | TBD | iOS/Android | 初始发布 |
+
+---
+
+## 22. 术语表
+
+### 22.1 产品术语
+
+| 术语 | 英文 | 说明 |
+|------|------|------|
+| 终活 | Zhonghuo / End-of-life Planning | 生命管理规划应用 |
+| 时光胶囊 | Time Capsule | 定时发送的消息或媒体内容 |
+| 家人守护 | Family Guard | 家人关联和互相关爱功能 |
+| 遗嘱模块 | Will Module | 遗嘱的不同组成部分 |
+| 签到 | Check-in | 每日安全打卡 |
+| 邀请码 | Invite Code | 6 位家人邀请绑定码 |
+| 云存储 | Cloud Storage | 阿里云 OSS / 腾讯云 COS |
+
+### 22.2 技术术语
+
+| 术语 | 说明 |
+|------|------|
+| GraphQL | API 查询语言和运行时 |
+| JWT | JSON Web Token，认证令牌 |
+| Keychain | iOS 安全存储系统 |
+| @MainActor | Swift 并发标记，确保在主线程执行 |
+| @Published | SwiftUI 数据绑定标记 |
+| PDO | PHP Data Objects，数据库访问层 |
+| 预处理语句 | Prepared Statement，防 SQL 注入 |
+| ATS | App Transport Security，iOS 网络安全策略 |
+
+### 22.3 角色术语
+
+| 角色 | 说明 |
+|------|------|
+| 主代理 | 主要协调代理，负责任务分配和 Memory 管理 |
+| 前端助手 | 负责 iOS/Swift 开发 |
+| 后端助手 | 负责 PHP 开发 |
+| 审查助手 | 负责代码审查 |
+
+---
+
 ## 附录
 
-#### Q1: Token 读取失败 (-25300)
+### A. 常见问题 (FAQ)
 
 **原因**: Token 未保存到 Keychain
 
@@ -1833,4 +2714,5 @@ class DataManager: ObservableObject { }
 
 **文档维护**: 小皮  
 **联系方式**: support@zhonghuo.cn  
-**最后更新**: 2026-04-04
+**最后更新**: 2026-04-04  
+**文档版本**: v1.0.3
