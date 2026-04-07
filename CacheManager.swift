@@ -248,3 +248,18 @@ extension CacheManager {
         refreshCache()
     }
 }
+// MARK: - DataManager 缓存集成（P1 离线缓存）
+
+extension CacheManager {
+    /// 从缓存加载数据（由 DataManager 调用）
+    func loadDataIfNeeded() {
+        print("🔵 CacheManager.loadDataIfNeeded 开始...")
+        
+        // 如果缓存过期，触发刷新
+        if !isCacheValid(for: .homeStatus) {
+            refreshCache()
+        }
+        
+        print("✅ CacheManager.loadDataIfNeeded 完成")
+    }
+}
