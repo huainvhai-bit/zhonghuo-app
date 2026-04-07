@@ -1380,7 +1380,7 @@ class TokenRefreshService {
         
         // 检查 Token 是否即将过期（5分钟内）
         guard let expirationTime = KeychainManager.shared.getTokenExpiration(),
-              Date().timeIntervalSince1970 >= expirationTime.timeIntervalSince1970 - 300 else {
+              Date().timeIntervalSince1970 >= expirationTime - 300 else {
             return token // Token 仍然有效
         }
         

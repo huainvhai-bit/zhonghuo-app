@@ -79,7 +79,7 @@ class KeychainManager {
     /// 读取 Token 过期时间
     /// - Returns: 过期时间（Date），nil 表示未设置
     func getTokenExpiration() -> Date? {
-        guard let timestamp = UserDefaults.standard.object(forKey: tokenExpirationKey) as? Double else {
+        guard let timestamp = UserDefaults.standard.double(forKey: tokenExpirationKey) else {
             return nil
         }
         return Date(timeIntervalSince1970: timestamp)
