@@ -851,9 +851,13 @@ class APIManager {
                 for (capsuleId, url) in cloudUrls {
                     if let index = DataManager.shared.capsules.firstIndex(where: { $0.id == capsuleId }) {
                         DataManager.shared.capsules[index].mediaServerURL = url
+                        DataManager.shared.capsules[index].cloudBackupStatus = .backedUp
+                        DataManager.shared.capsules[index].cloudBackupAt = Date()
                         print("✅ 胶囊 \(capsuleId) 云存储 URL 已更新")
                     }
                 }
+                // ✅ 持久化到本地 JSON
+                Task { await MainActor.run { DataManager.shared.saveCapsulesToFile() } }
             }
             
             // 🔧 警告：同步结果为 0
@@ -913,13 +917,17 @@ class APIManager {
             // 🔥 解析云存储 URL
             if let cloudUrls = syncResult["cloudUrls"] as? [String: String] {
                 print("☁️ 云存储 URL: \(cloudUrls.count) 个遗嘱已备份")
-                // 更新本地遗嘱的 content（从云存储读取）
+                // 更新本地遗嘱的 cloudURL
                 for (willId, url) in cloudUrls {
                     if let index = DataManager.shared.willModules.firstIndex(where: { $0.id == willId }) {
-                        // 保存云存储 URL（可以添加到 WillModule 模型）
+                        DataManager.shared.willModules[index].cloudURL = url
+                        DataManager.shared.willModules[index].cloudBackupStatus = .backedUp
+                        DataManager.shared.willModules[index].cloudBackupAt = Date()
                         print("✅ 遗嘱 \(willId) 云存储 URL 已更新：\(url)")
                     }
                 }
+                // ✅ 持久化到本地 JSON
+                Task { await MainActor.run { DataManager.shared.saveWillModulesToFile() } }
             }
             return BatchSyncResult(total: total, created: created, updated: updated)
         }

@@ -462,6 +462,7 @@ struct AddCapsuleModal: View {
                 if let permanentURL = await DataManager.shared.persistMediaFile(tempURL) {
                     print("✅ 媒体文件已持久化：\(permanentURL.path)")
                     capsuleContent = permanentURL.absoluteString
+                    mediaURL = permanentURL.absoluteString  // ✅ 先保存到 mediaURL 变量
                     
                     // 验证持久化后的文件
                     print("📁 持久化文件存在：\(FileManager.default.fileExists(atPath: permanentURL.path))")
@@ -502,7 +503,10 @@ struct AddCapsuleModal: View {
             createdAt: Date()
         )
         
-        // 4. 保存服务器 URL（如果有）
+        // 4. 保存媒体 URL（本地 + 服务器）
+        if let localURL = mediaURL {
+            capsule.mediaURL = localURL
+        }
         if let serverURL = mediaURL {
             capsule.mediaServerURL = serverURL
         }
