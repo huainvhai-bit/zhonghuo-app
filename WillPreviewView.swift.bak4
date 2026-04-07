@@ -86,7 +86,7 @@ struct WillPreviewView: View {
                     // 导出按钮
                     Button(action: {
                         // 触发 PDF 导出
-                        exportWillToPDF()
+                        NotificationCenter.default.post(name: NSNotification.Name("ExportPDF"), object: nil)
                     }) {
                         HStack {
                             Image(systemName: "doc.badge.gearshape.fill")
