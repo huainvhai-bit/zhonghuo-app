@@ -121,12 +121,18 @@ struct TimeCapsule: Identifiable, Codable {
         case text = "文字"
         case audio = "语音"
         case video = "视频"
+        case image = "图片"
+        case sticker = "表情"
+        case voice = "录音"
         
         var icon: String {
             switch self {
             case .text: return "✉️"
             case .audio: return "🎙️"
             case .video: return "🎥"
+            case .image: return "🖼️"
+            case .sticker: return "😊"
+            case .voice: return "🎤"
             }
         }
         
@@ -135,6 +141,9 @@ struct TimeCapsule: Identifiable, Codable {
             case .text: return "doc.text.fill"
             case .audio: return "mic.fill"
             case .video: return "video.fill"
+            case .image: return "photo.fill"
+            case .sticker: return "face.smiling.fill"
+            case .voice: return "waveform.rectangle.fill"
             }
         }
         
@@ -143,6 +152,18 @@ struct TimeCapsule: Identifiable, Codable {
             case .text: return "007AFF"
             case .audio: return "FF9500"
             case .video: return "AF52DE"
+            case .image: return "34C759"
+            case .sticker: return "FFD60A"
+            case .voice: return "5856D6"
+            }
+        }
+        
+        var mediaType: String {
+            switch self {
+            case .text, .sticker: return "image"
+            case .audio, .voice: return "audio"
+            case .video: return "video"
+            case .image: return "image"
             }
         }
     }
