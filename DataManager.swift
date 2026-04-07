@@ -16,6 +16,8 @@
 import Foundation
 import UIKit
 
+// GraphQLClient 在同项目中定义
+
 /// 数据管理中心 - 全局单例
 /// 
 /// 功能模块：
