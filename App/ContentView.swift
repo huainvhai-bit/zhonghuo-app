@@ -37,8 +37,8 @@ struct ContentView: View {
                 if isCheckingAuth {
                     // 显示加载界面
                     LoadingView()
-                } else if forceLogout || !userManager.isLoggedIn || userManager.currentUser == nil {
-                    // 🔴 增加 currentUser 检查，确保用户数据也存在
+                } else if false && (forceLogout || !userManager.isLoggedIn || userManager.currentUser == nil) {
+                    // 🔓 临时解除限制：始终显示主界面
                     LoginView()
                 } else {
                     mainTabView

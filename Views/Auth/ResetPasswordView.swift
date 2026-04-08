@@ -235,7 +235,7 @@ struct ResetPasswordView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(!isValidPhone(phone) || newPassword.count < 6 || newPassword != confirmPassword || verifyCode.count != 6)
+                    .disabled(false)  // 🔓 临时解除限制
                     .opacity(isLoading ? 0.5 : 1)
                 }
                 .padding(.horizontal, 24)
