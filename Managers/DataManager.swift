@@ -593,27 +593,32 @@ class DataManager: ObservableObject {
             return false
         }
         
-        // 调用后端 API，由后端调用短信服务商
-        let url = URL(string: "\(Self.apiURL)/api/sms.php?action=send_sms")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: Any] = [
-            "phone": phone,
-            "message": message
-        ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        if let httpResponse = response as? HTTPURLResponse,
-           (200...299).contains(httpResponse.statusCode) {
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let success = json?["success"] as? Bool ?? false
-            print("📱 发送短信结果：\(success ? "成功" : "失败")")
-            return success
+        do {
+            // 使用 GraphQL 发送短信
+            let mutation = """
+            mutation($phone: String!, $message: String!) {
+                sendSms(phone: $phone, message: $message) {
+                    success
+                    message
+                }
+            }
+            """
+            
+            let variables: [String: Any] = [
+                "phone": phone,
+                "message": message
+            ]
+            
+            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+            print("📱 GraphQL 发送短信请求")
+            
+            if let data = result["sendSms"] as? [String: Any],
+               let success = data["success"] as? Bool {
+                print("📱 发送短信结果：\(success ? "成功" : "失败")")
+                return success
+            }
+        } catch {
+            print("❌ GraphQL 发送短信失败：\(error)")
         }
         
         return false
@@ -939,23 +944,30 @@ class DataManager: ObservableObject {
     func syncCheckInStatus() async -> (isSafe: Bool, hoursRemaining: Double, autoCheckInPerformed: Bool)? {
         guard !DataManager.apiURL.isEmpty else { return nil }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/checkin.php?action=checkin_sync")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = KeychainManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                let result = try JSONDecoder().decode(ServerCheckInResponse.self, from: data)
-                print("✅ 签到同步成功：剩余 \(result.data.hoursRemaining) 小时，自动签到=\(result.data.autoCheckInPerformed)")
-                return (result.data.isSafe, result.data.hoursRemaining, result.data.autoCheckInPerformed)
+            // 使用 GraphQL 查询签到状态
+            let query = """
+            query {
+                syncCheckInStatus {
+                    isSafe
+                    hoursRemaining
+                    autoCheckInPerformed
+                }
+            }
+            """
+            
+            let result = try await GraphQLClient.shared.query(query)
+            print("✅ GraphQL 签到同步成功")
+            
+            if let data = result["syncCheckInStatus"] as? [String: Any],
+               let isSafe = data["isSafe"] as? Bool,
+               let hoursRemaining = data["hoursRemaining"] as? Double,
+               let autoCheckInPerformed = data["autoCheckInPerformed"] as? Bool {
+                print("✅ 签到同步成功：剩余 \(hoursRemaining) 小时，自动签到=\(autoCheckInPerformed)")
+                return (isSafe, hoursRemaining, autoCheckInPerformed)
             }
         } catch {
-            print("❌ 签到同步失败：\(error)")
+            print("❌ GraphQL 签到同步失败：\(error)")
         }
         return nil
     }
@@ -1173,6 +1185,137 @@ class DataManager: ObservableObject {
             print("❌ 资产同步失败：\(error)")
             return nil
         }
+    }
+    
+    // MARK: - 家人守护 API
+    
+    /// 邀请家人
+    func inviteFamily(phone: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($phone: String!) {
+            inviteFamily(phone: $phone) {
+                success
+                message
+                relationId
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["phone": phone]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["inviteFamily"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 接受家人邀请
+    func acceptFamilyInvite(relationId: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($relationId: String!) {
+            acceptFamilyInvite(relationId: $relationId) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["relationId": relationId]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["acceptFamilyInvite"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 拒绝家人邀请
+    func rejectFamilyInvite(relationId: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($relationId: String!) {
+            rejectFamilyInvite(relationId: $relationId) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["relationId": relationId]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["rejectFamilyInvite"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 移除家人
+    func removeFamily(relationId: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($relationId: String!) {
+            removeFamily(relationId: $relationId) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["relationId": relationId]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["removeFamily"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 通过邀请码绑定家人
+    func bindFamilyByInviteCode(inviteCode: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($inviteCode: String!) {
+            bindFamilyByInviteCode(inviteCode: $inviteCode) {
+                success
+                message
+                family {
+                    id
+                    name
+                }
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["inviteCode": inviteCode]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["bindFamilyByInviteCode"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 获取家人列表
+    func fetchFamilyMembers() async throws -> [[String: Any]] {
+        let query = """
+        query {
+            families {
+                id
+                relationId
+                name
+                phone
+                role
+                status
+                createdAt
+            }
+        }
+        """
+        
+        let result = try await GraphQLClient.shared.query(query)
+        
+        if let data = result["families"] as? [[String: Any]] {
+            return data
+        }
+        return []
     }
     
     /// 上传媒体文件到服务器
