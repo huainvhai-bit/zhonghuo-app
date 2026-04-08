@@ -50,18 +50,8 @@ class LifeCheckStatusManager: ObservableObject {
     func checkIn() async {
         print("✍️ 开始签到...")
         
-        // ✅ 修复：检查是否已过期（而不是检查今天是否已签到）
-        let now = Date()
-        let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
-        let expireAt = lastCheckInDate?.addingTimeInterval(checkInInterval * 3600)
-        
-        if let expireTime = expireAt {
-            if now < expireTime {
-                let hoursLeft = expireTime.timeIntervalSince(now) / 3600
-                print("⚠️ 签到仍在有效期内，剩余 \(String(format: "%.1f", hoursLeft)) 小时，跳过本次签到")
-                return
-            }
-        }
+        // ✅ 前台签到：无限制，随时可以签到
+        // 签到会重置 48 小时倒计时
         
         // 1. 本地签到
         lastCheckInDate = Date()
