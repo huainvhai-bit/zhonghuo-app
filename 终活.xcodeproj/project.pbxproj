@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		330A2F9C2F865E72009FE772 /* AssetModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F962F865E72009FE772 /* AssetModel.swift */; };
+		330A2F9D2F865E72009FE772 /* CapsuleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F972F865E72009FE772 /* CapsuleModel.swift */; };
+		330A2F9E2F865E72009FE772 /* WillModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F9B2F865E72009FE772 /* WillModel.swift */; };
+		330A2F9F2F865E72009FE772 /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F9A2F865E72009FE772 /* UserModel.swift */; };
+		330A2FA02F865E72009FE772 /* APITypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F952F865E72009FE772 /* APITypes.swift */; };
+		330A2FA12F865E72009FE772 /* GraphQLTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F982F865E72009FE772 /* GraphQLTypes.swift */; };
+		330A2FA22F865E72009FE772 /* ServerConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F992F865E72009FE772 /* ServerConfig.swift */; };
+		330A2FA52F865E8F009FE772 /* UserRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2FA32F865E8F009FE772 /* UserRegistration.swift */; };
+		330A2FA62F865E8F009FE772 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2FA42F865E8F009FE772 /* UserSession.swift */; };
 		3310C2C82F6D87CC0036FB58 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */; };
 		334C2F04C944C07197FE8DE5 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F297D03473770EF79D0 /* KeychainManager.swift */; };
 		3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40B2F66D4C000129FF3 /* UserManager.swift */; };
@@ -17,13 +26,13 @@
 		33DE7DE42F6D493700F8677E /* InviteCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DE12F6D493700F8677E /* InviteCodeView.swift */; };
 		33DE7DE52F6D493700F8677E /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDF2F6D493700F8677E /* FamilyMember.swift */; };
 		33DE7DE62F6D493700F8677E /* FamilyMemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */; };
-		33DE7DE72F6D493700F8677E /* FamilyGuardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */; };
+		33DE7DE72F6D493700F8677E /* Family/FamilyGuardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DE7DDE2F6D493700F8677E /* Family/FamilyGuardView.swift */; };
 		33DE7DED2F6D53CD00F8677E /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 33DE7DEC2F6D53CD00F8677E /* CodeScanner */; };
 		A1000001 /* ZhonghuoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ZhonghuoApp.swift */; };
 		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
-		A1000003 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* HomeStatusView.swift */; };
+		A1000003 /* Home/HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* Home/HomeStatusView.swift */; };
 		A1000005 /* WillAssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* WillAssetsView.swift */; };
-		A1000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* SettingsView.swift */; };
+		A1000007 /* Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* Settings/SettingsView.swift */; };
 		A1000009 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* Colors.swift */; };
 		A100000A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000A /* Models.swift */; };
 		A100000B /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000B /* DataManager.swift */; };
@@ -42,28 +51,27 @@
 		A1000035 /* WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000035 /* WillPreviewView.swift */; };
 		A1000036 /* HelpPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036 /* HelpPolicyView.swift */; };
 		A1000037 /* MediaRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000037 /* MediaRecorderView.swift */; };
-		A1075845 /* EmergencyContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2010F25 /* EmergencyContactsView.swift */; };
 		A1000040 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000040 /* AppConfig.swift */; };
 		A1000041 /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000041 /* DebugConfig.swift */; };
-
+		A1075845 /* EmergencyContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2010F25 /* EmergencyContactsView.swift */; };
+		B1000001 /* Auth/LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* Auth/LoginView.swift */; };
+		B1000002 /* Auth/RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* Auth/RegisterView.swift */; };
+		B1000003 /* Auth/ResetPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* Auth/ResetPasswordView.swift */; };
+		B1000004 /* Capsule/CapsuleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* Capsule/CapsuleEditView.swift */; };
+		B1000005 /* Capsule/CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* Capsule/CapsuleList.swift */; };
+		B1000006 /* Capsule/AVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* Capsule/AVPlayerView.swift */; };
+		B1000007 /* Settings/AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* Settings/AboutSettingsView.swift */; };
+		B1000008 /* Settings/EmergencyContactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* Settings/EmergencyContactSettingsView.swift */; };
+		B1000009 /* Settings/NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* Settings/NotificationSettingsView.swift */; };
+		B1000010 /* Settings/PrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* Settings/PrivacySettingsView.swift */; };
+		B1000011 /* Settings/ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* Settings/ProfileSettingsView.swift */; };
+		B1000012 /* Services/ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* Services/ConfigManager.swift */; };
+		B1000013 /* Services/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000013 /* Services/APIClient.swift */; };
+		B1000014 /* Services/TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000014 /* Services/TokenManager.swift */; };
 		D5AD1F30 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F300 /* AppError.swift */; };
 		D5AD1F31 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F310 /* Logger.swift */; };
 		D5AD1F32 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F320 /* NetworkService.swift */; };
-		B1000001 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* LoginView.swift */; };
-		B1000002 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* RegisterView.swift */; };
-		B1000003 /* ResetPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* ResetPasswordView.swift */; };
-		B1000004 /* CapsuleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* CapsuleEditView.swift */; };
-		B1000005 /* CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* CapsuleList.swift */; };
-		B1000006 /* AVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* AVPlayerView.swift */; };
-		B1000007 /* AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* AboutSettingsView.swift */; };
-		B1000008 /* EmergencyContactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* EmergencyContactSettingsView.swift */; };
-		B1000009 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* NotificationSettingsView.swift */; };
-		B1000010 /* PrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* PrivacySettingsView.swift */; };
-		B1000011 /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* ProfileSettingsView.swift */; };
-		B1000012 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* ConfigManager.swift */; };
-		B1000013 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000013 /* APIClient.swift */; };
-		B1000014 /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000014 /* TokenManager.swift */; };
-		/* End PBXBuildFile section */
+/* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		A7C9DEBA /* Embed Frameworks */ = {
@@ -79,21 +87,30 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		330A2F952F865E72009FE772 /* APITypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APITypes.swift; path = Models/APITypes.swift; sourceTree = "<group>"; };
+		330A2F962F865E72009FE772 /* AssetModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AssetModel.swift; path = Models/AssetModel.swift; sourceTree = "<group>"; };
+		330A2F972F865E72009FE772 /* CapsuleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CapsuleModel.swift; path = Models/CapsuleModel.swift; sourceTree = "<group>"; };
+		330A2F982F865E72009FE772 /* GraphQLTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GraphQLTypes.swift; path = Models/GraphQLTypes.swift; sourceTree = "<group>"; };
+		330A2F992F865E72009FE772 /* ServerConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServerConfig.swift; path = Models/ServerConfig.swift; sourceTree = "<group>"; };
+		330A2F9A2F865E72009FE772 /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserModel.swift; path = Models/UserModel.swift; sourceTree = "<group>"; };
+		330A2F9B2F865E72009FE772 /* WillModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WillModel.swift; path = Models/WillModel.swift; sourceTree = "<group>"; };
+		330A2FA32F865E8F009FE772 /* UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRegistration.swift; sourceTree = "<group>"; };
+		330A2FA42F865E8F009FE772 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
 		3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		3366C40B2F66D4C000129FF3 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillModuleEdit.swift; sourceTree = "<group>"; };
 		33B4F2152F742F1700D5E4FA /* CloudStorageStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageStatusView.swift; sourceTree = "<group>"; };
 		33DE7DDC2F6D493700F8677E /* BindFamilyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindFamilyView.swift; sourceTree = "<group>"; };
 		33DE7DDD2F6D493700F8677E /* DeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceMonitor.swift; sourceTree = "<group>"; };
-		33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Family/FamilyGuardView.swift; sourceTree = "<group>"; };
+		33DE7DDE2F6D493700F8677E /* Family/FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Family/FamilyGuardView.swift; sourceTree = "<group>"; };
 		33DE7DDF2F6D493700F8677E /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
 		33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMemberDetailView.swift; sourceTree = "<group>"; };
 		33DE7DE12F6D493700F8677E /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		A2000001 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuoApp.swift; sourceTree = SOURCE_ROOT; };
 		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = SOURCE_ROOT; };
-		A2000003 /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home/HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
+		A2000003 /* Home/HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home/HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
 		A2000005 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = SOURCE_ROOT; };
-		A2000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/SettingsView.swift; sourceTree = SOURCE_ROOT; };
+		A2000007 /* Settings/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/SettingsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000009 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = SOURCE_ROOT; };
 		A200000A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = SOURCE_ROOT; };
 		A200000B /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = SOURCE_ROOT; };
@@ -113,29 +130,28 @@
 		A2000035 /* WillPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillPreviewView.swift; sourceTree = SOURCE_ROOT; };
 		A2000036 /* HelpPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpPolicyView.swift; sourceTree = SOURCE_ROOT; };
 		A2000037 /* MediaRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRecorderView.swift; sourceTree = SOURCE_ROOT; };
-		A2010F25 /* EmergencyContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyContactsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000040 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		A2000041 /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = SOURCE_ROOT; };
+		A2010F25 /* EmergencyContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyContactsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000001 /* Auth/LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/LoginView.swift; sourceTree = SOURCE_ROOT; };
+		B2000002 /* Auth/RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/RegisterView.swift; sourceTree = SOURCE_ROOT; };
+		B2000003 /* Auth/ResetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/ResetPasswordView.swift; sourceTree = SOURCE_ROOT; };
+		B2000004 /* Capsule/CapsuleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleEditView.swift; sourceTree = SOURCE_ROOT; };
+		B2000005 /* Capsule/CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleList.swift; sourceTree = SOURCE_ROOT; };
+		B2000006 /* Capsule/AVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/AVPlayerView.swift; sourceTree = SOURCE_ROOT; };
+		B2000007 /* Settings/AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/AboutSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000008 /* Settings/EmergencyContactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/EmergencyContactSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000009 /* Settings/NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/NotificationSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000010 /* Settings/PrivacySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/PrivacySettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000011 /* Settings/ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/ProfileSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000012 /* Services/ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ConfigManager.swift; sourceTree = SOURCE_ROOT; };
+		B2000013 /* Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/APIClient.swift; sourceTree = SOURCE_ROOT; };
+		B2000014 /* Services/TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/TokenManager.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F297D03473770EF79D0 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
-
 		D5AD1F300 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F310 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F320 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = SOURCE_ROOT; };
-		B2000001 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/LoginView.swift; sourceTree = SOURCE_ROOT; };
-		B2000002 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/RegisterView.swift; sourceTree = SOURCE_ROOT; };
-		B2000003 /* ResetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/ResetPasswordView.swift; sourceTree = SOURCE_ROOT; };
-		B2000004 /* CapsuleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleEditView.swift; sourceTree = SOURCE_ROOT; };
-		B2000005 /* CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleList.swift; sourceTree = SOURCE_ROOT; };
-		B2000006 /* AVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/AVPlayerView.swift; sourceTree = SOURCE_ROOT; };
-		B2000007 /* AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/AboutSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000008 /* EmergencyContactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/EmergencyContactSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000009 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/NotificationSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000010 /* PrivacySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/PrivacySettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000011 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/ProfileSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000012 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ConfigManager.swift; sourceTree = SOURCE_ROOT; };
-		B2000013 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/APIClient.swift; sourceTree = SOURCE_ROOT; };
-		B2000014 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/TokenManager.swift; sourceTree = SOURCE_ROOT; };
-		/* End PBXFileReference section */
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A7B4E810 /* Frameworks */ = {
@@ -164,7 +180,7 @@
 				33B4F2152F742F1700D5E4FA /* CloudStorageStatusView.swift */,
 				3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */,
 				33DE7DDD2F6D493700F8677E /* DeviceMonitor.swift */,
-				33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */,
+				33DE7DDE2F6D493700F8677E /* Family/FamilyGuardView.swift */,
 				33DE7DDF2F6D493700F8677E /* FamilyMember.swift */,
 				33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */,
 				33DE7DE12F6D493700F8677E /* InviteCodeView.swift */,
@@ -172,10 +188,10 @@
 				3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */,
 				A2000001 /* ZhonghuoApp.swift */,
 				A2000002 /* ContentView.swift */,
-				A2000003 /* HomeStatusView.swift */,
+				A2000003 /* Home/HomeStatusView.swift */,
 				A2000025 /* MessageManager.swift */,
 				A2000005 /* WillAssetsView.swift */,
-				A2000007 /* SettingsView.swift */,
+				A2000007 /* Settings/SettingsView.swift */,
 				A2000009 /* Colors.swift */,
 				A200000A /* Models.swift */,
 				A200000B /* DataManager.swift */,
@@ -200,20 +216,29 @@
 				A2000041 /* DebugConfig.swift */,
 				D5AD1F297D03473770EF79D0 /* KeychainManager.swift */,
 				33DE7DDB2F6D480800F8677E /* Recovered References */,
-				B2000001 /* LoginView.swift */,
-				B2000002 /* RegisterView.swift */,
-				B2000003 /* ResetPasswordView.swift */,
-				B2000004 /* CapsuleEditView.swift */,
-				B2000005 /* CapsuleList.swift */,
-				B2000006 /* AVPlayerView.swift */,
-				B2000007 /* AboutSettingsView.swift */,
-				B2000008 /* EmergencyContactSettingsView.swift */,
-				B2000009 /* NotificationSettingsView.swift */,
-				B2000010 /* PrivacySettingsView.swift */,
-				B2000011 /* ProfileSettingsView.swift */,
-				B2000012 /* ConfigManager.swift */,
-				B2000013 /* APIClient.swift */,
-				B2000014 /* TokenManager.swift */,
+				B2000001 /* Auth/LoginView.swift */,
+				B2000002 /* Auth/RegisterView.swift */,
+				B2000003 /* Auth/ResetPasswordView.swift */,
+				330A2F952F865E72009FE772 /* APITypes.swift */,
+				330A2F962F865E72009FE772 /* AssetModel.swift */,
+				330A2F972F865E72009FE772 /* CapsuleModel.swift */,
+				330A2F982F865E72009FE772 /* GraphQLTypes.swift */,
+				330A2F992F865E72009FE772 /* ServerConfig.swift */,
+				330A2F9A2F865E72009FE772 /* UserModel.swift */,
+				330A2FA32F865E8F009FE772 /* UserRegistration.swift */,
+				330A2FA42F865E8F009FE772 /* UserSession.swift */,
+				330A2F9B2F865E72009FE772 /* WillModel.swift */,
+				B2000004 /* Capsule/CapsuleEditView.swift */,
+				B2000005 /* Capsule/CapsuleList.swift */,
+				B2000006 /* Capsule/AVPlayerView.swift */,
+				B2000007 /* Settings/AboutSettingsView.swift */,
+				B2000008 /* Settings/EmergencyContactSettingsView.swift */,
+				B2000009 /* Settings/NotificationSettingsView.swift */,
+				B2000010 /* Settings/PrivacySettingsView.swift */,
+				B2000011 /* Settings/ProfileSettingsView.swift */,
+				B2000012 /* Services/ConfigManager.swift */,
+				B2000013 /* Services/APIClient.swift */,
+				B2000014 /* Services/TokenManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -293,12 +318,12 @@
 			files = (
 				A1000001 /* ZhonghuoApp.swift in Sources */,
 				A1000002 /* ContentView.swift in Sources */,
-				A1000003 /* HomeStatusView.swift in Sources */,
+				A1000003 /* Home/HomeStatusView.swift in Sources */,
 				A1000025 /* MessageManager.swift in Sources */,
 				A1000005 /* WillAssetsView.swift in Sources */,
 				3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */,
 				3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */,
-				A1000007 /* SettingsView.swift in Sources */,
+				A1000007 /* Settings/SettingsView.swift in Sources */,
 				A1000009 /* Colors.swift in Sources */,
 				A100000A /* Models.swift in Sources */,
 				A100000B /* DataManager.swift in Sources */,
@@ -312,7 +337,7 @@
 				33DE7DE42F6D493700F8677E /* InviteCodeView.swift in Sources */,
 				33DE7DE52F6D493700F8677E /* FamilyMember.swift in Sources */,
 				33DE7DE62F6D493700F8677E /* FamilyMemberDetailView.swift in Sources */,
-				33DE7DE72F6D493700F8677E /* FamilyGuardView.swift in Sources */,
+				33DE7DE72F6D493700F8677E /* Family/FamilyGuardView.swift in Sources */,
 				A1000011 /* SecureStorage.swift in Sources */,
 				A1000030 /* WitnessView.swift in Sources */,
 				A1075845 /* EmergencyContactsView.swift in Sources */,
@@ -331,20 +356,29 @@
 				D5AD1F30 /* AppError.swift in Sources */,
 				D5AD1F31 /* Logger.swift in Sources */,
 				D5AD1F32 /* NetworkService.swift in Sources */,
-				B1000001 /* LoginView.swift in Sources */,
-				B1000002 /* RegisterView.swift in Sources */,
-				B1000003 /* ResetPasswordView.swift in Sources */,
-				B1000004 /* CapsuleEditView.swift in Sources */,
-				B1000005 /* CapsuleList.swift in Sources */,
-				B1000006 /* AVPlayerView.swift in Sources */,
-				B1000007 /* AboutSettingsView.swift in Sources */,
-				B1000008 /* EmergencyContactSettingsView.swift in Sources */,
-				B1000009 /* NotificationSettingsView.swift in Sources */,
-				B1000010 /* PrivacySettingsView.swift in Sources */,
-				B1000011 /* ProfileSettingsView.swift in Sources */,
-				B1000012 /* ConfigManager.swift in Sources */,
-				B1000013 /* APIClient.swift in Sources */,
-				B1000014 /* TokenManager.swift in Sources */,
+				B1000001 /* Auth/LoginView.swift in Sources */,
+				B1000002 /* Auth/RegisterView.swift in Sources */,
+				B1000003 /* Auth/ResetPasswordView.swift in Sources */,
+				B1000004 /* Capsule/CapsuleEditView.swift in Sources */,
+				B1000005 /* Capsule/CapsuleList.swift in Sources */,
+				B1000006 /* Capsule/AVPlayerView.swift in Sources */,
+				B1000007 /* Settings/AboutSettingsView.swift in Sources */,
+				330A2F9C2F865E72009FE772 /* AssetModel.swift in Sources */,
+				330A2FA52F865E8F009FE772 /* UserRegistration.swift in Sources */,
+				330A2FA62F865E8F009FE772 /* UserSession.swift in Sources */,
+				330A2F9D2F865E72009FE772 /* CapsuleModel.swift in Sources */,
+				330A2F9E2F865E72009FE772 /* WillModel.swift in Sources */,
+				330A2F9F2F865E72009FE772 /* UserModel.swift in Sources */,
+				330A2FA02F865E72009FE772 /* APITypes.swift in Sources */,
+				330A2FA12F865E72009FE772 /* GraphQLTypes.swift in Sources */,
+				330A2FA22F865E72009FE772 /* ServerConfig.swift in Sources */,
+				B1000008 /* Settings/EmergencyContactSettingsView.swift in Sources */,
+				B1000009 /* Settings/NotificationSettingsView.swift in Sources */,
+				B1000010 /* Settings/PrivacySettingsView.swift in Sources */,
+				B1000011 /* Settings/ProfileSettingsView.swift in Sources */,
+				B1000012 /* Services/ConfigManager.swift in Sources */,
+				B1000013 /* Services/APIClient.swift in Sources */,
+				B1000014 /* Services/TokenManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
