@@ -39,7 +39,11 @@ class LifeCheckStatusManager: ObservableObject {
     @Published var lastCheckInDate: Date?
     @Published var checkInHistory: [CheckInRecord] = []
     
-    private let checkInInterval: TimeInterval = 48 * 3600 // 48 小时
+    // ✅ 修复：从 DataManager 获取用户设置的签到间隔（而不是硬编码 48 小时）
+    private var checkInInterval: TimeInterval {
+        let hours = DataManager.shared.systemConfig.checkinIntervalHours
+        return hours * 3600
+    }
     
     private init() {
         loadLastCheckInDate()
@@ -68,11 +72,13 @@ class LifeCheckStatusManager: ObservableObject {
         
         // 2. 后端签到（GraphQL）
         do {
+            // ✅ 修复：使用用户设置的签到间隔（从 DataManager 获取）
+            let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
             let result = try await GraphQLClient.shared.checkIn(
-                checkInIntervalHours: config.checkInInterval,
+                checkInIntervalHours: Int(checkInInterval),
                 location: nil // TODO: 添加当前位置
             )
-            print("✅ 后端签到成功：\(result)")
+            print("✅ 后端签到成功，签到间隔：\(checkInInterval) 小时")
         } catch {
             print("❌ 后端签到失败：\(error)")
         }
@@ -239,11 +245,15 @@ class LifeCheckStatusManager: ObservableObject {
         }
         
         let now = Date()
-        let checkInIntervalSeconds = config.checkInInterval * 3600
+        
+        // ✅ 修复：使用用户设置的签到间隔（从 DataManager 获取）
+        let checkInIntervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        let checkInIntervalSeconds = checkInIntervalHours * 3600
         let nextCheckInTime = lastCheckIn.addingTimeInterval(TimeInterval(checkInIntervalSeconds))
         
         // 计算首次提醒时间（剩余 12 小时）
-        let firstReminderTime = nextCheckInTime.addingTimeInterval(-TimeInterval(config.firstReminderHours * 3600))
+        let reminderThresholdHours = DataManager.shared.systemConfig.checkinReminderThresholdHours
+        let firstReminderTime = nextCheckInTime.addingTimeInterval(-TimeInterval(reminderThresholdHours * 3600))
         
         // 如果已经过了首次提醒时间，立即设置
         if firstReminderTime <= now {
@@ -261,7 +271,7 @@ class LifeCheckStatusManager: ObservableObject {
         }
         
         // 设置重复提醒（每 2 小时）
-        scheduleRepeatReminders(from: firstReminderTime, to: nextCheckInTime)
+        scheduleRepeatReminders(from: firstReminderTime, to: nextCheckInTime, intervalHours: checkInIntervalHours)
         
         // 设置超时通知
         scheduleOverdueNotifications(after: nextCheckInTime)
@@ -269,6 +279,7 @@ class LifeCheckStatusManager: ObservableObject {
         print("✅ 通知流程设置完成")
         print("   - 首次提醒：\(firstReminderTime)")
         print("   - 下次签到：\(nextCheckInTime)")
+        print("   - 签到间隔：\(checkInIntervalHours) 小时")
     }
     
     /// 设置首次提醒
@@ -283,8 +294,9 @@ class LifeCheckStatusManager: ObservableObject {
     }
     
     /// 设置重复提醒（每 2 小时）
-    private func scheduleRepeatReminders(from startTime: Date, to endTime: Date) {
-        let intervalSeconds = config.reminderInterval * 3600
+    private func scheduleRepeatReminders(from startTime: Date, to endTime: Date, intervalHours: Double) {
+        let reminderIntervalHours = DataManager.shared.systemConfig.checkinReminderIntervalHours
+        let intervalSeconds = reminderIntervalHours * 3600
         var currentTime = startTime.addingTimeInterval(TimeInterval(intervalSeconds))
         var reminderCount = 1
         
@@ -308,13 +320,14 @@ class LifeCheckStatusManager: ObservableObject {
     
     /// 设置超时通知（倒计时结束后）
     private func scheduleOverdueNotifications(after deadline: Date) {
-        let intervalSeconds = config.overduePushInterval * 3600
+        let overduePushIntervalHours = DataManager.shared.systemConfig.checkinReminderIntervalHours
+        let intervalSeconds = overduePushIntervalHours * 3600
         var currentTime = deadline.addingTimeInterval(TimeInterval(intervalSeconds))
         var notificationCount = 1
         
         // 设置 5 个超时通知
         while notificationCount <= 5 {
-            let hoursOverdue = notificationCount * config.overduePushInterval
+            let hoursOverdue = notificationCount * Int(overduePushIntervalHours)
             
             scheduleNotification(
                 identifier: "checkin_overdue_\(notificationCount)",
