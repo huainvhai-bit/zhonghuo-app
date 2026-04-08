@@ -308,8 +308,8 @@ struct RegisterView: View {
                         .background(Color(hex: "AF52DE"))
                         .cornerRadius(12)
                 })
-                .contentShape(Rectangle())  // 🔴 确保整个矩形区域可点击
-                .disabled(false)  // 强制不禁用
+                .contentShape(Rectangle())
+                .disabled(false)
                 .opacity(isLoading ? 0.5 : 1)
             }
             .padding(.horizontal, 24)
