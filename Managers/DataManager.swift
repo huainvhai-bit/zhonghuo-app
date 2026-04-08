@@ -1291,6 +1291,33 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
+    /// 获取用户邀请码（GraphQL）
+    // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
+    func getInviteCode() async throws -> (inviteCode: String, qrUrl: String) {
+        let query = """
+        query {
+            getInviteCode {
+                success
+                message
+                data {
+                    inviteCode
+                    qrUrl
+                }
+            }
+        }
+        """
+        
+        let result = try await GraphQLClient.shared.query(query)
+        
+        if let data = result["getInviteCode"] as? [String: Any],
+           let resultData = data["data"] as? [String: Any],
+           let inviteCode = resultData["inviteCode"] as? String,
+           let qrUrl = resultData["qrUrl"] as? String {
+            return (inviteCode, qrUrl)
+        }
+        throw APIError.networkError
+    }
+    
     /// 获取家人列表
     func fetchFamilyMembers() async throws -> [[String: Any]] {
         let query = """
