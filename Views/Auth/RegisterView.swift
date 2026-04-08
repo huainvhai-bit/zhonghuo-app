@@ -339,10 +339,7 @@ struct RegisterView: View {
         }
         .background(Color("BackgroundColor"))
         .navigationBarTitleDisplayMode(.inline)
-        .onTapGesture {
-            print("🎹 点击背景隐藏键盘")
-            hideKeyboard()
-        }
+        // 🔴 移除 onTapGesture 避免拦截按钮点击
     }
     
     // MARK: --actions
