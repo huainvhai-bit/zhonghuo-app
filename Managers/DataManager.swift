@@ -1315,6 +1315,57 @@ class DataManager: ObservableObject {
         return []
     }
     
+    /// 获取家庭档案列表（GraphQL）
+    // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
+    func fetchFamilyArchives() async throws -> [[String: Any]] {
+        let query = """
+        query {
+            getFamilyArchives {
+                id
+                archiveName
+                description
+                isPublic
+                createdAt
+                updatedAt
+            }
+        }
+        """
+        
+        let result = try await GraphQLClient.shared.query(query)
+        
+        if let data = result["getFamilyArchives"] as? [[String: Any]] {
+            return data
+        }
+        return []
+    }
+    
+    /// 创建家庭档案（GraphQL）
+    // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
+    func createFamilyArchive(archiveName: String, description: String, isPublic: Bool) async throws -> Bool {
+        let mutation = """
+        mutation($archiveName: String!, $description: String!, $isPublic: Boolean!) {
+            createFamilyArchive(archiveName: $archiveName, description: $description, isPublic: $isPublic) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "archiveName": archiveName,
+            "description": description,
+            "isPublic": isPublic
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["createFamilyArchive"] as? [String: Any],
+           data["success"] as? Bool == true {
+            return true
+        }
+        return false
+    }
+    
     // MARK: - 数据导出
     
     /// 下载用户数据（GraphQL）
