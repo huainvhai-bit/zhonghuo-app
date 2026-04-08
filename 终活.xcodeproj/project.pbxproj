@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		330A2F9C2F865E72009FE772 /* AssetModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F962F865E72009FE772 /* AssetModel.swift */; };
 		330A2F9D2F865E72009FE772 /* CapsuleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F972F865E72009FE772 /* CapsuleModel.swift */; };
-		330A2F9E2F865E72009FE772 /* WillModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F9B2F865E72009FE772 /* WillModel.swift */; };
 		330A2F9F2F865E72009FE772 /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F9A2F865E72009FE772 /* UserModel.swift */; };
 		330A2FA02F865E72009FE772 /* APITypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F952F865E72009FE772 /* APITypes.swift */; };
 		330A2FA12F865E72009FE772 /* GraphQLTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F982F865E72009FE772 /* GraphQLTypes.swift */; };
@@ -87,15 +86,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		330A2F952F865E72009FE772 /* APITypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APITypes.swift; path = Models/APITypes.swift; sourceTree = "<group>"; };
-		330A2F962F865E72009FE772 /* AssetModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AssetModel.swift; path = Models/AssetModel.swift; sourceTree = "<group>"; };
-		330A2F972F865E72009FE772 /* CapsuleModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CapsuleModel.swift; path = Models/CapsuleModel.swift; sourceTree = "<group>"; };
-		330A2F982F865E72009FE772 /* GraphQLTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GraphQLTypes.swift; path = Models/GraphQLTypes.swift; sourceTree = "<group>"; };
-		330A2F992F865E72009FE772 /* ServerConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ServerConfig.swift; path = Models/ServerConfig.swift; sourceTree = "<group>"; };
-		330A2F9A2F865E72009FE772 /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UserModel.swift; path = Models/UserModel.swift; sourceTree = "<group>"; };
-		330A2F9B2F865E72009FE772 /* WillModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WillModel.swift; path = Models/WillModel.swift; sourceTree = "<group>"; };
-		330A2FA32F865E8F009FE772 /* UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRegistration.swift; sourceTree = "<group>"; };
-		330A2FA42F865E8F009FE772 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
+		330A2FA32F865E8F009FE772 /* UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User/UserRegistration.swift; sourceTree = "<group>"; };
+		330A2FA42F865E8F009FE772 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User/UserSession.swift; sourceTree = "<group>"; };
 		3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		3366C40B2F66D4C000129FF3 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillModuleEdit.swift; sourceTree = "<group>"; };
@@ -227,7 +219,6 @@
 				330A2F9A2F865E72009FE772 /* UserModel.swift */,
 				330A2FA32F865E8F009FE772 /* UserRegistration.swift */,
 				330A2FA42F865E8F009FE772 /* UserSession.swift */,
-				330A2F9B2F865E72009FE772 /* WillModel.swift */,
 				B2000004 /* Capsule/CapsuleEditView.swift */,
 				B2000005 /* Capsule/CapsuleList.swift */,
 				B2000006 /* Capsule/AVPlayerView.swift */,
@@ -367,7 +358,6 @@
 				330A2FA52F865E8F009FE772 /* UserRegistration.swift in Sources */,
 				330A2FA62F865E8F009FE772 /* UserSession.swift in Sources */,
 				330A2F9D2F865E72009FE772 /* CapsuleModel.swift in Sources */,
-				330A2F9E2F865E72009FE772 /* WillModel.swift in Sources */,
 				330A2F9F2F865E72009FE772 /* UserModel.swift in Sources */,
 				330A2FA02F865E72009FE772 /* APITypes.swift in Sources */,
 				330A2FA12F865E72009FE772 /* GraphQLTypes.swift in Sources */,

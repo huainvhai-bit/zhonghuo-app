@@ -77,7 +77,7 @@ class UserSession: ObservableObject {
             try data.write(to: userFileURL)
             
             // 在主线程修改 @Published 属性
-            await MainActor.run {
+            Task { @MainActor in
                 self.currentUser = user
                 self.isLoggedIn = true
                 
