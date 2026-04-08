@@ -29,13 +29,8 @@ struct ZhonghuoApp: App {
                 print("🟢 App 进入前台 - ZhonghuoApp")
                 RealTimeSyncManager.shared.appDidBecomeActive()
                 
-                // 🔵 每次 App 进入前台时触发自动签到
-                Task {
-                    if UserManager.shared.isLoggedIn {
-                        print("🔵 App 进入前台，触发自动签到...")
-                        await UserManager.shared.performAutoSignIn()
-                    }
-                }
+                // 🔵 自动签到已迁移到 HomeStatusView 处理（避免重复签到）
+                // HomeStatusView 的 onAppear 和 scenePhase 变化会自动触发签到
             }
         }
     }
