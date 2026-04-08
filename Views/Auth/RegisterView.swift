@@ -71,11 +71,14 @@ struct RegisterView: View {
     // MARK: - 注册逻辑
     
     private func register() async {
-        print("🔵 注册按钮被点击")
+        print("🔵🔵🔵 register() 函数被调用！！！")
         print("🔍 当前状态：phone=\(phone), password 长度=\(password.count), confirmPassword=\(confirmPassword)")
         print("🔍 验证结果：isValidPhone=\(isValidPhone(phone)), isValidPassword=\(isValidPassword(password)), 密码匹配=\(password == confirmPassword)")
         
-        isLoading = true
+        await MainActor.run {
+            isLoading = true
+            print("⚙️ isLoading 已设置为 true")
+        }
         
         do {
             // 验证输入
@@ -291,10 +294,13 @@ struct RegisterView: View {
                         .font(.system(size: 18, weight: .medium))
                     
                     Button(action: {
-                        Task {
+                        print("🔴🔴🔴 立即注册按钮被点击！！！")
+                        Task { @MainActor in
+                            print("🔴 Task 开始执行")
                             await register()
+                            print("🔴 Task 执行完成")
                         }
-                    }) {
+                    }, label: {
                         Text("立即注册")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
@@ -302,8 +308,8 @@ struct RegisterView: View {
                             .frame(height: 50)
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
-                    }
-                    .disabled(isLoading)
+                    })
+                    .disabled(false)  // 强制不禁用
                     .opacity(isLoading ? 0.5 : 1)
                 }
                 .padding(.horizontal, 24)
@@ -314,6 +320,17 @@ struct RegisterView: View {
                         dismissButton: .default(Text("确定"))
                     )
                 }
+                
+                // 测试按钮 - 验证点击是否有效
+                Button(action: {
+                    print("🧪 测试按钮被点击！")
+                    showingError = true
+                    errorMessage = "测试按钮正常工作！"
+                }) {
+                    Text("🧪 测试点击")
+                        .foregroundColor(.red)
+                }
+                .padding(.top, 20)
                 
                 Spacer()
                 
@@ -335,6 +352,7 @@ struct RegisterView: View {
             .background(Color("BackgroundColor"))
             .navigationBarTitleDisplayMode(.inline)
             .onTapGesture {
+                print("🎹 点击背景隐藏键盘")
                 hideKeyboard()
             }
         }
