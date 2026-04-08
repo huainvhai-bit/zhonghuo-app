@@ -414,16 +414,23 @@ struct HomeStatusView: View {
     
     // MARK: - 自动签到
     private func startAutoCheckInIfNeeded() async {
-        // 检查今天是否已签到
-        let calendar = Calendar.current
-        let lastCheckIn = statusManager.lastCheckInDate
+        // ✅ 修复：检查签到是否已过期（而不是检查今天是否已签到）
+        // 只有 checkin_expire_at < 当前时间 才需要签到
+        let now = Date()
+        let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
+        let expireAt = statusManager.lastCheckInDate?.addingTimeInterval(checkInInterval * 3600)
         
-        if let lastDate = lastCheckIn {
-            if calendar.isDateInToday(lastDate) {
-                print("✅ 今天已签到，跳过自动签到")
+        if let expireTime = expireAt {
+            if now < expireTime {
+                // 还在有效期内，不需要签到
+                let hoursLeft = expireTime.timeIntervalSince(now) / 3600
+                print("✅ 签到仍在有效期内，剩余 \(String(format: "%.1f", hoursLeft)) 小时，跳过自动签到")
                 return
             }
         }
+        
+        // 已过期，需要自动签到
+        print("⏰ 签到已过期，执行自动签到...")
         
         // 延迟 2 秒后自动签到（等待数据加载完成）
         try? await Task.sleep(nanoseconds: 2_000_000_000)
