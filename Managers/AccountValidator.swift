@@ -170,26 +170,6 @@ class AccountValidator: ObservableObject {
     }
 }
 
-// MARK: - 响应模型
-
-struct ValidateResponse: Codable {
-    let status: String
-    let message: String?
-}
-
-struct UserInfoResponse: Codable {
-    let status: String
-    let data: UserInfoData?
-    let message: String?
-}
-
-struct UserInfoData: Codable {
-    let id: String
-    let name: String
-    let phone: String
-    let avatar: String?
-}
-
 // MARK: - 通知扩展
 
 extension NotificationCenter {

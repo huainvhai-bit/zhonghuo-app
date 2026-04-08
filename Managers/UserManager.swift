@@ -913,12 +913,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    struct ServerResponse: Codable {
-        let success: Bool
-        let message: String?
-        let error: String?
-    }
-    
     @MainActor
     func logout() {
         print("🔴 UserManager.logout() 被调用")

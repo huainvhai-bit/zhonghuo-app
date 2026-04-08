@@ -266,14 +266,6 @@ struct ZhonghuoApp: App {
     }
 }
 
-// MARK: - 响应模型
-struct ValidateResponse: Codable {
-    let success: Bool
-    let message: String?
-}
-
-// UserInfoResponse 和 UserInfoData 定义已移至 AccountValidator.swift
-
 // MARK: - RealTimeSyncManager
 @MainActor
 class RealTimeSyncManager: ObservableObject {
