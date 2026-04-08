@@ -1,75 +1,35 @@
 #!/bin/bash
+# 
+# Xcode 项目文件修复脚本
+# 
+# 问题: 重构后，项目文件引用的 Swift 文件路径过时
+# 解决: 使用 Xcode IDE 手动更新项目文件
+#
 
-# 修复终活 App Xcode 项目配置
-# 问题：缺少必要的 Build Phases 导致无法自动安装到模拟器
-
-cd /Users/lishimin/Documents/zhonghuo-app
-
-echo "🔧 开始修复 Xcode 项目配置..."
-
-# 备份原项目文件
-cp 终活.xcodeproj/project.pbxproj 终活.xcodeproj/project.pbxproj.backup
-
-# 读取当前 project.pbxproj
-PBXPROJ="终活.xcodeproj/project.pbxproj"
-
-# 1. 检查是否有 Resources 阶段
-if grep -q "PBXResourcesBuildPhase" "$PBXPROJ"; then
-    echo "✅ Resources BuildPhase 已存在"
-else
-    echo "❌ 缺少 Resources BuildPhase - 需要添加"
-fi
-
-# 2. 检查是否有 Embed Frameworks 阶段
-if grep -q "PBXCopyFilesBuildPhase" "$PBXPROJ"; then
-    echo "✅ Embed Frameworks BuildPhase 已存在"
-else
-    echo "❌ 缺少 Embed Frameworks BuildPhase - 需要添加"
-fi
-
-# 3. 检查 SDKROOT 设置
-if grep -q "SDKROOT = iphoneos" "$PBXPROJ"; then
-    echo "⚠️  SDKROOT 设置为 iphoneos (真机) - 应该使用 iphonesimulator 用于模拟器"
-    echo "   但这不影响运行，Xcode 会自动处理"
-fi
-
-# 4. 检查 CODE_SIGN_STYLE
-if grep -q "CODE_SIGN_STYLE = Automatic" "$PBXPROJ"; then
-    echo "✅ 代码签名设置为 Automatic"
-else
-    echo "❌ 代码签名未设置 - 需要设置为 Automatic"
-fi
-
+echo "=== Xcode 项目修复指南 ==="
 echo ""
-echo "📋 当前项目配置检查完成"
+echo "问题: 项目文件引用了过时的文件路径"
 echo ""
 
-# 显示当前的 Build Phases
-echo "📦 当前 Build Phases:"
-grep -A5 "buildPhases = (" "$PBXPROJ" | head -20
-
-echo ""
-echo "💡 建议操作："
-echo "1. 在 Xcode 中打开项目"
-echo "2. 选择 Target '终活'"
-echo "3. 点击 'Build Phases' 标签"
-echo "4. 确认有以下阶段:"
-echo "   - Target Dependencies (可选)"
-echo "   - Compile Sources (必须有)"
-echo "   - Link Binary With Libraries (必须有)"
-echo "   - Copy Bundle Resources (必须有)"
-echo "   - Embed Frameworks (可选)"
-echo ""
-echo "如果缺少任何阶段，请点击 '+' 按钮添加"
+# 列出缺失的文件（在根目录不存在但在模块中）
+echo "需要添加到 Xcode 项目的模块目录："
+echo "  - Auth/"
+echo "  - Capsule/"
+echo "  - Family/"
+echo "  - Home/"
+echo "  - Location/"
+echo "  - Models/"
+echo "  - Services/"
+echo "  - Settings/"
+echo "  - User/"
 echo ""
 
-# 检查 DerivedData
-DERIVED_DATA="/Users/lishimin/Library/Developer/Xcode/DerivedData/终活-cqrdtepyatgbutagxrvrefgapusm"
-if [ -d "$DERIVED_DATA" ]; then
-    echo "🗑️  清理旧的 DerivedData 缓存..."
-    rm -rf "$DERIVED_DATA"
-    echo "✅ 已清理"
-fi
-
+echo "提示: 在 Xcode 中操作："
+echo "  1. 打开 终活.xcodeproj"
+echo "  2. 右键点击项目导航器中的项目图标"
+echo "  3. 选择 'Add Files to '终活''"
+echo "  4. 选择上述模块目录，勾选 'Create folder references'"
+echo "  5. 删除根目录中不存在的旧文件引用"
 echo ""
-echo "✅ 修复完成！请在 Xcode 中重新构建项目"
+
+echo "完成后，点击 Product > Build 编译项目"
