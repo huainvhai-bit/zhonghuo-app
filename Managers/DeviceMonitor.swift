@@ -303,23 +303,18 @@ class DeviceMonitor: ObservableObject {
         }
         
         do {
-            let query = """
-            mutation($deviceId: String!, $deviceModel: String!, $osVersion: String!, $appVersion: String!) {
-                uploadDeviceInfo(deviceId: $deviceId, deviceModel: $deviceModel, osVersion: $osVersion, appVersion: $appVersion) {
-                    success
-                    message
-                }
-            }
-            """
+            // ✅ 修复：使用 DataManager 统一函数
+            let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+            let deviceModel = UIDevice.current.model
+            let osVersion = UIDevice.current.systemVersion
+            let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
             
-            let variables: [String: Any] = [
-                "deviceId": UIDevice.current.identifierForVendor?.uuidString ?? "unknown",
-                "deviceModel": UIDevice.current.model,
-                "osVersion": UIDevice.current.systemVersion,
-                "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-            ]
-            
-            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            let result = try await DataManager.shared.uploadDeviceInfo(
+                deviceId: deviceId,
+                deviceModel: deviceModel,
+                osVersion: osVersion,
+                appVersion: appVersion
+            )
             print("📡 设备信息上传响应：\(result)")
             
         } catch {

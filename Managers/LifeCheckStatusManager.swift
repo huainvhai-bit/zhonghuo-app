@@ -72,9 +72,9 @@ class LifeCheckStatusManager: ObservableObject {
         
         // 2. 后端签到（GraphQL）
         do {
-            // ✅ 修复：使用用户设置的签到间隔（从 DataManager 获取）
+            // ✅ 修复：使用 DataManager 统一函数
             let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
-            let result = try await GraphQLClient.shared.checkIn(
+            let result = try await DataManager.shared.checkIn(
                 checkInIntervalHours: Int(checkInInterval),
                 location: nil // TODO: 添加当前位置
             )

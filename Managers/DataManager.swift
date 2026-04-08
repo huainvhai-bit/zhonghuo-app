@@ -1471,6 +1471,62 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
+    /// 签到（GraphQL）
+    // ✅ 统一：将 LifeCheckStatusManager 调用迁移到 DataManager
+    func checkIn(checkInIntervalHours: Int = 48, location: [String: Any]? = nil) async throws -> [String: Any] {
+        let mutation = """
+        mutation($checkInIntervalHours: Int, $location: JSON) {
+            checkIn(checkInIntervalHours: $checkInIntervalHours, location: $location) {
+                success
+                checkInTime
+                expireTimestamp
+            }
+        }
+        """
+        
+        var variables: [String: Any] = [
+            "checkInIntervalHours": checkInIntervalHours
+        ]
+        
+        if let location = location {
+            variables["location"] = location
+        }
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["checkIn"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 上传设备信息（GraphQL）
+    // ✅ 统一：将 DeviceMonitor 调用迁移到 DataManager
+    func uploadDeviceInfo(deviceId: String, deviceModel: String, osVersion: String, appVersion: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($deviceId: String!, $deviceModel: String!, $osVersion: String!, $appVersion: String!) {
+            uploadDeviceInfo(deviceId: $deviceId, deviceModel: $deviceModel, osVersion: $osVersion, appVersion: $appVersion) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "deviceId": deviceId,
+            "deviceModel": deviceModel,
+            "osVersion": osVersion,
+            "appVersion": appVersion
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["uploadDeviceInfo"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
     // MARK: - 数据导出
     
     /// 下载用户数据（GraphQL）
