@@ -50,7 +50,6 @@
 		A1000034 /* Managers/NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* NotificationManager.swift */; };
 		A1000035 /* Views/Will/WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000035 /* WillPreviewView.swift */; };
 		A1000036 /* Views/Common/HelpPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000036 /* HelpPolicyView.swift */; };
-		A1000037 /* Views/Common/MediaRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000037 /* MediaRecorderView.swift */; };
 		A1000040 /* Utils/AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000040 /* AppConfig.swift */; };
 		A1000041 /* Utils/DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000041 /* DebugConfig.swift */; };
 		A1075845 /* Views/Common/EmergencyContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2010F25 /* EmergencyContactsView.swift */; };
@@ -123,7 +122,6 @@
 		A2000034 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/NotificationManager.swift; sourceTree = SOURCE_ROOT; };
 		A2000035 /* WillPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Will/WillPreviewView.swift; sourceTree = SOURCE_ROOT; };
 		A2000036 /* HelpPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/HelpPolicyView.swift; sourceTree = SOURCE_ROOT; };
-		A2000037 /* MediaRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/MediaRecorderView.swift; sourceTree = SOURCE_ROOT; };
 		A2000040 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/AppConfig.swift; sourceTree = SOURCE_ROOT; };
 		A2000041 /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/DebugConfig.swift; sourceTree = SOURCE_ROOT; };
 		A2010F25 /* EmergencyContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/EmergencyContactsView.swift; sourceTree = SOURCE_ROOT; };
@@ -206,7 +204,6 @@
 				A2000034 /* NotificationManager.swift */,
 				A2000035 /* WillPreviewView.swift */,
 				A2000036 /* HelpPolicyView.swift */,
-				A2000037 /* MediaRecorderView.swift */,
 				A2000040 /* AppConfig.swift */,
 				A2000041 /* DebugConfig.swift */,
 				D5AD1F297D03473770EF79D0 /* KeychainManager.swift */,
@@ -343,7 +340,6 @@
 				A1000034 /* Managers/NotificationManager.swift in Sources */,
 				A1000035 /* Views/Will/WillPreviewView.swift in Sources */,
 				A1000036 /* Views/Common/HelpPolicyView.swift in Sources */,
-				A1000037 /* Views/Common/MediaRecorderView.swift in Sources */,
 				A1000040 /* Utils/AppConfig.swift in Sources */,
 				A1000041 /* Utils/DebugConfig.swift in Sources */,
 				334C2F04C944C07197FE8DE5 /* Managers/KeychainManager.swift in Sources */,
