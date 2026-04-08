@@ -173,8 +173,15 @@ struct ZhonghuoApp: App {
     private func isNetworkAvailable() async -> Bool {
         guard !DataManager.apiURL.isEmpty else { return false }
         do {
-            let url = URL(string: "\(DataManager.apiURL)/api/check-config.php")!
-            let (_, response) = try await URLSession.shared.data(from: url)
+            // 使用 GraphQL 简单查询检查连通性
+            let query = "query { getConfig { checkinIntervalHours } }"
+            let url = URL(string: "\(DataManager.apiURL)/api/graphql.php")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse {
                 return (200...299).contains(httpResponse.statusCode)
             }
@@ -200,9 +207,23 @@ struct ZhonghuoApp: App {
         // ✅ 安全修复：不再使用密码验证，仅使用 Token 验证
         do {
             let token = KeychainManager.shared.getToken() ?? ""
-            let url = URL(string: "\(DataManager.apiURL)/api/users.php?action=info")!
+            let query = """
+            query {
+                user {
+                    id
+                    name
+                    phone
+                    status
+                }
+            }
+            """
+            
+            let url = URL(string: "\(DataManager.apiURL)/api/graphql.php")!
             var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
             
             let (data, response) = try await URLSession.shared.data(for: request)
             

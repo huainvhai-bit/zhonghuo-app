@@ -82,10 +82,16 @@ class AccountValidator: ObservableObject {
             return false
         }
         
-        // 尝试访问 API
+        // 尝试访问 GraphQL API
         do {
-            let url = URL(string: "\(dataManager.apiURL)/api/check-config.php")!
-            let (_, response) = try await URLSession.shared.data(from: url)
+            let query = "query { getConfig { checkinIntervalHours } }"
+            let url = URL(string: "\(dataManager.apiURL)/api/graphql.php")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
                 return (200...299).contains(httpResponse.statusCode)
@@ -113,19 +119,35 @@ class AccountValidator: ObservableObject {
         let token = KeychainManager.shared.getToken() ?? ""
         
         do {
-            let url = URL(string: "\(dataManager.apiURL)/api/users.php?action=info")!
+            let query = """
+            query {
+                user {
+                    id
+                    name
+                    phone
+                    status
+                }
+            }
+            """
+            
+            let url = URL(string: "\(dataManager.apiURL)/api/graphql.php")!
             var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
             if let httpResponse = response as? HTTPURLResponse {
                 if (200...299).contains(httpResponse.statusCode) {
-                    let result = try JSONDecoder().decode(UserInfoResponse.self, from: data)
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                     
-                    if result.status == "success", let userInfo = result.data {
+                    if let userData = json?["data"] as? [String: Any],
+                       let userDataDict = userData["user"] as? [String: Any],
+                       let phone = userDataDict["phone"] as? String {
                         // 验证手机号是否匹配
-                        if userInfo.phone == user.phone {
+                        if phone == user.phone {
                             return true
                         } else {
                             validationError = "账号信息不匹配"

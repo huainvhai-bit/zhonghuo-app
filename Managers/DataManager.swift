@@ -520,30 +520,27 @@ class DataManager: ObservableObject {
     
     // MARK: - 密码重置
     
-    /// 发送重置密码验证码
+    /// 发送重置密码验证码（GraphQL）
     func sendResetPasswordCode(phone: String) async throws -> Bool {
         guard !Self.apiURL.isEmpty else {
             print("❌ API URL 未设置")
             return false
         }
         
-        let url = URL(string: "\(Self.apiURL)/api/users.php?action=send_reset_code")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let mutation = """
+        mutation($phone: String!) {
+            sendResetCode(phone: $phone) {
+                success
+                message
+            }
+        }
+        """
         
-        let body: [String: Any] = [
-            "phone": phone
-        ]
+        let variables: [String: Any] = ["phone": phone]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        if let httpResponse = response as? HTTPURLResponse,
-           (200...299).contains(httpResponse.statusCode) {
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let success = json?["success"] as? Bool ?? false
+        if let data = result["sendResetCode"] as? [String: Any],
+           let success = data["success"] as? Bool {
             print("📱 发送验证码结果：\(success ? "成功" : "失败")")
             return success
         }
@@ -558,25 +555,25 @@ class DataManager: ObservableObject {
             return false
         }
         
-        let url = URL(string: "\(Self.apiURL)/api/users.php?action=reset_password")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let mutation = """
+        mutation($phone: String!, $verifyCode: String!, $newPassword: String!) {
+            resetPassword(phone: $phone, verifyCode: $verifyCode, newPassword: $newPassword) {
+                success
+                message
+            }
+        }
+        """
         
-        let body: [String: Any] = [
+        let variables: [String: Any] = [
             "phone": phone,
-            "verify_code": verifyCode,
-            "new_password": newPassword
+            "verifyCode": verifyCode,
+            "newPassword": newPassword
         ]
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        if let httpResponse = response as? HTTPURLResponse,
-           (200...299).contains(httpResponse.statusCode) {
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let success = json?["success"] as? Bool ?? false
+        if let data = result["resetPassword"] as? [String: Any],
+           let success = data["success"] as? Bool {
             print("🔐 重置密码结果：\(success ? "成功" : "失败")")
             return success
         }
@@ -630,32 +627,40 @@ class DataManager: ObservableObject {
         return try await sendSmsNotification(phone: guardianPhone, message: message)
     }
     
-    /// 获取通知配置
+    /// 获取通知配置（GraphQL）
     func fetchNotificationConfig() async -> NotificationConfig? {
         guard !Self.apiURL.isEmpty else { return nil }
         
-        let url = URL(string: "\(Self.apiURL)/api/notification_config.php?action=get")!
-        
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                
-                if let success = json?["success"] as? Bool, success,
-                   let data = json?["data"] as? [String: Any] {
-                    
-                    let config = NotificationConfig(
-                        checkInInterval: data["checkInInterval"] as? Int ?? 48,
-                        firstReminderHours: data["firstReminderHours"] as? Int ?? 12,
-                        reminderInterval: data["reminderInterval"] as? Int ?? 2,
-                        overduePushInterval: data["overduePushInterval"] as? Int ?? 1,
-                        enableSmsNotification: data["enableSmsNotification"] as? Bool ?? true
-                    )
-                    
-                    print("✅ 获取通知配置成功：间隔=\(config.checkInInterval)h, 首次=\(config.firstReminderHours)h, 重复=\(config.reminderInterval)h")
-                    return config
+            let query = """
+            query {
+                getConfig {
+                    checkinIntervalHours
+                    notificationReminderThresholdHours
+                    notificationPushIntervalHours
                 }
+            }
+            """
+            
+            let response = try await sendGraphQLQuery(query: query, variables: [:], baseURL: Self.apiURL)
+            
+            if let data = response["data"] as? [String: Any],
+               let configData = data["getConfig"] as? [String: Any] {
+                
+                let checkinInterval = configData["checkinIntervalHours"] as? Int ?? 48
+                let firstReminder = configData["notificationReminderThresholdHours"] as? Int ?? 12
+                let reminderInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+                
+                let config = NotificationConfig(
+                    checkInInterval: checkinInterval,
+                    firstReminderHours: firstReminder,
+                    reminderInterval: reminderInterval,
+                    overduePushInterval: 1,
+                    enableSmsNotification: true
+                )
+                
+                print("✅ 获取通知配置成功：间隔=\(config.checkInInterval)h, 首次=\(config.firstReminderHours)h, 重复=\(config.reminderInterval)h")
+                return config
             }
         } catch {
             print("❌ 获取通知配置失败：\(error)")
