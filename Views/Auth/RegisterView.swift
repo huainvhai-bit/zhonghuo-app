@@ -236,125 +236,132 @@ struct RegisterView: View {
     // MARK: - 视图
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 30) {
-                // Logo
-                VStack(spacing: 12) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(Color(hex: "AF52DE"))
-                    
-                    Text("终活")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(Color(hex: "AF52DE"))
-                    
-                    Text("注册账号")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                }
-                .padding(.top, 40)
+        VStack(spacing: 30) {
+            // Logo
+            VStack(spacing: 12) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(Color(hex: "AF52DE"))
                 
-                Spacer()
+                Text("终活")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(Color(hex: "AF52DE"))
                 
-                // 注册表单
-                VStack(spacing: 20) {
-                    TextField("姓名", text: $name)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    TextField("手机号码", text: $phone)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.phonePad)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    HStack {
-                        TextField("验证码", text: $verifyCode)
-                            .textFieldStyle(CustomTextFieldStyle())
-                            .keyboardType(.numberPad)
-                            .font(.system(size: 18, weight: .medium))
-                        
-                        Button(action: requestVerifyCode) {
-                            Text(countdown > 0 ? "\(countdown)s" : "获取验证码")
-                                .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
-                                .font(.system(size: 16))
-                        }
-                        .disabled(countdown > 0 || phone.isEmpty)
-                    }
-                    
-                    SecureField("设置密码（8 位以上）", text: $password)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    SecureField("确认密码", text: $confirmPassword)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    Button(action: {
-                        print("🔴🔴🔴 立即注册按钮被点击！！！")
-                        Task { @MainActor in
-                            print("🔴 Task 开始执行")
-                            await register()
-                            print("🔴 Task 执行完成")
-                        }
-                    }, label: {
-                        Text("立即注册")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color(hex: "AF52DE"))
-                            .cornerRadius(12)
-                    })
-                    .disabled(false)  // 强制不禁用
-                    .opacity(isLoading ? 0.5 : 1)
-                }
-                .padding(.horizontal, 24)
-                .alert(isPresented: $showingError) {
-                    Alert(
-                        title: Text("错误"),
-                        message: Text(errorMessage),
-                        dismissButton: .default(Text("确定"))
-                    )
-                }
+                Text("注册账号")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+            }
+            .padding(.top, 40)
+            
+            Spacer()
+            
+            // 注册表单
+            VStack(spacing: 20) {
+                TextField("姓名", text: $name)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                    .font(.system(size: 18, weight: .medium))
                 
-                // 测试按钮 - 验证点击是否有效
-                Button(action: {
-                    print("🧪 测试按钮被点击！")
-                    showingError = true
-                    errorMessage = "测试按钮正常工作！"
-                }) {
-                    Text("🧪 测试点击")
-                        .foregroundColor(.red)
-                }
-                .padding(.top, 20)
+                TextField("手机号码", text: $phone)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .keyboardType(.phonePad)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                    .font(.system(size: 18, weight: .medium))
                 
-                Spacer()
-                
-                // 切换到登录
                 HStack {
-                    Text("已经有账号？")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 16))
+                    TextField("验证码", text: $verifyCode)
+                        .textFieldStyle(CustomTextFieldStyle())
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 18, weight: .medium))
                     
-                    Button(action: { isPresented = false }) {
-                        Text("立即登录")
-                            .foregroundColor(Color(hex: "AF52DE"))
-                            .font(.system(size: 16, weight: .bold))
+                    Button(action: requestVerifyCode) {
+                        Text(countdown > 0 ? "\(countdown)s" : "获取验证码")
+                            .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                            .font(.system(size: 16))
                     }
+                    .disabled(countdown > 0 || phone.isEmpty)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 60)
+                
+                SecureField("设置密码（8 位以上）", text: $password)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .font(.system(size: 18, weight: .medium))
+                
+                SecureField("确认密码", text: $confirmPassword)
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .font(.system(size: 18, weight: .medium))
+                
+                // 🔴 调试标签
+                Text("🔴 如果能看到这个，说明视图正常渲染")
+                    .foregroundColor(.red)
+                    .font(.system(size: 12))
+                    .padding(.top, 5)
+                
+                Button(action: {
+                    print("🔴🔴🔴 立即注册按钮被点击！！！")
+                    Task { @MainActor in
+                        print("🔴 Task 开始执行")
+                        await register()
+                        print("🔴 Task 执行完成")
+                    }
+                }, label: {
+                    Text("立即注册")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color(hex: "AF52DE"))
+                        .cornerRadius(12)
+                })
+                .disabled(false)  // 强制不禁用
+                .opacity(isLoading ? 0.5 : 1)
             }
-            .background(Color("BackgroundColor"))
-            .navigationBarTitleDisplayMode(.inline)
-            .onTapGesture {
-                print("🎹 点击背景隐藏键盘")
-                hideKeyboard()
+            .padding(.horizontal, 24)
+            
+            // 测试按钮 - 验证点击是否有效
+            Button(action: {
+                print("🧪 测试按钮被点击！")
+                showingError = true
+                errorMessage = "测试按钮正常工作！"
+            }) {
+                Text("🧪 测试点击")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+                    .padding()
+                    .border(Color.red)
             }
+            .padding(.top, 10)
+            
+            Spacer()
+            
+            // 切换到登录
+            HStack {
+                Text("已经有账号？")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 16))
+                
+                Button(action: { isPresented = false }) {
+                    Text("立即登录")
+                        .foregroundColor(Color(hex: "AF52DE"))
+                        .font(.system(size: 16, weight: .bold))
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 60)
+        }
+        .alert(isPresented: $showingError) {
+            Alert(
+                title: Text("错误"),
+                message: Text(errorMessage),
+                dismissButton: .default(Text("确定"))
+            )
+        }
+        .background(Color("BackgroundColor"))
+        .navigationBarTitleDisplayMode(.inline)
+        .onTapGesture {
+            print("🎹 点击背景隐藏键盘")
+            hideKeyboard()
         }
     }
     
