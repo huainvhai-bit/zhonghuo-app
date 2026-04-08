@@ -272,28 +272,14 @@ struct PreviewButton: View {
     }
 }
 
-// MARK: - AVPlayerView（防止白屏）
-struct AVPlayerView: UIViewRepresentable {
-    let player: AVPlayer
-    
-    func makeUIView(context: Context) -> amatuer PlayerViewController {
-        let controller = PlayerViewController()
-        controller.player = player
-        return controller
-    }
-    
-    func updateUIView(_ uiView: PlayerViewController, context: Context) {
-        uiView.player = player
-    }
-}
-
-class PlayerViewController: UIViewController {
+// MARK: - AVPlayerViewController
+class AVPlayerViewController: UIViewController {
     var player: AVPlayer? {
-        get {playerView.player }
+        get { playerView.player }
         set { playerView.player = newValue }
     }
     
-    let playerView = AVPlayerView()
+    let playerView = AVPlayerView(player: AVPlayer())
     
     override func viewDidLoad() {
         super.viewDidLoad()

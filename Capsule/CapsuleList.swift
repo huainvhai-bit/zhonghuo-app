@@ -139,7 +139,7 @@ struct CapsuleList: View {
     
     private func deleteCapsules(at offsets: IndexSet) {
         let capsulesToDelete = filteredCapsules
-            .safe Subset(offsets)
+            .safeSubset(offsets)
             .map { $0.id }
         
         for capsuleId in capsulesToDelete {
