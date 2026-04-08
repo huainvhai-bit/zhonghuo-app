@@ -977,50 +977,6 @@ class DataManager: ObservableObject {
         return nil
     }
     
-    /// 批量同步遗嘱模块到服务器（GraphQL）
-    func batchSyncWillModules() async -> (total: Int, created: Int, updated: Int)? {
-        guard !DataManager.apiURL.isEmpty else { return nil }
-        
-        // 转换为 GraphQL 格式
-        let modulesInput = willModules.map { module in
-            [
-                "id": module.id,
-                "type": module.type,
-                "title": module.title,
-                "subtitle": module.subtitle,
-                "content": module.content,
-                "isCompleted": module.isCompleted,
-                "template": module.template ?? ""
-            ]
-        }
-        
-        let query = """
-        mutation($modules: [WillModuleInput!]!) {
-            batchSyncWills(modules: $modules) {
-                success
-                message
-                data { total created updated }
-            }
-        }
-        """
-        
-        let variables: [String: Any] = ["modules": modulesInput]
-        
-        do {
-            let result = try await GraphQLClient.shared.query(query, variables: variables)
-            if let data = result["data"] as? [String: Any],
-               let syncResult = data["batchSyncWills"] as? [String: Any],
-               let total = syncResult["total"] as? Int,
-               let created = syncResult["created"] as? Int,
-               let updated = syncResult["updated"] as? Int {
-                print("✅ 遗嘱同步成功（GraphQL）：总计 \(total), 新增 \(created), 更新 \(updated)")
-                return (total, created, updated)
-            }
-        } catch {
-            print("❌ 遗嘱同步失败（GraphQL）：\(error)")
-        }
-        return nil
-    }
     
     /// 批量同步胶囊到服务器
     /// ✅ 修复：标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
