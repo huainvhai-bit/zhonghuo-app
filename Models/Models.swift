@@ -233,6 +233,7 @@ struct Asset: Identifiable, Codable {
     var accountNumber: String
     var details: [String: String]
     var createdAt: Date
+    var deletedAt: Date?  // 删除时间（软删除）
     
     enum AssetType: String, Codable, CaseIterable {
         case bank = "银行存款"
@@ -1047,6 +1048,55 @@ class APIManager {
         throw APIError.networkError
     }
     
+    func batchSyncAssets(_ assets: [AssetInput]) async throws -> BatchSyncResult {
+        print("🔍 batchSyncAssets 开始同步 \(assets.count) 个资产")
+        
+        let assetsInput = assets.map { a -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": a.id,
+                "type": a.type,
+                "name": a.name,
+                "institution": a.institution,
+                "balance": a.balance,
+                "accountNumber": a.accountNumber
+            ]
+            if let details = a.details {
+                dict["details"] = details
+            }
+            if let deletedAt = a.deletedAt {
+                dict["deletedAt"] = deletedAt
+            }
+            return dict
+        }
+        
+        let query = """
+        mutation($assets: [AssetInput!]!) {
+            batchSyncAssets(assets: $assets) {
+                total
+                created
+                updated
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["assets": assetsInput]
+        
+        print("🔍 batchSyncAssets GraphQL Query:")
+        print(query)
+        print("🔍 Variables: \(assetsInput)")
+        print("---")
+        
+        let response = try await client.query(query, variables: variables)
+        if let data = response["data"] as? [String: Any],
+           let syncResult = data["batchSyncAssets"] as? [String: Any],
+           let total = syncResult["total"] as? Int,
+           let created = syncResult["created"] as? Int,
+           let updated = syncResult["updated"] as? Int {
+            return BatchSyncResult(total: total, created: created, updated: updated)
+        }
+        throw APIError.networkError
+    }
+    
     // 🔥 从云存储读取胶囊内容
     func fetchCapsuleContentFromCloud(url: String) async throws -> String {
         guard let cloudURL = URL(string: url) else {
@@ -1131,6 +1181,18 @@ struct WitnessInput {
     let relationship: String
     let isConfirmed: Bool?  // 是否已确认（对应数据库 is_confirmed）
     let deletedAt: String?  // 删除时间戳（ISO 8601）
+}
+
+/// 资产 API 输入
+struct AssetInput {
+    let id: String
+    let type: String
+    let name: String
+    let institution: String
+    let balance: Double
+    let accountNumber: String
+    let details: [String: String]?
+    let deletedAt: String?
 }
 
 struct BatchSyncResult {

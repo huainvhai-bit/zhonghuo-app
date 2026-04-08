@@ -1148,6 +1148,33 @@ class DataManager: ObservableObject {
         }
     }
     
+    func batchSyncAssets() async -> (total: Int, created: Int, updated: Int)? {
+        print("💰 开始同步资产：共 \(assets.count) 个")
+        guard !assets.isEmpty else { return (0, 0, 0) }
+        
+        let inputs = assets.map { asset in
+            AssetInput(
+                id: asset.id,
+                type: asset.type.rawValue,
+                name: asset.name,
+                institution: asset.institution,
+                balance: asset.balance,
+                accountNumber: asset.accountNumber,
+                details: asset.details,
+                deletedAt: asset.deletedAt != nil ? ISO8601DateFormatter().string(from: asset.deletedAt!) : nil
+            )
+        }
+        
+        do {
+            let result = try await APIManager.shared.batchSyncAssets(inputs)
+            print("✅ 资产同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            return (result.total, result.created, result.updated)
+        } catch {
+            print("❌ 资产同步失败：\(error)")
+            return nil
+        }
+    }
+    
     /// 上传媒体文件到服务器
     /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {

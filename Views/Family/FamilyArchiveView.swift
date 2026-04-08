@@ -184,29 +184,43 @@ struct FamilyArchiveView: View {
             isLoading = true
             defer { isLoading = false }
             
-            // TODO: 调用 GraphQL 查询家族档案
-            // let result = await DataManager.shared.fetchFamilyArchives()
-            // archives = result.archives
-            
-            // 模拟数据
-            archives = [
-                FamilyArchive(
-                    id: UUID().uuidString,
-                    userId: "user123",
-                    archiveName: "我家的故事",
-                    description: "记录我们家族的点点滴滴",
-                    isPublic: false,
-                    members: [
-                        FamilyArchiveMember(
-                            id: UUID().uuidString,
-                            archiveId: "",
-                            userId: "user123",
-                            userName: "我",
-                            role: .owner,
-                            joinedAt: Date(),
-                            permissions: [.view, .edit, .addMember, .delete]
+            do {
+                // 调用 GraphQL 查询家族档案
+                let query = """
+                query {
+                    getFamilyArchives {
+                        id
+                        archiveName
+                        description
+                        isPublic
+                        createdAt
+                        updatedAt
+                    }
+                }
+                """
+                
+                let result = try await GraphQLClient.shared.query(query)
+                print("📡 GraphQL 家庭档案响应：\(result)")
+                
+                if let archivesData = result["getFamilyArchives"] as? [[String: Any]] {
+                    archives = archivesData.compactMap { data -> FamilyArchive? in
+                        guard let id = data["id"] as? String,
+                              let archiveName = data["archiveName"] as? String else {
+                            return nil
+                        }
+                        return FamilyArchive(
+                            id: id,
+                            userId: UserManager.shared.currentUser?.id ?? "",
+                            archiveName: archiveName,
+                            description: data["description"] as? String ?? "",
+                            isPublic: data["isPublic"] as? Bool ?? false,
+                            members: [] // 成员列表需要单独查询
                         )
-                    ],
+                    }
+                }
+            } catch {
+                print("❌ 获取家庭档案失败：\(error)")
+            }
                     createdAt: Date(),
                     updatedAt: Date()
                 )
@@ -370,10 +384,37 @@ struct CreateArchiveView: View {
         isLoading = true
         defer { isLoading = false }
         
-        // TODO: 调用 GraphQL 创建家族档案
-        // let result = await DataManager.shared.createFamilyArchive(...)
-        
-        // 模拟成功
+        Task {
+            do {
+                // 调用 GraphQL 创建家族档案
+                let mutation = """
+                mutation($archiveName: String!, $description: String, $isPublic: Boolean) {
+                    createFamilyArchive(archiveName: $archiveName, description: $description, isPublic: $isPublic) {
+                        id
+                        success
+                    }
+                }
+                """
+                
+                let variables: [String: Any] = [
+                    "archiveName": archiveName,
+                    "description": description,
+                    "isPublic": isPublic
+                ]
+                
+                let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+                print("📡 GraphQL 创建家庭档案响应：\(result)")
+                
+                if let success = result["createFamilyArchive"] as? [String: Any],
+                   success["success"] as? Bool == true {
+                    print("✅ 家庭档案创建成功")
+                    presentationMode.wrappedValue.dismiss()
+                    loadArchives() // 刷新列表
+                }
+            } catch {
+                print("❌ 创建家庭档案失败：\(error)")
+            }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             presentationMode.wrappedValue.dismiss()
         }
