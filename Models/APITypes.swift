@@ -7,6 +7,32 @@
 
 import Foundation
 
+// MARK: - API Errors
+
+enum APIError: LocalizedError {
+    case createFailed
+    case updateFailed
+    case deleteFailed
+    case networkError
+    case unauthorized
+    case invalidURL
+    case invalidResponse
+    case decodingError
+    
+    var errorDescription: String? {
+        switch self {
+        case .createFailed: return "创建失败"
+        case .updateFailed: return "更新失败"
+        case .deleteFailed: return "删除失败"
+        case .networkError: return "网络错误"
+        case .unauthorized: return "未授权"
+        case .invalidURL: return "无效的 URL"
+        case .invalidResponse: return "无效的响应"
+        case .decodingError: return "解码失败"
+        }
+    }
+}
+
 // MARK: - Token 刷新服务（P0 修复）
 
 /// Token 自动刷新服务
