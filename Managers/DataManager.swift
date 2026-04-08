@@ -1442,6 +1442,9 @@ class DataManager: ObservableObject {
                     notificationReminderThresholdHours
                     notificationPushIntervalHours
                     smsIsDevelopment
+                    latestVersion
+                    forceUpdateVersion
+                    updateUrl
                 }
             }
             """
@@ -1453,11 +1456,17 @@ class DataManager: ObservableObject {
                 let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
                 let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
                 let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+                let latestVersion = configData["latestVersion"] as? String ?? "1.0.0"
+                let forceUpdateVersion = configData["forceUpdateVersion"] as? String ?? "0.0.0"
+                let updateUrl = configData["updateUrl"] as? String ?? ""
                 
                 systemConfig = SystemConfig(
                     checkinReminderThresholdHours: Double(reminderHours),
                     checkinReminderIntervalHours: Double(pushInterval),
-                    minimumEmergencyContacts: 2
+                    minimumEmergencyContacts: 2,
+                    latestVersion: latestVersion,
+                    forceUpdateVersion: forceUpdateVersion,
+                    updateUrl: updateUrl
                 )
                 
                 settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
@@ -1466,6 +1475,9 @@ class DataManager: ObservableObject {
                 print("   - 签到间隔：\(checkinHours) 小时")
                 print("   - 签到提醒阈值：\(reminderHours) 小时")
                 print("   - 签到提醒间隔：\(pushInterval) 小时")
+                print("   - 最新版本：\(latestVersion)")
+                print("   - 强制更新版本：\(forceUpdateVersion)")
+                print("   - 更新地址：\(updateUrl)")
             } else {
                 print("⚠️ 系统配置加载失败：数据格式错误")
             }

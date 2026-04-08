@@ -461,6 +461,15 @@ struct SystemConfig: Codable {
     
     /// 维护模式提示信息
     var appMaintenanceMessage: String = "系统维护中，请稍后再试"
+    
+    /// 最新版本号（用于检查更新）
+    var latestVersion: String = "1.0.0"
+    
+    /// 强制更新最低版本
+    var forceUpdateVersion: String = "0.0.0"
+    
+    /// 更新地址（App Store 或下载链接）
+    var updateUrl: String = ""
 }
 
 // MARK: - 配置 API 响应

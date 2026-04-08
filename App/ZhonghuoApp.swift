@@ -56,6 +56,9 @@ struct ZhonghuoApp: App {
             return
         }
         
+        // 🔵 版本检查更新（每次启动时检查）
+        await checkVersionUpdate()
+        
         // 🔴 关键修复 3: 验证失败不立即退出登录，而是标记状态
         if let user = UserManager.shared.currentUser {
             print("🔐 开始验证账号：\(user.name) (\(user.phone))")
@@ -84,6 +87,70 @@ struct ZhonghuoApp: App {
                 }
             }
         }
+    }
+    
+    /// 检查版本更新
+    @MainActor
+    private func checkVersionUpdate() async {
+        // 等待网络
+        await waitForNetwork(timeout: 5.0)
+        
+        guard !DataManager.apiURL.isEmpty else {
+            print("⚠️ API URL 未设置，跳过版本检查")
+            return
+        }
+        
+        do {
+            // 加载系统配置（包含版本信息）
+            await DataManager.shared.loadSystemConfig()
+            
+            let config = DataManager.shared.systemConfig
+            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+            
+            print("📱 版本检查：当前=\(currentVersion), 最新=\(config.latestVersion)")
+            
+            // 判断是否需要更新
+            if isVersionNewer(config.latestVersion, than: currentVersion) {
+                let forceUpdate = isVersionNewerOrEqual(config.forceUpdateVersion, than: currentVersion)
+                
+                print("📢 发现新版本：\(config.latestVersion), 强制更新=\(forceUpdate)")
+                
+                // 存储更新信息到 UserDefaults，供 ContentView 读取
+                UserDefaults.standard.set(config.latestVersion, forKey: "pendingUpdateVersion")
+                UserDefaults.standard.set(config.forceUpdateVersion, forKey: "pendingForceUpdateVersion")
+                UserDefaults.standard.set(config.updateUrl, forKey: "pendingUpdateUrl")
+                UserDefaults.standard.set(true, forKey: "showingUpdateAlert")
+            }
+        } catch {
+            print("❌ 版本检查失败：\(error)")
+        }
+    }
+    
+    /// 比较版本号（v1 > v2 返回 true）
+    private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
+        let v1Components = v1.split(separator: ".").compactMap { Int($0) }
+        let v2Components = v2.split(separator: ".").compactMap { Int($0) }
+        
+        for i in 0..<max(v1Components.count, v2Components.count) {
+            let v1Part = i < v1Components.count ? v1Components[i] : 0
+            let v2Part = i < v2Components.count ? v2Components[i] : 0
+            
+            if v1Part > v2Part {
+                return true
+            } else if v1Part < v2Part {
+                return false
+            }
+        }
+        
+        return false
+    }
+    
+    /// 比较版本号（v1 >= v2 返回 true）
+    private func isVersionNewerOrEqual(_ v1: String, than v2: String) -> Bool {
+        if v1 == v2 {
+            return true
+        }
+        return isVersionNewer(v1, than: v2)
     }
     
     /// 等待网络（可配置超时）

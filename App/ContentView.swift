@@ -21,6 +21,10 @@ struct ContentView: View {
     @State private var refreshTrigger = false  // 🔴 触发刷新的标记
     @State private var showingLogoutAlert = false  // 🔴 显示退出登录提示
     @State private var logoutReason = ""  // 🔴 退出登录原因
+    @State private var showingUpdateAlert = false  // 📱 版本更新提示
+    @State private var updateVersion = ""  // 📱 更新版本号
+    @State private var updateUrl = ""  // 📱 更新地址
+    @State private var isForceUpdate = false  // 📱 是否强制更新
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -40,6 +44,20 @@ struct ContentView: View {
                     mainTabView
                 }
             }
+        }
+        .alert("版本更新", isPresented: $showingUpdateAlert) {
+            Button("立即更新") {
+                if !updateUrl.isEmpty, let url = URL(string: updateUrl) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            if !isForceUpdate {
+                Button("稍后再说", role: .cancel) {
+                    showingUpdateAlert = false
+                }
+            }
+        } message: {
+            Text("发现新版本 \(updateVersion)，是否立即更新？")
         }
         .onAppear {
             // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
@@ -76,6 +94,25 @@ struct ContentView: View {
                 if let reason = notification.userInfo?["reason"] as? String {
                     logoutReason = reason
                     showingLogoutAlert = true
+                }
+            }
+            
+            // 📱 监听版本更新提示
+            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                let showing = UserDefaults.standard.bool(forKey: "showingUpdateAlert")
+                if showing && !showingUpdateAlert {
+                    updateVersion = UserDefaults.standard.string(forKey: "pendingUpdateVersion") ?? ""
+                    updateUrl = UserDefaults.standard.string(forKey: "pendingUpdateUrl") ?? ""
+                    let forceVersion = UserDefaults.standard.string(forKey: "pendingForceUpdateVersion") ?? ""
+                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+                    
+                    // 判断是否强制更新
+                    isForceUpdate = isVersionNewerOrEqual(forceVersion, than: currentVersion)
+                    
+                    showingUpdateAlert = true
+                    
+                    // 清除标记
+                    UserDefaults.standard.set(false, forKey: "showingUpdateAlert")
                 }
             }
         }
@@ -451,4 +488,32 @@ struct LoadingView: View {
 
 #Preview {
     ContentView()
+}
+
+// MARK: - 版本比较辅助函数
+extension ContentView {
+    private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
+        let v1Components = v1.split(separator: ".").compactMap { Int($0) }
+        let v2Components = v2.split(separator: ".").compactMap { Int($0) }
+        
+        for i in 0..<max(v1Components.count, v2Components.count) {
+            let v1Part = i < v1Components.count ? v1Components[i] : 0
+            let v2Part = i < v2Components.count ? v2Components[i] : 0
+            
+            if v1Part > v2Part {
+                return true
+            } else if v1Part < v2Part {
+                return false
+            }
+        }
+        
+        return false
+    }
+    
+    private func isVersionNewerOrEqual(_ v1: String, than v2: String) -> Bool {
+        if v1 == v2 {
+            return true
+        }
+        return isVersionNewer(v1, than: v2)
+    }
 }
