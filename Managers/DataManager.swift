@@ -1393,6 +1393,34 @@ class DataManager: ObservableObject {
         return false
     }
     
+    /// 创建紧急联系人（GraphQL）
+    // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
+    func createEmergencyContact(name: String, phone: String, relation: String, priority: Int = 1) async throws -> [String: Any] {
+        let mutation = """
+        mutation($name: String!, $phone: String!, $relation: String!, $priority: Int) {
+            createEmergencyContact(name: $name, phone: $phone, relation: $relation, priority: $priority) {
+                success
+                id
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "name": name,
+            "phone": phone,
+            "relation": relation,
+            "priority": priority
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["createEmergencyContact"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
     // MARK: - 数据导出
     
     /// 下载用户数据（GraphQL）

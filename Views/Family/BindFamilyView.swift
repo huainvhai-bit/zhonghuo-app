@@ -200,41 +200,18 @@ struct BindFamilyView: View {
         }
         
         do {
-            // 使用 GraphQL bindFamilyByInviteCode mutation
-            let query = """
-            mutation($inviteCode: String!) {
-                bindFamilyByInviteCode(inviteCode: $inviteCode) {
-                    success
-                    message
-                    data {
-                        members {
-                            id
-                            name
-                            phone
-                            relation
-                            status
-                            createdAt
-                        }
-                    }
-                }
-            }
-            """
+            // ✅ 修复：使用 DataManager 统一函数
+            let result = try await DataManager.shared.bindFamilyByInviteCode(inviteCode: inviteCode)
+            print("📡 绑定家人响应：\(result)")
             
-            let variables: [String: Any] = ["inviteCode": inviteCode]
-            let result = try await GraphQLClient.shared.query(query, variables: variables)
-            print("📡 GraphQL 绑定家人响应：\(result)")
-            
-            if let data = result["data"] as? [String: Any],
-               let bindFamilyByInviteCode = data["bindFamilyByInviteCode"] as? [String: Any] {
-                let success = bindFamilyByInviteCode["success"] as? Bool ?? false
-                if success {
-                    // 绑定成功后，自动添加到紧急联系人
-                    await addEmergencyContactIfNeeded()
-                    showingSuccess = true
-                    return
-                } else {
-                    errorMessage = bindFamilyByInviteCode["message"] as? String ?? "绑定失败"
-                }
+            let success = result["success"] as? Bool ?? false
+            if success {
+                // 绑定成功后，自动添加到紧急联系人
+                await addEmergencyContactIfNeeded()
+                showingSuccess = true
+                return
+            } else {
+                errorMessage = result["message"] as? String ?? "绑定失败"
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -274,46 +251,19 @@ struct BindFamilyView: View {
         }
         
         do {
-            // 使用 GraphQL family query 获取家人列表
-            let query = """
-            query {
-                family {
-                    success
-                    message
-                    data {
-                        members {
-                            id
-                            name
-                            phone
-                            relation
-                            status
-                            createdAt
-                        }
-                    }
-                }
-            }
-            """
+            // ✅ 修复：使用 DataManager 统一函数
+            let members = try await DataManager.shared.fetchFamilyMembers()
             
-            let result = try await GraphQLClient.shared.query(query)
-            print("📡 GraphQL 家人列表响应：\(result)")
-            
-            if let data = result["data"] as? [String: Any],
-               let familyResult = data["family"] as? [String: Any],
-               let success = familyResult["success"] as? Bool,
-               success {
-                if let familyData = familyResult["data"] as? [String: Any],
-                   let members = familyData["members"] as? [[String: Any]],
-                   !members.isEmpty {
-                    // 获取最后一个绑定的家人
-                    let lastMember = members.last!
-                    let name = lastMember["name"] as? String ?? ""
-                    let phone = lastMember["phone"] as? String ?? ""
-                    let relation = lastMember["relation"] as? String ?? "家人"
-                    
-                    // 自动添加到紧急联系人
-                    await addEmergencyContact(name: name, phone: phone, relation: relation)
-                    print("✅ 家人绑定成功：\(name)，已自动添加到紧急联系人")
-                }
+            if !members.isEmpty {
+                // 获取最后一个绑定的家人
+                let lastMember = members.last!
+                let name = lastMember["name"] as? String ?? ""
+                let phone = lastMember["phone"] as? String ?? ""
+                let relation = lastMember["role"] as? String ?? "家人"
+                
+                // 自动添加到紧急联系人
+                await addEmergencyContact(name: name, phone: phone, relation: relation)
+                print("✅ 家人绑定成功：\(name)，已自动添加到紧急联系人")
             }
         } catch {
             print("❌ 紧急联系人自动添加失败：\(error)")
@@ -327,26 +277,17 @@ struct BindFamilyView: View {
             return
         }
         
-        let query = """
-        mutation {
-            createEmergencyContact(
-                name: "\(name)",
-                phone: "\(phone)",
-                relation: "\(relation)",
-                priority: 1
-            ) {
-                success
-                id
-            }
-        }
-        """
-        
         do {
-            let result = try await GraphQLClient.shared.query(query)
-            if let data = result["data"] as? [String: Any],
-               let contactResult = data["createEmergencyContact"] as? [String: Any],
-               let success = contactResult["success"] as? Bool,
-               success {
+            // ✅ 修复：使用 DataManager 统一函数
+            let result = try await DataManager.shared.createEmergencyContact(
+                name: name,
+                phone: phone,
+                relation: relation,
+                priority: 1
+            )
+            
+            let success = result["success"] as? Bool ?? false
+            if success {
                 print("✅ 紧急联系人自动添加成功：\(name)")
             } else {
                 print("⚠️ 紧急联系人已存在或添加失败")
