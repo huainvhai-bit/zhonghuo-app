@@ -44,7 +44,28 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     var userFileURL: URL {
-        URL(fileURLWithPath: documentsPath).appendingPathComponent("user.json")
+        // ✅ 修复：按 userId 隔离本地文件，支持多账号切换
+        if let userId = KeychainManager.shared.getUserId() {
+            return URL(fileURLWithPath: documentsPath).appendingPathComponent("user_\(userId).json")
+        } else {
+            // 未登录时使用默认文件名
+            return URL(fileURLWithPath: documentsPath).appendingPathComponent("user.json")
+        }
+    }
+    
+    /// 获取所有本地用户文件列表（用于清理）
+    func getAllUserFiles() -> [URL] {
+        let files = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: documentsPath), includingPropertiesForKeys: nil)
+        return files?.filter { $0.lastPathComponent.hasPrefix("user_") && $0.lastPathComponent.hasSuffix(".json") } ?? []
+    }
+    
+    /// 清除所有本地用户文件（退出登录时调用）
+    func clearAllUserFiles() {
+        let files = getAllUserFiles()
+        for file in files {
+            try? fileManager.removeItem(at: file)
+        }
+        print("🗑️ 已清除 \(files.count) 个本地用户文件")
     }
     
     var userFileExists: Bool {
@@ -417,14 +438,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     // MARK: - 用户注册
-    func register(name: String, phone: String) -> Result<User, Error> {
+    func register(name: String, phone: String, password: String) -> Result<User, Error> {
         if !isValidPhone(phone) {
             return .failure(Error.invalidPhone)
         }
         
-        if let _ = loadUserFromFile() {
-            return .failure(Error.alreadyRegistered)
-        }
+        // ✅ 修复：移除已注册检查，支持同一手机号注册多个账号（后端会验证）
+        // 本地不再限制，由后端判断手机号是否已存在
         
         let user = User(
             id: UUID().uuidString,
@@ -874,11 +894,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.lastCheckInDate = nil
         self.checkInInterval = .twoDays  // 重置为默认值
         
-        // 🗑️ 删除本地用户文件
+        // ✅ 修复：清除当前用户的本地文件（支持多账号）
         do {
             if fileManager.fileExists(atPath: userFileURL.path) {
                 try fileManager.removeItem(at: userFileURL)
-                print("   ✅ 已删除用户文件：user.json")
+                print("   ✅ 已删除当前用户文件：\(userFileURL.lastPathComponent)")
             }
         } catch {
             print("   ❌ 删除用户文件失败：\(error)")
