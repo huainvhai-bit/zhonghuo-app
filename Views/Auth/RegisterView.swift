@@ -38,15 +38,22 @@ struct RegisterView: View {
     private func isValidPhone(_ phone: String) -> Bool {
         let pattern = "^1[3-9]\\d{9}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
-        return predicate.evaluate(with: phone)
+        let result = predicate.evaluate(with: phone)
+        print("🔍 手机号验证：\(phone) -> \(result)")
+        return result
     }
     
     /// 验证密码
     private func isValidPassword(_ password: String) -> Bool {
-        guard password.count >= 8 else { return false }
+        guard password.count >= 8 else { 
+            print("🔍 密码验证：长度不足 8 位")
+            return false 
+        }
         let hasLetter = password.rangeOfCharacter(from: .letters) != nil
         let hasNumber = password.rangeOfCharacter(from: .decimalDigits) != nil
-        return hasLetter && hasNumber
+        let result = hasLetter && hasNumber
+        print("🔍 密码验证：长度=\(password.count), 有字母=\(hasLetter), 有数字=\(hasNumber) -> \(result)")
+        return result
     }
     
     /// 启动倒计时
@@ -64,21 +71,35 @@ struct RegisterView: View {
     // MARK: - 注册逻辑
     
     private func register() async {
+        print("🔵 注册按钮被点击")
+        print("🔍 当前状态：phone=\(phone), password 长度=\(password.count), confirmPassword=\(confirmPassword)")
+        print("🔍 验证结果：isValidPhone=\(isValidPhone(phone)), isValidPassword=\(isValidPassword(password)), 密码匹配=\(password == confirmPassword)")
+        
         isLoading = true
         
         do {
             // 验证输入
             guard isValidPhone(phone) else {
+                print("❌ 手机号验证失败")
                 throw NSError(domain: "手机号格式错误", code: -1)
             }
             
             guard isValidPassword(password) else {
+                print("❌ 密码验证失败")
                 throw NSError(domain: "密码至少 8 位，包含字母和数字", code: -1)
             }
             
             guard password == confirmPassword else {
+                print("❌ 两次密码不一致")
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
+            
+            guard !verifyCode.isEmpty else {
+                print("❌ 验证码为空")
+                throw NSError(domain: "请输入验证码", code: -1)
+            }
+            
+            print("✅ 所有验证通过，开始注册请求...")
             
             // 调用注册 API
             let mutation = """
@@ -115,7 +136,11 @@ struct RegisterView: View {
     private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
         let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "https://api.zhonghuo.app"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
+        print("🌐 注册请求 URL: \(baseURL)/api/graphql.php")
+        print("📦 请求数据：name=\(name), phone=\(phone)")
+        
         guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
+            print("❌ URL 无效：\(baseURL)/api/graphql.php")
             throw NSError(domain: "Invalid URL", code: -1)
         }
         
@@ -130,7 +155,9 @@ struct RegisterView: View {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
+        print("📤 发送请求...")
         let (data, response) = try await URLSession.shared.data(for: request)
+        print("📥 收到响应：statusCode=\((response as? HTTPURLResponse)?.statusCode ?? -1)")
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NSError(domain: "Invalid Response", code: -1)
@@ -276,7 +303,7 @@ struct RegisterView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(!isValidPhone(phone) || !isValidPassword(password) || password != confirmPassword)
+                    .disabled(isLoading)
                     .opacity(isLoading ? 0.5 : 1)
                 }
                 .padding(.horizontal, 24)
