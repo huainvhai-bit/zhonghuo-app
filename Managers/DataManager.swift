@@ -1027,6 +1027,7 @@ class DataManager: ObservableObject {
                 id: capsule.id,
                 title: capsule.title,
                 type: capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
+                mediaType: capsule.type.rawValue == "文字" ? "text" : (capsule.type.rawValue == "语音" ? "audio" : "video"),
                 content: capsule.content,
                 openAt: formatter.string(from: capsule.sendDate)
             )
@@ -1064,7 +1065,7 @@ class DataManager: ObservableObject {
         guard !willModules.isEmpty else { return (0, 0, 0) }
         
         let inputs = willModules.map { will in
-            WillInput(id: will.id, type: will.type.rawValue, title: will.title, content: will.content)
+            WillInput(id: will.id, type: will.type.rawValue, title: will.title, subtitle: will.subtitle, content: will.content)
         }
         
         do {
@@ -1132,7 +1133,7 @@ class DataManager: ObservableObject {
                 name: witness.name,
                 phone: witness.phone,
                 relationship: witness.relationship,
-                status: nil,
+                isConfirmed: witness.isConfirmed,
                 deletedAt: deletedAtStr
             )
         }

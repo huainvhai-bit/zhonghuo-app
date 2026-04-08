@@ -1013,8 +1013,8 @@ class APIManager {
                 "phone": w.phone,
                 "relationship": w.relationship
             ]
-            if let status = w.status {
-                dict["status"] = status
+            if let isConfirmed = w.isConfirmed {
+                dict["isConfirmed"] = isConfirmed
             }
             return dict
         }
@@ -1102,6 +1102,7 @@ struct CapsuleInput {
     let id: String
     let title: String
     let type: String
+    let mediaType: String?  // 媒体类型：text/audio/video
     let content: String?
     let openAt: String?
 }
@@ -1110,6 +1111,7 @@ struct WillInput {
     let id: String
     let type: String
     let title: String
+    let subtitle: String?  // 副标题
     let content: String?
 }
 
@@ -1127,7 +1129,7 @@ struct WitnessInput {
     let name: String
     let phone: String
     let relationship: String
-    let status: String?
+    let isConfirmed: Bool?  // 是否已确认（对应数据库 is_confirmed）
     let deletedAt: String?  // 删除时间戳（ISO 8601）
 }
 
