@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D5AD1F33 /* Utils/NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F330 /* NetworkUtils.swift */; };
 		330A2F9C2F865E72009FE772 /* AssetModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F962F865E72009FE772 /* AssetModel.swift */; };
 		330A2F9D2F865E72009FE772 /* CapsuleModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F972F865E72009FE772 /* CapsuleModel.swift */; };
 		330A2F9F2F865E72009FE772 /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2F9A2F865E72009FE772 /* UserModel.swift */; };
@@ -86,6 +87,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D5AD1F330 /* NetworkUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/NetworkUtils.swift; sourceTree = SOURCE_ROOT; };
 		330A2FA32F865E8F009FE772 /* UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/UserRegistration.swift; sourceTree = "<group>"; };
 		330A2FA42F865E8F009FE772 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/UserSession.swift; sourceTree = "<group>"; };
 		3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/QRCodeScannerView.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 				D5AD1F300 /* AppError.swift */,
 				D5AD1F310 /* Logger.swift */,
 				D5AD1F320 /* NetworkService.swift */,
+				D5AD1F330 /* NetworkUtils.swift */,
 				A200000F /* ErrorHandler.swift */,
 				A2000010 /* CloudStorageManager.swift */,
 				A2000011 /* SecureStorage.swift */,
@@ -347,6 +350,7 @@
 				D5AD1F30 /* Utils/AppError.swift in Sources */,
 				D5AD1F31 /* Utils/Logger.swift in Sources */,
 				D5AD1F32 /* Utils/NetworkService.swift in Sources */,
+				D5AD1F33 /* Utils/NetworkUtils.swift in Sources */,
 				B1000001 /* Views/Auth/LoginView.swift in Sources */,
 				B1000002 /* Views/Auth/RegisterView.swift in Sources */,
 				B1000003 /* Views/Auth/ResetPasswordView.swift in Sources */,
