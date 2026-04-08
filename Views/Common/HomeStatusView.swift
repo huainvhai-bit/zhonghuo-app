@@ -85,22 +85,18 @@ struct HomeStatusView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
-                Button(action: {
-                    performManualCheckIn()
-                }) {
-                    Circle()
-                        .fill(checkInColor)
-                        .frame(width: 80, height: 80)
-                        .shadow(color: checkInColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .overlay(
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
-                        )
-                }
-                .padding(8)
-                .scaleEffect(showCheckInAnimation ? 1.2 : 1.0)
-                .animation(.spring(), value: showCheckInAnimation)
+                // 自动签到状态指示器
+                Circle()
+                    .fill(checkInColor)
+                    .frame(width: 80, height: 80)
+                    .shadow(color: checkInColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                    )
+                    .scaleEffect(showCheckInAnimation ? 1.2 : 1.0)
+                    .animation(.spring(), value: showCheckInAnimation)
             }
         }
     }
@@ -462,31 +458,6 @@ struct HomeStatusView: View {
         let remaining = max(0, totalSeconds - elapsed)
         
         timerManager.updateSeconds(remaining)
-    }
-    
-    // MARK: - 手动签到
-    private func performManualCheckIn() {
-        print("✍️ 手动签到...")
-        
-        Task {
-            await statusManager.checkIn()
-            
-            await MainActor.run {
-                withAnimation(.spring()) {
-                    showCheckInAnimation = true
-                }
-                
-                // 重置动画
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation(.spring()) {
-                        showCheckInAnimation = false
-                    }
-                }
-                
-                // 重新加载签到状态
-                loadCheckInStatus()
-            }
-        }
     }
 }
 
