@@ -325,12 +325,9 @@ struct LoginView: View {
                 hideKeyboard()
             }
         }
-        .background(
-            NavigationLink(
-                destination: RegisterView(isPresented: $isRegistering),
-                isActive: $isRegistering
-            ) { EmptyView() }
-        )
+        .fullScreenCover(isPresented: $isRegistering) {
+            RegisterView(isPresented: $isRegistering)
+        }
         .sheet(isPresented: $showingResetPassword) {
             ResetPasswordView(isPresented: $showingResetPassword)
         }
