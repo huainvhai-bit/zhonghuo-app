@@ -280,40 +280,18 @@ struct InviteCodeView: View {
         }
         
         do {
-            // 使用 GraphQL getInviteCode mutation
-            let query = """
-            mutation {
-                getInviteCode {
-                    success
-                    message
-                    data { inviteCode qrUrl }
-                }
-            }
-            """
+            // ✅ 修复：使用 DataManager 统一函数
+            let (code, url) = try await DataManager.shared.getInviteCode()
             
-            let result = try await GraphQLClient.shared.query(query)
-            print("📡 GraphQL 邀请码响应：\(result)")
-            
-            if let data = result["data"] as? [String: Any],
-               let inviteResult = data["getInviteCode"] as? [String: Any] {
-                let success = inviteResult["success"] as? Bool ?? false
-                if success {
-                    if let resultData = inviteResult["data"] as? [String: Any] {
-                        inviteCode = resultData["inviteCode"] as? String ?? ""
-                        qrURL = resultData["qrUrl"] as? String ?? ""
-                        print("✅ 邀请码加载成功：\(inviteCode)")
-                    }
-                } else {
-                    errorMessage = inviteResult["message"] as? String ?? "生成失败"
-                    print("❌ 邀请码生成失败：\(errorMessage)")
-                }
-            }
+            inviteCode = code
+            qrURL = url
+            print("✅ 邀请码加载成功：\(inviteCode)")
+            isLoading = false
         } catch {
             errorMessage = error.localizedDescription
+            isLoading = false
             print("❌ 邀请码加载异常：\(error)")
         }
-        
-        isLoading = false
     }
     
     private func generateQRCode(from string: String) -> UIImage? {

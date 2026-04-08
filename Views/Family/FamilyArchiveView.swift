@@ -185,38 +185,23 @@ struct FamilyArchiveView: View {
             defer { isLoading = false }
             
             do {
-                // 调用 GraphQL 查询家族档案
-                let query = """
-                query {
-                    getFamilyArchives {
-                        id
-                        archiveName
-                        description
-                        isPublic
-                        createdAt
-                        updatedAt
-                    }
-                }
-                """
+                // ✅ 修复：使用 DataManager 统一函数
+                let archivesData = try await DataManager.shared.fetchFamilyArchives()
+                print("📡 家庭档案响应：\(archivesData)")
                 
-                let result = try await GraphQLClient.shared.query(query)
-                print("📡 GraphQL 家庭档案响应：\(result)")
-                
-                if let archivesData = result["getFamilyArchives"] as? [[String: Any]] {
-                    archives = archivesData.compactMap { data -> FamilyArchive? in
-                        guard let id = data["id"] as? String,
-                              let archiveName = data["archiveName"] as? String else {
-                            return nil
-                        }
-                        return FamilyArchive(
-                            id: id,
-                            userId: UserManager.shared.currentUser?.id ?? "",
-                            archiveName: archiveName,
-                            description: data["description"] as? String ?? "",
-                            isPublic: data["isPublic"] as? Bool ?? false,
-                            members: [] // 成员列表需要单独查询
-                        )
+                archives = archivesData.compactMap { data -> FamilyArchive? in
+                    guard let id = data["id"] as? String,
+                          let archiveName = data["archiveName"] as? String else {
+                        return nil
                     }
+                    return FamilyArchive(
+                        id: id,
+                        userId: UserManager.shared.currentUser?.id ?? "",
+                        archiveName: archiveName,
+                        description: data["description"] as? String ?? "",
+                        isPublic: data["isPublic"] as? Bool ?? false,
+                        members: [] // 成员列表需要单独查询
+                    )
                 }
             } catch {
                 print("❌ 获取家庭档案失败：\(error)")
@@ -386,27 +371,14 @@ struct CreateArchiveView: View {
         
         Task {
             do {
-                // 调用 GraphQL 创建家族档案
-                let mutation = """
-                mutation($archiveName: String!, $description: String, $isPublic: Boolean) {
-                    createFamilyArchive(archiveName: $archiveName, description: $description, isPublic: $isPublic) {
-                        id
-                        success
-                    }
-                }
-                """
+                // ✅ 修复：使用 DataManager 统一函数
+                let success = try await DataManager.shared.createFamilyArchive(
+                    archiveName: archiveName,
+                    description: description,
+                    isPublic: isPublic
+                )
                 
-                let variables: [String: Any] = [
-                    "archiveName": archiveName,
-                    "description": description,
-                    "isPublic": isPublic
-                ]
-                
-                let result = try await GraphQLClient.shared.query(mutation, variables: variables)
-                print("📡 GraphQL 创建家庭档案响应：\(result)")
-                
-                if let success = result["createFamilyArchive"] as? [String: Any],
-                   success["success"] as? Bool == true {
+                if success {
                     print("✅ 家庭档案创建成功")
                     presentationMode.wrappedValue.dismiss()
                     loadArchives() // 刷新列表
