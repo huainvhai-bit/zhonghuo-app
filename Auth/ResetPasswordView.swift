@@ -137,7 +137,8 @@ struct ResetPasswordView: View {
               let resetData = data["resetPassword"] as? [String: Any],
               let success = resetData["success"] as? Bool,
               success else {
-            throw NSError(domain: "重置密码失败", code: -1)
+            print("❌ 重置密码失败")
+            return
         }
         
         print("✅ 密码重置成功")
@@ -224,7 +225,7 @@ struct ResetPasswordView: View {
                         .textFieldStyle(CustomTextFieldStyle())
                         .font(.system(size: 18, weight: .medium))
                     
-                    Button(action: resetPassword) {
+                    Button(action: { Task { await resetPassword() } }) {
                         Text("重置密码")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)

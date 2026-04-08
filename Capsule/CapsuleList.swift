@@ -51,30 +51,33 @@ struct CapsuleList: View {
                 }
                 
                 Spacer()
+                
+                Text("\(dataManager.capsules.count)")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
             }
             
             HStack(spacing: 12) {
                 StatItem(icon: "capsule.fill", value: "\(dataManager.capsules.count)", label: "全部", color: .white)
                 StatItem(icon: "clock.fill", value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", color: .white)
                 StatItem(icon: "checkmark.circle.fill", value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", color: .white)
-                StatItem(icon: "link.circle.fill", value: "\(dataManager.capsules.filter { $0.privacy == .private }.count)", label: "私密", color: .white)
             }
         }
         .padding(20)
         .background(
             LinearGradient(
-                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "4F46E5")]),
+                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.3), radius: 8, x: 0, y: 4)
     }
     
     private var filterButtons: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Button(action: { selectedFilter = nil }) {
                     Text("全部")
                         .foregroundColor(selectedFilter == nil ? .white : Color(hex: "6366F1"))
@@ -84,9 +87,9 @@ struct CapsuleList: View {
                         .cornerRadius(20)
                 }
                 
-                ForEach(TimeCapsule.CapsuleType.allCases, id: \.self) { type in
+                ForEach([TimeCapsule.CapsuleType.text, .video, .audio], id: \.self) { type in
                     Button(action: { selectedFilter = type }) {
-                        Text(type.displayName)
+                        Text(type.rawValue)
                             .foregroundColor(selectedFilter == type ? .white : Color(hex: "6366F1"))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
@@ -102,7 +105,9 @@ struct CapsuleList: View {
         List {
             Section {
                 ForEach(filteredCapsules) { capsule in
-                    CapsuleRow(capsule: capsule)
+                    NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
+                        CapsuleRow(capsule: capsule)
+                    }
                 }
                 .onDelete(perform: deleteCapsules)
             }
@@ -112,103 +117,36 @@ struct CapsuleList: View {
     
     private var emptyState: some View {
         VStack(spacing: 24) {
-            Image(systemName: "hourglass")
-                .font(.system(size: 64))
-                .foregroundColor(.gray)
+            Image(systemName: "capsule")
+                .font(.system(size: 48))
+                .foregroundColor(Color(hex: "6366F1").opacity(0.5))
             
-            VStack(spacing: 8) {
-                Text("暂无胶囊")
-                    .font(.headline)
-                Text("请点击 + 号创建第一个时光胶囊")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text("还没有时光胶囊")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.secondary)
             
-            Button(action: {}) {
+            Text("点击右上角 ➕ 创建第一个胶囊")
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+            
+            NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
                 Text("创建胶囊")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 24)
                     .padding(.vertical, 12)
                     .background(Color(hex: "6366F1"))
                     .cornerRadius(12)
             }
         }
+        .padding(.vertical, 40)
     }
     
     private func deleteCapsules(at offsets: IndexSet) {
-        let capsulesToDelete = filteredCapsules
-            .safeSubset(offsets)
-            .map { $0.id }
-        
-        for capsuleId in capsulesToDelete {
-            dataManager.deleteCapsule(capsuleId: capsuleId)
+        for index in offsets {
+            let capsule = filteredCapsules[index]
+            dataManager.capsules.removeAll { $0.id == capsule.id }
         }
-    }
-}
-
-// MARK: - 胶囊行
-struct CapsuleRow: View {
-    let capsule: TimeCapsule
-    @State private var showingDeleteConfirm = false
-    @State private var onEdit: () -> Void = {}
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: capsule.type.icon)
-                        .foregroundColor(.secondary)
-                    Text(capsule.title)
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                
-                Text(formatSendDate(capsule.sendDate))
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            HStack(spacing: 8) {
-                if capsule.privacy == .private {
-                    Image(systemName: "lock.fill")
-                        .foregroundColor(.orange)
-                }
-                
-                if !capsule.isSent {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(.orange)
-                }
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onEdit()
-        }
-        .alert("删除胶囊", isPresented: $showingDeleteConfirm) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive, action: onDelete)
-        } message: {
-            Text("确定要删除\"\(capsule.title)\"吗？此操作无法撤销。")
-        }
-    }
-    
-    private func onDelete() {
-        // 处理删除
-        dataManager.deleteCapsule(capsuleId: capsule.id)
-    }
-    
-    private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
-        return formatter.string(from: date)
     }
 }
 
@@ -220,22 +158,86 @@ struct StatItem: View {
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.system(size: 16))
                 .foregroundColor(color)
             
             Text(value)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(color)
             
             Text(label)
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundColor(color.opacity(0.8))
         }
     }
 }
 
+// MARK: - 胶囊行
+struct CapsuleRow: View {
+    let capsule: TimeCapsule
+    @State private var showingDeleteConfirm = false
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: capsule.type.icon)
+                        .foregroundColor(.secondary)
+                    Text(capsule.title)
+                        .font(.system(size: 16, weight: .semibold))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        if !capsule.isSent {
+                            Image(systemName: "lock.fill")
+                                .foregroundColor(.orange)
+                        }
+                        
+                        if capsule.isSent {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
+                
+                Text(capsule.content)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                
+                HStack {
+                    Text(formatSendDate(capsule.sendDate))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    Text(capsule.type.rawValue)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(hex: "6366F1"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "6366F1").opacity(0.1))
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+    }
+    
+    private func formatSendDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
+        return formatter.string(from: date)
+    }
+}
+
 #Preview {
-    CapsuleList(dataManager: DataManager.shared)
+    NavigationView {
+        CapsuleList(dataManager: DataManager.shared)
+    }
 }

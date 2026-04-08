@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		3310C2C82F6D87CC0036FB58 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */; };
 		334C2F04C944C07197FE8DE5 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F297D03473770EF79D0 /* KeychainManager.swift */; };
-		3366C40A2F66D49800129FF3 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C4092F66D49800129FF3 /* AuthView.swift */; };
 		3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40B2F66D4C000129FF3 /* UserManager.swift */; };
 		3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */; };
 		33B4F2162F742F1700D5E4FA /* CloudStorageStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B4F2152F742F1700D5E4FA /* CloudStorageStatusView.swift */; };
@@ -23,7 +22,6 @@
 		A1000001 /* ZhonghuoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ZhonghuoApp.swift */; };
 		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
 		A1000003 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* HomeStatusView.swift */; };
-		A1000004 /* TimeCapsuleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* TimeCapsuleView.swift */; };
 		A1000005 /* WillAssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* WillAssetsView.swift */; };
 		A1000007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* SettingsView.swift */; };
 		A1000009 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* Colors.swift */; };
@@ -51,6 +49,20 @@
 		D5AD1F30 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F300 /* AppError.swift */; };
 		D5AD1F31 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F310 /* Logger.swift */; };
 		D5AD1F32 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F320 /* NetworkService.swift */; };
+		B1000001 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* LoginView.swift */; };
+		B1000002 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* RegisterView.swift */; };
+		B1000003 /* ResetPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* ResetPasswordView.swift */; };
+		B1000004 /* CapsuleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* CapsuleEditView.swift */; };
+		B1000005 /* CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* CapsuleList.swift */; };
+		B1000006 /* AVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* AVPlayerView.swift */; };
+		B1000007 /* AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* AboutSettingsView.swift */; };
+		B1000008 /* EmergencyContactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* EmergencyContactSettingsView.swift */; };
+		B1000009 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* NotificationSettingsView.swift */; };
+		B1000010 /* PrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* PrivacySettingsView.swift */; };
+		B1000011 /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* ProfileSettingsView.swift */; };
+		B1000012 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* ConfigManager.swift */; };
+		B1000013 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000013 /* APIClient.swift */; };
+		B1000014 /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000014 /* TokenManager.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -68,22 +80,20 @@
 
 /* Begin PBXFileReference section */
 		3310C2C72F6D87CB0036FB58 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
-		3366C4092F66D49800129FF3 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		3366C40B2F66D4C000129FF3 /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillModuleEdit.swift; sourceTree = "<group>"; };
 		33B4F2152F742F1700D5E4FA /* CloudStorageStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageStatusView.swift; sourceTree = "<group>"; };
 		33DE7DDC2F6D493700F8677E /* BindFamilyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BindFamilyView.swift; sourceTree = "<group>"; };
 		33DE7DDD2F6D493700F8677E /* DeviceMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceMonitor.swift; sourceTree = "<group>"; };
-		33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyGuardView.swift; sourceTree = "<group>"; };
+		33DE7DDE2F6D493700F8677E /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Family/FamilyGuardView.swift; sourceTree = "<group>"; };
 		33DE7DDF2F6D493700F8677E /* FamilyMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMember.swift; sourceTree = "<group>"; };
 		33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyMemberDetailView.swift; sourceTree = "<group>"; };
 		33DE7DE12F6D493700F8677E /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		A2000001 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuoApp.swift; sourceTree = SOURCE_ROOT; };
 		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = SOURCE_ROOT; };
-		A2000003 /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
-		A2000004 /* TimeCapsuleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeCapsuleView.swift; sourceTree = SOURCE_ROOT; };
+		A2000003 /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home/HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
 		A2000005 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = SOURCE_ROOT; };
-		A2000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = SOURCE_ROOT; };
+		A2000007 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/SettingsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000009 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = SOURCE_ROOT; };
 		A200000A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = SOURCE_ROOT; };
 		A200000B /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = SOURCE_ROOT; };
@@ -111,6 +121,20 @@
 		D5AD1F300 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F310 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F320 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = SOURCE_ROOT; };
+		B2000001 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/LoginView.swift; sourceTree = SOURCE_ROOT; };
+		B2000002 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/RegisterView.swift; sourceTree = SOURCE_ROOT; };
+		B2000003 /* ResetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Auth/ResetPasswordView.swift; sourceTree = SOURCE_ROOT; };
+		B2000004 /* CapsuleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleEditView.swift; sourceTree = SOURCE_ROOT; };
+		B2000005 /* CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/CapsuleList.swift; sourceTree = SOURCE_ROOT; };
+		B2000006 /* AVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Capsule/AVPlayerView.swift; sourceTree = SOURCE_ROOT; };
+		B2000007 /* AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/AboutSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000008 /* EmergencyContactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/EmergencyContactSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000009 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/NotificationSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000010 /* PrivacySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/PrivacySettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000011 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings/ProfileSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		B2000012 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ConfigManager.swift; sourceTree = SOURCE_ROOT; };
+		B2000013 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/APIClient.swift; sourceTree = SOURCE_ROOT; };
+		B2000014 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/TokenManager.swift; sourceTree = SOURCE_ROOT; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,14 +168,12 @@
 				33DE7DDF2F6D493700F8677E /* FamilyMember.swift */,
 				33DE7DE02F6D493700F8677E /* FamilyMemberDetailView.swift */,
 				33DE7DE12F6D493700F8677E /* InviteCodeView.swift */,
-				3366C4092F66D49800129FF3 /* AuthView.swift */,
 				3366C40B2F66D4C000129FF3 /* UserManager.swift */,
 				3366C40D2F66D4D500129FF3 /* WillModuleEdit.swift */,
 				A2000001 /* ZhonghuoApp.swift */,
 				A2000002 /* ContentView.swift */,
 				A2000003 /* HomeStatusView.swift */,
 				A2000025 /* MessageManager.swift */,
-				A2000004 /* TimeCapsuleView.swift */,
 				A2000005 /* WillAssetsView.swift */,
 				A2000007 /* SettingsView.swift */,
 				A2000009 /* Colors.swift */,
@@ -178,6 +200,20 @@
 				A2000041 /* DebugConfig.swift */,
 				D5AD1F297D03473770EF79D0 /* KeychainManager.swift */,
 				33DE7DDB2F6D480800F8677E /* Recovered References */,
+				B2000001 /* LoginView.swift */,
+				B2000002 /* RegisterView.swift */,
+				B2000003 /* ResetPasswordView.swift */,
+				B2000004 /* CapsuleEditView.swift */,
+				B2000005 /* CapsuleList.swift */,
+				B2000006 /* AVPlayerView.swift */,
+				B2000007 /* AboutSettingsView.swift */,
+				B2000008 /* EmergencyContactSettingsView.swift */,
+				B2000009 /* NotificationSettingsView.swift */,
+				B2000010 /* PrivacySettingsView.swift */,
+				B2000011 /* ProfileSettingsView.swift */,
+				B2000012 /* ConfigManager.swift */,
+				B2000013 /* APIClient.swift */,
+				B2000014 /* TokenManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -259,11 +295,9 @@
 				A1000002 /* ContentView.swift in Sources */,
 				A1000003 /* HomeStatusView.swift in Sources */,
 				A1000025 /* MessageManager.swift in Sources */,
-				A1000004 /* TimeCapsuleView.swift in Sources */,
 				A1000005 /* WillAssetsView.swift in Sources */,
 				3366C40E2F66D4D500129FF3 /* WillModuleEdit.swift in Sources */,
 				3366C40C2F66D4C000129FF3 /* UserManager.swift in Sources */,
-				3366C40A2F66D49800129FF3 /* AuthView.swift in Sources */,
 				A1000007 /* SettingsView.swift in Sources */,
 				A1000009 /* Colors.swift in Sources */,
 				A100000A /* Models.swift in Sources */,
@@ -297,6 +331,20 @@
 				D5AD1F30 /* AppError.swift in Sources */,
 				D5AD1F31 /* Logger.swift in Sources */,
 				D5AD1F32 /* NetworkService.swift in Sources */,
+				B1000001 /* LoginView.swift in Sources */,
+				B1000002 /* RegisterView.swift in Sources */,
+				B1000003 /* ResetPasswordView.swift in Sources */,
+				B1000004 /* CapsuleEditView.swift in Sources */,
+				B1000005 /* CapsuleList.swift in Sources */,
+				B1000006 /* AVPlayerView.swift in Sources */,
+				B1000007 /* AboutSettingsView.swift in Sources */,
+				B1000008 /* EmergencyContactSettingsView.swift in Sources */,
+				B1000009 /* NotificationSettingsView.swift in Sources */,
+				B1000010 /* PrivacySettingsView.swift in Sources */,
+				B1000011 /* ProfileSettingsView.swift in Sources */,
+				B1000012 /* ConfigManager.swift in Sources */,
+				B1000013 /* APIClient.swift in Sources */,
+				B1000014 /* TokenManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

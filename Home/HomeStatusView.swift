@@ -54,7 +54,7 @@ struct HomeStatusView: View {
                 }
                 .opacity(0)
                 
-                NavigationLink(destination: TimeCapsuleView(), isActive: $navigateToTimeCapsule) {
+                NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) {
                     EmptyView()
                 }
                 .opacity(0)
@@ -70,7 +70,7 @@ struct HomeStatusView: View {
             .onAppear {
                 setupNavigationBar()
             }
-            .onChange(of: scenePhase) { _, newPhase in
+            .onChange(of: scenePhase) { newPhase in
                 if newPhase == .active {
                     timerManager.start {
                         // 定时器回调
@@ -98,7 +98,7 @@ struct HomeStatusView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
-                Button(action: showCheckInAnimation) {
+                Button(action: { /* TODO: 签到动画 */ }) {
                     Circle()
                         .fill(checkInColor)
                         .frame(width: 80, height: 80)
@@ -283,7 +283,7 @@ struct HomeStatusView: View {
     
     private func formatCountdown(_ seconds: Double) -> String {
         let hours = Int(seconds / 3600)
-        let minutes = Int((seconds % 3600) / 60)
+        let minutes = Int((Int(seconds) % 3600) / 60)
         
         if hours > 0 {
             return "\(hours)时\(minutes)分"

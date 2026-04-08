@@ -93,7 +93,7 @@ struct CapsuleEditView: View {
                 }
             }
             .sheet(isPresented: $showingRecorder) {
-                MediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
+                CapsuleMediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
                     if selectedType == .audio {
                         recordedAudioURL = url
                     } else {
@@ -113,7 +113,7 @@ struct CapsuleEditView: View {
             type: selectedType,
             sendDate: sendDate,
             isSent: false,
-            privacy: .private
+            createdAt: Date()
         )
         
         dataManager.addCapsule(capsule)
@@ -148,7 +148,7 @@ struct CapsuleEditView: View {
 }
 
 // MARK: - 媒体录制视图
-struct MediaRecorderView: View {
+struct CapsuleMediaRecorderView: View {
     let selectedType: TimeCapsule.CapsuleType
     @Environment(\.dismiss) var dismiss
     @StateObject var recorder = MediaRecorder()
@@ -201,7 +201,7 @@ struct MediaRecorderView: View {
                     Button("取消") { dismiss() }
                 }
             }
-            .onChange(of: recorder.recordingURL) { _, newURL in
+            .onChange(of: recorder.recordingURL) { newURL in
                 if let url = newURL {
                     onRecordComplete(url)
                 }
@@ -274,19 +274,17 @@ struct PreviewButton: View {
 
 // MARK: - AVPlayerViewController
 class AVPlayerViewController: UIViewController {
-    var player: AVPlayer? {
-        get { playerView.player }
-        set { playerView.player = newValue }
-    }
-    
-    let playerView = AVPlayerView(player: AVPlayer())
+    var player: AVPlayer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        playerView.frame = view.bounds
-        playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(playerView)
+        if let player = player {
+            let playerLayer = AVPlayerLayer(player: player)
+            playerLayer.videoGravity = .resizeAspect
+            playerLayer.frame = view.bounds
+            view.layer.addSublayer(playerLayer)
+        }
     }
 }
 

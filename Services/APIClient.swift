@@ -102,7 +102,7 @@ class APIClient {
     
     /// 获取服务器配置
     func fetchServerConfig(from baseURL: String) async throws -> [String: Any] {
-        let query = """
+        let configQuery = """
         query {
             getConfig {
                 checkinIntervalHours
@@ -113,6 +113,6 @@ class APIClient {
         }
         """
         
-        return try await query(query)
+        return try await query(configQuery)
     }
 }

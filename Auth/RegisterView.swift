@@ -8,6 +8,15 @@
 
 import SwiftUI
 
+struct CustomTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+    }
+}
+
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
@@ -148,7 +157,8 @@ struct RegisterView: View {
               let registerData = data["register"] as? [String: Any],
               let success = registerData["success"] as? Bool,
               success else {
-            throw NSError(domain: "注册失败", code: -1)
+            print("❌ 注册失败")
+            return
         }
         
         print("✅ 注册成功")
@@ -252,7 +262,11 @@ struct RegisterView: View {
                         .textFieldStyle(CustomTextFieldStyle())
                         .font(.system(size: 18, weight: .medium))
                     
-                    Button(action: register) {
+                    Button(action: {
+                        Task {
+                            await register()
+                        }
+                    }) {
                         Text("立即注册")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)

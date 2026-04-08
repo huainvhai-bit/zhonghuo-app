@@ -35,7 +35,7 @@ struct ContentView: View {
                     LoadingView()
                 } else if forceLogout || !userManager.isLoggedIn || userManager.currentUser == nil {
                     // 🔴 增加 currentUser 检查，确保用户数据也存在
-                    AuthView()
+                    LoginView()
                 } else {
                     mainTabView
                 }
@@ -360,7 +360,7 @@ struct ContentView: View {
             .tag(0)
             
             NavigationView {
-                TimeCapsuleView()
+                CapsuleList(dataManager: dataManager)
                     .navigationBarHidden(true)
             }
             .tabItem {

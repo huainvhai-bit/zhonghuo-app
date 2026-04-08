@@ -158,7 +158,8 @@ struct LoginView: View {
               let loginData = data["login"] as? [String: Any],
               let success = loginData["success"] as? Bool,
               success else {
-            throw NSError(domain: "登录失败", code: -1)
+            print("❌ 登录失败")
+            return
         }
         
         print("✅ 登录成功")
@@ -250,7 +251,15 @@ struct LoginView: View {
                         }
                     }
                     
-                    Button(action: loginType == "password" ? loginWithPassword : loginWithCode) {
+                    Button(action: {
+                        Task {
+                            if loginType == "password" {
+                                await loginWithPassword()
+                            } else {
+                                await loginWithCode()
+                            }
+                        }
+                    }) {
                         Text("登录")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)

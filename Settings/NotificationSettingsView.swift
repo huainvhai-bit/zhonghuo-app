@@ -18,7 +18,12 @@ struct NotificationSettingsView: View {
         NavigationView {
             Form {
                 Section(header: Text("通知设置")) {
-                    Toggle(isOn: $userManager.currentUser?.notificationsEnabled ?? true) {
+                    Toggle(isOn: Binding(
+                        get: { userManager.currentUser?.notificationsEnabled ?? true },
+                        set: { newValue in
+                            userManager.currentUser?.notificationsEnabled = newValue
+                        }
+                    )) {
                         Text("通知开关")
                     }
                     
@@ -33,7 +38,10 @@ struct NotificationSettingsView: View {
                 }
                 
                 Section(header: Text("提醒设置")) {
-                    Toggle(isOn: $configManager.systemConfig.checkinReminderThresholdHours > 0) {
+                    Toggle(isOn: Binding(
+                        get: { configManager.systemConfig.checkinReminderThresholdHours > 0 },
+                        set: { _ in }
+                    )) {
                         Text("提前提醒")
                     }
                     
@@ -48,10 +56,11 @@ struct NotificationSettingsView: View {
                 }
                 
                 Section(header: Text("静默模式")) {
-                    Toggle(isWithLabel: true) {
+                    Toggle(isOn: Binding(
+                        get: { false },
+                        set: { _ in }
+                    )) {
                         Text("静默模式")
-                    } label: {
-                        Text("关闭所有通知推送")
                     }
                 }
             }

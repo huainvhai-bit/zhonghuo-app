@@ -11,7 +11,7 @@ import Foundation
 /// 服务器配置管理器
 /// 职责：动态获取服务器地址、解析系统配置
 @MainActor
-class ConfigManager {
+class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
     
     private let apiClient = APIClient.shared
