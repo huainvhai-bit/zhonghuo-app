@@ -85,8 +85,8 @@ struct LoginView: View {
         
         do {
             let mutation = """
-            mutation($phone: String!, $verifyCode: String!) {
-                login(phone: $phone, verifyCode: $verifyCode) {
+            mutation($phone: String!, $code: String!) {
+                verifyCodeLogin(phone: $phone, code: $code) {
                     success
                     token
                     user {
@@ -100,7 +100,7 @@ struct LoginView: View {
             
             let variables: [String: Any] = [
                 "phone": phone,
-                "verifyCode": verifyCode
+                "code": verifyCode
             ]
             
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -367,8 +367,34 @@ struct LoginView: View {
     }
     
     private func sendVerifyCode() async {
-        // TODO: 实现发送验证码逻辑
-        print("📤 发送验证码到 \(phone)")
+        do {
+            let mutation = """
+            mutation($phone: String!) {
+                sendLoginCode(phone: $phone) {
+                    success
+                    code
+                    message
+                }
+            }
+            """
+            
+            let variables: [String: Any] = ["phone": phone]
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
+            
+            if let data = response["data"] as? [String: Any],
+               let result = data["sendLoginCode"] as? [String: Any],
+               let success = result["success"] as? Bool, success {
+                let devCode = result["code"] as? String ?? ""
+                print("✅ 验证码发送成功：\(devCode.isEmpty ? "已发送" : "开发者模式验证码：\(devCode)")")
+                
+                // 开发者模式自动填充验证码
+                if !devCode.isEmpty {
+                    verifyCode = devCode
+                }
+            }
+        } catch {
+            handleAuthError(error, context: "发送验证码")
+        }
     }
 }
 
