@@ -73,8 +73,8 @@ class DataManager: ObservableObject {
         query {
             getConfig {
                 checkinIntervalHours
-                notificationReminderThresholdHours
-                notificationPushIntervalHours
+                checkinReminderThresholdHours
+                checkinReminderIntervalHours
                 smsIsDevelopment
             }
         }
@@ -89,16 +89,17 @@ class DataManager: ObservableObject {
         }
         
         await MainActor.run {
-            // 解析配置
+            // ✅ 修复：解析配置使用正确的字段名（匹配后端返回）
             let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
-            let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
-            let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+            let reminderThreshold = configData["checkinReminderThresholdHours"] as? Int ?? 12
+            let reminderInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
             let smsDev = configData["smsIsDevelopment"] as? Int ?? 1
             
             self.systemConfig = SystemConfig(
-                checkinReminderThresholdHours: Double(reminderHours),
-                checkinReminderIntervalHours: Double(pushInterval),
-                minimumEmergencyContacts: 2
+                checkinReminderThresholdHours: Double(reminderThreshold),
+                checkinReminderIntervalHours: Double(reminderInterval),
+                minimumEmergencyContacts: 2,
+                checkinIntervalHours: Double(checkinHours)
             )
             
             // 保存签到间隔到 UserSettings
@@ -118,8 +119,8 @@ class DataManager: ObservableObject {
                 print("✅ 后端配置获取成功（GraphQL）")
                 print("   Base URL: \(DataManager.baseURL)")
                 print("   签到间隔：\(checkinHours) 小时")
-                print("   提醒阈值：\(reminderHours) 小时")
-                print("   推送间隔：\(pushInterval) 小时")
+                print("   提醒阈值：\(reminderThreshold) 小时")
+                print("   推送间隔：\(reminderInterval) 小时")
                 print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
             }
         }
