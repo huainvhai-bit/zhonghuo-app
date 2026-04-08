@@ -205,18 +205,7 @@ struct ValidateResponse: Codable {
     let message: String?
 }
 
-struct UserInfoResponse: Codable {
-    let status: String
-    let data: UserInfoData?
-    let message: String?
-}
-
-struct UserInfoData: Codable {
-    let id: String
-    let name: String
-    let phone: String
-    let avatar: String?
-}
+// UserInfoResponse 和 UserInfoData 定义已移至 AccountValidator.swift
 
 // MARK: - RealTimeSyncManager
 @MainActor

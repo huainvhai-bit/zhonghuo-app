@@ -173,17 +173,7 @@ struct CapsuleInfo: Codable, Identifiable {
 }
 
 /// 遗嘱信息（与后端同步）
-struct WillInfo: Codable, Identifiable {
-    let id: String
-    let type: String  // full, digital, oral
-    let title: String
-    let content: String?
-    let createdAt: Date
-}
-
-/// 家庭成员信息
-struct FamilyInfo: Codable, Identifiable {
-    let id: String
+// WillInfo 和 FamilyInfo 定义已移至 Models.swift
     let relationType: String
     let relatedUserId: String
     let relatedUserName: String?
