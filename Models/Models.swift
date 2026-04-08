@@ -178,6 +178,7 @@ struct WillModule: Identifiable, Codable {
     var content: String
     var isCompleted: Bool
     var template: String?
+    var deletedAt: Date? = nil  // 删除标记
     
     // 🔥 云存储状态
     var cloudBackupStatus: TimeCapsule.CloudBackupStatus = .pending
@@ -834,6 +835,9 @@ class APIManager {
             if let openAt = c.openAt {
                 dict["openAt"] = openAt
             }
+            if let deletedAt = c.deletedAt {
+                dict["deletedAt"] = deletedAt
+            }
             return dict
         }
         
@@ -917,6 +921,12 @@ class APIManager {
             ]
             if let content = w.content {
                 dict["content"] = content
+            }
+            if let subtitle = w.subtitle {
+                dict["subtitle"] = subtitle
+            }
+            if let deletedAt = w.deletedAt {
+                dict["deletedAt"] = deletedAt
             }
             return dict
         }
@@ -1164,6 +1174,7 @@ struct CapsuleInput {
     let mediaType: String?  // 媒体类型：text/audio/video
     let content: String?
     let openAt: String?
+    let deletedAt: String?  // 删除标记（ISO8601 格式）
 }
 
 struct WillInput {
@@ -1172,6 +1183,7 @@ struct WillInput {
     let title: String
     let subtitle: String?  // 副标题
     let content: String?
+    let deletedAt: String?  // 删除标记
 }
 
 /// 🔧 紧急联系人 API 输入

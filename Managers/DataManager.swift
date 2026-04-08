@@ -996,13 +996,31 @@ class DataManager: ObservableObject {
         }
         
         let inputs = capsules.map { capsule in
-            CapsuleInput(
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            
+            var input: [String: Any] = [
+                "id": capsule.id,
+                "title": capsule.title,
+                "type": capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
+                "mediaType": capsule.type.rawValue == "文字" ? "text" : (capsule.type.rawValue == "语音" ? "audio" : "video"),
+                "content": capsule.content,
+                "openAt": formatter.string(from: capsule.sendDate)
+            ]
+            
+            // ✅ 添加删除标记
+            if let deletedAt = capsule.deletedAt {
+                input["deletedAt"] = formatter.string(from: deletedAt)
+            }
+            
+            return CapsuleInput(
                 id: capsule.id,
                 title: capsule.title,
-                type: capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
-                mediaType: capsule.type.rawValue == "文字" ? "text" : (capsule.type.rawValue == "语音" ? "audio" : "video"),
+                type: input["type"] as! String,
+                mediaType: input["mediaType"] as? String,
                 content: capsule.content,
-                openAt: formatter.string(from: capsule.sendDate)
+                openAt: input["openAt"] as? String,
+                deletedAt: input["deletedAt"] as? String
             )
         }
         
@@ -1037,8 +1055,18 @@ class DataManager: ObservableObject {
         print("📜 开始同步遗嘱：共 \(willModules.count) 个")
         guard !willModules.isEmpty else { return (0, 0, 0) }
         
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
         let inputs = willModules.map { will in
-            WillInput(id: will.id, type: will.type.rawValue, title: will.title, subtitle: will.subtitle, content: will.content)
+            WillInput(
+                id: will.id,
+                type: will.type.rawValue,
+                title: will.title,
+                subtitle: will.subtitle,
+                content: will.content,
+                deletedAt: will.deletedAt != nil ? formatter.string(from: will.deletedAt!) : nil
+            )
         }
         
         do {
