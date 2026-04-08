@@ -30,13 +30,26 @@ class NetworkUtils {
     /// - Parameter baseURL: 服务器地址（可以不带协议）
     /// - Returns: 带有正确协议的完整 URL
     static func normalizeBaseURL(_ baseURL: String) -> String {
+        let cleanURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 如果是本地开发 IP（8.136.41.211），强制使用 HTTP
+        if cleanURL.contains("8.136.41.211") || cleanURL.contains("127.0.0.1") || cleanURL.contains("localhost") {
+            if cleanURL.hasPrefix("https://") {
+                return cleanURL.replacingOccurrences(of: "https://", with: "http://")
+            }
+            if !cleanURL.hasPrefix("http://") {
+                return "http://\(cleanURL)"
+            }
+            return cleanURL
+        }
+        
         // 如果已经包含协议，直接返回
-        if baseURL.hasPrefix("http://") || baseURL.hasPrefix("https://") {
-            return baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleanURL.hasPrefix("http://") || cleanURL.hasPrefix("https://") {
+            return cleanURL
         }
         
         // 默认使用 HTTP（适配本地开发环境）
-        return "http://\(baseURL.trimmingCharacters(in: .whitespacesAndNewlines))"
+        return "http://\(cleanURL)"
     }
     
     /// 智能检测服务器协议
