@@ -1304,6 +1304,80 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
+    /// 从云端恢复数据到本地（会覆盖本地数据）
+    @MainActor
+    func restoreFromCloud() async throws {
+        print("☁️ ====== 开始从云端恢复数据 ======")
+        
+        // 1. 下载服务器数据
+        let serverData = try await downloadUserData(type: "all")
+        
+        // 2. 解析胶囊数据
+        if let capsulesData = serverData["capsules"] as? [[String: Any]] {
+            capsules.removeAll()
+            for item in capsulesData {
+                do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: item)
+                    let capsule = try JSONDecoder().decode(TimeCapsule.self, from: jsonData)
+                    capsules.append(capsule)
+                } catch {
+                    print("⚠️ 解析胶囊失败：\(error)")
+                }
+            }
+            print("✅ 恢复胶囊：\(capsules.count) 个")
+        }
+        
+        // 3. 解析遗嘱数据
+        if let willsData = serverData["wills"] as? [[String: Any]] {
+            willModules.removeAll()
+            for item in willsData {
+                do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: item)
+                    let will = try JSONDecoder().decode(WillModule.self, from: jsonData)
+                    willModules.append(will)
+                } catch {
+                    print("⚠️ 解析遗嘱失败：\(error)")
+                }
+            }
+            print("✅ 恢复遗嘱：\(willModules.count) 个")
+        }
+        
+        // 4. 解析紧急联系人
+        if let contactsData = serverData["contacts"] as? [[String: Any]] {
+            emergencyContacts.removeAll()
+            for item in contactsData {
+                do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: item)
+                    let contact = try JSONDecoder().decode(User.EmergencyContact.self, from: jsonData)
+                    emergencyContacts.append(contact)
+                } catch {
+                    print("⚠️ 解析联系人失败：\(error)")
+                }
+            }
+            print("✅ 恢复紧急联系人：\(emergencyContacts.count) 个")
+        }
+        
+        // 5. 解析见证人
+        if let witnessesData = serverData["witnesses"] as? [[String: Any]] {
+            witnesses.removeAll()
+            for item in witnessesData {
+                do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: item)
+                    let witness = try JSONDecoder().decode(Witness.self, from: jsonData)
+                    witnesses.append(witness)
+                } catch {
+                    print("⚠️ 解析见证人失败：\(error)")
+                }
+            }
+            print("✅ 恢复见证人：\(witnesses.count) 个")
+        }
+        
+        print("☁️ ====== 云端恢复完成 ======")
+        
+        // 6. 通知其他视图刷新
+        NotificationCenter.default.post(name: NSNotification.Name("DataDidRestoreFromCloud"), object: nil)
+    }
+    
     /// 上传媒体文件到服务器
     /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {

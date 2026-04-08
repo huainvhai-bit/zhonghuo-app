@@ -9,6 +9,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import UIKit
 
 // SyncManager 在同一模块中，无需额外 import
 
@@ -473,6 +474,35 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    // MARK: - 设备检测（新设备登录提示恢复数据）
+    
+    /// 获取当前设备标识符
+    var currentDeviceId: String {
+        UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+    }
+    
+    /// 保存设备标识符
+    func saveCurrentDeviceId() {
+        UserDefaults.standard.set(currentDeviceId, forKey: "lastDeviceId_\(currentUser?.id ?? "unknown")")
+    }
+    
+    /// 检查是否为新设备
+    func isNewDevice() -> Bool {
+        guard let userId = currentUser?.id else { return true }
+        let savedDeviceId = UserDefaults.standard.string(forKey: "lastDeviceId_\(userId)")
+        return savedDeviceId != currentDeviceId
+    }
+    
+    /// 检查本地数据是否为空
+    @MainActor
+    func isLocalDataEmpty() -> Bool {
+        let dataManager = DataManager.shared
+        return dataManager.capsules.isEmpty && 
+               dataManager.willModules.isEmpty && 
+               dataManager.emergencyContacts.isEmpty && 
+               dataManager.witnesses.isEmpty
+    }
+    
     func login(phone: String) -> Result<User, Error> {
         guard var user = loadUserFromFile() else {
             return .failure(Error.userNotFound)
@@ -499,6 +529,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             KeychainManager.shared.saveUserPhone(user.phone)
             print("🔐 Token 已保存到 Keychain（永久登录）")
         }
+        
+        // ✅ 保存设备标识符（用于新设备检测）
+        saveCurrentDeviceId()
         
         // 触发实时同步
         Task {

@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var showPrivacy = false
     @State private var showAbout = false
     @State private var showingLogoutConfirm = false
+    @State private var showingRestoreConfirm = false
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var showingExportProgress = false
@@ -59,6 +60,13 @@ struct SettingsView: View {
                             Text("导出个人数据")
                         }
                     }
+                    Button(action: { showingRestoreConfirm = true }) {
+                        HStack {
+                            Image(systemName: "icloud.and.arrow.down")
+                            Text("从云端恢复")
+                        }
+                    }
+                    .foregroundColor(.blue)
                 }
                 
                 Section(header: Text("关于")) {
@@ -87,6 +95,14 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("确定要退出登录吗？")
+            }
+            .alert("从云端恢复", isPresented: $showingRestoreConfirm) {
+                Button("取消", role: .cancel) { }
+                Button("恢复", role: .destructive) {
+                    Task { await restoreFromCloud() }
+                }
+            } message: {
+                Text("⚠️ 云端数据将覆盖本地所有数据（胶囊、遗嘱、紧急联系人、见证人），确定要继续吗？")
             }
             .sheet(isPresented: $showProfile) {
                 ProfileSettingsView()
@@ -173,6 +189,23 @@ struct SettingsView: View {
                 showingError = true
                 showingExportProgress = false
             }
+        }
+    }
+    
+    /// 从云端恢复数据
+    @MainActor
+    private func restoreFromCloud() async {
+        print("☁️ 开始从云端恢复数据...")
+        
+        do {
+            try await DataManager.shared.restoreFromCloud()
+            print("✅ 云端恢复成功")
+            showingRestoreConfirm = false
+        } catch {
+            print("❌ 云端恢复失败：\(error)")
+            errorMessage = "恢复失败：\(error.localizedDescription)"
+            showingError = true
+            showingRestoreConfirm = false
         }
     }
 }
