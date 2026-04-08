@@ -106,18 +106,36 @@ struct CapsuleEditView: View {
     }
     
     private func saveCapsule() {
-        let capsule = TimeCapsule(
-            id: UUID().uuidString,
-            title: title,
-            content: content,
-            type: selectedType,
-            sendDate: sendDate,
-            isSent: false,
-            createdAt: Date()
-        )
-        
-        dataManager.addCapsule(capsule)
-        dismiss()
+        Task {
+            var mediaServerUrl: String? = nil
+            
+            // 📤 上传媒体文件到服务器
+            if let audioURL = recordedAudioURL {
+                mediaServerUrl = await DataManager.shared.uploadMediaToServer(audioURL, type: .audio)
+                print("📤 音频上传结果：\(mediaServerUrl ?? "失败")")
+            } else if let videoURL = recordedVideoURL {
+                mediaServerUrl = await DataManager.shared.uploadMediaToServer(videoURL, type: .video)
+                print("📤 视频上传结果：\(mediaServerUrl ?? "失败")")
+            }
+            
+            let capsule = TimeCapsule(
+                id: UUID().uuidString,
+                title: title,
+                content: content,
+                type: selectedType,
+                mediaServerURL: mediaServerUrl ?? "",
+                sendDate: sendDate,
+                isSent: false,
+                createdAt: Date()
+            )
+            
+            dataManager.addCapsule(capsule)
+            
+            // 📢 通知同步到服务器
+            NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+            
+            dismiss()
+        }
     }
     
     private func playerView(for url: URL) -> AnyView {
