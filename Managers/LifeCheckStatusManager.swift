@@ -47,7 +47,10 @@ class LifeCheckStatusManager: ObservableObject {
     }
     
     // MARK: - 签到
-    func checkIn() {
+    func checkIn() async {
+        print("✍️ 开始签到...")
+        
+        // 1. 本地签到
         lastCheckInDate = Date()
         saveLastCheckInDate()
         
@@ -60,7 +63,21 @@ class LifeCheckStatusManager: ObservableObject {
             checkInHistory.removeLast()
         }
         
+        // 2. 后端签到（GraphQL）
+        do {
+            let result = try await GraphQLClient.shared.checkIn(
+                checkInIntervalHours: config.checkInInterval,
+                location: nil // TODO: 添加当前位置
+            )
+            print("✅ 后端签到成功：\(result)")
+        } catch {
+            print("❌ 后端签到失败：\(error)")
+        }
+        
+        // 3. 更新状态
         updateStatus()
+        
+        print("✅ 签到完成")
     }
     
     // MARK: - 状态更新

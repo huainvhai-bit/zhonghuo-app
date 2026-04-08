@@ -1503,6 +1503,25 @@ extension GraphQLClient {
         return try await self.query(mutation, variables: variables)
     }
     
+    /// 签到
+    func checkIn(checkInIntervalHours: Int = 48, location: [String: Any]? = nil) async throws -> [String: Any] {
+        let mutation = """
+        mutation($checkInIntervalHours: Int, $location: JSON) {
+            checkIn(checkInIntervalHours: $checkInIntervalHours, location: $location) {
+                success
+                checkInTime
+                expireTimestamp
+            }
+        }
+        """
+        var variables: [String: Any] = [:]
+        variables["checkInIntervalHours"] = checkInIntervalHours
+        if let location = location {
+            variables["location"] = location
+        }
+        return try await self.query(mutation, variables: variables)
+    }
+    
     /// 更新签到间隔
     func updateCheckInInterval(userId: String, interval: Int) async throws -> [String: Any] {
         let mutation = """
