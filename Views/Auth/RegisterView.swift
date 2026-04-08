@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import os.log
 
 struct CustomTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
@@ -253,11 +252,6 @@ struct RegisterView: View {
                     .foregroundColor(.gray)
             }
             .padding(.top, 40)
-                
-                // 🔴 自动测试：2 秒后自动点击注册
-                Text("🔴 自动测试：2 秒后自动执行注册")
-                    .foregroundColor(.orange)
-                    .font(.system(size: 10))
             
             Spacer()
             
@@ -300,20 +294,10 @@ struct RegisterView: View {
                 
                 Button(action: {
                     print("🔴🔴🔴 立即注册按钮被点击！！！")
-                    NSLog("🔴🔴🔴 立即注册按钮被点击！！！")
-                    os_log("🔴🔴🔴 立即注册按钮被点击！！！", log: .default, type: .error)
-                    
-                    // 🔴 同步测试：直接设置错误弹窗
-                    showingError = true
-                    errorMessage = "按钮点击成功！开始注册..."
-                    
-                    // 🔴 异步执行注册
                     Task { @MainActor in
                         print("🔴 Task 开始执行")
-                        NSLog("🔴 Task 开始执行")
                         await register()
                         print("🔴 Task 执行完成")
-                        NSLog("🔴 Task 执行完成")
                     }
                 }, label: {
                     Text("立即注册")
@@ -357,18 +341,6 @@ struct RegisterView: View {
         .background(Color("BackgroundColor"))
         .navigationBarTitleDisplayMode(.inline)
         // 🔴 移除 onTapGesture 避免拦截按钮点击
-        .onAppear {
-            // 🔴 自动测试：2 秒后自动执行注册
-            print("🧪 自动测试：注册页面已加载，2 秒后将自动执行注册")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                print("🧪 自动测试：开始执行注册...")
-                Task { @MainActor in
-                    print("🧪 自动测试：Task 开始执行")
-                    await register()
-                    print("🧪 自动测试：Task 执行完成")
-                }
-            }
-        }
     }
     
     // MARK: --actions

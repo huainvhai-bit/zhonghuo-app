@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import os.log
 
 struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
@@ -308,13 +309,17 @@ struct LoginView: View {
                         .font(.system(size: 16))
                     
                     Button(action: { 
-                        print("🔵 LoginView: 点击立即注册")
+                        print("🔵🔵🔵 LoginView: 点击立即注册")
+                        NSLog("🔵🔵🔵 LoginView: 点击立即注册")
+                        os_log("🔵🔵🔵 LoginView: 点击立即注册", log: .default, type: .error)
                         isRegistering = true 
+                        print("🔵 isRegistering 已设置为：\(isRegistering)")
                     }) {
                         Text("立即注册")
                             .foregroundColor(Color(hex: "AF52DE"))
                             .font(.system(size: 16, weight: .bold))
                     }
+                    .contentShape(Rectangle())  // 🔴 确保整个区域可点击
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 60)
