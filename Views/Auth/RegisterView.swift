@@ -25,12 +25,13 @@ struct RegisterView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var verifyCode = ""
     @State private var isLoading = false
     @State private var showingError = false
     @State private var errorMessage = ""
-    @State private var countdown = 0
-    @State private var timer: Timer?
+    // ⚠️ 2026-04-08 修复：移除验证码相关状态
+    // @State private var verifyCode = ""
+    // @State private var countdown = 0
+    // @State private var timer: Timer?
     
     // MARK: - 辅助方法
     
@@ -56,17 +57,8 @@ struct RegisterView: View {
         return result
     }
     
-    /// 启动倒计时
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if countdown > 0 {
-                countdown -= 1
-            } else {
-                timer?.invalidate()
-            }
-        }
-    }
+    // ⚠️ 2026-04-08 修复：移除 startTimer 函数（不再需要验证码倒计时）
+    // private func startTimer() { ... }
     
     // MARK: - 注册逻辑
     
@@ -97,17 +89,19 @@ struct RegisterView: View {
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
             
-            guard !verifyCode.isEmpty else {
-                print("❌ 验证码为空")
-                throw NSError(domain: "请输入验证码", code: -1)
-            }
+            // ⚠️ 2026-04-08 修复：注册不需要验证码，移除验证
+            // guard !verifyCode.isEmpty else {
+            //     print("❌ 验证码为空")
+            //     throw NSError(domain: "请输入验证码", code: -1)
+            // }
             
             print("✅ 所有验证通过，开始注册请求...")
             
             // 调用注册 API
+            // ⚠️ 2026-04-08 修复：移除 verifyCode 参数
             let mutation = """
-            mutation($name: String!, $phone: String!, $password: String!, $verifyCode: String!) {
-                register(name: $name, phone: $phone, password: $password, verifyCode: $verifyCode) {
+            mutation($name: String!, $phone: String!, $password: String!) {
+                register(name: $name, phone: $phone, password: $password) {
                     success
                     token
                     user {
@@ -122,8 +116,7 @@ struct RegisterView: View {
             let variables: [String: Any] = [
                 "name": name,
                 "phone": phone,
-                "password": password,
-                "verifyCode": verifyCode
+                "password": password
             ]
             
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -270,20 +263,6 @@ struct RegisterView: View {
                     .disableAutocorrection(true)
                     .font(.system(size: 18, weight: .medium))
                 
-                HStack {
-                    TextField("验证码", text: $verifyCode)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.numberPad)
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    Button(action: requestVerifyCode) {
-                        Text(countdown > 0 ? "\(countdown)s" : "获取验证码")
-                            .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
-                            .font(.system(size: 16))
-                    }
-                    .disabled(countdown > 0 || phone.isEmpty)
-                }
-                
                 SecureField("设置密码（8 位以上）", text: $password)
                     .textFieldStyle(CustomTextFieldStyle())
                     .font(.system(size: 18, weight: .medium))
@@ -349,26 +328,9 @@ struct RegisterView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
-    private func requestVerifyCode() {
-        guard isValidPhone(phone) else {
-            errorMessage = "手机号格式错误"
-            showingError = true
-            return
-        }
-        
-        countdown = 60
-        startTimer()
-        
-        // 调用发送验证码 API
-        Task {
-            await sendVerifyCode()
-        }
-    }
-    
-    private func sendVerifyCode() async {
-        // TODO: 实现发送验证码逻辑
-        print("📤 发送验证码到 \(phone)")
-    }
+    // ⚠️ 2026-04-08 修复：移除验证码相关函数
+    // private func requestVerifyCode() { ... }
+    // private func sendVerifyCode() { ... }
 }
 
 #Preview {
