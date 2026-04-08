@@ -788,34 +788,25 @@ class DataManager: ObservableObject {
     // MARK: - 服务器同步
     
     /// 同步资产到服务器
-    /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
+    /// ✅ 统一：从 REST API (will.php) 迁移到 GraphQL
     func syncAssetToServer(_ asset: Asset) async {
         guard !DataManager.apiURL.isEmpty else { return }
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/will.php?action=update_asset")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        if let token = KeychainManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        let body: [String: Any] = [
-            "id": asset.id,
-            "type": asset.type.rawValue,
-            "name": asset.name,
-            "institution": asset.institution,
-            "balance": asset.balance,
-            "account_number": asset.accountNumber,
-            "details": asset.details
-        ]
-        
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                print("✅ 资产已同步到服务器：\(asset.name)")
-            }
+            // 将 details 字典转换为 JSON 字符串
+            let detailsJSON = try JSONSerialization.data(withJSONObject: asset.details)
+            let detailsString = String(data: detailsJSON, encoding: .utf8) ?? "{}"
+            
+            let result = try await updateAssetGraphQL(
+                id: asset.id,
+                type: asset.type.rawValue,
+                name: asset.name,
+                institution: asset.institution,
+                balance: asset.balance,
+                accountNumber: asset.accountNumber,
+                details: detailsString
+            )
+            print("✅ 资产已同步到服务器：\(asset.name)")
         } catch {
             print("❌ 资产同步失败：\(error)")
         }
@@ -1522,6 +1513,36 @@ class DataManager: ObservableObject {
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
         if let data = result["uploadDeviceInfo"] as? [String: Any] {
+            return data
+        }
+        throw APIError.networkError
+    }
+    
+    /// 更新资产（GraphQL）
+    // ✅ 统一：将 REST API (will.php) 迁移到 GraphQL
+    func updateAssetGraphQL(id: String, type: String, name: String, institution: String, balance: Double, accountNumber: String, details: String) async throws -> [String: Any] {
+        let mutation = """
+        mutation($id: String!, $type: String!, $name: String!, $institution: String!, $balance: Float!, $account_number: String!, $details: String!) {
+            updateAsset(id: $id, type: $type, name: $name, institution: $institution, balance: $balance, account_number: $account_number, details: $details) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "id": id,
+            "type": type,
+            "name": name,
+            "institution": institution,
+            "balance": balance,
+            "account_number": accountNumber,
+            "details": details
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["updateAsset"] as? [String: Any] {
             return data
         }
         throw APIError.networkError
