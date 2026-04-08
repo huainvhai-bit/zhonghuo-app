@@ -829,6 +829,10 @@ class APIManager {
                 "title": c.title,
                 "type": c.type
             ]
+            // ✅ 修复：添加 mediaType 字段
+            if let mediaType = c.mediaType {
+                dict["mediaType"] = mediaType
+            }
             if let content = c.content {
                 dict["content"] = content
             }
@@ -1035,6 +1039,10 @@ class APIManager {
             ]
             if let isConfirmed = w.isConfirmed {
                 dict["isConfirmed"] = isConfirmed
+            }
+            // ✅ 修复：添加 deletedAt 字段
+            if let deletedAt = w.deletedAt {
+                dict["deletedAt"] = deletedAt
             }
             return dict
         }
