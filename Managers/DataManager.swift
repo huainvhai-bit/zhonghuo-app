@@ -266,23 +266,28 @@ class DataManager: ObservableObject {
     /// 检查网络连通性
     // ✅ P2 修复 #1: 使用配置文件中的 API 地址
     // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
+    // ✅ 修复：统一网络检查方法，使用 GraphQL 避免重复代码
     func checkNetworkConnectivity() async -> Bool {
-        guard let url = URL(string: "\(AppConfig.defaultAPIURL)/api/check-config.php") else {
-            return false
-        }
+        guard !DataManager.apiURL.isEmpty else { return false }
         
         do {
-            let (_, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                return false
+            let query = "query { getConfig { checkinIntervalHours } }"
+            let url = URL(string: "\(DataManager.apiURL)/api/graphql.php")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse {
+                return (200...299).contains(httpResponse.statusCode)
             }
-            return (200...299).contains(httpResponse.statusCode)
         } catch {
-            if DebugConfig.enableErrorLogs {
-                errorPrint("网络检查失败：\(error)")
+            if DebugConfig.enableNetworkLogs {
+                print("⚠️ 网络检查失败：\(error)")
             }
-            return false
         }
+        return false
     }
     
     // MARK: - Token 验证
@@ -633,12 +638,13 @@ class DataManager: ObservableObject {
         guard !Self.apiURL.isEmpty else { return nil }
         
         do {
+            // ✅ 修复：使用正确的字段名（匹配后端返回）
             let query = """
             query {
                 getConfig {
                     checkinIntervalHours
-                    notificationReminderThresholdHours
-                    notificationPushIntervalHours
+                    checkinReminderThresholdHours
+                    checkinReminderIntervalHours
                 }
             }
             """
@@ -648,9 +654,10 @@ class DataManager: ObservableObject {
             if let data = response["data"] as? [String: Any],
                let configData = data["getConfig"] as? [String: Any] {
                 
+                // ✅ 修复：使用正确的字段名解析
                 let checkinInterval = configData["checkinIntervalHours"] as? Int ?? 48
-                let firstReminder = configData["notificationReminderThresholdHours"] as? Int ?? 12
-                let reminderInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+                let firstReminder = configData["checkinReminderThresholdHours"] as? Int ?? 12
+                let reminderInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
                 
                 let config = NotificationConfig(
                     checkInInterval: checkinInterval,

@@ -77,30 +77,9 @@ class AccountValidator: ObservableObject {
     }
     
     /// 检查网络是否可用
+    // ✅ 修复：使用 DataManager 统一方法，避免重复代码
     private func isNetworkAvailable() async -> Bool {
-        guard !dataManager.apiURL.isEmpty else {
-            return false
-        }
-        
-        // 尝试访问 GraphQL API
-        do {
-            let query = "query { getConfig { checkinIntervalHours } }"
-            let url = URL(string: "\(dataManager.apiURL)/api/graphql.php")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
-            
-            let (_, response) = try await URLSession.shared.data(for: request)
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                return (200...299).contains(httpResponse.statusCode)
-            }
-        } catch {
-            print("⚠️ 网络检查失败：\(error)")
-        }
-        
-        return false
+        return await dataManager.checkNetworkConnectivity()
     }
     
     /// 验证用户凭证（使用 Token 验证，不再存储密码）

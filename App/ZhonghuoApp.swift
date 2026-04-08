@@ -165,25 +165,9 @@ struct ZhonghuoApp: App {
     }
     
     /// 检查网络是否可用
+    // ✅ 修复：使用 DataManager 统一方法，避免重复代码
     private func isNetworkAvailable() async -> Bool {
-        guard !DataManager.apiURL.isEmpty else { return false }
-        do {
-            // 使用 GraphQL 简单查询检查连通性
-            let query = "query { getConfig { checkinIntervalHours } }"
-            let url = URL(string: "\(DataManager.apiURL)/api/graphql.php")!
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: ["query": query])
-            
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse {
-                return (200...299).contains(httpResponse.statusCode)
-            }
-        } catch {
-            print("⚠️ 网络检查失败：\(error)")
-        }
-        return false
+        return await DataManager.shared.checkNetworkConnectivity()
     }
     
     /// 验证结果
