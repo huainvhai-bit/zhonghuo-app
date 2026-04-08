@@ -8,6 +8,7 @@
 
 import SwiftUI
 import MessageUI
+import UserNotifications
 
 // MARK: - CheckInStatus 枚举
 enum CheckInStatus {
@@ -32,51 +33,37 @@ struct HomeStatusView: View {
     @State private var hasSentOverdueAlert = false
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color(hex: "F5F5F7")
-                    .ignoresSafeArea(edges: .all)
-                
-                ScrollView {
-                    VStack(spacing: 16) {
-                        checkInCard
-                        statusCard
-                        progressCard
-                        capsulePreview
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
+        ZStack {
+            Color(hex: "F5F5F7")
+                .ignoresSafeArea(edges: .all)
+            
+            ScrollView {
+                VStack(spacing: 16) {
+                    checkInCard
+                    statusCard
+                    progressCard
+                    capsulePreview
                 }
-                
-                // 隐藏的全局导航链接
-                NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                // 紧急联系人不足提示
-                if showingEmergencyContactAlert {
-                    EmergencyContactAlert(
-                        showingEmergencyContactAlert: $showingEmergencyContactAlert,
-                        showingEmergencyContactsSheet: $showingEmergencyContactsSheet
-                    )
-                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
             }
-            .onAppear {
-                setupNavigationBar()
+            
+            // 紧急联系人不足提示
+            if showingEmergencyContactAlert {
+                EmergencyContactAlert(
+                    showingEmergencyContactAlert: $showingEmergencyContactAlert,
+                    showingEmergencyContactsSheet: $showingEmergencyContactsSheet
+                )
             }
-            .onChange(of: scenePhase) { newPhase in
-                if newPhase == .active {
-                    timerManager.start {
-                        // 定时器回调
-                    }
-                }
+        }
+        .onAppear {
+            loadCheckInStatus()
+            Task {
+                await startAutoCheckInIfNeeded()
             }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            handleScenePhaseChange(newPhase)
         }
     }
     
@@ -98,7 +85,9 @@ struct HomeStatusView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
-                Button(action: { /* TODO: 签到动画 */ }) {
+                Button(action: {
+                    performManualCheckIn()
+                }) {
                     Circle()
                         .fill(checkInColor)
                         .frame(width: 80, height: 80)
@@ -349,6 +338,155 @@ struct HomeStatusView: View {
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
         UINavigationBar.appearance().compactAppearance = appearance
+    }
+    
+    // MARK: - 签到状态加载
+    private func loadCheckInStatus() {
+        isSafe = statusManager.isSafe
+        timerManager.updateSeconds(statusManager.hoursRemaining * 3600)
+        
+        // 启动倒计时定时器
+        timerManager.start {
+            self.updateUIOnTimerTick()
+        }
+    }
+    
+    private func updateUIOnTimerTick() {
+        // 检查是否需要推送提醒
+        checkAndSendReminderIfNeeded()
+    }
+    
+    private func checkAndSendReminderIfNeeded() {
+        let hoursRemaining = timerManager.secondsRemaining / 3600
+        let firstReminderHours = dataManager.systemConfig.checkinReminderThresholdHours
+        let reminderInterval = dataManager.systemConfig.checkinReminderIntervalHours
+        
+        // 首次提醒：剩余时间 <= 首次提醒时间
+        if hoursRemaining <= firstReminderHours && hoursRemaining > 0 && !hasSentOverdueAlert {
+            sendReminderNotification(title: "签到提醒", body: "您还有\(Int(hoursRemaining))小时需要签到，请及时签到")
+            hasSentOverdueAlert = true
+        }
+        
+        // 超时提醒
+        if hoursRemaining <= 0 && !hasSentOverdueAlert {
+            sendReminderNotification(title: "签到超时", body: "您已超过签到时间，请尽快签到以免系统自动通知紧急联系人")
+            hasSentOverdueAlert = true
+        }
+    }
+    
+    private func sendReminderNotification(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ 发送通知失败：\(error)")
+            } else {
+                print("✅ 发送通知成功：\(title)")
+            }
+        }
+    }
+    
+    // MARK: - 场景切换处理
+    private func handleScenePhaseChange(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .active:
+            // App 从后台恢复到前台
+            print("🟢 App 恢复到前台")
+            loadCheckInStatus()
+            Task {
+                await startAutoCheckInIfNeeded()
+            }
+            timerManager.start { [timerManager] in
+                self.updateUIOnTimerTick()
+            }
+        case .inactive:
+            // App 处于非活动状态
+            print("🟡 App 处于非活动状态")
+        case .background:
+            // App 进入后台
+            print("🔴 App 进入后台")
+            // 在后台时继续更新倒计时（基于系统时间）
+            updateCountdownBasedOnSystemTime()
+        @unknown default:
+            break
+        }
+    }
+    
+    // MARK: - 自动签到
+    private func startAutoCheckInIfNeeded() async {
+        // 检查今天是否已签到
+        let calendar = Calendar.current
+        let lastCheckIn = statusManager.lastCheckInDate
+        
+        if let lastDate = lastCheckIn {
+            if calendar.isDateInToday(lastDate) {
+                print("✅ 今天已签到，跳过自动签到")
+                return
+            }
+        }
+        
+        // 延迟 2 秒后自动签到（等待数据加载完成）
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        await performAutoCheckIn()
+    }
+    
+    private func performAutoCheckIn() async {
+        print("✍️ 执行自动签到...")
+        await statusManager.checkIn()
+        
+        await MainActor.run {
+            withAnimation(.spring()) {
+                showCheckInAnimation = true
+            }
+            
+            // 重置动画
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.spring()) {
+                    showCheckInAnimation = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - 基于系统时间更新倒计时
+    private func updateCountdownBasedOnSystemTime() {
+        guard let lastCheckIn = statusManager.lastCheckInDate else { return }
+        
+        let now = Date()
+        let elapsed = now.timeIntervalSince(lastCheckIn)
+        let totalSeconds = dataManager.systemConfig.checkinIntervalHours * 3600
+        let remaining = max(0, totalSeconds - elapsed)
+        
+        timerManager.updateSeconds(remaining)
+    }
+    
+    // MARK: - 手动签到
+    private func performManualCheckIn() {
+        print("✍️ 手动签到...")
+        
+        Task {
+            await statusManager.checkIn()
+            
+            await MainActor.run {
+                withAnimation(.spring()) {
+                    showCheckInAnimation = true
+                }
+                
+                // 重置动画
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.spring()) {
+                        showCheckInAnimation = false
+                    }
+                }
+                
+                // 重新加载签到状态
+                loadCheckInStatus()
+            }
+        }
     }
 }
 
