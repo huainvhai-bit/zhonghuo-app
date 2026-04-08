@@ -292,12 +292,6 @@ struct RegisterView: View {
                     .textFieldStyle(CustomTextFieldStyle())
                     .font(.system(size: 18, weight: .medium))
                 
-                // 🔴 调试标签
-                Text("🔴 如果能看到这个，说明视图正常渲染")
-                    .foregroundColor(.red)
-                    .font(.system(size: 12))
-                    .padding(.top, 5)
-                
                 Button(action: {
                     print("🔴🔴🔴 立即注册按钮被点击！！！")
                     Task { @MainActor in
@@ -318,20 +312,6 @@ struct RegisterView: View {
                 .opacity(isLoading ? 0.5 : 1)
             }
             .padding(.horizontal, 24)
-            
-            // 测试按钮 - 验证点击是否有效
-            Button(action: {
-                print("🧪 测试按钮被点击！")
-                showingError = true
-                errorMessage = "测试按钮正常工作！"
-            }) {
-                Text("🧪 测试点击")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.red)
-                    .padding()
-                    .border(Color.red)
-            }
-            .padding(.top, 10)
             
             Spacer()
             

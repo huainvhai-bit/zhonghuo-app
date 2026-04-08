@@ -318,16 +318,6 @@ struct LoginView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 60)
-                
-                // 🔴 测试按钮
-                Button(action: {
-                    print("🧪 LoginView 测试按钮被点击")
-                }) {
-                    Text("🧪 Login 测试")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red)
-                }
-                .padding(.bottom, 20)
             }
             .background(Color("BackgroundColor"))
             .navigationBarTitleDisplayMode(.inline)
