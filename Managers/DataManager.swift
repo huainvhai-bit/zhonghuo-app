@@ -1393,6 +1393,56 @@ class DataManager: ObservableObject {
         return false
     }
     
+    /// 更新家庭档案（GraphQL）
+    // ✅ 统一：添加缺失的家庭档案函数
+    func updateFamilyArchive(id: String, archiveName: String, description: String, isPublic: Bool) async throws -> Bool {
+        let mutation = """
+        mutation($id: String!, $archiveName: String!, $description: String!, $isPublic: Boolean!) {
+            updateFamilyArchive(id: $id, archiveName: $archiveName, description: $description, isPublic: $isPublic) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "id": id,
+            "archiveName": archiveName,
+            "description": description,
+            "isPublic": isPublic
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["updateFamilyArchive"] as? [String: Any],
+           data["success"] as? Bool == true {
+            return true
+        }
+        return false
+    }
+    
+    /// 删除家庭档案（GraphQL）
+    // ✅ 统一：添加缺失的家庭档案函数
+    func deleteFamilyArchive(id: String) async throws -> Bool {
+        let mutation = """
+        mutation($id: String!) {
+            deleteFamilyArchive(id: $id) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["id": id]
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        
+        if let data = result["deleteFamilyArchive"] as? [String: Any],
+           data["success"] as? Bool == true {
+            return true
+        }
+        return false
+    }
+    
     /// 创建紧急联系人（GraphQL）
     // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
     func createEmergencyContact(name: String, phone: String, relation: String, priority: Int = 1) async throws -> [String: Any] {
