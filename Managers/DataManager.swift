@@ -1318,6 +1318,31 @@ class DataManager: ObservableObject {
         return []
     }
     
+    // MARK: - 数据导出
+    
+    /// 下载用户数据（GraphQL）
+    func downloadUserData(type: String = "all") async throws -> [String: Any] {
+        let query = """
+        query($type: String) {
+            downloadUserData(type: $type) {
+                capsules
+                wills
+                contacts
+                witnesses
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["type": type]
+        let result = try await GraphQLClient.shared.query(query, variables: variables)
+        
+        if let data = result["downloadUserData"] as? [String: Any] {
+            print("✅ 数据导出成功：胶囊\(data["capsules"] ?? []) 遗嘱\(data["wills"] ?? [])")
+            return data
+        }
+        throw APIError.networkError
+    }
+    
     /// 上传媒体文件到服务器
     /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {

@@ -20,6 +20,8 @@ struct SettingsView: View {
     @State private var showingLogoutConfirm = false
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var showingExportProgress = false
+    @State private var exportSuccess = false
     
     var body: some View {
         NavigationView {
@@ -51,6 +53,12 @@ struct SettingsView: View {
                 Section(header: Text("隐私与安全")) {
                     NavigationLink("隐私政策", destination: PrivacySettingsView())
                     NavigationLink("服务条款", destination: TermsSettingsView())
+                    Button(action: exportUserData) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.down")
+                            Text("导出个人数据")
+                        }
+                    }
                 }
                 
                 Section(header: Text("关于")) {
@@ -120,6 +128,52 @@ struct SettingsView: View {
         UserDefaults.standard.synchronize()
         
         print("✅ 退出登录完成")
+    }
+    
+    private func exportUserData() {
+        Task {
+            showingExportProgress = true
+            
+            do {
+                // 调用数据导出 API
+                let data = try await DataManager.shared.downloadUserData(type: "all")
+                print("✅ 导出数据：\(data)")
+                
+                // 将数据转换为 JSON
+                let jsonData = try JSONSerialization.data(withJSONObject: data, options: .prettyPrinted)
+                
+                // 保存到临时文件
+                let tempDir = FileManager.default.temporaryDirectory
+                let fileName = "终活数据_\(Date().formatted(.dateTime.year().month().day().hour().minute()))"
+                let fileURL = tempDir.appendingPathComponent("\(fileName).json")
+                try jsonData.write(to: fileURL)
+                
+                // 使用 UIActivityViewController 分享文件
+                let activityVC = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+                
+                // 获取窗口场景
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = windowScene.windows.first?.rootViewController {
+                    // 如果是 iPad，需要设置 popover
+                    if let popover = activityVC.popoverPresentationController {
+                        popover.sourceView = rootVC.view
+                        popover.sourceRect = CGRect(x: rootVC.view.bounds.midX, y: rootVC.view.bounds.midY, width: 0, height: 0)
+                        popover.permittedArrowDirections = []
+                    }
+                    
+                    await MainActor.run {
+                        rootVC.present(activityVC, animated: true)
+                        showingExportProgress = false
+                        exportSuccess = true
+                    }
+                }
+            } catch {
+                print("❌ 导出数据失败：\(error)")
+                errorMessage = "导出失败：\(error.localizedDescription)"
+                showingError = true
+                showingExportProgress = false
+            }
+        }
     }
 }
 
