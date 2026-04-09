@@ -32,6 +32,7 @@ struct ZhonghuoApp: App {
                 print("🟢 App 进入前台 - ZhonghuoApp")
                 RealTimeSyncManager.shared.appDidBecomeActive()
                 
+                // 🔴 禁用自动签到（避免重复触发和卡顿）
                 // 🔵 自动签到已迁移到 HomeStatusView 处理（避免重复签到）
                 // HomeStatusView 的 onAppear 和 scenePhase 变化会自动触发签到
             }

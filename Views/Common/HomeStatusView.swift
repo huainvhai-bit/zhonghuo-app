@@ -58,9 +58,10 @@ struct HomeStatusView: View {
         }
         .onAppear {
             loadCheckInStatus()
-            Task {
-                await startAutoCheckInIfNeeded()
-            }
+            // 🔴 禁用自动签到（避免重复触发）
+            // Task {
+            //     await startAutoCheckInIfNeeded()
+            // }
         }
         .onChange(of: scenePhase) { newPhase in
             handleScenePhaseChange(newPhase)

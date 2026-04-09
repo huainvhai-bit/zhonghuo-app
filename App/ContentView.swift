@@ -224,13 +224,21 @@ struct ContentView: View {
             print("   - userManager.currentUser: \(self.userManager.currentUser?.name ?? "nil")")
             print("   - 判断条件：forceLogout=\(self.forceLogout) || !isLoggedIn=\(!self.userManager.isLoggedIn) || currentUser==nil=\(self.userManager.currentUser == nil)")
             
+            // 🔴 禁用自动签到（避免重复触发和卡顿）
             // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
+            // if isLoggedIn {
+            //     print("✅ 用户已登录，执行自动签到...")
+            //     Task {
+            //         await self.userManager.performAutoSignIn()
+            //         self.checkEmergencyContacts()
+            //     }
+            // } else {
+            //     print("⚠️ 用户未登录，显示登录界面")
+            // }
+            
             if isLoggedIn {
-                print("✅ 用户已登录，执行自动签到...")
-                Task {
-                    await self.userManager.performAutoSignIn()
-                    self.checkEmergencyContacts()
-                }
+                print("✅ 用户已登录，跳过自动签到")
+                self.checkEmergencyContacts()
             } else {
                 print("⚠️ 用户未登录，显示登录界面")
             }

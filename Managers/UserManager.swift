@@ -551,6 +551,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
     func performAutoSignIn() {
+        // 🔴 完全禁用自动签到（避免重复触发和卡顿）
+        print("⏭️ 自动签到已禁用（避免重复触发和卡顿）")
+        return
+    }
+    
+    @MainActor
+    func performAutoSignInOLD() {
         // 🔴 防重复：10 秒内不重复签到
         let now = Date()
         if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < 10 {
