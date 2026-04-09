@@ -332,6 +332,9 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
+                // 设置紫色导航栏背景（与首页一致）
+                setupNavigationBar()
+                
                 // 启动设备监控
                 startDeviceMonitoring()
                 
@@ -1011,6 +1014,19 @@ extension SettingsView {
     func stopDeviceMonitoring() {
         deviceMonitor.stopMonitoring()
         print("🔋 设备监控已停止")
+    }
+    
+    // 设置紫色导航栏背景（与首页一致）
+    private func setupNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "6366F1")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 
