@@ -173,6 +173,13 @@ struct ContentView: View {
         // 加载用户（同步）
         self.userManager.loadUser()
         
+        // 🔴 等待异步加载完成（最多 3 秒）
+        var waitCount = 0
+        while self.userManager.currentUser == nil && waitCount < 30 {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 秒
+            waitCount += 1
+        }
+        
         // 🔴 确保 isLoggedIn 和 currentUser 都有效
         let isLoggedIn = self.userManager.isLoggedIn && self.userManager.currentUser != nil
         print("🔍 登录状态检查：")
