@@ -1314,8 +1314,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 await MainActor.run {
                     // ✅ Swift 6 并发安全：使用局部变量避免捕获问题
                     let _ = willModulesCount
-                    // 🔧 优化：只更新统计信息，不获取详细数据列表（详细数据通过 batchSync 按需同步）
+                    
+                    // 🔧 修复：如果 currentUser 是 nil，创建新用户对象
                     if var currentUser = self.currentUser {
+                        // 更新已存在的用户
                         currentUser.emergencyContactsCount = emergencyContactsCount
                         currentUser.witnessesCount = witnessesCount
                         currentUser.capsulesCount = capsulesCount
@@ -1328,6 +1330,34 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         self.currentUser = currentUser
                         
                         print("✅ 用户统计信息已更新：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount)")
+                    } else {
+                        // 🔴 创建新用户对象（从服务器数据）
+                        let user = User(
+                            id: userId,
+                            name: name,
+                            phone: phone,
+                            createdAt: dateFormatter.date(from: createdAt) ?? Date(),
+                            emergencyContacts: [],
+                            checkInInterval: .oneDay,  // 默认值
+                            notificationsEnabled: true,
+                            cloudSyncEnabled: true,
+                            lastCheckInDate: dateFormatter.date(from: lastCheckInDate),
+                            lastLoginAt: dateFormatter.date(from: lastLoginAt),
+                            lastLoginIp: lastLoginIp,
+                            checkinCount: checkinCount,
+                            ethnicity: nil,
+                            birthday: nil,
+                            idCard: nil,
+                            address: nil,
+                            emergencyContactsCount: emergencyContactsCount,
+                            witnessesCount: witnessesCount,
+                            capsulesCount: capsulesCount,
+                            willModulesCount: willModulesCount,
+                            familyCount: familyCount
+                        )
+                        self.currentUser = user
+                        self.isLoggedIn = true
+                        print("✅ 从服务器创建用户对象：\(user.name)")
                     }
                     
                     // ✅ 标记加载完成
@@ -1335,7 +1365,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     isUserLoaded = true
                 }
                 
-                // 保存本地缓存（如果有 currentUser）
+                // 保存本地缓存
                 if let currentUser = self.currentUser {
                     saveUser(currentUser)
                 }
