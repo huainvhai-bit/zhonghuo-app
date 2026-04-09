@@ -55,7 +55,7 @@ struct SettingsView: View {
                 
                 Section(header: Text("隐私与安全")) {
                     NavigationLink("隐私政策", destination: PrivacySettingsView())
-                    Link("服务条款", destination: URL(string: "https://zhonghuo.cn/terms")!)
+                    Button("服务条款") { openTermsURL() }
                     Button(action: exportUserData) {
                         HStack {
                             Image(systemName: "square.and.arrow.down")
@@ -131,6 +131,12 @@ struct SettingsView: View {
         }
         .onDisappear {
             deviceMonitor.stopMonitoring()
+        }
+    }
+    
+    private func openTermsURL() {
+        if let url = URL(string: "https://zhonghuo.cn/terms") {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
         }
     }
     
