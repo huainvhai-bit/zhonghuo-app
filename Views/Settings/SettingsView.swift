@@ -124,7 +124,7 @@ struct SettingsView: View {
             .onReceive(deviceMonitor.$batteryLevel) { level in
                 deviceMonitor.batteryLevel = level
             }
-        .onAppear {
+            .onAppear {
             deviceMonitor.startMonitoring()
         }
         .onDisappear {
