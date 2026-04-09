@@ -138,7 +138,7 @@ struct SettingsView: View {
                 FamilyGuardView()
             }
             .onReceive(deviceMonitor.$batteryLevel) { level in
-                deviceMonitor.batteryLevel = level
+                // 仅用于触发视图更新，无需重复赋值
             }
             .onAppear {
             deviceMonitor.startMonitoring()
