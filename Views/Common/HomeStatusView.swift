@@ -58,10 +58,9 @@ struct HomeStatusView: View {
         }
         .onAppear {
             loadCheckInStatus()
-            // 🎯 仅触发动画，实际签到由 ContentView.performAutoSignIn 处理
-            // Task {
-            //     await startAutoCheckInIfNeeded()
-            // }
+            Task {
+                await startAutoCheckInIfNeeded()
+            }
         }
         .onChange(of: scenePhase) { newPhase in
             handleScenePhaseChange(newPhase)
@@ -86,18 +85,22 @@ struct HomeStatusView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
-                // 自动签到状态指示器
-                Circle()
-                    .fill(checkInColor)
-                    .frame(width: 80, height: 80)
-                    .shadow(color: checkInColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                    .overlay(
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
-                    )
-                    .scaleEffect(showCheckInAnimation ? 1.2 : 1.0)
-                    .animation(.spring(), value: showCheckInAnimation)
+                Button(action: {
+                    performManualCheckIn()
+                }) {
+                    Circle()
+                        .fill(checkInColor)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: checkInColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                        )
+                }
+                .padding(8)
+                .scaleEffect(showCheckInAnimation ? 1.2 : 1.0)
+                .animation(.spring(), value: showCheckInAnimation)
             }
         }
     }
@@ -413,16 +416,28 @@ struct HomeStatusView: View {
         }
     }
     
-    // MARK: - 自动签到（仅用于 UI 动画，实际签到由 UserManager.performAutoSignIn 处理）
+    // MARK: - 自动签到
     private func startAutoCheckInIfNeeded() async {
-        // ✅ 前台签到：每次打开 App 都自动签到，无限制
-        // 签到会重置 48 小时倒计时
-        print("🟢 打开 App，触发自动签到...")
+        // 检查今天是否已签到
+        let calendar = Calendar.current
+        let lastCheckIn = statusManager.lastCheckInDate
+        
+        if let lastDate = lastCheckIn {
+            if calendar.isDateInToday(lastDate) {
+                print("✅ 今天已签到，跳过自动签到")
+                return
+            }
+        }
         
         // 延迟 2 秒后自动签到（等待数据加载完成）
         try? await Task.sleep(nanoseconds: 2_000_000_000)
+        await performAutoCheckIn()
+    }
+    
+    private func performAutoCheckIn() async {
+        print("✍️ 执行自动签到...")
+        await statusManager.checkIn()
         
-        // 🎯 仅触发动画，实际签到由 UserManager.performAutoSignIn 处理
         await MainActor.run {
             withAnimation(.spring()) {
                 showCheckInAnimation = true
@@ -447,6 +462,31 @@ struct HomeStatusView: View {
         let remaining = max(0, totalSeconds - elapsed)
         
         timerManager.updateSeconds(remaining)
+    }
+    
+    // MARK: - 手动签到
+    private func performManualCheckIn() {
+        print("✍️ 手动签到...")
+        
+        Task {
+            await statusManager.checkIn()
+            
+            await MainActor.run {
+                withAnimation(.spring()) {
+                    showCheckInAnimation = true
+                }
+                
+                // 重置动画
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.spring()) {
+                        showCheckInAnimation = false
+                    }
+                }
+                
+                // 重新加载签到状态
+                loadCheckInStatus()
+            }
+        }
     }
 }
 

@@ -18,9 +18,12 @@ struct ZhonghuoApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
-                    // 🔵 启动时验证账号
+                    // 🔴 禁用启动时账号验证（避免弹窗打扰用户）
+                    // Task {
+                    //     await validateAccountOnLaunch()
+                    // }
                     Task {
-                        await validateAccountOnLaunch()
+                        await checkVersionUpdate()  // 只检查版本更新
                     }
                 }
         }

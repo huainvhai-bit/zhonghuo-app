@@ -88,13 +88,13 @@ struct ContentView: View {
                 }
             }
             
-            // 🔴 监听退出登录提示
-            NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowLogoutAlert"), object: nil, queue: .main) { notification in
-                if let reason = notification.userInfo?["reason"] as? String {
-                    logoutReason = reason
-                    showingLogoutAlert = true
-                }
-            }
+            // 🔴 禁用退出登录提示（不再弹窗打扰用户）
+            // NotificationCenter.default.addObserver(forName: NSNotification.Name("ShowLogoutAlert"), object: nil, queue: .main) { notification in
+            //     if let reason = notification.userInfo?["reason"] as? String {
+            //         logoutReason = reason
+            //         showingLogoutAlert = true
+            //     }
+            // }
             
             // 📱 监听版本更新提示
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
