@@ -20,8 +20,8 @@ class APIClient {
     
     init(baseURL: String = "") {
         // ✅ 修复：确保 baseURL 不为空
-        let effectiveBaseURL = baseURL.isEmpty ? (UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL ?? AppConfig.defaultAPIURL) : baseURL
-        self.baseURL = effectiveBaseURL
+        let effectiveBaseURL = baseURL.isEmpty ? (UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL) : baseURL
+        self.baseURL = effectiveBaseURL.isEmpty ? AppConfig.defaultAPIURL : effectiveBaseURL
     }
     
     /// 执行 GraphQL 查询（带重试机制）
@@ -104,7 +104,7 @@ class APIClient {
         
         if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
             let message = errors[0]["message"] as? String ?? "GraphQL 错误"
-            Logger.error("GraphQL 错误：\(message)", category: "APIClient")
+            Logger.error("GraphQL 错误：\(message)")
             throw GraphQLError.serverError(message)
         }
         
