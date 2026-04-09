@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showNotifications = false
     @State private var showPrivacy = false
     @State private var showAbout = false
+    @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
     @State private var showingLogoutConfirm = false
     @State private var showingRestoreConfirm = false
     @State private var errorMessage = ""
@@ -75,6 +76,18 @@ struct SettingsView: View {
                     Button("关于 App") { showAbout = true }
                 }
                 
+                Section(header: Text("家人守护")) {
+                    Button(action: { showingFamilyGuard = true }) {
+                        HStack {
+                            Image(systemName: "person.2.fill")
+                            Text("家人守护")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                
                 Section {
                     Button(role: .destructive) {
                         showingLogoutConfirm = true
@@ -120,6 +133,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showAbout) {
                 AboutSettingsView()
+            }
+            .sheet(isPresented: $showingFamilyGuard) {
+                FamilyGuardView()
             }
             .onReceive(deviceMonitor.$batteryLevel) { level in
                 deviceMonitor.batteryLevel = level
