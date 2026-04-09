@@ -71,6 +71,12 @@ class LifeCheckStatusManager: ObservableObject {
         }
         
         // 2. 后端签到（GraphQL）
+        // ✅ 修复：签到前检查 token 是否存在
+        guard let token = KeychainManager.shared.getToken(), !token.isEmpty else {
+            print("⚠️ 后端签到跳过：Token 不存在（用户可能未登录）")
+            return
+        }
+        
         do {
             // ✅ 修复：使用 DataManager 统一函数
             let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
