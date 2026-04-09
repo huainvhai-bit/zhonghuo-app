@@ -182,9 +182,12 @@ struct LoginView: View {
         // 🔴 强制更新登录状态
         await MainActor.run {
             userManager.isLoggedIn = true
+            print("🔍 LoginView 设置 isLoggedIn = true")
+            print("   - userManager.currentUser: \(userManager.currentUser?.name ?? "nil")")
         }
         
         // 🔴 通知 ContentView 重新检查登录状态
+        print("📢 发送 UserDidLogin 通知")
         NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
         
         // 通知 HomeStatusView 刷新

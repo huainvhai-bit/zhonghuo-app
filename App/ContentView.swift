@@ -212,6 +212,10 @@ struct ContentView: View {
             self.refreshTrigger.toggle()
             
             print("   - isCheckingAuth: \(self.isCheckingAuth)")
+            print("   - forceLogout: \(self.forceLogout)")
+            print("   - userManager.isLoggedIn: \(self.userManager.isLoggedIn)")
+            print("   - userManager.currentUser: \(self.userManager.currentUser?.name ?? "nil")")
+            print("   - 判断条件：forceLogout=\(self.forceLogout) || !isLoggedIn=\(!self.userManager.isLoggedIn) || currentUser==nil=\(self.userManager.currentUser == nil)")
             
             // ✅ 用户已登录时，执行自动签到（只在这里触发一次）
             if isLoggedIn {
