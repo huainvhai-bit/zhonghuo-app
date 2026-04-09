@@ -542,11 +542,12 @@ struct CameraPreviewView: UIViewRepresentable {
         let view = UIView(frame: .zero)
         view.backgroundColor = .black
         
-        guard let session = session,
-              let previewLayer = AVCaptureVideoPreviewLayer(session: session) else {
+        // ✅ 修复：session 为 Optional，但 AVCaptureVideoPreviewLayer 初始化不返回 Optional
+        guard let session = session else {
             return view
         }
         
+        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(previewLayer)
         
