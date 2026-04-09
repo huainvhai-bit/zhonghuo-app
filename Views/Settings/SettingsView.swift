@@ -27,7 +27,6 @@ struct SettingsView: View {
     @State private var exportSuccess = false
     
     var body: some View {
-        NavigationView {
             List {
                 // 用户信息卡片
                 Section {
@@ -87,7 +86,6 @@ struct SettingsView: View {
                 }
             }
             .listStyle(PlainListStyle())
-        }
             .background(Color(hex: "F5F5F7"))
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.large)
