@@ -348,31 +348,39 @@ struct CapsuleMediaRecorderView: View {
     private func startRecording() {
         // ✅ 检查权限
         if selectedType == .video {
-            AVCaptureDevice.requestAccess(for: .video) { granted in
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                guard let self = self else { return }
                 if granted {
                     AVCaptureDevice.requestAccess(for: .audio) { granted in
                         if granted {
-                            Task { @MainActor in
-                                recorder.startRecording(type: .video)
-                                startTimer()
+                            DispatchQueue.main.async {
+                                self.recorder.startRecording(type: .video)
+                                self.startTimer()
                             }
                         } else {
-                            showingPermissionAlert = true
+                            DispatchQueue.main.async {
+                                self.showingPermissionAlert = true
+                            }
                         }
                     }
                 } else {
-                    showingPermissionAlert = true
+                    DispatchQueue.main.async {
+                        self.showingPermissionAlert = true
+                    }
                 }
             }
         } else {
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                guard let self = self else { return }
                 if granted {
-                    Task { @MainActor in
-                        recorder.startRecording(type: .audio)
-                        startTimer()
+                    DispatchQueue.main.async {
+                        self.recorder.startRecording(type: .audio)
+                        self.startTimer()
                     }
                 } else {
-                    showingPermissionAlert = true
+                    DispatchQueue.main.async {
+                        self.showingPermissionAlert = true
+                    }
                 }
             }
         }
@@ -448,40 +456,48 @@ class MediaRecorder: NSObject, ObservableObject {
     }
     
     private func startVideoRecording() {
-        captureSession = AVCaptureSession()
-        captureSession?.sessionPreset = .high
-        
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
-              let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-              let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-              let captureSession = captureSession,
-              captureSession.canAddInput(videoInput),
-              captureSession.canAddInput(audioInput) else {
-            print("❌ 无法设置视频录制")
-            return
-        }
-        
-        captureSession.addInput(videoInput)
-        captureSession.addInput(audioInput)
-        
-        videoOutput = AVCaptureMovieFileOutput()
-        if captureSession.canAddOutput(videoOutput!) {
-            captureSession.addOutput(videoOutput!)
+        // ✅ 在后台线程执行，避免阻塞 UI
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             
-            // ✅ 创建 TimeCapsules 目录
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let timeCapsulesDir = documentsPath.appendingPathComponent("TimeCapsules")
-            try? FileManager.default.createDirectory(at: timeCapsulesDir, withIntermediateDirectories: true)
+            self.captureSession = AVCaptureSession()
+            self.captureSession?.sessionPreset = .high
             
-            let fileName = UUID().uuidString + ".mp4"
-            let filePath = timeCapsulesDir.appendingPathComponent(fileName)
-            recordingURL = filePath
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
+                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
+                  let captureSession = self.captureSession,
+                  captureSession.canAddInput(videoInput),
+                  captureSession.canAddInput(audioInput) else {
+                print("❌ 无法设置视频录制")
+                return
+            }
             
-            captureSession.startRunning()
-            videoOutput?.startRecording(to: filePath, recordingDelegate: self)
-            isRecording = true
-            print("✅ 开始录制视频：\(filePath)")
+            captureSession.addInput(videoInput)
+            captureSession.addInput(audioInput)
+            
+            self.videoOutput = AVCaptureMovieFileOutput()
+            if captureSession.canAddOutput(self.videoOutput!) {
+                captureSession.addOutput(self.videoOutput!)
+                
+                // ✅ 创建 TimeCapsules 目录
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let timeCapsulesDir = documentsPath.appendingPathComponent("TimeCapsules")
+                try? FileManager.default.createDirectory(at: timeCapsulesDir, withIntermediateDirectories: true)
+                
+                let fileName = UUID().uuidString + ".mp4"
+                let filePath = timeCapsulesDir.appendingPathComponent(fileName)
+                self.recordingURL = filePath
+                
+                // ✅ 在后台线程启动录制
+                captureSession.startRunning()
+                DispatchQueue.main.async {
+                    self.videoOutput?.startRecording(to: filePath, recordingDelegate: self)
+                    self.isRecording = true
+                    print("✅ 开始录制视频：\(filePath)")
+                }
+            }
         }
     }
     
