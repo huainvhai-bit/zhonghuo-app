@@ -24,84 +24,82 @@ struct CapsuleEditView: View {
     @State private var showingPlayer = false
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("类型")) {
-                    Picker("类型", selection: $selectedType) {
-                        Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
-                        Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
-                        Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
-                    }
-                    .pickerStyle(.segmented)
+        Form {
+            Section(header: Text("类型")) {
+                Picker("类型", selection: $selectedType) {
+                    Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
+                    Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
+                    Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
                 }
+                .pickerStyle(.segmented)
+            }
+            
+            Section(header: Text("内容")) {
+                TextField("标题", text: $title)
                 
-                Section(header: Text("内容")) {
-                    TextField("标题", text: $title)
-                    
-                    if selectedType == .text {
-                        TextEditor(text: $content)
-                            .frame(minHeight: 100)
-                    } else {
-                        VStack(spacing: 12) {
-                            Button(action: { showingRecorder = true }) {
-                                HStack(spacing: 12) {
-                                    Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                    
-                                    Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Color(hex: "6366F1"))
-                                .cornerRadius(10)
+                if selectedType == .text {
+                    TextEditor(text: $content)
+                        .frame(minHeight: 100)
+                } else {
+                    VStack(spacing: 12) {
+                        Button(action: { showingRecorder = true }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.white)
+                                
+                                Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
                             }
-                            
-                            if selectedType == .audio, let url = recordedAudioURL {
-                                PreviewButton(icon: "mic.fill", title: "已录制音频", url: url, showingPlayer: $showingPlayer)
-                            } else if selectedType == .video, let url = recordedVideoURL {
-                                PreviewButton(icon: "video.fill", title: "已录制视频", url: url, showingPlayer: $showingPlayer)
-                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color(hex: "6366F1"))
+                            .cornerRadius(10)
                         }
-                        .sheet(isPresented: $showingPlayer) {
-                            if let url = recordedAudioURL ?? recordedVideoURL {
-                                playerView(for: url)
-                            }
+                        
+                        if selectedType == .audio, let url = recordedAudioURL {
+                            PreviewButton(icon: "mic.fill", title: "已录制音频", url: url, showingPlayer: $showingPlayer)
+                        } else if selectedType == .video, let url = recordedVideoURL {
+                            PreviewButton(icon: "video.fill", title: "已录制视频", url: url, showingPlayer: $showingPlayer)
+                        }
+                    }
+                    .sheet(isPresented: $showingPlayer) {
+                        if let url = recordedAudioURL ?? recordedVideoURL {
+                            playerView(for: url)
                         }
                     }
                 }
-                
-                Section(header: Text("发送时间")) {
-                    DatePicker("发送日期", selection: $sendDate)
-                        .datePickerStyle(.compact)
-                }
             }
-            .navigationTitle(selectedType == .text ? "编辑胶囊" : "录制胶囊")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        saveCapsule()
-                    }
-                    .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
-                }
+            
+            Section(header: Text("发送时间")) {
+                DatePicker("发送日期", selection: $sendDate)
+                    .datePickerStyle(.compact)
             }
-            .sheet(isPresented: $showingRecorder) {
-                CapsuleMediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
-                    if selectedType == .audio {
-                        recordedAudioURL = url
-                    } else {
-                        recordedVideoURL = url
-                    }
-                    showingRecorder = false
-                })
+        }
+        .navigationTitle(selectedType == .text ? "编辑胶囊" : "录制胶囊")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
             }
+            
+            ToolbarItem(placement: .confirmationAction) {
+                Button("保存") {
+                    saveCapsule()
+                }
+                .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
+            }
+        }
+        .sheet(isPresented: $showingRecorder) {
+            CapsuleMediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
+                if selectedType == .audio {
+                    recordedAudioURL = url
+                } else {
+                    recordedVideoURL = url
+                }
+                showingRecorder = false
+            })
         }
     }
     
@@ -176,75 +174,51 @@ struct CapsuleMediaRecorderView: View {
     @State var onRecordComplete: (URL) -> Void
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if recorder.isRecording {
+        VStack {
+            if recorder.isRecording {
+                HStack {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 32))
+                        .foregroundColor(.red)
+                    Text("录制中")
+                        .font(.headline)
+                }
+                .padding()
+                
+                Button(action: recorder.stopRecording) {
                     HStack {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 32))
-                            .foregroundColor(.red)
-                        Text("录制中")
-                            .font(.headline)
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 24))
+                        Text("停止录制")
                     }
-                    .padding()
-                    
-                    Button(action: recorder.stopRecording) {
-                        HStack {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 24))
-                            Text("停止录制")
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 12)
-                        .background(Color.red)
-                        .cornerRadius(10)
-                    }
-                } else {
-                    Button(action: recorder.startRecording) {
-                        HStack {
-                            Image(systemName: "record.fill")
-                                .font(.system(size: 48))
-                            Text("点击开始录制")
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 48)
-                        .padding(.vertical, 24)
-                        .background(Color.red)
-                        .cornerRadius(10)
-                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.red)
+                    .cornerRadius(10)
                 }
-            }
-            .navigationTitle(selectedType == .audio ? "录制音频" : "录制视频")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
-                }
-            }
-            .onChange(of: recorder.recordingURL) { newURL in
-                if let url = newURL {
-                    onRecordComplete(url)
+            } else {
+                Button(action: recorder.startRecording) {
+                    HStack {
+                        Image(systemName: "record.fill")
+                            .font(.system(size: 48))
+                        Text("点击开始录制")
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 48)
+                    .padding(.vertical, 24)
+                    .background(Color.red)
+                    .cornerRadius(10)
                 }
             }
         }
-        .onAppear {
-            setupNavigationBar()
+        .navigationTitle(selectedType == .audio ? "录制音频" : "录制视频")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
+            }
         }
-        .background(Color(hex: "F5F5F7"))
-    }
-    
-    // 设置紫色导航栏背景（与首页一致）
-    private func setupNavigationBar() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "6366F1")
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 

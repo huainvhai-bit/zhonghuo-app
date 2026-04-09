@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
@@ -18,6 +19,7 @@ struct CapsuleList: View {
     
     var body: some View {
         ZStack {
+            // 背景色
             Color(hex: "F5F5F7")
                 .ignoresSafeArea()
             
@@ -43,21 +45,27 @@ struct CapsuleList: View {
             let loadedCapsules = dataManager.loadCapsulesFromFile()
             dataManager.capsules = loadedCapsules
             
+            // 设置紫色导航栏背景
+            setupNavigationBar()
+            
             // 同步胶囊到云端
             Task {
                 await dataManager.batchSyncCapsules()
             }
         }
-        .navigationTitle("时光胶囊")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
-                    Image(systemName: "plus")
-                        .foregroundColor(.white)
-                }
-            }
-        }
+    }
+    
+    // 设置紫色导航栏背景（与首页一致）
+    private func setupNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "6366F1")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
     }
     
     private var statsCard: some View {

@@ -423,7 +423,6 @@ struct ContentView: View {
             
             NavigationView {
                 CapsuleList(dataManager: dataManager)
-                    .navigationBarHidden(true)
             }
             .tabItem {
                 Label("时光胶囊", systemImage: "clock.fill")
