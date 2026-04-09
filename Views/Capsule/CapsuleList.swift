@@ -17,22 +17,47 @@ struct CapsuleList: View {
     }
     
     var body: some View {
-        VStack(spacing: 16) {
-            // 统计卡片
-            statsCard
+        ZStack {
+            Color(hex: "F5F5F7")
+                .ignoresSafeArea()
             
-            // 类型筛选
-            filterButtons
+            VStack(spacing: 16) {
+                // 统计卡片
+                statsCard
+                
+                // 类型筛选
+                filterButtons
+                
+                // 胶囊列表
+                if filteredCapsules.isEmpty {
+                    emptyState
+                } else {
+                    capsuleList
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+        }
+        .onAppear {
+            // 从文件加载胶囊数据
+            let loadedCapsules = dataManager.loadCapsulesFromFile()
+            dataManager.capsules = loadedCapsules
             
-            // 胶囊列表
-            if filteredCapsules.isEmpty {
-                emptyState
-            } else {
-                capsuleList
+            // 同步胶囊到云端
+            Task {
+                await dataManager.batchSyncCapsules()
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
+        .navigationTitle("时光胶囊")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
+                    Image(systemName: "plus")
+                        .foregroundColor(.white)
+                }
+            }
+        }
     }
     
     private var statsCard: some View {
@@ -113,6 +138,7 @@ struct CapsuleList: View {
             }
         }
         .listStyle(PlainListStyle())
+        .background(Color.clear)
     }
     
     private var emptyState: some View {
@@ -146,6 +172,12 @@ struct CapsuleList: View {
         for index in offsets {
             let capsule = filteredCapsules[index]
             dataManager.capsules.removeAll { $0.id == capsule.id }
+            dataManager.saveCapsulesToFile()
+        }
+        
+        // 同步删除到云端
+        Task {
+            await dataManager.batchSyncCapsules()
         }
     }
 }

@@ -134,6 +134,9 @@ struct CapsuleEditView: View {
             // 📢 通知同步到服务器
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
+            // 📤 同步到云端
+            await dataManager.batchSyncCapsules()
+            
             dismiss()
         }
     }
@@ -225,6 +228,23 @@ struct CapsuleMediaRecorderView: View {
                 }
             }
         }
+        .onAppear {
+            setupNavigationBar()
+        }
+        .background(Color(hex: "F5F5F7"))
+    }
+    
+    // 设置紫色导航栏背景（与首页一致）
+    private func setupNavigationBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "6366F1")
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 
