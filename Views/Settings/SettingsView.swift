@@ -7,6 +7,8 @@
 //
 
 import SwiftUI
+import Combine
+import CloudKit
 
 struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
@@ -53,7 +55,7 @@ struct SettingsView: View {
                 
                 Section(header: Text("隐私与安全")) {
                     NavigationLink("隐私政策", destination: PrivacySettingsView())
-                    NavigationLink("服务条款", destination: TermsSettingsView())
+                    Link("服务条款", destination: URL(string: "https://zhonghuo.cn/terms")!)
                     Button(action: exportUserData) {
                         HStack {
                             Image(systemName: "square.and.arrow.down")
