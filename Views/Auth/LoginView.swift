@@ -254,6 +254,13 @@ struct LoginView: View {
                                 errorMessage = ""
                             }
                         }
+                        .onTapGesture {
+                            // 🔴 点击输入框时清空错误（避免多次点击显示旧错误）
+                            if showingError {
+                                showingError = false
+                                errorMessage = ""
+                            }
+                        }
                     
                     if loginType == "password" {
                         SecureField("密码", text: $password)
