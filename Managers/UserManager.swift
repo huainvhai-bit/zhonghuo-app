@@ -1315,6 +1315,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     // ✅ Swift 6 并发安全：使用局部变量避免捕获问题
                     let _ = willModulesCount
                     
+                    print("🔍 fetchUserData: 准备设置 currentUser")
+                    print("   - 当前 currentUser: \(self.currentUser?.name ?? "nil")")
+                    print("   - userId: \(userId)")
+                    print("   - name: \(name)")
+                    
                     // 🔧 修复：如果 currentUser 是 nil，创建新用户对象
                     if var currentUser = self.currentUser {
                         // 更新已存在的用户
@@ -1358,11 +1363,14 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         self.currentUser = user
                         self.isLoggedIn = true
                         print("✅ 从服务器创建用户对象：\(user.name)")
+                        print("   - currentUser.id: \(user.id)")
+                        print("   - currentUser.phone: \(user.phone)")
                     }
                     
                     // ✅ 标记加载完成
                     isFetchingUserData = false
                     isUserLoaded = true
+                    print("✅ fetchUserData 完成：isUserLoaded=\(isUserLoaded), currentUser=\(self.currentUser?.name ?? "nil")")
                 }
                 
                 // 保存本地缓存
