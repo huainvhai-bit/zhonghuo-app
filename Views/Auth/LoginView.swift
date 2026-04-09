@@ -184,6 +184,9 @@ struct LoginView: View {
             userManager.isLoggedIn = true
         }
         
+        // 🔴 通知 ContentView 重新检查登录状态
+        NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+        
         // 通知 HomeStatusView 刷新
         NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
         
