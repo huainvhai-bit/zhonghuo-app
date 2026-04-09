@@ -141,11 +141,11 @@ struct SettingsView: View {
                 // 仅用于触发视图更新，无需重复赋值
             }
             .onAppear {
-            deviceMonitor.startMonitoring()
-        }
-        .onDisappear {
-            deviceMonitor.stopMonitoring()
-        }
+                deviceMonitor.startMonitoring()
+            }
+            .onDisappear {
+                deviceMonitor.stopMonitoring()
+            }
     }
     
     private func openTermsURL() {
