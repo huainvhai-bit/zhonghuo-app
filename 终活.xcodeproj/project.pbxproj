@@ -30,7 +30,7 @@
 		33DE7DED2F6D53CD00F8677E /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 33DE7DEC2F6D53CD00F8677E /* CodeScanner */; };
 		A1000001 /* App/ZhonghuoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ZhonghuoApp.swift */; };
 		A1000002 /* App/ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
-		A1000003 /* Views/Common/HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* Home/HomeStatusView.swift */; };
+		A1000003 /* Views/Common/HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* Views/Common/HomeStatusView.swift */; };
 		A1000005 /* Views/Will/WillAssetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* WillAssetsView.swift */; };
 		A1000007 /* Views/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* Settings/SettingsView.swift */; };
 		A1000009 /* Utils/Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* Colors.swift */; };
@@ -101,7 +101,7 @@
 		33DE7DE12F6D493700F8677E /* Views/Common/InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/InviteCodeView.swift; sourceTree = "<group>"; };
 		A2000001 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ZhonghuoApp.swift; sourceTree = SOURCE_ROOT; };
 		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ContentView.swift; sourceTree = SOURCE_ROOT; };
-		A2000003 /* Home/HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
+		A2000003 /* Views/Common/HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/HomeStatusView.swift; sourceTree = SOURCE_ROOT; };
 		A2000005 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Will/WillAssetsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000007 /* Settings/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/SettingsView.swift; sourceTree = SOURCE_ROOT; };
 		A2000009 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/Colors.swift; sourceTree = SOURCE_ROOT; };
@@ -180,7 +180,7 @@
 				3366C40D2F66D4D500129FF3 /* Views/Will/WillModuleEdit.swift */,
 				A2000001 /* ZhonghuoApp.swift */,
 				A2000002 /* ContentView.swift */,
-				A2000003 /* Home/HomeStatusView.swift */,
+				A2000003 /* Views/Common/HomeStatusView.swift */,
 				A2000025 /* MessageManager.swift */,
 				A2000005 /* WillAssetsView.swift */,
 				A2000007 /* Settings/SettingsView.swift */,
