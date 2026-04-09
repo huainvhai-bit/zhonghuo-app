@@ -95,7 +95,7 @@ class ConfigManager: ObservableObject {
             let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
             let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
             let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
-            let smsDev = configData["smsIsDevelopment"] as? Int ?? 1
+            _ = configData["smsIsDevelopment"] as? Int ?? 1
             
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderHours),

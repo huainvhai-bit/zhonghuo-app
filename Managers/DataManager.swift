@@ -797,7 +797,7 @@ class DataManager: ObservableObject {
             let detailsJSON = try JSONSerialization.data(withJSONObject: asset.details)
             let detailsString = String(data: detailsJSON, encoding: .utf8) ?? "{}"
             
-            let result = try await updateAssetGraphQL(
+            _ = try await updateAssetGraphQL(
                 id: asset.id,
                 type: asset.type.rawValue,
                 name: asset.name,
@@ -854,7 +854,7 @@ class DataManager: ObservableObject {
         
         // 异步同步删除到服务器
         Task {
-            if let result = await batchSyncWills() {
+            if let _ = await batchSyncWills() {
                 print("✅ 遗嘱删除同步成功")
             } else {
                 print("⚠️ 遗嘱删除同步失败")
@@ -1080,7 +1080,7 @@ class DataManager: ObservableObject {
     
     func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
         // 🔧 修复：从 currentUser 读取数据
-        guard let userId = UserManager.shared.currentUser?.id else {
+        guard UserManager.shared.currentUser?.id != nil else {
             print("⚠️ 紧急联系人同步：用户未登录")
             return nil
         }

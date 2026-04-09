@@ -88,7 +88,7 @@ struct ZhonghuoApp: App {
     @MainActor
     private func checkVersionUpdate() async {
         // 等待网络
-        await waitForNetwork(timeout: 5.0)
+        _ = await waitForNetwork(timeout: 5.0)
         
         guard !DataManager.apiURL.isEmpty else {
             print("⚠️ API URL 未设置，跳过版本检查")
@@ -116,8 +116,6 @@ struct ZhonghuoApp: App {
                 UserDefaults.standard.set(config.updateUrl, forKey: "pendingUpdateUrl")
                 UserDefaults.standard.set(true, forKey: "showingUpdateAlert")
             }
-        } catch {
-            print("❌ 版本检查失败：\(error)")
         }
     }
     
