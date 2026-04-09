@@ -170,6 +170,9 @@ struct ContentView: View {
     private func checkLoginStatus() async {
         print("🔍 开始检查登录状态...")
         
+        // 🔴 重置 forceLogout，避免历史状态影响
+        self.forceLogout = false
+        
         // 加载用户（同步）
         self.userManager.loadUser()
         
@@ -201,8 +204,12 @@ struct ContentView: View {
             } else if validationResult == .networkError || validationResult == .serverError {
                 // 网络错误/服务器错误时，保持登录状态（使用本地数据）
                 print("⚠️ 网络/服务器错误，保持登录状态（使用本地缓存）")
+                // 🔴 重置 forceLogout，避免误判
+                self.forceLogout = false
             } else {
                 print("✅ Token 验证成功")
+                // 🔴 重置 forceLogout，确保登录状态正常
+                self.forceLogout = false
             }
         }
         
