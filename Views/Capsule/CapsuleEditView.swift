@@ -210,7 +210,7 @@ struct CapsuleEditView: View {
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
             // 📤 同步到云端
-            await dataManager.batchSyncCapsules()
+            _ = await dataManager.batchSyncCapsules()
             
             dismiss()
         }
@@ -280,7 +280,8 @@ struct CapsuleMediaRecorderView: View {
                     
                     if recorder.isRecording {
                         Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
-                            .font(.system(size: 32, monospacedDigit: true))
+                            .font(.system(size: 32))
+                            .monospacedDigit()
                             .foregroundColor(.secondary)
                     }
                 }
