@@ -247,11 +247,25 @@ struct LoginView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                         .font(.system(size: 18, weight: .medium))
+                        .onChange(of: phone) { _ in
+                            // 🔴 清空错误信息（避免输入时显示旧错误）
+                            if showingError {
+                                showingError = false
+                                errorMessage = ""
+                            }
+                        }
                     
                     if loginType == "password" {
                         SecureField("密码", text: $password)
                             .textFieldStyle(CustomTextFieldStyle())
                             .font(.system(size: 18, weight: .medium))
+                            .onChange(of: password) { _ in
+                                // 🔴 清空错误信息（避免输入时显示旧错误）
+                                if showingError {
+                                    showingError = false
+                                    errorMessage = ""
+                                }
+                            }
                     } else {
                         HStack {
                             TextField("验证码", text: $verifyCode)
