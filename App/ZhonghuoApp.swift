@@ -18,12 +18,9 @@ struct ZhonghuoApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
-                    // 🔴 禁用启动时账号验证（避免弹窗打扰用户）
-                    // Task {
-                    //     await validateAccountOnLaunch()
-                    // }
+                    // ✅ P1 修复 #4: 清理残留代码，只保留版本检查
                     Task {
-                        await checkVersionUpdate()  // 只检查版本更新
+                        await checkVersionUpdate()
                     }
                 }
         }
@@ -31,10 +28,7 @@ struct ZhonghuoApp: App {
             if newPhase == .active {
                 print("🟢 App 进入前台 - ZhonghuoApp")
                 RealTimeSyncManager.shared.appDidBecomeActive()
-                
-                // 🔴 禁用自动签到（避免重复触发和卡顿）
-                // 🔵 自动签到已迁移到 HomeStatusView 处理（避免重复签到）
-                // HomeStatusView 的 onAppear 和 scenePhase 变化会自动触发签到
+                // ✅ P1 修复 #4: 自动签到已迁移到 HomeStatusView 处理
             }
         }
     }

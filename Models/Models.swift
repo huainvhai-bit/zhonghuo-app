@@ -1347,6 +1347,7 @@ struct GraphQLErrorItem: Decodable {
 
 // MARK: - GraphQL Errors
 
+// ✅ P0 修复 #2: 完善错误类型定义
 enum GraphQLError: LocalizedError {
     case invalidURL
     case invalidResponse
@@ -1354,15 +1355,37 @@ enum GraphQLError: LocalizedError {
     case serverError(String)
     case noData
     case decodingError
+    case unauthorized
+    case forbidden
+    case notFound
+    case serviceUnavailable
+    case networkError
+    case timeout
+    case unknown
     
     var errorDescription: String? {
         switch self {
         case .invalidURL: return "无效的 URL"
         case .invalidResponse: return "无效的响应"
-        case .httpError(let code): return "HTTP 错误：\(code)"
+        case .httpError(let code):
+            switch code {
+            case 401: return "未授权，请重新登录"
+            case 403: return "禁止访问"
+            case 404: return "资源不存在"
+            case 500: return "服务器内部错误"
+            case 503: return "服务不可用"
+            default: return "HTTP 错误：\(code)"
+            }
         case .serverError(let message): return "服务器错误：\(message)"
         case .noData: return "没有数据"
         case .decodingError: return "解码错误"
+        case .unauthorized: return "未授权，请重新登录"
+        case .forbidden: return "禁止访问"
+        case .notFound: return "资源不存在"
+        case .serviceUnavailable: return "服务不可用"
+        case .networkError: return "网络连接失败"
+        case .timeout: return "请求超时"
+        case .unknown: return "未知错误"
         }
     }
 }
