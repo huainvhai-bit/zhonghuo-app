@@ -87,7 +87,6 @@ struct SettingsView: View {
                 }
             }
             .listStyle(PlainListStyle())
-
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.large)
             .navigationViewStyle(StackNavigationViewStyle())
