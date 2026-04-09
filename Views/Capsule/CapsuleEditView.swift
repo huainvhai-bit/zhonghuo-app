@@ -267,7 +267,8 @@ struct CapsuleMediaRecorderView: View {
                         Image(systemName: "record.fill")
                             .font(.system(size: 80))
                             .foregroundColor(.red)
-                            .symbolEffect(.pulse)
+                            .scaleEffect(recorder.isRecording ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: recorder.isRecording)
                     } else {
                         Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
                             .font(.system(size: 80))
