@@ -395,7 +395,7 @@ struct CapsuleMediaRecorderView: View {
 }
 
 // MARK: - MediaRecorder 类（✅ 修复：支持视频和语音录制）
-class MediaRecorder: ObservableObject {
+class MediaRecorder: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var recordingURL: URL?
     private var audioRecorder: AVAudioRecorder?
