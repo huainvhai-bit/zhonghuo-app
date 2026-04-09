@@ -64,9 +64,9 @@
 		B1000009 /* Views/Settings/NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* Settings/NotificationSettingsView.swift */; };
 		B1000010 /* Views/Settings/PrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* Settings/PrivacySettingsView.swift */; };
 		B1000011 /* Views/Settings/ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* Settings/ProfileSettingsView.swift */; };
-		B1000012 /* Services/ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* Services/ConfigManager.swift */; };
-		B1000013 /* Services/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000013 /* Services/APIClient.swift */; };
-		B1000014 /* Services/TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000014 /* Services/TokenManager.swift */; };
+		B1000012 /* Managers/ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* Managers/ConfigManager.swift */; };
+		B1000013 /* Managers/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000013 /* Managers/APIClient.swift */; };
+		B1000014 /* Managers/TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000014 /* Managers/TokenManager.swift */; };
 		D5AD1F30 /* Utils/AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F300 /* AppError.swift */; };
 		D5AD1F31 /* Utils/Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F310 /* Logger.swift */; };
 		D5AD1F32 /* Utils/NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F320 /* NetworkService.swift */; };
@@ -136,9 +136,9 @@
 		B2000009 /* Settings/NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/NotificationSettingsView.swift; sourceTree = SOURCE_ROOT; };
 		B2000010 /* Settings/PrivacySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/PrivacySettingsView.swift; sourceTree = SOURCE_ROOT; };
 		B2000011 /* Settings/ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/ProfileSettingsView.swift; sourceTree = SOURCE_ROOT; };
-		B2000012 /* Services/ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/ConfigManager.swift; sourceTree = SOURCE_ROOT; };
-		B2000013 /* Services/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/APIClient.swift; sourceTree = SOURCE_ROOT; };
-		B2000014 /* Services/TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/TokenManager.swift; sourceTree = SOURCE_ROOT; };
+		B2000012 /* Managers/ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/ConfigManager.swift; sourceTree = SOURCE_ROOT; };
+		B2000013 /* Managers/APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/APIClient.swift; sourceTree = SOURCE_ROOT; };
+		B2000014 /* Managers/TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/TokenManager.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F297D03473770EF79D0 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/KeychainManager.swift; sourceTree = "<group>"; };
 		D5AD1F300 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/AppError.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F310 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/Logger.swift; sourceTree = SOURCE_ROOT; };
@@ -227,9 +227,9 @@
 				B2000009 /* Settings/NotificationSettingsView.swift */,
 				B2000010 /* Settings/PrivacySettingsView.swift */,
 				B2000011 /* Settings/ProfileSettingsView.swift */,
-				B2000012 /* Services/ConfigManager.swift */,
-				B2000013 /* Services/APIClient.swift */,
-				B2000014 /* Services/TokenManager.swift */,
+				B2000012 /* Managers/ConfigManager.swift */,
+				B2000013 /* Managers/APIClient.swift */,
+				B2000014 /* Managers/TokenManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -366,9 +366,9 @@
 				B1000009 /* Views/Settings/NotificationSettingsView.swift in Sources */,
 				B1000010 /* Views/Settings/PrivacySettingsView.swift in Sources */,
 				B1000011 /* Views/Settings/ProfileSettingsView.swift in Sources */,
-				B1000012 /* Services/ConfigManager.swift in Sources */,
-				B1000013 /* Services/APIClient.swift in Sources */,
-				B1000014 /* Services/TokenManager.swift in Sources */,
+				B1000012 /* Managers/ConfigManager.swift in Sources */,
+				B1000013 /* Managers/APIClient.swift in Sources */,
+				B1000014 /* Managers/TokenManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
