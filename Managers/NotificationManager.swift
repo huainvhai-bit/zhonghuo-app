@@ -48,8 +48,9 @@ class NotificationManager: ObservableObject {
         
         // 📱 优先使用后端配置，其次使用参数，最后使用默认值
         // ✅ 修复 #1: 使用 await MainActor.run 包裹访问 @MainActor 的 DataManager
-        let threshold = reminderThresholdHours ?? DataManager.shared.systemConfig.checkinReminderThresholdHours
-        let interval = reminderIntervalHours ?? DataManager.shared.systemConfig.checkinReminderIntervalHours
+        // ✅ Swift 6: Double 是非可选类型，但为了类型匹配需要 Double() 包装
+        let threshold = reminderThresholdHours.map { Double($0) } ?? DataManager.shared.systemConfig.checkinReminderThresholdHours
+        let interval = reminderIntervalHours.map { Double($0) } ?? DataManager.shared.systemConfig.checkinReminderIntervalHours
         
         print("   - 提醒阈值：\(threshold) 小时（后端配置）")
         print("   - 推送间隔：\(interval) 小时（后端配置）")

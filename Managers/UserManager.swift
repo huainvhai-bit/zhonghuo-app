@@ -1311,6 +1311,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                 
                 await MainActor.run {
+                    // ✅ Swift 6 并发安全：使用局部变量避免捕获问题
+                    let _ = willModulesCount
                     // 🔧 优化：只更新统计信息，不获取详细数据列表（详细数据通过 batchSync 按需同步）
                     if var currentUser = self.currentUser {
                         currentUser.emergencyContactsCount = emergencyContactsCount
