@@ -320,6 +320,17 @@ struct SettingsView: View {
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("我的")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         // 手动刷新设备信息
@@ -327,7 +338,7 @@ struct SettingsView: View {
                         deviceMonitor.updateBatteryInfo()
                     }) {
                         Image(systemName: "arrow.clockwise")
-                            .foregroundColor(.indigo)
+                            .foregroundColor(.white)
                     }
                 }
             }
