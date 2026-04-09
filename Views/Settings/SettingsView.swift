@@ -54,7 +54,7 @@ struct SettingsView: View {
                 }
                 
                 Section(header: Text("隐私与安全")) {
-                    NavigationLink("隐私政策", destination: PrivacySettingsView())
+                    Button("隐私政策") { showPrivacy = true }
                     Button("服务条款") { openTermsURL() }
                     Button(action: exportUserData) {
                         HStack {
