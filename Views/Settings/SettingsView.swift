@@ -17,81 +17,81 @@ struct SettingsView: View {
     @State private var showPrivacy = false
     @State private var showAbout = false
     @State private var showingLogoutConfirm = false
-    @State private var errorMessage = ""
-    @State private var showingError = false
     
     var body: some View {
-        List {
-            // 用户信息卡片
-            Section {
-                UserInfoCard(user: userManager.currentUser)
-                    .onTapGesture {
-                        showProfile = true
-                    }
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            
-            // 统计信息
-            Section {
-                StatCardsView(user: userManager.currentUser)
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-            
-            // 设置分类
-            Section(header: Text("账户设置")) {
-                Button("个人资料") { showProfile = true }
-                Button("紧急联系人") { showEmergencyContacts = true }
-                Button("通知设置") { showNotifications = true }
-            }
-            
-            Section(header: Text("隐私与安全")) {
-                Button("隐私政策") { showPrivacy = true }
-                Button("服务条款") { openTermsURL() }
-            }
-            
-            Section(header: Text("关于")) {
-                Button("关于 App") { showAbout = true }
-            }
-            
-            Section {
-                Button(role: .destructive) {
-                    showingLogoutConfirm = true
-                } label: {
-                    HStack {
-                        Image(systemName: "ant.cpu")
-                        Text("退出登录")
+        NavigationView {
+            List {
+                // 用户信息卡片
+                Section {
+                    UserInfoCard(user: userManager.currentUser)
+                        .onTapGesture {
+                            showProfile = true
+                        }
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                
+                // 统计信息
+                Section {
+                    StatCardsView(user: userManager.currentUser)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                
+                // 设置分类
+                Section(header: Text("账户设置")) {
+                    Button("个人资料") { showProfile = true }
+                    Button("紧急联系人") { showEmergencyContacts = true }
+                    Button("通知设置") { showNotifications = true }
+                }
+                
+                Section(header: Text("隐私与安全")) {
+                    Button("隐私政策") { showPrivacy = true }
+                    Button("服务条款") { openTermsURL() }
+                }
+                
+                Section(header: Text("关于")) {
+                    Button("关于 App") { showAbout = true }
+                }
+                
+                Section {
+                    Button(role: .destructive) {
+                        showingLogoutConfirm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "ant.cpu")
+                            Text("退出登录")
+                        }
                     }
                 }
             }
-        }
-        .listStyle(PlainListStyle())
-        .background(Color(hex: "F5F5F7"))
-        .navigationTitle("设置")
-        .navigationBarTitleDisplayMode(.large)
-        .alert("退出登录", isPresented: $showingLogoutConfirm) {
-            Button("取消", role: .cancel) { }
-            Button("退出", role: .destructive) {
-                Task { await logout() }
+            .listStyle(PlainListStyle())
+            .background(Color(hex: "F5F5F7"))
+            .navigationTitle("设置")
+            .navigationBarTitleDisplayMode(.large)
+            .alert("退出登录", isPresented: $showingLogoutConfirm) {
+                Button("取消", role: .cancel) { }
+                Button("退出", role: .destructive) {
+                    Task { await logout() }
+                }
+            } message: {
+                Text("确定要退出登录吗？")
             }
-        } message: {
-            Text("确定要退出登录吗？")
-        }
-        .sheet(isPresented: $showProfile) {
-            ProfileSettingsView()
-        }
-        .sheet(isPresented: $showEmergencyContacts) {
-            EmergencyContactSettingsView()
-        }
-        .sheet(isPresented: $showNotifications) {
-            NotificationSettingsView()
-        }
-        .sheet(isPresented: $showPrivacy) {
-            PrivacySettingsView()
-        }
-        .sheet(isPresented: $showAbout) {
-            AboutSettingsView()
+            .sheet(isPresented: $showProfile) {
+                ProfileSettingsView()
+            }
+            .sheet(isPresented: $showEmergencyContacts) {
+                EmergencyContactSettingsView()
+            }
+            .sheet(isPresented: $showNotifications) {
+                NotificationSettingsView()
+            }
+            .sheet(isPresented: $showPrivacy) {
+                PrivacySettingsView()
+            }
+            .sheet(isPresented: $showAbout) {
+                AboutSettingsView()
+            }
         }
     }
     
