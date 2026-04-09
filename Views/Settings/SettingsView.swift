@@ -28,7 +28,7 @@ struct SettingsView: View {
     @State private var exportSuccess = false
     
     var body: some View {
-            List {
+        List {
 
                 // 用户信息卡片
                 Section {
