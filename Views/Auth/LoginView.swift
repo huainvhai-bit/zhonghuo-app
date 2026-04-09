@@ -179,15 +179,15 @@ struct LoginView: View {
         // 加载用户数据
         await userManager.loadUser()
         
+        // 🔴 强制更新登录状态
+        await MainActor.run {
+            userManager.isLoggedIn = true
+        }
+        
         // 通知 HomeStatusView 刷新
         NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
         
         print("🟢 登录状态已更新")
-        
-        // 关闭登录界面，返回主页面
-        await MainActor.run {
-            dismiss()
-        }
     }
     
     /// 处理登录错误
