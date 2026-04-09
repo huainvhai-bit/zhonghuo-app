@@ -72,14 +72,10 @@ struct ZhonghuoApp: App {
                 print("✅ 账号验证成功")
                 UserDefaults.standard.set(now, forKey: "lastAccountValidationTime")
             } else {
-                print("❌ 账号验证失败：\(result.reason)")
-                // 🔴 关键修复 4: 仅在不允许本地使用时才退出登录
-                if result.shouldLogout {
-                    print("🚪 账号异常，需要退出登录")
-                    await logout(reason: result.reason)
-                } else {
-                    print("⚠️ 账号异常，但允许本地使用")
-                }
+                // 🔴 关键修复 4: 完全禁用验证失败的弹窗和退出登录
+                // 只记录日志，不打扰用户
+                print("⚠️ 账号验证失败：\(result.reason) - 静默处理，不影响使用")
+                // 不再调用 logout()，允许用户继续使用本地数据
             }
         }
     }
@@ -216,19 +212,20 @@ struct ZhonghuoApp: App {
                     } else {
                         // 无用户数据 → 静默失败，不退出
                         print("⚠️ 验证响应无用户数据，静默失败")
-                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证无数据")
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "")
                     }
                     
                 case 401:
-                    // Token 无效 → 需要退出
-                    return ValidationResult(isValid: false, shouldLogout: true, reason: "登录已过期")
+                    // Token 无效 → 静默失败，不退出
+                    print("⚠️ Token 无效，静默失败")
+                    return ValidationResult(isValid: false, shouldLogout: false, reason: "")
                     
                 case 404, 500:
                     // 服务器错误 → 不退出，允许本地使用
-                    return ValidationResult(isValid: false, shouldLogout: false, reason: "验证服务不可用")
+                    return ValidationResult(isValid: false, shouldLogout: false, reason: "")
                     
                 default:
-                    return ValidationResult(isValid: false, shouldLogout: false, reason: "网络错误")
+                    return ValidationResult(isValid: false, shouldLogout: false, reason: "")
                 }
             }
         } catch {
