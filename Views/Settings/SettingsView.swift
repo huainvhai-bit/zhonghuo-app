@@ -48,9 +48,9 @@ struct SettingsView: View {
                 
                 // 设置分类
                 Section(header: Text("账户设置")) {
-                    NavigationLink("个人资料", destination: ProfileSettingsView())
-                    NavigationLink("紧急联系人", destination: EmergencyContactSettingsView())
-                    NavigationLink("通知设置", destination: NotificationSettingsView())
+                    Button("个人资料") { showProfile = true }
+                    Button("紧急联系人") { showEmergencyContacts = true }
+                    Button("通知设置") { showNotifications = true }
                 }
                 
                 Section(header: Text("隐私与安全")) {
@@ -72,7 +72,7 @@ struct SettingsView: View {
                 }
                 
                 Section(header: Text("关于")) {
-                    NavigationLink("关于 App", destination: AboutSettingsView())
+                    Button("关于 App") { showAbout = true }
                 }
                 
                 Section {
