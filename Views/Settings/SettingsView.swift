@@ -91,6 +91,7 @@ struct SettingsView: View {
             .background(Color(hex: "F5F5F7"))
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.large)
+            .navigationViewStyle(StackNavigationViewStyle())
             .alert("退出登录", isPresented: $showingLogoutConfirm) {
                 Button("取消", role: .cancel) { }
                 Button("退出", role: .destructive) {
