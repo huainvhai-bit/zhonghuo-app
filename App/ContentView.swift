@@ -448,10 +448,7 @@ struct ContentView: View {
             }
             .tag(3)
             
-            NavigationView {
-                SettingsView()
-                    .navigationBarHidden(true)
-            }
+            SettingsView()
             .tabItem {
                 Label("我的", systemImage: "person.fill")
             }
