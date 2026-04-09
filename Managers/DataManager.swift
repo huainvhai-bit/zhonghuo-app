@@ -107,7 +107,7 @@ class DataManager: ObservableObject {
             
             // 使用后端返回的地址（无条件相信）
             DataManager.baseURL = baseURL
-            DataManager.apiURL = baseURL
+            DataManager.apiURL = NetworkUtils.normalizeBaseURL(baseURL)
             
             self.isBackendOnline = true
             
