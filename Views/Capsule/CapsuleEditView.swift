@@ -252,16 +252,23 @@ struct CapsuleMediaRecorderView: View {
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var showingPermissionAlert = false
+    @State private var showCameraPreview = false
     
     var body: some View {
         ZStack {
             Color(hex: "F5F5F7")
                 .ignoresSafeArea(edges: .all)
             
+            if selectedType == .video && showCameraPreview {
+                // 摄像头预览
+                CameraPreviewView(session: recorder.captureSession)
+                    .ignoresSafeArea()
+            }
+            
             VStack(spacing: 32) {
                 Spacer()
                 
-                // 录制图标
+                // 录制状态
                 VStack(spacing: 16) {
                     if recorder.isRecording {
                         Image(systemName: "record.fill")
@@ -318,6 +325,11 @@ struct CapsuleMediaRecorderView: View {
                 Spacer()
             }
         }
+        .onAppear {
+            if selectedType == .video {
+                showCameraPreview = true
+            }
+        }
         .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -348,38 +360,36 @@ struct CapsuleMediaRecorderView: View {
     private func startRecording() {
         // ✅ 检查权限
         if selectedType == .video {
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                guard let self = self else { return }
+            AVCaptureDevice.requestAccess(for: .video) { granted in
                 if granted {
                     AVCaptureDevice.requestAccess(for: .audio) { granted in
                         if granted {
                             DispatchQueue.main.async {
-                                self.recorder.startRecording(type: .video)
-                                self.startTimer()
+                                recorder.startRecording(type: .video)
+                                startTimer()
                             }
                         } else {
                             DispatchQueue.main.async {
-                                self.showingPermissionAlert = true
+                                showingPermissionAlert = true
                             }
                         }
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self.showingPermissionAlert = true
+                        showingPermissionAlert = true
                     }
                 }
             }
         } else {
-            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-                guard let self = self else { return }
+            AVCaptureDevice.requestAccess(for: .audio) { granted in
                 if granted {
                     DispatchQueue.main.async {
-                        self.recorder.startRecording(type: .audio)
-                        self.startTimer()
+                        recorder.startRecording(type: .audio)
+                        startTimer()
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self.showingPermissionAlert = true
+                        showingPermissionAlert = true
                     }
                 }
             }
@@ -408,9 +418,9 @@ struct CapsuleMediaRecorderView: View {
 class MediaRecorder: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var recordingURL: URL?
+    @Published var captureSession: AVCaptureSession?  // ✅ 公开 captureSession 用于预览
     private var audioRecorder: AVAudioRecorder?
     private var videoOutput: AVCaptureMovieFileOutput?
-    private var captureSession: AVCaptureSession?
     
     enum RecordingType {
         case audio
@@ -520,6 +530,42 @@ extension MediaRecorder: AVCaptureFileOutputRecordingDelegate {
         } else {
             print("✅ 视频录制成功：\(outputFileURL)")
             recordingURL = outputFileURL
+        }
+    }
+}
+
+// MARK: - 摄像头预览视图
+struct CameraPreviewView: UIViewRepresentable {
+    let session: AVCaptureSession?
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.backgroundColor = .black
+        
+        guard let session = session,
+              let previewLayer = AVCaptureVideoPreviewLayer(session: session) else {
+            return view
+        }
+        
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        
+        DispatchQueue.main.async {
+            previewLayer.frame = view.bounds
+        }
+        
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        guard let session = session,
+              let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer else {
+            return
+        }
+        
+        previewLayer.session = session
+        DispatchQueue.main.async {
+            previewLayer.frame = uiView.bounds
         }
     }
 }
