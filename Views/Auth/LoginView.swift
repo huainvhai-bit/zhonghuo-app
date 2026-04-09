@@ -194,6 +194,11 @@ struct LoginView: View {
         NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
         
         print("🟢 登录状态已更新")
+        
+        // ✅ 关闭登录界面，返回主页面
+        await MainActor.run {
+            dismiss()
+        }
     }
     
     /// 处理登录错误

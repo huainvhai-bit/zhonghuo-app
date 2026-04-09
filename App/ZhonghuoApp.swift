@@ -208,15 +208,15 @@ struct ZhonghuoApp: App {
                 switch httpResponse.statusCode {
                 case 200:
                     let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    let success = json?["success"] as? Bool ?? false
-                    if success,
-                       let data = json?["data"] as? [String: Any],
-                       let phone = data["phone"] as? String,
-                       phone == user.phone {
+                    // ✅ 宽松验证：只要 200 响应且有用户数据，就认为验证成功
+                    if let data = json?["data"] as? [String: Any],
+                       let userId = data["id"] as? String {
+                        print("✅ 验证成功：用户 ID=\(userId)")
                         return ValidationResult(isValid: true, shouldLogout: false, reason: "")
                     } else {
-                        // 账号不存在 → 需要退出
-                        return ValidationResult(isValid: false, shouldLogout: true, reason: "账号不存在")
+                        // 无用户数据 → 静默失败，不退出
+                        print("⚠️ 验证响应无用户数据，静默失败")
+                        return ValidationResult(isValid: false, shouldLogout: false, reason: "验证无数据")
                     }
                     
                 case 401:
