@@ -87,7 +87,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     override init() {
         super.init()
         setupLocationManager()
-        loadUser()
+        // ✅ 延迟 loadUser 调用，避免初始化时卡死
+        // loadUser 会在需要时自动调用
     }
     
     /// 配置定位管理器
