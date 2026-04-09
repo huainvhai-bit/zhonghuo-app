@@ -404,7 +404,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// ✅ 支持自动刷新 Token（永久登录）
     /// ✅ P0 修复 #3: 仅使用 Keychain 存储 Token，移除 UserDefaults
     static func sendGraphQLQueryWithToken(query: String, variables: [String: Any]) async throws -> [String: Any] {
-        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "https://8.136.41.211:3395"
+        let baseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
         guard let apiURL = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
         }

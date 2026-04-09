@@ -424,9 +424,12 @@ class RealTimeSyncManager: ObservableObject {
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // 🔴 关键：同步设置默认 API URL（在后台任务注册前）
-        DataManager.apiURL = "https://8.136.41.211:3395"
-        DataManager.baseURL = "https://8.136.41.211:3395"
-        UserDefaults.standard.set("https://8.136.41.211:3395", forKey: "apiURL")
+        // 使用 NetworkUtils 自动转换为正确的协议（本地 IP 强制使用 HTTP）
+        let defaultURL = "8.136.41.211:3395"
+        let normalizedURL = NetworkUtils.normalizeBaseURL(defaultURL)
+        DataManager.apiURL = normalizedURL
+        DataManager.baseURL = normalizedURL
+        UserDefaults.standard.set(normalizedURL, forKey: "apiURL")
         print("🔵 API URL 已设置：\(DataManager.apiURL)")
         
         // 异步更新配置（从服务器获取最新配置）
@@ -514,24 +517,28 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     private func initializeAPIConfig() async {
         // 🔴 关键：立即设置默认值（同步，确保在异步操作前就设置好）
+        let defaultURL = "8.136.41.211:3395"
+        let normalizedURL = NetworkUtils.normalizeBaseURL(defaultURL)
         await MainActor.run {
-            DataManager.apiURL = "https://8.136.41.211:3395"
-            DataManager.baseURL = "https://8.136.41.211:3395"
+            DataManager.apiURL = normalizedURL
+            DataManager.baseURL = normalizedURL
         }
         
         do {
             // 尝试从 UserDefaults 读取已保存的 API URL
             if let savedURL = UserDefaults.standard.string(forKey: "apiURL"), !savedURL.isEmpty {
                 await MainActor.run {
-                    DataManager.apiURL = savedURL
-                    DataManager.baseURL = savedURL
+                    // 使用 NetworkUtils 确保 URL 格式正确
+                    let normalizedSavedURL = NetworkUtils.normalizeBaseURL(savedURL)
+                    DataManager.apiURL = normalizedSavedURL
+                    DataManager.baseURL = normalizedSavedURL
                 }
                 print("🔵 API URL 已从缓存加载：\(DataManager.apiURL)")
                 return
             }
             
             // 从服务器获取配置（超时 3 秒）
-            let baseURL = "https://8.136.41.211:3395"
+            let baseURL = "8.136.41.211:3395"
             try await withTimeout(seconds: 3) {
                 try await DataManager.shared.fetchServerConfig(from: baseURL)
             }
