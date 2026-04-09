@@ -269,7 +269,7 @@ struct LoginView: View {
                             .background(Color(hex: "AF52DE"))
                             .cornerRadius(12)
                     }
-                    .disabled(false)  // 🔓 临时解除限制
+                    .disabled(isLoading)
                     .opacity(isLoading ? 0.5 : 1)
                 }
                 .padding(.horizontal, 24)
