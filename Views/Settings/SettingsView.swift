@@ -11,7 +11,6 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
-    @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
     @State private var showProfile = false
     @State private var showEmergencyContacts = false
     @State private var showNotifications = false
@@ -22,103 +21,93 @@ struct SettingsView: View {
     @State private var showingError = false
     
     var body: some View {
-        NavigationView {
-            List {
-                // 用户信息卡片
-                Section {
-                    UserInfoCard(user: userManager.currentUser)
-                        .onTapGesture {
-                            showProfile = true
-                        }
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                
-                // 统计信息
-                Section {
-                    StatCardsView(user: userManager.currentUser)
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                
-                // 设置分类
-                Section(header: Text("账户设置")) {
-                    NavigationLink("个人资料", destination: ProfileSettingsView())
-                    NavigationLink("紧急联系人", destination: EmergencyContactSettingsView())
-                    NavigationLink("通知设置", destination: NotificationSettingsView())
-                }
-                
-                Section(header: Text("隐私与安全")) {
-                    NavigationLink("隐私政策", destination: PrivacySettingsView())
-                    NavigationLink("服务条款", destination: TermsSettingsView())
-                }
-                
-                Section(header: Text("关于")) {
-                    NavigationLink("关于 App", destination: AboutSettingsView())
-                }
-                
-                Section {
-                    Button(role: .destructive) {
-                        showingLogoutConfirm = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "ant.cpu")
-                            Text("退出登录")
-                        }
+        List {
+            // 用户信息卡片
+            Section {
+                UserInfoCard(user: userManager.currentUser)
+                    .onTapGesture {
+                        showProfile = true
+                    }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            
+            // 统计信息
+            Section {
+                StatCardsView(user: userManager.currentUser)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+            
+            // 设置分类
+            Section(header: Text("账户设置")) {
+                Button("个人资料") { showProfile = true }
+                Button("紧急联系人") { showEmergencyContacts = true }
+                Button("通知设置") { showNotifications = true }
+            }
+            
+            Section(header: Text("隐私与安全")) {
+                Button("隐私政策") { showPrivacy = true }
+                Button("服务条款") { openTermsURL() }
+            }
+            
+            Section(header: Text("关于")) {
+                Button("关于 App") { showAbout = true }
+            }
+            
+            Section {
+                Button(role: .destructive) {
+                    showingLogoutConfirm = true
+                } label: {
+                    HStack {
+                        Image(systemName: "ant.cpu")
+                        Text("退出登录")
                     }
                 }
             }
-            .listStyle(PlainListStyle())
-            .background(Color(hex: "F5F5F7"))
-            .navigationTitle("设置")
-            .navigationBarTitleDisplayMode(.large)
-            .alert("退出登录", isPresented: $showingLogoutConfirm) {
-                Button("取消", role: .cancel) { }
-                Button("退出", role: .destructive) {
-                    Task { await logout() }
-                }
-            } message: {
-                Text("确定要退出登录吗？")
-            }
-            .sheet(isPresented: $showProfile) {
-                ProfileSettingsView()
-            }
-            .sheet(isPresented: $showEmergencyContacts) {
-                EmergencyContactSettingsView()
-            }
-            .sheet(isPresented: $showNotifications) {
-                NotificationSettingsView()
-            }
-            .sheet(isPresented: $showPrivacy) {
-                PrivacySettingsView()
-            }
-            .sheet(isPresented: $showAbout) {
-                AboutSettingsView()
-            }
-            .onReceive(deviceMonitor.$batteryLevel) { level in
-                deviceMonitor.batteryLevel = level
-            }
         }
-        .onAppear {
-            deviceMonitor.startMonitoring()
+        .listStyle(PlainListStyle())
+        .background(Color(hex: "F5F5F7"))
+        .navigationTitle("设置")
+        .navigationBarTitleDisplayMode(.large)
+        .alert("退出登录", isPresented: $showingLogoutConfirm) {
+            Button("取消", role: .cancel) { }
+            Button("退出", role: .destructive) {
+                Task { await logout() }
+            }
+        } message: {
+            Text("确定要退出登录吗？")
         }
-        .onDisappear {
-            deviceMonitor.stopMonitoring()
+        .sheet(isPresented: $showProfile) {
+            ProfileSettingsView()
+        }
+        .sheet(isPresented: $showEmergencyContacts) {
+            EmergencyContactSettingsView()
+        }
+        .sheet(isPresented: $showNotifications) {
+            NotificationSettingsView()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            PrivacySettingsView()
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutSettingsView()
+        }
+    }
+    
+    private func openTermsURL() {
+        if let url = URL(string: "https://www.example.com/terms") {
+            UIApplication.shared.open(url)
         }
     }
     
     private func logout() async {
         print("🔴 退出登录")
-        
-        // 清除所有用户数据
         userManager.logout()
-        
-        // 清除 UserDefaults
         UserDefaults.standard.removeObject(forKey: "userToken")
         UserDefaults.standard.removeObject(forKey: "userId")
         UserDefaults.standard.set(false, forKey: "isLoggedIn")
         UserDefaults.standard.synchronize()
-        
         print("✅ 退出登录完成")
     }
 }
