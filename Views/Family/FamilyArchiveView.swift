@@ -205,11 +205,8 @@ struct FamilyArchiveView: View {
                 }
             } catch {
                 print("❌ 获取家庭档案失败：\(error)")
+                return []
             }
-                    createdAt: Date(),
-                    updatedAt: Date()
-                )
-            ]
         }
     }
 }
