@@ -47,6 +47,12 @@ struct WillAssetsView: View {
                 if dataManager.assets.isEmpty {
                     dataManager.initializeDefaultAssets()
                 }
+                
+                // ✅ 从服务器加载最新数据
+                Task {
+                    await dataManager.batchSyncWills()
+                    await dataManager.batchSyncAssets()
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {

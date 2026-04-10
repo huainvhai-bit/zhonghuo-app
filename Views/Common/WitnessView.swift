@@ -486,6 +486,28 @@ struct EditWitnessModal: View {
             notes = witness.notes
             isConfirmed = witness.isConfirmed
         }
+        
+        // ✅ 保存后同步到服务器
+        private func updateWitness() {
+            guard !name.isEmpty else { return }
+            
+            var updated = witness
+            updated.name = name
+            updated.relationship = relationship
+            updated.phone = phone
+            updated.idNumber = idNumber
+            updated.notes = notes
+            updated.isConfirmed = isConfirmed
+            
+            DataManager.shared.updateWitness(updated)
+            
+            // ✅ 异步同步到服务器
+            Task {
+                await DataManager.shared.batchSyncWitnesses()
+            }
+            
+            dismiss()
+        }
     }
     
     private func updateWitness() {

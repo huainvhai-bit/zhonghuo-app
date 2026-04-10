@@ -823,6 +823,11 @@ class DataManager: ObservableObject {
         saveWillModulesToFile()
         print("📜 遗嘱模块已保存到本地，准备同步到服务器...")
         print("📊 当前 willModules.count: \(willModules.count)")
+        
+        // ✅ 异步同步到服务器
+        Task {
+            await batchSyncWills()
+        }
         print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
@@ -911,6 +916,11 @@ class DataManager: ObservableObject {
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
+        // ✅ 异步同步到服务器
+        Task {
+            await batchSyncCapsules()
+        }
+        
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
@@ -929,6 +939,11 @@ class DataManager: ObservableObject {
             
             // 发送数据变更通知（触发实时同步）
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+            
+            // ✅ 异步同步到服务器
+            Task {
+                await batchSyncCapsules()
+            }
             
             // 异步同步到服务器
             Task {
