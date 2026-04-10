@@ -82,11 +82,18 @@ class LifeCheckStatusManager: ObservableObject {
             let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
             
             // ✅ 获取当前位置
-            let location = UserManager.shared.currentLocation
+            var locationDict: [String: Any]?
+            if let location = UserManager.shared.currentLocation {
+                locationDict = [
+                    "latitude": location.coordinate.latitude,
+                    "longitude": location.coordinate.longitude,
+                    "accuracy": location.horizontalAccuracy
+                ]
+            }
             
             _ = try await DataManager.shared.checkIn(
                 checkInIntervalHours: Int(checkInInterval),
-                location: location
+                location: locationDict
             )
             print("✅ 后端签到成功，签到间隔：\(checkInInterval) 小时")
         } catch {

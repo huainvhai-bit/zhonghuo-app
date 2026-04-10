@@ -609,7 +609,7 @@ struct SettingsView: View {
             "checkInIntervalHours": interval.hours
         ]
         
-        let response = try await DataManager.shared.sendGraphQLQuery(query: mutation, variables: variables)
+        let response = try await DataManager.shared.sendGraphQLQuery(query: mutation, variables: variables, baseURL: DataManager.apiURL)
         
         if let data = response["data"] as? [String: Any],
            let updateData = data["updateCheckInInterval"] as? [String: Any],
