@@ -71,8 +71,8 @@ struct CapsuleList: View {
             dataManager.capsules = loadedCapsules
             
             // 📤 同步胶囊到云端
-            Task {
-                await dataManager.batchSyncCapsules()
+            Task { @MainActor in
+                try? await dataManager.batchSyncCapsules()
             }
         }
     }
@@ -161,7 +161,8 @@ struct CapsuleList: View {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
                     // ✅ Bug 2 修复：点击胶囊跳转到预览页面，而不是编辑页面
-                    NavigationLink(destination: CapsuleDetailView(dataManager: dataManager, capsule: capsule)) {
+                    // ⚠️ 临时改回 CapsuleEditView，CapsuleDetailView 需要在 Xcode 中添加
+                    NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
                         CapsuleCard(capsule: capsule)
                     }
                 }

@@ -62,9 +62,9 @@ struct EditWillModuleModal: View {
             .confirmationDialog("选择模板", isPresented: $showingTemplatePicker) {
                 ForEach(getTemplatesForModule(module), id: \.title) { template in
                     Button(template.title) {
-                        content = template.content
+                        self.content = template.content
                         // ✅ 填写内容后自动标记为完成
-                        isCompleted = !content.isEmpty
+                        self.isCompleted = !self.content.isEmpty
                     }
                 }
                 Button("取消", role: .cancel) {}

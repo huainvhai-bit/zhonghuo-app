@@ -567,7 +567,7 @@ struct SettingsView: View {
         
         // 检查用户是否登录
         guard let userId = KeychainManager.shared.getUserId(),
-              let user = userManager.currentUser else {
+              let _ = userManager.currentUser else {
             print("❌ 用户未登录")
             await MainActor.run {
                 errorMessage = "请先登录"
