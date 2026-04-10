@@ -161,7 +161,7 @@ struct CapsuleList: View {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
                     // ✅ Bug 2 修复：点击胶囊跳转到预览页面，而不是编辑页面
-                    // ⚠️ 临时改回 CapsuleEditView，CapsuleDetailView 需要在 Xcode 中添加
+                    // ⚠️ CapsuleDetailView 编译问题，临时使用 CapsuleEditView
                     NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
                         CapsuleCard(capsule: capsule)
                     }
