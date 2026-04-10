@@ -231,15 +231,16 @@ struct CapsuleCard: View {
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
         switch type {
         case .text: return "doc.text.fill"
-        case .audio: return "mic.fill"
-        case .video: return "video.fill"
+        case .audio, .voice: return "mic.fill"
+        case .video, .image, .sticker: return "video.fill"
+        @unknown default: return "capsule.fill"
         }
     }
     
     private func formatSendDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy 年 MM 月 dd 日 发送"
-        return formatter.format(date)
+        return formatter.string(from: date)
     }
 }
 
