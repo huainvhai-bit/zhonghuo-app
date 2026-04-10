@@ -18,27 +18,57 @@ struct CapsuleList: View {
     }
     
     var body: some View {
-        ZStack {
-            // 背景色
-            Color(hex: "F5F5F7")
-                .ignoresSafeArea()
-            
-            VStack(spacing: 16) {
-                // 统计卡片
-                statsCard
+        NavigationView {
+            ZStack {
+                // ✅ 背景色全屏覆盖（与首页一致）
+                Color(hex: "F5F5F7")
+                    .ignoresSafeArea(edges: .all)
                 
-                // 类型筛选
-                filterButtons
-                
-                // 胶囊列表
-                if filteredCapsules.isEmpty {
-                    emptyState
-                } else {
-                    capsuleList
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // 统计卡片
+                        statsCard
+                        
+                        // 类型筛选
+                        filterButtons
+                        
+                        // 胶囊列表
+                        if filteredCapsules.isEmpty {
+                            emptyState
+                        } else {
+                            capsuleList
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .navigationTitle("⏰ 时光胶囊")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "capsule.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("时光胶囊")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .onAppear {
+                setupNavigationBar()
+                
+                // 📥 从文件加载胶囊数据
+                let loadedCapsules = dataManager.loadCapsulesFromFile()
+                dataManager.capsules = loadedCapsules
+                
+                // 📤 同步胶囊到云端
+                Task {
+                    await dataManager.batchSyncCapsules()
+                }
+            }
         }
         .onAppear {
             // 从文件加载胶囊数据
@@ -111,26 +141,59 @@ struct CapsuleList: View {
     private var filterButtons: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                Button(action: { selectedFilter = nil }) {
-                    Text("全部")
-                        .foregroundColor(selectedFilter == nil ? .white : Color(hex: "6366F1"))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(selectedFilter == nil ? Color(hex: "6366F1") : Color.white)
-                        .cornerRadius(20)
+                // 全部按钮
+                FilterButton(title: "全部", icon: "square.grid.2x2", isSelected: selectedFilter == nil) {
+                    selectedFilter = nil
                 }
                 
-                ForEach([TimeCapsule.CapsuleType.text, .video, .audio], id: \.self) { type in
-                    Button(action: { selectedFilter = type }) {
-                        Text(type.rawValue)
-                            .foregroundColor(selectedFilter == type ? .white : Color(hex: "6366F1"))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(selectedFilter == type ? Color(hex: "6366F1") : Color.white)
-                            .cornerRadius(20)
-                    }
+                // 文字胶囊
+                FilterButton(title: "文字", icon: "doc.text", isSelected: selectedFilter == .text) {
+                    selectedFilter = .text
+                }
+                
+                // 语音胶囊
+                FilterButton(title: "语音", icon: "mic", isSelected: selectedFilter == .audio) {
+                    selectedFilter = .audio
+                }
+                
+                // 视频胶囊
+                FilterButton(title: "视频", icon: "video", isSelected: selectedFilter == .video) {
+                    selectedFilter = .video
                 }
             }
+        }
+    }
+}
+
+// MARK: - 筛选按钮
+struct FilterButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .foregroundColor(isSelected ? .white : Color(hex: "6366F1"))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                isSelected ?
+                LinearGradient(
+                    gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ) :
+                Color.white
+            )
+            .cornerRadius(20)
+            .shadow(color: isSelected ? Color(hex: "6366F1").opacity(0.3) : Color.clear, radius: 8, x: 0, y: 2)
         }
     }
     
@@ -187,45 +250,70 @@ struct CapsuleList: View {
     }
 }
 
-// MARK: - 胶囊卡片
+// MARK: - 胶囊卡片（✅ 优化：增强视觉效果）
 struct CapsuleCard: View {
     let capsule: TimeCapsule
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 12) {
+                // 类型图标
                 Image(systemName: iconForType(capsule.type))
-                    .font(.system(size: 20))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
-                    .padding(8)
-                    .background(Color(hex: "6366F1"))
-                    .cornerRadius(8)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(10)
                 
+                // 标题和类型
                 VStack(alignment: .leading, spacing: 4) {
                     Text(capsule.title)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primary)
+                        .lineLimit(1)
                     
-                    Text(capsule.type.rawValue)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 6) {
+                        Image(systemName: iconForType(capsule.type))
+                            .font(.system(size: 10))
+                        Text(capsule.type.rawValue)
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(capsule.isSent ? .green : .orange)
+                // 状态图标
+                VStack(spacing: 4) {
+                    Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(capsule.isSent ? .green : .orange)
+                    
+                    Text(capsule.isSent ? "已发送" : "待发送")
+                        .font(.system(size: 10))
+                        .foregroundColor(capsule.isSent ? .green : .orange)
+                }
             }
             
-            Text(formatSendDate(capsule.sendDate))
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
+            // 发送日期
+            HStack(spacing: 6) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 12))
+                Text(formatSendDate(capsule.sendDate))
+                    .font(.system(size: 13))
+            }
+            .foregroundColor(.secondary)
         }
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
     }
     
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
