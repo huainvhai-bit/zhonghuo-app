@@ -135,18 +135,15 @@ struct CapsuleList: View {
     }
     
     private var capsuleList: some View {
-        List {
-            Section {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
                     NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
-                        CapsuleRow(capsule: capsule)
+                        CapsuleCard(capsule: capsule)
                     }
                 }
-                .onDelete(perform: deleteCapsules)
             }
         }
-        .listStyle(PlainListStyle())
-        .background(Color.clear)
     }
     
     private var emptyState: some View {
@@ -187,6 +184,62 @@ struct CapsuleList: View {
         Task {
             await dataManager.batchSyncCapsules()
         }
+    }
+}
+
+// MARK: - 胶囊卡片
+struct CapsuleCard: View {
+    let capsule: TimeCapsule
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: iconForType(capsule.type))
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(Color(hex: "6366F1"))
+                    .cornerRadius(8)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(capsule.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    Text(capsule.type.rawValue)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(capsule.isSent ? .green : .orange)
+            }
+            
+            Text(formatSendDate(capsule.sendDate))
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+    
+    private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
+        switch type {
+        case .text: return "doc.text.fill"
+        case .audio: return "mic.fill"
+        case .video: return "video.fill"
+        }
+    }
+    
+    private func formatSendDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy 年 MM 月 dd 日 发送"
+        return formatter.format(date)
     }
 }
 
