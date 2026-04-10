@@ -358,13 +358,20 @@ struct CapsuleMediaRecorderView: View {
     }
     
     private func startRecording() {
+        print("🎥 开始录制，类型：\(selectedType)")
+        
         // ✅ 检查权限
         if selectedType == .video {
+            print("🎥 请求视频权限...")
             AVCaptureDevice.requestAccess(for: .video) { granted in
+                print("🎥 视频权限：\(granted ? "已允许" : "已拒绝")")
                 if granted {
+                    print("🎥 请求音频权限...")
                     AVCaptureDevice.requestAccess(for: .audio) { granted in
+                        print("🎥 音频权限：\(granted ? "已允许" : "已拒绝")")
                         if granted {
                             DispatchQueue.main.async {
+                                print("🎥 开始启动录制...")
                                 recorder.startRecording(type: .video)
                                 startTimer()
                             }
@@ -500,9 +507,11 @@ class MediaRecorder: NSObject, ObservableObject {
                 let filePath = timeCapsulesDir.appendingPathComponent(fileName)
                 self.recordingURL = filePath
                 
-                // ✅ 在后台线程启动录制
+                // ✅ 先启动 captureSession，再启动录制
                 captureSession.startRunning()
-                DispatchQueue.main.async {
+                
+                // 等待 session 稳定
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.videoOutput?.startRecording(to: filePath, recordingDelegate: self)
                     self.isRecording = true
                     print("✅ 开始录制视频：\(filePath)")
