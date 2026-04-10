@@ -170,6 +170,11 @@ struct SettingsView: View {
                         Menu {
                             ForEach(CheckInInterval.allCases, id: \.self) { interval in
                                 Button(interval.rawValue) {
+                                    print("🔵 点击签到间隔：\(interval.rawValue)")
+                                    print("   - 当前 userId: \(KeychainManager.shared.getUserId() ?? "nil")")
+                                    print("   - 当前 currentUser: \(userManager.currentUser?.name ?? "nil")")
+                                    print("   - 当前 checkInInterval: \(userManager.checkInInterval.rawValue)")
+                                    print("   - 当前 user.checkInInterval: \(userManager.currentUser?.checkInInterval.rawValue ?? "nil")")
                                     Task {
                                         await updateCheckInInterval(interval)
                                     }

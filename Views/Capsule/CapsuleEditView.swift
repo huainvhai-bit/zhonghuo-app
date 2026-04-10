@@ -512,51 +512,26 @@ class MediaRecorder: NSObject, ObservableObject {
     }
     
     private func startVideoRecording() {
-        // ✅ 在后台线程执行，避免阻塞 UI
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            self.captureSession = AVCaptureSession()
-            self.captureSession?.sessionPreset = .high
-            
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
-                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-                  let captureSession = self.captureSession,
-                  captureSession.canAddInput(videoInput),
-                  captureSession.canAddInput(audioInput) else {
-                print("❌ 无法设置视频录制")
-                return
-            }
-            
-            captureSession.addInput(videoInput)
-            captureSession.addInput(audioInput)
-            
-            self.videoOutput = AVCaptureMovieFileOutput()
-            if captureSession.canAddOutput(self.videoOutput!) {
-                captureSession.addOutput(self.videoOutput!)
-                
-                // ✅ 创建 TimeCapsules 目录
-                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let timeCapsulesDir = documentsPath.appendingPathComponent("TimeCapsules")
-                try? FileManager.default.createDirectory(at: timeCapsulesDir, withIntermediateDirectories: true)
-                
-                let fileName = UUID().uuidString + ".mp4"
-                let filePath = timeCapsulesDir.appendingPathComponent(fileName)
-                self.recordingURL = filePath
-                
-                // ✅ 先启动 captureSession，再启动录制
-                captureSession.startRunning()
-                
-                // 等待 session 稳定
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.videoOutput?.startRecording(to: filePath, recordingDelegate: self)
-                    self.isRecording = true
-                    print("✅ 开始录制视频：\(filePath)")
-                }
-            }
+        // ✅ 使用已初始化的 captureSession（由 setupCameraForVideo 创建）
+        guard let captureSession = captureSession,
+              let videoOutput = videoOutput else {
+            print("❌ 摄像头未初始化，无法录制")
+            return
         }
+        
+        // ✅ 创建 TimeCapsules 目录
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let timeCapsulesDir = documentsPath.appendingPathComponent("TimeCapsules")
+        try? FileManager.default.createDirectory(at: timeCapsulesDir, withIntermediateDirectories: true)
+        
+        let fileName = UUID().uuidString + ".mp4"
+        let filePath = timeCapsulesDir.appendingPathComponent(fileName)
+        recordingURL = filePath
+        
+        // ✅ 开始录制
+        videoOutput.startRecording(to: filePath, recordingDelegate: self)
+        isRecording = true
+        print("✅ 开始录制视频：\(filePath)")
     }
     
     func stopRecording() {
