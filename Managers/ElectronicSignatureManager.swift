@@ -260,11 +260,12 @@ class ElectronicSignatureManager: ObservableObject {
     func isMultiSignatureComplete(_ state: MultiSignatureState) -> Bool {
         return state.signedCount >= state.totalSigners
     }
-    
-    // MARK: - 签章持久化辅助方法
-    
-    /// Keychain 管理器扩展
-    extension KeychainManager {
+}
+
+// MARK: - KeychainManager 扩展
+
+/// Keychain 管理器扩展 - 电子签章持久化
+extension KeychainManager {
         private let electronicSignaturesKey = "electronic_signatures"
         
         /// 保存电子签章
@@ -299,7 +300,6 @@ class ElectronicSignatureManager: ObservableObject {
         }
         return nil
     }
-}
 
 // MARK: - String 扩展：SHA-256
 

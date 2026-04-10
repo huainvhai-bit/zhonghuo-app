@@ -22,9 +22,9 @@ class WillTemplateManager: ObservableObject {
         let type: WillModule.WillType
         let description: String
         let contentTemplate: String
-        let适用场景: [String]
-        let法律合规: String
-        letrecommendedFields: [String]
+        let 适用场景: [String]
+        let 法律合规: String
+        let recommendedFields: [String]
     }
     
     /// 遗嘱模板列表

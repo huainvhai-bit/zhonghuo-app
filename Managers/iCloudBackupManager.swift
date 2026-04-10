@@ -15,8 +15,8 @@ class iCloudBackupManager: ObservableObject {
     // MARK: - iCloud 容器配置
     
     private let container: CKContainer
-    private privateCloudDatabase: CKDatabase!
-    private publicCloudDatabase: CKDatabase!
+    private var privateCloudDatabase: CKDatabase!
+    private var publicCloudDatabase: CKDatabase!
     
     private init() {
         container = CKContainer.default()

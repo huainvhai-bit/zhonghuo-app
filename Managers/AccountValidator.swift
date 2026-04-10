@@ -36,7 +36,8 @@ class AccountValidator: ObservableObject {
         validationError = nil
         
         // 等待网络可用
-        if !await waitForNetwork() {
+        let networkAvailable = await waitForNetwork()
+        if !networkAvailable {
             validationError = "网络不可用，请稍后重试"
             isValidating = false
             return false

@@ -174,11 +174,6 @@ struct CapsuleInfo: Codable, Identifiable {
 
 /// 遗嘱信息（与后端同步）
 // WillInfo 和 FamilyInfo 定义已移至 Models.swift
-    let relationType: String
-    let relatedUserId: String
-    let relatedUserName: String?
-    let relatedUserPhone: String?
-}
 
 /// 资产信息
 struct AssetInfo: Codable, Identifiable {
