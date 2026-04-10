@@ -21,6 +21,8 @@ struct ResetPasswordView: View {
     @State private var errorMessage = ""
     @State private var countdown = 0
     @State private var timer: Timer?
+    @State private var isSuccess = false
+    @State private var codeSent = false
     
     // MARK: - 辅助方法
     
@@ -296,7 +298,7 @@ struct ResetPasswordView: View {
     
     private func sendVerifyCode() async {
         isLoading = true
-        errorMessage = nil
+        errorMessage = ""
         
         do {
             let mutation = """
