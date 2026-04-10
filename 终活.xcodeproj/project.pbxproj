@@ -59,6 +59,7 @@
 		B1000004 /* Views/Capsule/CapsuleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* Capsule/CapsuleEditView.swift */; };
 		B1000005 /* Views/Capsule/CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* Capsule/CapsuleList.swift */; };
 		B1000006 /* Views/Capsule/AVPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* Capsule/AVPlayerView.swift */; };
+		B1000007A /* Views/Capsule/CapsuleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007A /* Capsule/CapsuleDetailView.swift */; };
 		B1000007 /* Views/Settings/AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* Settings/AboutSettingsView.swift */; };
 		B1000008 /* Views/Settings/EmergencyContactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* Settings/EmergencyContactSettingsView.swift */; };
 		B1000009 /* Views/Settings/NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* Settings/NotificationSettingsView.swift */; };
@@ -131,6 +132,7 @@
 		B2000004 /* Capsule/CapsuleEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Capsule/CapsuleEditView.swift; sourceTree = SOURCE_ROOT; };
 		B2000005 /* Capsule/CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Capsule/CapsuleList.swift; sourceTree = SOURCE_ROOT; };
 		B2000006 /* Capsule/AVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Capsule/AVPlayerView.swift; sourceTree = SOURCE_ROOT; };
+		B2000007A /* Capsule/CapsuleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Capsule/CapsuleDetailView.swift; sourceTree = SOURCE_ROOT; };
 		B2000007 /* Settings/AboutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/AboutSettingsView.swift; sourceTree = SOURCE_ROOT; };
 		B2000008 /* Settings/EmergencyContactSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/EmergencyContactSettingsView.swift; sourceTree = SOURCE_ROOT; };
 		B2000009 /* Settings/NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/NotificationSettingsView.swift; sourceTree = SOURCE_ROOT; };
@@ -222,6 +224,7 @@
 				B2000004 /* Capsule/CapsuleEditView.swift */,
 				B2000005 /* Capsule/CapsuleList.swift */,
 				B2000006 /* Capsule/AVPlayerView.swift */,
+				B2000007A /* Capsule/CapsuleDetailView.swift */,
 				B2000007 /* Settings/AboutSettingsView.swift */,
 				B2000008 /* Settings/EmergencyContactSettingsView.swift */,
 				B2000009 /* Settings/NotificationSettingsView.swift */,
