@@ -767,7 +767,10 @@ struct ProgressRow: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            print("🔵 ProgressRow 点击：\(label)")
+            action()
+        }) {
             VStack(spacing: 8) {
                 HStack {
                     Text(label)
@@ -799,7 +802,9 @@ struct ProgressRow: View {
                 }
                 .frame(height: 7)
             }
+            .contentShape(Rectangle())  // ✅ 修复：确保整个区域可点击
         }
+        .buttonStyle(.plain)  // ✅ 修复：使用 plain 样式
     }
 }
 
@@ -848,10 +853,12 @@ struct CapsulePreviewRow: View {
             .cornerRadius(10)
         }
         .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .contentShape(Rectangle())  // ✅ 确保整个区域可点击
         .onTapGesture {
+            print("🔵 CapsulePreviewRow 点击：\(capsule.title)")
             onTap()
         }
+        .buttonStyle(.plain)  // ✅ 添加 plain 样式
     }
     
     // 📅 中文日期格式化
