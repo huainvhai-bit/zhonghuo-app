@@ -329,10 +329,8 @@ struct CapsuleMediaRecorderView: View {
             // ✅ 修复：视频模式下立即初始化摄像头
             if selectedType == .video {
                 showCameraPreview = true
-                // 确保 captureSession 已初始化
-                if recorder.captureSession == nil {
-                    recorder.captureSession = AVCaptureSession()
-                }
+                // ✅ 调用 setupCameraForVideo 初始化摄像头
+                recorder.setupCameraForVideo()
             }
         }
         .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
@@ -433,10 +431,46 @@ class MediaRecorder: NSObject, ObservableObject {
     @Published var captureSession: AVCaptureSession?  // ✅ 公开 captureSession 用于预览
     private var audioRecorder: AVAudioRecorder?
     private var videoOutput: AVCaptureMovieFileOutput?
+    private var previewLayer: AVCaptureVideoPreviewLayer?
     
     enum RecordingType {
         case audio
         case video
+    }
+    
+    // ✅ 新增：初始化摄像头（在视图出现时调用）
+    func setupCameraForVideo() {
+        guard captureSession == nil else { return }  // 已初始化
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            self.captureSession = AVCaptureSession()
+            self.captureSession?.sessionPreset = .high
+            
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
+                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
+                  let captureSession = self.captureSession,
+                  captureSession.canAddInput(videoInput),
+                  captureSession.canAddInput(audioInput) else {
+                print("❌ 无法初始化摄像头")
+                return
+            }
+            
+            captureSession.addInput(videoInput)
+            captureSession.addInput(audioInput)
+            
+            self.videoOutput = AVCaptureMovieFileOutput()
+            if captureSession.canAddOutput(self.videoOutput!) {
+                captureSession.addOutput(self.videoOutput!)
+            }
+            
+            // ✅ 启动 session（但不开始录制）
+            captureSession.startRunning()
+            print("🎥 摄像头已初始化并启动")
+        }
     }
     
     func startRecording(type: RecordingType) {
@@ -556,6 +590,8 @@ struct CameraPreviewView: UIViewRepresentable {
         let view = UIView(frame: UIScreen.main.bounds)
         view.backgroundColor = .black
         
+        print("🎥 CameraPreviewView.makeUIView: session=\(session != nil ? "已设置" : "nil")")
+        
         // ✅ 修复：立即设置 previewLayer
         if let session = session {
             let previewLayer = AVCaptureVideoPreviewLayer(session: session)
@@ -563,6 +599,8 @@ struct CameraPreviewView: UIViewRepresentable {
             previewLayer.frame = view.bounds
             view.layer.addSublayer(previewLayer)
             print("🎥 CameraPreviewView: PreviewLayer 已创建，frame=\(view.bounds)")
+        } else {
+            print("⚠️ CameraPreviewView: session 为 nil，无法创建预览层")
         }
         
         return view
@@ -575,13 +613,14 @@ struct CameraPreviewView: UIViewRepresentable {
         if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
             previewLayer.session = session
             previewLayer.frame = uiView.bounds
+            print("🎥 CameraPreviewView.updateUIView: PreviewLayer 已更新")
         } else {
             let previewLayer = AVCaptureVideoPreviewLayer(session: session)
             previewLayer.videoGravity = .resizeAspectFill
             previewLayer.frame = uiView.bounds
             uiView.layer.addSublayer(previewLayer)
+            print("🎥 CameraPreviewView.updateUIView: 创建新的 PreviewLayer")
         }
-        print("🎥 CameraPreviewView: PreviewLayer 已更新")
     }
 }
 

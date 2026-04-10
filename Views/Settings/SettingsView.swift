@@ -556,6 +556,9 @@ struct SettingsView: View {
     // MARK: - 更新签到间隔
     private func updateCheckInInterval(_ interval: CheckInInterval) async {
         print("🔵 开始更新签到间隔：\(interval.rawValue)")
+        print("   - Keychain userId: \(KeychainManager.shared.getUserId() ?? "nil")")
+        print("   - userManager.currentUser: \(userManager.currentUser?.name ?? "nil")")
+        print("   - userManager.isLoggedIn: \(userManager.isLoggedIn)")
         
         // 检查用户是否登录
         guard let userId = KeychainManager.shared.getUserId(),
