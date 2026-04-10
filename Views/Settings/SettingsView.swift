@@ -558,7 +558,7 @@ struct SettingsView: View {
         print("🔵 开始更新签到间隔：\(interval.rawValue)")
         
         // 检查用户是否登录
-        guard let userId = UserDefaults.standard.string(forKey: "userId"),
+        guard let userId = KeychainManager.shared.getUserId(),
               let user = userManager.currentUser else {
             print("❌ 用户未登录")
             await MainActor.run {

@@ -259,8 +259,8 @@ struct CapsuleMediaRecorderView: View {
             Color(hex: "F5F5F7")
                 .ignoresSafeArea(edges: .all)
             
-            if selectedType == .video && showCameraPreview {
-                // 摄像头预览
+            // ✅ 修复：视频模式下始终显示摄像头预览
+            if selectedType == .video {
                 CameraPreviewView(session: recorder.captureSession)
                     .ignoresSafeArea()
             }
@@ -326,8 +326,13 @@ struct CapsuleMediaRecorderView: View {
             }
         }
         .onAppear {
+            // ✅ 修复：视频模式下立即初始化摄像头
             if selectedType == .video {
                 showCameraPreview = true
+                // 确保 captureSession 已初始化
+                if recorder.captureSession == nil {
+                    recorder.captureSession = AVCaptureSession()
+                }
             }
         }
         .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
@@ -548,20 +553,16 @@ struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession?
     
     func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: .zero)
+        let view = UIView(frame: UIScreen.main.bounds)
         view.backgroundColor = .black
         
-        // ✅ 修复：session 为 Optional，但 AVCaptureVideoPreviewLayer 初始化不返回 Optional
-        guard let session = session else {
-            return view
-        }
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(previewLayer)
-        
-        DispatchQueue.main.async {
+        // ✅ 修复：立即设置 previewLayer
+        if let session = session {
+            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer.videoGravity = .resizeAspectFill
             previewLayer.frame = view.bounds
+            view.layer.addSublayer(previewLayer)
+            print("🎥 CameraPreviewView: PreviewLayer 已创建，frame=\(view.bounds)")
         }
         
         return view
@@ -570,18 +571,17 @@ struct CameraPreviewView: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let session = session else { return }
         
-        // ✅ 修复黑屏：确保 previewLayer 正确设置和更新
-        if uiView.layer.sublayers?.isEmpty ?? true {
+        // ✅ 修复：确保 previewLayer 正确更新
+        if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
+            previewLayer.session = session
+            previewLayer.frame = uiView.bounds
+        } else {
             let previewLayer = AVCaptureVideoPreviewLayer(session: session)
             previewLayer.videoGravity = .resizeAspectFill
             previewLayer.frame = uiView.bounds
             uiView.layer.addSublayer(previewLayer)
-            print("🎥 CameraPreviewView: PreviewLayer 已添加")
-        } else if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
-            previewLayer.session = session
-            previewLayer.frame = uiView.bounds
-            print("🎥 CameraPreviewView: PreviewLayer 已更新")
         }
+        print("🎥 CameraPreviewView: PreviewLayer 已更新")
     }
 }
 
