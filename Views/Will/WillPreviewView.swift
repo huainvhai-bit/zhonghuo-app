@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import UIKit
+import PDFKit
 
 struct WillPreviewView: View {
     @ObservedObject var dataManager = DataManager.shared
@@ -86,7 +88,9 @@ struct WillPreviewView: View {
                     // 导出按钮
                     Button(action: {
                         // 触发 PDF 导出
-                        exportWillToPDF()
+                        Task {
+                            await exportWillToPDF()
+                        }
                     }) {
                         HStack {
                             Image(systemName: "doc.badge.gearshape.fill")
@@ -148,7 +152,7 @@ struct WillPreviewView: View {
 
 extension WillPreviewView {
     /// 导出遗嘱为 PDF
-    func exportWillToPDF() {
+    func exportWillToPDF() async {
         print("🔵 WillPreviewView.exportWillToPDF 开始...")
         
         // 收集遗嘱内容
@@ -191,20 +195,56 @@ extension WillPreviewView {
             let pdfPath = documentsPath.appendingPathComponent("遺囑_\(Date().formatted(.iso8601)).pdf")
             print("PDF 保存路径：\(pdfPath.path)")
             
-            // TODO: 使用 PDFKit 创建真实 PDF
-            // let pdfData = createPDF(from: pdfContent)
-            // try? pdfData.write(to: pdfPath)
-            
-            print("⚠️ WillPreviewView: PDF 导出功能需使用 PDFKit 实现（当前为占位）")
-            
-            // 临时实现：保存为 Markdown 文件
-            let mdPath = documentsPath.appendingPathComponent("遺囑_\(Date().formatted(.iso8601)).md")
+            // ✅ 使用 PDFKit 创建真实 PDF
             do {
-                try pdfContent.write(to: mdPath, atomically: true, encoding: .utf8)
-                print("✅ 临时 Markdown 文件已保存到：\(mdPath.path)")
+                let pdfData = try createPDF(from: pdfContent)
+                try pdfData.write(to: pdfPath)
+                print("✅ PDF 文件已保存到：\(pdfPath.path)")
+                
+                await MainActor.run {
+                    exportSuccess = true
+                }
             } catch {
-                print("❌ 保存失败：\(error.localizedDescription)")
+                print("❌ PDF 创建失败：\(error.localizedDescription)")
+                await MainActor.run {
+                    errorMessage = "PDF 导出失败：\(error.localizedDescription)"
+                    showError = true
+                }
             }
         }
+    }
+    
+    // ✅ PDF 创建函数
+    private func createPDF(from content: String) throws -> Data {
+        // 使用 PDFKit 创建 PDF
+        let pdfDocument = PDFDocument()
+        
+        // 创建 PDF 页面
+        let pageInfo = PDFPageInfo()
+        pageInfo.pageSize = CGSize(width: 595, height: 842) // A4
+        
+        // 添加内容到 PDF
+        // 注：完整实现需要使用 Core Graphics 或 PDFKit 的底层 API
+        // 这里使用简化版本
+        
+        // 临时方案：将文本内容转换为 PDF
+        let attributedString = NSAttributedString(string: content, attributes: [
+            .font: UIFont.systemFont(ofSize: 12),
+            .foregroundColor: UIColor.black
+        ])
+        
+        // 创建 PDF 数据
+        let paperSize = CGSize(width: 595, height: 842)
+        let pdfData = NSMutableData()
+        
+        UIGraphicsBeginPDFContextToData(pdfData, CGRect(origin: .zero, size: paperSize), nil)
+        UIGraphicsBeginPDFPage()
+        
+        let context = UIGraphicsGetCurrentContext()
+        attributedString.draw(in: CGRect(origin: CGPoint(x: 50, y: 50), size: CGSize(width: 495, height: 742)))
+        
+        UIGraphicsEndPDFContext()
+        
+        return pdfData as Data
     }
 }

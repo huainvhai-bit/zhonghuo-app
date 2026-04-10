@@ -736,8 +736,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// 方案 1: Message Framework（iOS 原生）
     private func sendViaMessageFramework(phone: String, message: String) {
         print("📱 [方案 1] Message Framework 发送短信")
-        // TODO: 实现 Message Framework 发送
-        print("   ✅ Message Framework 发送成功（待实现）")
+        // ✅ 使用 MFMessageComposeViewController 需要用户交互，不适合后台发送
+        // 已移至 MessageManager 实现
+        print("   ⚠️ Message Framework 需要用户交互，使用 MessageManager 代替")
     }
     
     /// 方案 2: 阿里云短信 API
@@ -754,8 +755,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         Task {
-            // TODO: 实现阿里云短信 API 调用
-            print("   ✅ 阿里云短信发送成功（待实现）")
+            // ✅ 调用后端短信发送 API
+            do {
+                let result = try await DataManager.shared.sendSmsNotification(phone: phone, message: message)
+                if result {
+                    print("   ✅ 阿里云短信发送成功")
+                } else {
+                    print("   ⚠️ 阿里云短信发送失败")
+                }
+            } catch {
+                print("   ❌ 阿里云短信发送失败：\(error)")
+            }
         }
     }
     
@@ -773,8 +783,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         Task {
-            // TODO: 实现腾讯云短信 API 调用
-            print("   ✅ 腾讯云短信发送成功（待实现）")
+            // ✅ 调用后端短信发送 API
+            do {
+                let result = try await DataManager.shared.sendSmsNotification(phone: phone, message: message)
+                if result {
+                    print("   ✅ 腾讯云短信发送成功")
+                } else {
+                    print("   ⚠️ 腾讯云短信发送失败")
+                }
+            } catch {
+                print("   ❌ 腾讯云短信发送失败：\(error)")
+            }
         }
     }
     

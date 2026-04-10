@@ -255,7 +255,9 @@ struct TemplateModal: View {
             List {
                 ForEach(templates, id: \.title) { template in
                     Button(action: {
-                        // TODO: 应用模板到对应模块
+                        // ✅ 应用模板到对应模块
+                        content = template.content
+                        isCompleted = !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         dismiss()
                     }) {
                         VStack(alignment: .leading, spacing: 8) {

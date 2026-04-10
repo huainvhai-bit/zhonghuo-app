@@ -106,13 +106,34 @@ struct SmsSettingsView: View {
         KeychainManager.shared.saveTencentSecretKey(tencentSecretKey)
     }
     
-    private func sendTestSms() {
+    private func sendTestSms() async {
         print("🧪 发送测试短信...")
         
-        // TODO: 调用短信发送函数
-        // 这里可以调用 UserManager.shared.sendSmsToContact
+        guard let testPhone = phoneNumber else {
+            errorMessage = "请输入测试手机号"
+            showingError = true
+            return
+        }
         
-        print("✅ 测试短信已发送")
+        do {
+            // ✅ 调用后端短信发送 API
+            let result = try await DataManager.shared.sendSmsNotification(
+                phone: testPhone,
+                message: "【终活 App】这是一条测试短信，用于验证短信服务是否正常工作。"
+            )
+            
+            if result {
+                print("✅ 测试短信发送成功")
+            } else {
+                print("⚠️ 测试短信发送失败")
+                errorMessage = "短信发送失败，请检查配置"
+                showingError = true
+            }
+        } catch {
+            print("❌ 测试短信发送失败：\(error)")
+            errorMessage = "短信发送失败：\(error.localizedDescription)"
+            showingError = true
+        }
     }
 }
 

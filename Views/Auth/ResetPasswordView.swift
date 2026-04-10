@@ -144,10 +144,14 @@ struct ResetPasswordView: View {
         
         print("✅ 密码重置成功")
         
-        // 延迟后关闭弹窗
+        // 显示成功提示
         await MainActor.run {
-            isPresented = false
-            // TODO: 显示成功提示后跳转到登录
+            isSuccess = true
+            
+            // 1 秒后关闭弹窗
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                isPresented = false
+            }
         }
         
         print("🟢 新密码已保存")
@@ -291,8 +295,37 @@ struct ResetPasswordView: View {
     }
     
     private func sendVerifyCode() async {
-        // TODO: 实现发送验证码逻辑
-        print("📤 发送验证码到 \(phone)")
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            let mutation = """
+            mutation($phone: String!) {
+                sendResetPasswordCode(phone: $phone) {
+                    success
+                    message
+                }
+            }
+            """
+            
+            let variables: [String: Any] = ["phone": phone]
+            _ = try await graphqlAuthRequest(mutation: mutation, variables: variables)
+            
+            await MainActor.run {
+                codeSent = true
+                startTimer()
+            }
+            
+            print("✅ 验证码已发送到 \(phone)")
+        } catch {
+            await MainActor.run {
+                errorMessage = "发送验证码失败：\(error.localizedDescription)"
+                showingError = true
+            }
+            print("❌ 发送验证码失败：\(error)")
+        }
+        
+        await MainActor.run { isLoading = false }
     }
 }
 

@@ -215,8 +215,29 @@ struct DataDeletionView: View {
     }
     
     private func deleteServerData() async {
-        // TODO: 调用后端删除接口
-        // let result = await DataManager.shared.deleteAllUserData()
+        // ✅ 调用后端删除用户数据 API
+        do {
+            let mutation = """
+            mutation {
+                deleteUserData {
+                    success
+                    message
+                }
+            }
+            """
+            
+            let response = try await DataManager.shared.sendGraphQLQuery(query: mutation)
+            
+            if let data = response["data"] as? [String: Any],
+               let deleteData = data["deleteUserData"] as? [String: Any],
+               let success = deleteData["success"] as? Bool, success {
+                print("✅ 服务器数据删除成功")
+            } else {
+                print("⚠️ 服务器数据删除失败")
+            }
+        } catch {
+            print("❌ 服务器数据删除失败：\(error)")
+        }
     }
     
     private func clearCache() async {
