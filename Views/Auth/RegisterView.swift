@@ -240,7 +240,7 @@ struct RegisterView: View {
         
         // 加载用户数据
         let userManager = UserManager.shared
-        await userManager.loadUser()
+        userManager.loadUser()
         
         // 通知 HomeStatusView 刷新
         NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)

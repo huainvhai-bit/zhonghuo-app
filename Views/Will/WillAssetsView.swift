@@ -52,8 +52,8 @@ struct WillAssetsView: View {
                 
                 // ✅ 从服务器加载最新数据
                 Task {
-                    await dataManager.batchSyncWills()
-                    await dataManager.batchSyncAssets()
+                    _ = await dataManager.batchSyncWills()
+                    _ = await dataManager.batchSyncAssets()
                 }
             }
             .toolbar {

@@ -727,12 +727,12 @@ struct EditProfileModal: View {
             }
             .onAppear {
                 if let user = userManager.currentUser {
-                    name = user.name ?? ""
-                    phone = user.phone ?? ""
-                    ethnicity = user.ethnicity ?? ""
+                    name = user.name
+                    phone = user.phone
+                    ethnicity = user.ethnicity
                     birthday = user.birthday ?? Date()
-                    idCard = user.idCard ?? ""
-                    address = user.address ?? ""
+                    idCard = user.idCard
+                    address = user.address
                     print("🔵 编辑资料：name=\(name), phone=\(phone)")
                 }
             }
@@ -789,7 +789,7 @@ struct EmergencyContactModal: View {
                                     relationship: witness.role
                                 ))
                                 userManager.currentUser = user
-                                userManager.saveUser(user)
+                                _ = userManager.saveUser(user)
                                 
                                 // 确保登录状态保持
                                 UserDefaults.standard.set(true, forKey: "isLoggedIn")

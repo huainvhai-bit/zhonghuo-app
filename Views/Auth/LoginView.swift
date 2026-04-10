@@ -177,7 +177,7 @@ struct LoginView: View {
         }
         
         // 加载用户数据
-        await userManager.loadUser()
+        userManager.loadUser()
         
         // 🔴 强制更新登录状态
         await MainActor.run {
