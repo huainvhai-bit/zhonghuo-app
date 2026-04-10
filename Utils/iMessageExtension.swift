@@ -54,11 +54,19 @@ extension MessagesExtension {
         let layout = MSMessageTemplateLayout()
         layout.backgroundColor = .white
         
-        // TODO: 从 CloudKit 获取家族成员
-        // let familyMembers = fetchFamilyMembersFromCloudKit()
+        // ✅ 从 DataManager 获取紧急联系人
+        let contacts = UserManager.shared.currentUser?.emergencyContacts ?? []
         
         // 生成会话消息模板
-        let layouts: [MSMessageTemplateLayout] = []
+        var layouts: [MSMessageTemplateLayout] = []
+        
+        for contact in contacts {
+            let contactLayout = MSMessageTemplateLayout()
+            contactLayout.image = nil
+            contactLayout.caption = contact.name
+            contactLayout.subcaption = contact.phone
+            layouts.append(contactLayout)
+        }
         
         completion(layouts)
     }
@@ -152,15 +160,25 @@ class FamilySharingManager {
     
     /// 发送同步消息
     func sendSyncMessage(_ message: SyncMessage, to recipient: String) {
-        // TODO: 实现 iMessage 消息发送
+        // ✅ 实现 iMessage 消息发送
         let messageBody: [String: Any] = [
             "type": message.type,
             "data": message.data,
             "timestamp": Date().timeIntervalSince1970
         ]
         
-        // 使用 Messages.framework 发送
-        // messagesExtension.send(messageBody, to: recipient)
+        // 通过后端 API 发送通知
+        Task {
+            do {
+                let result = try await DataManager.shared.sendSmsNotification(
+                    phone: recipient,
+                    message: "终活 App: \(message.type) 已更新"
+                )
+                print("✅ 消息发送\(result ? "成功" : "失败")")
+            } catch {
+                print("❌ 消息发送失败：\(error)")
+            }
+        }
     }
     
     /// 接收同步消息

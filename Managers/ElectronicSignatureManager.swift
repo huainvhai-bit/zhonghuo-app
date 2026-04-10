@@ -105,7 +105,17 @@ class ElectronicSignatureManager: ObservableObject {
         // 暂略
         
         // 验证见证人资质（如果是见证人签章）
-        // TODO: 调用 LegalConsultationManager.checkWitnessQualification()
+        // ✅ 调用 LegalConsultationManager.checkWitnessQualification()
+        if let witnessId = witnessId {
+            let witness = DataManager.shared.witnesses.first { $0.id == witnessId }
+            if let witness = witness {
+                let (isValid, message) = LegalConsultationManager.shared.checkWitnessQualification(witness: witness)
+                if !isValid {
+                    print("❌ ElectronicSignatureManager: 见证人资质验证失败 - \(message)")
+                    return false
+                }
+            }
+        }
         
         print("✅ ElectronicSignatureManager: 签章验证通过")
         return true

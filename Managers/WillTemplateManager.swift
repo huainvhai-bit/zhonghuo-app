@@ -368,7 +368,10 @@ class WillTemplateManager: ObservableObject {
         return [
             "\(UserManager.shared.currentUser?.name ?? "本人")": user.name ?? "本人",
             "\(UserManager.shared.currentUser?.idNumber ?? "未知")": user.idNumber ?? "未知",
-            // TODO: 添加更多字段
+            // ✅ 添加更多字段
+            "\(UserManager.shared.currentUser?.phone ?? "手机号")": user.phone ?? "手机号",
+            "[日期]": DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .none),
+            "[城市]": "[填写城市]",
         ]
     }
 }

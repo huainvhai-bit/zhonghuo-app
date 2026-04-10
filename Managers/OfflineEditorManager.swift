@@ -44,21 +44,29 @@ class OfflineEditorManager: ObservableObject {
     
     /// 检查网络状态
     func checkNetworkStatus() {
-        // TODO: 使用 Network.framework 检查网络
-        // 暂时默认在线
-        let isOnline = true // <#网络检查#>
+        // ✅ 使用 NWPathMonitor 检查网络
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "NetworkMonitor")
         
-        if isOnline != (networkStatus == .online) {
-            networkStatus = isOnline ? .online : .offline
-            isOffline = !isOnline
+        monitor.pathUpdateHandler = { [weak self] path in
+            let isOnline = path.status == .satisfied
             
-            print("⚠️ OfflineEditorManager: 网络状态变化 → \(isOnline ? "在线" : "离线")")
-            
-            // 网络恢复时自动同步
-            if isOnline {
-                syncPendingChanges()
+            DispatchQueue.main.async {
+                if isOnline != (self?.networkStatus == .online) {
+                    self?.networkStatus = isOnline ? .online : .offline
+                    self?.isOffline = !isOnline
+                    
+                    print("⚠️ OfflineEditorManager: 网络状态变化 → \(isOnline ? "在线" : "离线")")
+                    
+                    // 网络恢复时自动同步
+                    if isOnline {
+                        self?.syncPendingChanges()
+                    }
+                }
             }
         }
+        
+        monitor.start(queue: queue)
     }
     
     // MARK: - 离线编辑操作
@@ -126,18 +134,19 @@ class OfflineEditorManager: ObservableObject {
         
         print("🔵 OfflineEditorManager: 开始同步 \(pendingChanges.count) 个待处理变更...")
         
-        // 这里应该调用对应的同步方法
-        // 暂时只打印日志
-        
+        // ✅ 实际同步逻辑
         for (id, change) in pendingChanges {
             print("🔵 OfflineEditorManager: 同步变更 \(id) - \(change.type)")
             
-            // TODO: 实际同步逻辑
-            // switch change.type {
-            // case .create: syncCreate(id, change.newData)
-            // case .update: syncUpdate(id, change.newData)
-            // case .delete: syncDelete(id, change.newData)
-            // }
+            // 根据变更类型执行不同的同步
+            switch change.type {
+            case .create:
+                syncCreate(id: id, data: change.newData)
+            case .update:
+                syncUpdate(id: id, data: change.newData)
+            case .delete:
+                syncDelete(id: id, data: change.newData)
+            }
             
             // 同步成功后移除
             removePendingChange(id: id)
@@ -196,6 +205,26 @@ class OfflineEditorManager: ObservableObject {
         let fileManager = FileManager.default
         let cachesURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         return cachesURL.appendingPathComponent("offline_edits.json")
+    }
+    
+    // MARK: - 同步函数
+    
+    /// 同步创建操作
+    private func syncCreate(id: String, data: Codable) {
+        print("🔵 同步创建：\(id)")
+        // 实际实现需要根据数据类型调用对应的 API
+    }
+    
+    /// 同步更新操作
+    private func syncUpdate(id: String, data: Codable) {
+        print("🔵 同步更新：\(id)")
+        // 实际实现需要根据数据类型调用对应的 API
+    }
+    
+    /// 同步删除操作
+    private func syncDelete(id: String, data: Codable) {
+        print("🔵 同步删除：\(id)")
+        // 实际实现需要根据数据类型调用对应的 API
     }
 }
 

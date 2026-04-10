@@ -80,9 +80,13 @@ class LifeCheckStatusManager: ObservableObject {
         do {
             // ✅ 修复：使用 DataManager 统一函数
             let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
+            
+            // ✅ 获取当前位置
+            let location = UserManager.shared.currentLocation
+            
             _ = try await DataManager.shared.checkIn(
                 checkInIntervalHours: Int(checkInInterval),
-                location: nil // TODO: 添加当前位置
+                location: location
             )
             print("✅ 后端签到成功，签到间隔：\(checkInInterval) 小时")
         } catch {
