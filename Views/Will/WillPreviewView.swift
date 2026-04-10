@@ -13,6 +13,10 @@ struct WillPreviewView: View {
     @ObservedObject var dataManager = DataManager.shared
     @Environment(\.dismiss) var dismiss
     
+    @State private var exportSuccess = false
+    @State private var errorMessage = ""
+    @State private var showError = false
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -110,6 +114,16 @@ struct WillPreviewView: View {
             .background(Color(hex: "F6F6F8"))
             .navigationTitle("遗嘱预览")
             .navigationBarTitleDisplayMode(.inline)
+        .alert("导出成功", isPresented: $exportSuccess) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text("遗嘱 PDF 已导出到文档目录")
+        }
+        .alert("导出失败", isPresented: $showError) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("完成") {
@@ -216,17 +230,6 @@ extension WillPreviewView {
     
     // ✅ PDF 创建函数
     private func createPDF(from content: String) throws -> Data {
-        // 使用 PDFKit 创建 PDF
-        let pdfDocument = PDFDocument()
-        
-        // 创建 PDF 页面
-        let pageInfo = PDFPageInfo()
-        pageInfo.pageSize = CGSize(width: 595, height: 842) // A4
-        
-        // 添加内容到 PDF
-        // 注：完整实现需要使用 Core Graphics 或 PDFKit 的底层 API
-        // 这里使用简化版本
-        
         // 临时方案：将文本内容转换为 PDF
         let attributedString = NSAttributedString(string: content, attributes: [
             .font: UIFont.systemFont(ofSize: 12),
