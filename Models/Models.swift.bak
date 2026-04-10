@@ -512,7 +512,7 @@ class APIManager {
         """
         
         // 简化实现，直接调用
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 上传位置
@@ -525,7 +525,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 创建胶囊
@@ -539,7 +539,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["createCapsule"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -557,7 +557,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 删除胶囊
@@ -570,7 +570,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 创建遗嘱
@@ -584,7 +584,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["createWill"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -602,7 +602,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 删除遗嘱
@@ -615,7 +615,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 创建资产
@@ -629,7 +629,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["createAsset"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -647,7 +647,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 删除资产
@@ -660,7 +660,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 生成邀请码
@@ -674,7 +674,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["inviteFamily"] as? [String: Any],
            let code = data["inviteCode"] as? String {
             return code
@@ -692,7 +692,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 拒绝邀请
@@ -705,7 +705,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 移除家人
@@ -718,7 +718,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 创建紧急联系人
@@ -732,7 +732,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["createEmergencyContact"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -750,7 +750,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 删除紧急联系人
@@ -763,7 +763,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 创建见证人
@@ -777,7 +777,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         if let data = result["createWitness"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -795,7 +795,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     /// 删除见证人
@@ -808,7 +808,7 @@ class APIManager {
         }
         """
         
-        _ = try await client.query(query)
+        try await client.query(query)
     }
     
     // MARK: - 批量同步
@@ -1688,7 +1688,7 @@ extension APIManager {
         """
         
         // 执行查询
-        let result = try await client.query(query)
+        let result: [String: Any] = try await client.query(query)
         
         print("✅ APIManager.refreshToken 完成")
         

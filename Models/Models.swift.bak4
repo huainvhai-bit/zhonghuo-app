@@ -539,7 +539,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["createCapsule"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -584,7 +584,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["createWill"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -629,7 +629,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["createAsset"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -674,7 +674,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["inviteFamily"] as? [String: Any],
            let code = data["inviteCode"] as? String {
             return code
@@ -732,7 +732,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["createEmergencyContact"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -777,7 +777,7 @@ class APIManager {
         }
         """
         
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         if let data = result["createWitness"] as? [String: Any],
            let id = data["id"] as? String {
             return id
@@ -1688,7 +1688,7 @@ extension APIManager {
         """
         
         // 执行查询
-        let result = try await client.query(query)
+        let result: [String: Any] = _ = try await client.query(query)
         
         print("✅ APIManager.refreshToken 完成")
         

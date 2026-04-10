@@ -68,7 +68,7 @@ class AuthManager: ObservableObject {
             print("✅ 登录成功：\(name) (\(phone))")
             
             // 触发数据同步
-            DataManager.shared.initializeAPIConfig()
+            await DataManager.shared.initializeAPIConfig()
             
             return true
             

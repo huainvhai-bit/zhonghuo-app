@@ -729,10 +729,10 @@ struct EditProfileModal: View {
                 if let user = userManager.currentUser {
                     name = user.name ?? ""
                     phone = user.phone ?? ""
-                    ethnicity = user.ethnicity ?? ""
+                    ethnicity = user.ethnicity
                     birthday = user.birthday ?? Date()
-                    idCard = user.idCard ?? ""
-                    address = user.address ?? ""
+                    idCard = user.idCard
+                    address = user.address
                     print("🔵 编辑资料：name=\(name), phone=\(phone)")
                 }
             }

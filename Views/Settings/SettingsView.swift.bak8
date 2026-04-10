@@ -731,8 +731,8 @@ struct EditProfileModal: View {
                     phone = user.phone ?? ""
                     ethnicity = user.ethnicity ?? ""
                     birthday = user.birthday ?? Date()
-                    idCard = user.idCard ?? ""
-                    address = user.address ?? ""
+                    idCard = user.idCard
+                    address = user.address
                     print("🔵 编辑资料：name=\(name), phone=\(phone)")
                 }
             }
