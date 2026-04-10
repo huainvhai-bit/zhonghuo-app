@@ -172,6 +172,7 @@ struct CapsuleList: View {
                         CapsuleCard(capsule: capsule)
                     }
                 }
+                .onDelete(perform: deleteCapsules)  // ✅ 添加删除功能
             }
         }
     }
