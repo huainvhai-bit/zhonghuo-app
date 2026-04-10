@@ -57,28 +57,20 @@ struct CapsuleList: View {
                     }
                 }
             }
-            .onAppear {
-                setupNavigationBar()
-                
-                // 📥 从文件加载胶囊数据
-                let loadedCapsules = dataManager.loadCapsulesFromFile()
-                dataManager.capsules = loadedCapsules
-                
-                // 📤 同步胶囊到云端
-                Task {
-                    await dataManager.batchSyncCapsules()
-                }
-            }
+        }
+        .refreshable {
+            // ✅ 下拉刷新
+            print("🔄 胶囊列表刷新...")
+            await dataManager.batchSyncCapsules()
         }
         .onAppear {
-            // 从文件加载胶囊数据
+            setupNavigationBar()
+            
+            // 📥 从文件加载胶囊数据
             let loadedCapsules = dataManager.loadCapsulesFromFile()
             dataManager.capsules = loadedCapsules
             
-            // 设置紫色导航栏背景
-            setupNavigationBar()
-            
-            // 同步胶囊到云端
+            // 📤 同步胶囊到云端
             Task {
                 await dataManager.batchSyncCapsules()
             }

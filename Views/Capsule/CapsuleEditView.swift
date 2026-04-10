@@ -559,14 +559,19 @@ struct CameraPreviewView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        guard let session = session,
-              let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer else {
-            return
-        }
+        guard let session = session else { return }
         
-        previewLayer.session = session
-        DispatchQueue.main.async {
+        // ✅ 修复黑屏：确保 previewLayer 正确设置和更新
+        if uiView.layer.sublayers?.isEmpty ?? true {
+            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer.videoGravity = .resizeAspectFill
             previewLayer.frame = uiView.bounds
+            uiView.layer.addSublayer(previewLayer)
+            print("🎥 CameraPreviewView: PreviewLayer 已添加")
+        } else if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
+            previewLayer.session = session
+            previewLayer.frame = uiView.bounds
+            print("🎥 CameraPreviewView: PreviewLayer 已更新")
         }
     }
 }

@@ -595,39 +595,30 @@ struct SettingsView: View {
     }
     
     private func syncCheckInIntervalToServer(userId: String, interval: CheckInInterval) async throws {
-        guard !DataManager.apiURL.isEmpty else {
-            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "API 未初始化"])
+        // ✅ 使用 GraphQL API 更新签到间隔
+        let mutation = """
+        mutation($checkInIntervalHours: Int!) {
+            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
+                success
+                message
+            }
         }
+        """
         
-        let url = URL(string: "\(DataManager.apiURL)/api/settings.php?action=admin_update_checkin_interval")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // 添加 token
-        if let token = KeychainManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        
-        let body: [String: Any] = [
-            "user_id": userId,
-            "check_in_interval": interval.hours
+        let variables: [String: Any] = [
+            "checkInIntervalHours": interval.hours
         ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let response = try await DataManager.shared.sendGraphQLQuery(query: mutation, variables: variables)
         
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw NSError(domain: "Server", code: -1)
+        if let data = response["data"] as? [String: Any],
+           let updateData = data["updateCheckInInterval"] as? [String: Any],
+           let success = updateData["success"] as? Bool, success {
+            print("✅ GraphQL 签到间隔更新成功")
+        } else {
+            print("⚠️ GraphQL 签到间隔更新失败")
+            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "更新失败"])
         }
-        
-        let result = try JSONDecoder().decode(ServerResponse.self, from: data)
-        if !result.success {
-            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: result.error ?? "更新失败"])
-        }
-        
-        print("✅ 服务器同步成功")
     }
     
     struct ServerResponse: Codable {
