@@ -16,6 +16,8 @@ struct WillAssetsView: View {
     @State private var editingAsset: Asset? = nil
     @State private var showingPDFExport = false
     @State private var pdfExportSuccess = false
+    @State private var templateContent = ""
+    @State private var templateIsCompleted = false
     
     var body: some View {
         NavigationView {
@@ -78,7 +80,7 @@ struct WillAssetsView: View {
                 AddAssetModal(dataManager: dataManager, asset: nil)
             }
             .sheet(isPresented: $showingTemplateModal) {
-                TemplateModal(dataManager: dataManager)
+                TemplateModal(dataManager: dataManager, content: $templateContent, isCompleted: $templateIsCompleted)
             }
             .sheet(item: $editingModule) { module in
                 EditWillModuleModal(dataManager: dataManager, module: module)

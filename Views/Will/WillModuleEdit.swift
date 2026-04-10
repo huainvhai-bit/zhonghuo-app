@@ -191,6 +191,8 @@ struct EditWillModuleModal: View {
 struct TemplateModal: View {
     @ObservedObject var dataManager: DataManager
     @Environment(\.dismiss) var dismiss
+    @Binding var content: String
+    @Binding var isCompleted: Bool
     
     let templates: [(title: String, content: String)] = [
         (
