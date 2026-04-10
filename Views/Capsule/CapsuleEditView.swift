@@ -24,6 +24,8 @@ struct CapsuleEditView: View {
     @State private var showingPlayer = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
+    @State private var showCameraOptions = false  // ✅ Bug 1: 显示摄像头选项
     
     var body: some View {
         ZStack {
@@ -71,20 +73,56 @@ struct CapsuleEditView: View {
                         } else {
                             // ✅ 修复：视频/语音录制按钮
                             VStack(spacing: 12) {
-                                Button(action: { showingRecorder = true }) {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                                            .font(.system(size: 24))
-                                            .foregroundColor(.white)
-                                        
-                                        Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.white)
+                                HStack {
+                                    Button(action: { showingRecorder = true }) {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
+                                                .font(.system(size: 24))
+                                                .foregroundColor(.white)
+                                            
+                                            Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(.white)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color(hex: "6366F1"))
+                                        .cornerRadius(10)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color(hex: "6366F1"))
-                                    .cornerRadius(10)
+                                    
+                                    // ✅ Bug 1: 摄像头切换按钮（仅视频）
+                                    if selectedType == .video {
+                                        Button(action: { showCameraOptions.toggle() }) {
+                                            Image(systemName: useFrontCamera ? "camera.fill" : "camera.rotate.fill")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.secondary)
+                                        }
+                                        .padding(.leading, 8)
+                                    }
+                                }
+                                
+                                // ✅ Bug 1: 摄像头选项菜单
+                                if selectedType == .video && showCameraOptions {
+                                    HStack(spacing: 16) {
+                                        Button(action: {
+                                            useFrontCamera = true
+                                            showCameraOptions = false
+                                        }) {
+                                            Label("前置摄像头", systemImage: "person.fill")
+                                                .foregroundColor(useFrontCamera ? .indigo : .primary)
+                                        }
+                                        
+                                        Button(action: {
+                                            useFrontCamera = false
+                                            showCameraOptions = false
+                                        }) {
+                                            Label("后置摄像头", systemImage: "camera.fill")
+                                                .foregroundColor(!useFrontCamera ? .indigo : .primary)
+                                        }
+                                    }
+                                    .padding(8)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(8)
                                 }
                                 
                                 if selectedType == .audio, let url = recordedAudioURL {
@@ -326,11 +364,11 @@ struct CapsuleMediaRecorderView: View {
             }
         }
         .onAppear {
-            // ✅ 修复：视频模式下立即初始化摄像头
+            // ✅ Bug 1 修复：视频模式下立即初始化摄像头
             if selectedType == .video {
                 showCameraPreview = true
-                // ✅ 调用 setupCameraForVideo 初始化摄像头
-                recorder.setupCameraForVideo()
+                // ✅ 调用 setupCameraForVideo 初始化摄像头（默认前置）
+                recorder.setupCameraForVideo(useFrontCamera: true)
             }
         }
         .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
@@ -438,8 +476,8 @@ class MediaRecorder: NSObject, ObservableObject {
         case video
     }
     
-    // ✅ 新增：初始化摄像头（在视图出现时调用）
-    func setupCameraForVideo() {
+    // ✅ Bug 1 修复：初始化摄像头（在视图出现时调用，支持前后切换）
+    func setupCameraForVideo(useFrontCamera: Bool = true) {
         guard captureSession == nil else { return }  // 已初始化
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -448,14 +486,17 @@ class MediaRecorder: NSObject, ObservableObject {
             self.captureSession = AVCaptureSession()
             self.captureSession?.sessionPreset = .high
             
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+            // ✅ Bug 1: 根据参数选择前置或后置摄像头
+            let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
+            
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
                   let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
                   let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
                   let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
                   let captureSession = self.captureSession,
                   captureSession.canAddInput(videoInput),
                   captureSession.canAddInput(audioInput) else {
-                print("❌ 无法初始化摄像头")
+                print("❌ 无法初始化摄像头（前置=\(useFrontCamera)）")
                 return
             }
             
@@ -469,7 +510,7 @@ class MediaRecorder: NSObject, ObservableObject {
             
             // ✅ 启动 session（但不开始录制）
             captureSession.startRunning()
-            print("🎥 摄像头已初始化并启动")
+            print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
         }
     }
     
@@ -538,8 +579,13 @@ class MediaRecorder: NSObject, ObservableObject {
         if let videoOutput = videoOutput, videoOutput.isRecording {
             videoOutput.stopRecording()
             captureSession?.stopRunning()
+            print("🎥 停止视频录制")
+        } else if let audioRecorder = audioRecorder, audioRecorder.isRecording {
+            audioRecorder.stop()
+            recordingURL = audioRecorder.url  // ✅ Bug 3 修复：保存语音文件 URL
+            print("🎵 停止语音录制：\(recordingURL?.absoluteString ?? "nil")")
         } else {
-            audioRecorder?.stop()
+            print("⚠️ 没有在录制的媒体")
         }
         isRecording = false
     }

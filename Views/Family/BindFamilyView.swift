@@ -172,7 +172,14 @@ struct BindFamilyView: View {
     // MARK: - 方法
     
     private func bindFamily() {
-        guard inviteCode.count == 6 else { return }
+        print("🔵 手动输入邀请码：\(inviteCode)")
+        
+        guard inviteCode.count == 6 else {
+            print("❌ 邀请码长度不正确：\(inviteCode.count) 位")
+            errorMessage = "邀请码必须是 6 位"
+            showingError = true
+            return
+        }
         
         isBinding = true
         errorMessage = ""

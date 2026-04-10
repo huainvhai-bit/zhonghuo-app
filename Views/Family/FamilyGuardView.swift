@@ -39,8 +39,9 @@ struct FamilyGuardView: View {
                     familyListView
                 }
             }
-            .navigationTitle("家人守护")
-            .navigationBarTitleDisplayMode(.large)
+            // ✅ Bug 4 修复：移除 large 标题模式，避免与 toolbar 标题重复
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
                 

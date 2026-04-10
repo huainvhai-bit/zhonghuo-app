@@ -160,7 +160,8 @@ struct CapsuleList: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
-                    NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
+                    // ✅ Bug 2 修复：点击胶囊跳转到预览页面，而不是编辑页面
+                    NavigationLink(destination: CapsuleDetailView(dataManager: dataManager, capsule: capsule)) {
                         CapsuleCard(capsule: capsule)
                     }
                 }
