@@ -1,3 +1,6 @@
+import SwiftUI
+import UIKit
+
 //
 //  iMessageExtension.swift
 //  终活 iMessage Extension
@@ -12,7 +15,8 @@ import CloudKit
 
 // MARK: - iMessage Extension 主入口
 
-class MessagesExtension: MSMessagesAppViewController {
+// iMessage Extension 需要独立的 target，这里作为普通 Manager
+// class MessagesExtension: MSMessagesAppViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -31,7 +35,7 @@ class MessagesExtension: MSMessagesAppViewController {
         }
     }
     
-    override func didTransition(to state: MSCollectionViewLayoutState) {
+    // override func didTransition(to state: MSCollectionViewLayoutState) {
         // 布局变化时调整 UI
     }
 }
@@ -271,7 +275,7 @@ extension FamilySharingManager {
 
 // MARK: - 预览
 
-struct iMessageExtension_Previews: PreviewProvider {
+// struct iMessageExtension_Previews: PreviewProvider {
     static var previews: some View {
         MessagesExtension()
     }

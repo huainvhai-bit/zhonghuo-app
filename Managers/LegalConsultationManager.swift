@@ -1,3 +1,6 @@
+import SwiftUI
+import UIKit
+
 //
 //  LegalConsultationManager.swift
 //  终活

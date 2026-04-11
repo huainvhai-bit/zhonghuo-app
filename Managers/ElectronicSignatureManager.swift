@@ -1,3 +1,31 @@
+
+// MARK: - Witness 类型（用于电子签名）
+extension User {
+    struct Witness: Codable, Identifiable {
+        var id = UUID()
+        var name: String
+        var phone: String
+        var relationship: String
+        var idNumber: String?
+        var isQualified: Bool = true
+    }
+}
+
+// MARK: - 多人签署状态
+struct MultiSignatureState: Codable {
+    let documentId: String
+    var signers: [User.Witness]
+    var signatures: [String: Data]  // witnessId -> signatureData
+    var completedAt: Date?
+    
+    var isComplete: Bool {
+        return signatures.count >= signers.count
+    }
+}
+
+import SwiftUI
+import UIKit
+
 //
 //  ElectronicSignatureManager.swift
 //  终活

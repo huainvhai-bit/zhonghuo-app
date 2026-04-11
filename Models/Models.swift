@@ -410,7 +410,80 @@ struct User: Codable, Identifiable {
         var isConfirmed: Bool = false
         var createdAt: Date = Date()
         var deletedAt: Date? = nil  // 删除标记
-    }
+    // 财产信息
+    var address: String?
+    var propertyId: String?
+    var bank: String?
+    var account: String?
+    var stock: String?
+    var fund: String?
+    var carPlate: String?
+    var otherProperty: String?
+    
+    // 数字资产
+    var wechat: String?
+    var qq: String?
+    var weibo: String?
+    var bitcoin: String?
+    var walletPassword: String?
+    var iCloud: String?
+    var baidu: String?
+    var gamePlatform: String?
+    var gameAccount: String?
+    var email: String?
+    var emailPassword: String?
+    
+    // 继承人信息
+    var spouseName: String?
+    var childName: String?
+    var relativeName: String?
+    var socialInheritor: String?
+    var cryptoInheritor: String?
+    var cloudInheritor: String?
+    var gameInheritor: String?
+    var emailInheritor: String?
+    var primaryInheritor: String?
+    var houseInheritor: String?
+    var carInheritor: String?
+    var otherInheritor: String?
+    var moneyInheritor: String?
+    var propertyInheritor: String?
+    
+    // 遗嘱执行人
+    var executorName: String?
+    var executorContact: String?
+    var digitalExecutor: String?
+    var digitalContact: String?
+    
+    // 指示说明
+    var socialInstruction: String?
+    var cryptoInstruction: String?
+    var cloudInstruction: String?
+    var gameInstruction: String?
+    
+    // 监护人
+    var primaryGuardian: String?
+    var secondaryGuardian: String?
+    var propertyGuardian: String?
+    
+    // 抚养安排
+    var monthlyAllowance: String?
+    var visitation: String?
+    var education: String?
+    var medical: String?
+    
+    // 丧葬安排
+    var funeralType: String?
+    var funeralLocation: String?
+    var burialType: String?
+    var cemetery: String?
+    var funeralFund: String?
+    var funeralExecutor: String?
+    var otherArrangement: String?
+    
+    // 身份证号
+    var idNumber: String?
+}
 }
 
 // MARK: - 用户设置
