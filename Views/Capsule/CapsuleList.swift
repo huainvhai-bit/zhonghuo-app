@@ -8,6 +8,7 @@
 
 import SwiftUI
 import UIKit
+import Foundation
 
 struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
@@ -179,7 +180,7 @@ struct CapsuleList: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
-                    // ✅ Bug 修复：点击胶囊跳转到编辑页面，传递胶囊数据
+                    // ✅ Bug 修复：点击胶囊跳转到详情页面
                     NavigationLink(destination: CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)) {
                         CapsuleCard(capsule: capsule)
                     }
