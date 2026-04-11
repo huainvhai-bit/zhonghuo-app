@@ -272,7 +272,10 @@ class DataManager: ObservableObject {
         
         do {
             let query = "query { getConfig { checkinIntervalHours } }"
-            let url = URL(string: "\(DataManager.apiURL)/api/graphql.php")!
+            guard let url = URL(string: "\(DataManager.apiURL)/api/graphql.php") else {
+                print("❌ 无效的 API URL")
+                return false
+            }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1030,7 +1033,7 @@ class DataManager: ObservableObject {
             return CapsuleInput(
                 id: capsule.id,
                 title: capsule.title,
-                type: input["type"] as! String,
+                type: input["type"] as? String ?? capsule.type.rawValue,
                 mediaType: input["mediaType"] as? String,
                 content: capsule.content,
                 openAt: input["openAt"] as? String,

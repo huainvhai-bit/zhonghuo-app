@@ -243,7 +243,7 @@ extension WillPreviewView {
         UIGraphicsBeginPDFContextToData(pdfData, CGRect(origin: .zero, size: paperSize), nil)
         UIGraphicsBeginPDFPage()
         
-        let context = UIGraphicsGetCurrentContext()
+        // context 自动获取，不需要显式赋值
         attributedString.draw(in: CGRect(origin: CGPoint(x: 50, y: 50), size: CGSize(width: 495, height: 742)))
         
         UIGraphicsEndPDFContext()

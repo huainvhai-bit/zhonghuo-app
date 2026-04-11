@@ -1348,8 +1348,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                 
                 await MainActor.run {
-                    // ✅ Swift 6 并发安全：使用局部变量避免捕获问题
-                    let _ = willModulesCount
+                    // ✅ Swift 6 并发安全：在 MainActor 内使用局部变量副本
+                    let localEmergencyContactsCount = emergencyContactsCount
+                    let localWitnessesCount = witnessesCount
+                    let localCapsulesCount = capsulesCount
+                    let localWillModulesCount = willModulesCount
+                    let localFamilyCount = familyCount
+                    let localAssetsCount = assetsCount
                     
                     print("🔍 fetchUserData: 准备设置 currentUser")
                     print("   - 当前 currentUser: \(self.currentUser?.name ?? "nil")")
@@ -1359,18 +1364,18 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     // 🔧 修复：如果 currentUser 是 nil，创建新用户对象
                     if var currentUser = self.currentUser {
                         // 更新已存在的用户
-                        currentUser.emergencyContactsCount = emergencyContactsCount
-                        currentUser.witnessesCount = witnessesCount
-                        currentUser.capsulesCount = capsulesCount
-                        currentUser.willModulesCount = willModulesCount
-                        currentUser.familyCount = familyCount
+                        currentUser.emergencyContactsCount = localEmergencyContactsCount
+                        currentUser.witnessesCount = localWitnessesCount
+                        currentUser.capsulesCount = localCapsulesCount
+                        currentUser.willModulesCount = localWillModulesCount
+                        currentUser.familyCount = localFamilyCount
                         currentUser.checkinCount = checkinCount
                         currentUser.lastCheckInDate = dateFormatter.date(from: lastCheckInDate) ?? currentUser.lastCheckInDate
                         currentUser.lastLoginAt = dateFormatter.date(from: lastLoginAt) ?? currentUser.lastLoginAt
                         currentUser.lastLoginIp = lastLoginIp.isEmpty ? currentUser.lastLoginIp : lastLoginIp
                         self.currentUser = currentUser
                         
-                        print("✅ 用户统计信息已更新：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount)")
+                        print("✅ 用户统计信息已更新：紧急=\(localEmergencyContactsCount), 见证=\(localWitnessesCount), 胶囊=\(localCapsulesCount), 嘱托=\(localWillModulesCount)")
                     } else {
                         // 🔴 创建新用户对象（从服务器数据）
                         let user = User(
@@ -1390,11 +1395,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             birthday: nil,
                             idCard: nil,
                             address: nil,
-                            emergencyContactsCount: emergencyContactsCount,
-                            witnessesCount: witnessesCount,
-                            capsulesCount: capsulesCount,
-                            willModulesCount: willModulesCount,
-                            familyCount: familyCount
+                            emergencyContactsCount: localEmergencyContactsCount,
+                            witnessesCount: localWitnessesCount,
+                            capsulesCount: localCapsulesCount,
+                            willModulesCount: localWillModulesCount,
+                            familyCount: localFamilyCount
                         )
                         self.currentUser = user
                         self.isLoggedIn = true

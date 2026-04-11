@@ -263,7 +263,7 @@ struct BindFamilyView: View {
             
             if !members.isEmpty {
                 // 获取最后一个绑定的家人
-                let lastMember = members.last!
+                guard let lastMember = members.last else { return }
                 let name = lastMember["name"] as? String ?? ""
                 let phone = lastMember["phone"] as? String ?? ""
                 let relation = lastMember["role"] as? String ?? "家人"

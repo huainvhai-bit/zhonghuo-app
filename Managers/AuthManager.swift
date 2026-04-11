@@ -151,7 +151,7 @@ class AuthManager: ObservableObject {
     /// 检查登录状态（从 Keychain 恢复）
     func checkLoginStatus() -> Bool {
         if let token = KeychainManager.shared.getToken(),
-           let userId = KeychainManager.shared.getUserId() {
+           let _ = KeychainManager.shared.getUserId() {
             isLoggedIn = true
             currentUser = KeychainManager.shared.getUserPhone() // 临时使用手机号
             authToken = token

@@ -727,8 +727,8 @@ struct EditProfileModal: View {
             }
             .onAppear {
                 if let user = userManager.currentUser {
-                    name = user.name ?? ""
-                    phone = user.phone ?? ""
+                    name = user.name
+                    phone = user.phone
                     ethnicity = user.ethnicity ?? ""
                     birthday = user.birthday ?? Date()
                     idCard = user.idCard ?? ""

@@ -12,6 +12,7 @@ import AVKit
 
 struct CapsuleEditView: View {
     @ObservedObject var dataManager: DataManager
+    var existingCapsule: TimeCapsule? = nil  // ✅ Bug 修复：添加编辑模式支持
     @Environment(\.dismiss) var dismiss
     @State private var title = ""
     @State private var content = ""
@@ -156,6 +157,15 @@ struct CapsuleEditView: View {
                 }
             }
         }
+        .onAppear {
+            // ✅ Bug 修复：编辑模式下加载已有胶囊数据
+            if let existingCapsule = existingCapsule {
+                title = existingCapsule.title
+                content = existingCapsule.content
+                selectedType = existingCapsule.type
+                sendDate = existingCapsule.sendDate
+            }
+        }
         .navigationTitle(selectedType == .text ? "编辑胶囊" : "录制胶囊")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -221,28 +231,41 @@ struct CapsuleEditView: View {
     private func saveCapsule() {
         Task {
             var mediaServerUrl: String? = nil
+            var localMediaPath: String = ""  // ✅ Bug 修复：保存相对路径
             
             // 📤 上传媒体文件到服务器
             if let audioURL = recordedAudioURL {
                 mediaServerUrl = await DataManager.shared.uploadMediaToServer(audioURL, type: .audio)
                 print("📤 音频上传结果：\(mediaServerUrl ?? "失败")")
+                // ✅ Bug 修复：保存相对路径（避免 iOS sandbox 变化导致无法播放）
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
+                localMediaPath = audioURL.path.replacingOccurrences(of: documentsPath, with: "")
             } else if let videoURL = recordedVideoURL {
                 mediaServerUrl = await DataManager.shared.uploadMediaToServer(videoURL, type: .video)
                 print("📤 视频上传结果：\(mediaServerUrl ?? "失败")")
+                // ✅ Bug 修复：保存相对路径
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
+                localMediaPath = videoURL.path.replacingOccurrences(of: documentsPath, with: "")
             }
             
             let capsule = TimeCapsule(
-                id: UUID().uuidString,
+                id: existingCapsule?.id ?? UUID().uuidString,  // ✅ Bug 修复：编辑模式使用原 ID
                 title: title,
                 content: content,
                 type: selectedType,
+                mediaURL: localMediaPath,  // ✅ Bug 修复：保存相对路径
                 mediaServerURL: mediaServerUrl ?? "",
                 sendDate: sendDate,
-                isSent: false,
-                createdAt: Date()
+                isSent: existingCapsule?.isSent ?? false,
+                createdAt: existingCapsule?.createdAt ?? Date()  // ✅ Bug 修复：编辑模式保留原创建时间
             )
             
-            dataManager.addCapsule(capsule)
+            // ✅ Bug 修复：编辑模式更新，新增模式添加
+            if existingCapsule != nil {
+                dataManager.updateCapsule(capsule)  // ✅ 更新现有胶囊
+            } else {
+                dataManager.addCapsule(capsule)  // 新增胶囊
+            }
             
             // 📢 通知同步到服务器
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
@@ -255,8 +278,21 @@ struct CapsuleEditView: View {
     }
     
     private func playerView(for url: URL) -> AnyView {
-        if FileManager.default.fileExists(atPath: url.path) {
-            let player = AVPlayer(url: url)
+        // ✅ Bug 修复：处理相对路径
+        let absoluteURL: URL
+        if url.path.hasPrefix("/") && !url.path.contains("Documents") {
+            // 旧数据：绝对路径但 sandbox 已变化
+            absoluteURL = url
+        } else if url.path.hasPrefix("/") {
+            // 新数据：相对路径，需要转换
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            absoluteURL = documentsPath.appendingPathComponent(String(url.path.dropFirst()))
+        } else {
+            absoluteURL = url
+        }
+        
+        if FileManager.default.fileExists(atPath: absoluteURL.path) {
+            let player = AVPlayer(url: absoluteURL)
             player.actionAtItemEnd = .none
             player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
             
@@ -272,7 +308,8 @@ struct CapsuleEditView: View {
                         .foregroundColor(.red)
                     Text("媒体文件无法播放")
                         .font(.headline)
-                    Text("文件可能已损坏或不存在")
+                    Text("文件路径：\(absoluteURL.path)")
+                        .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding()
@@ -286,7 +323,7 @@ struct CapsuleMediaRecorderView: View {
     let selectedType: TimeCapsule.CapsuleType
     @Environment(\.dismiss) var dismiss
     @StateObject var recorder = MediaRecorder()
-    @State var onRecordComplete: (URL) -> Void
+    let onRecordComplete: (URL) -> Void  // ✅ 修复：闭包不能用 @State
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var showingPermissionAlert = false

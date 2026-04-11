@@ -243,7 +243,10 @@ struct DataDeletionView: View {
     private func clearCache() async {
         // 清理文档目录
         let fileManager = FileManager.default
-        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("❌ 无法获取文档目录路径")
+            return
+        }
         
         do {
             let contents = try fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil)

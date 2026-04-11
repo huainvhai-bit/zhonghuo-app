@@ -349,7 +349,6 @@ class NetworkService {
                  .securityTokenExpired,
                  .securityTokenInvalid,
                  .dataNotFound,
-                 .invalidParameter,
                  .invalidParameter:
                 return false
             default:
@@ -450,7 +449,7 @@ class NetworkService {
         }
         
         // 添加文件
-        let uploadFileName = fileName ?? fileURL.lastPathComponent
+        let uploadFileName = fileURL.lastPathComponent
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"\(parameterName)\"; filename=\"\(uploadFileName)\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)

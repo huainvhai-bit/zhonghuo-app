@@ -63,8 +63,6 @@ class ErrorHandler {
             return "✏️ 输入错误"
         case .permissionDenied, .accessDenied, .securityForbidden:
             return "🚫 权限不足"
-        case .localDatabase:
-            return "💾 存储问题"
         case .securityDataTampering, .securitySuspiciousActivity, .securityEncryptionFailed, .securityDecryptionFailed:
             return "🛡️ 安全问题"
         case .securityKeychainError:

@@ -193,7 +193,7 @@ struct FamilyMemberDetailView: View {
             // 地图（如果有坐标）
             if let deviceInfo = member.deviceInfo, deviceInfo.hasLocation {
                 locationMap(deviceInfo: deviceInfo)
-            } else if let deviceInfo = member.deviceInfo {
+            } else if member.deviceInfo != nil {
                 // 无位置信息
                 noLocationView
             }

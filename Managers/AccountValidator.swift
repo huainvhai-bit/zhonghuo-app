@@ -110,7 +110,9 @@ class AccountValidator: ObservableObject {
             }
             """
             
-            let url = URL(string: "\(dataManager.apiURL)/api/graphql.php")!
+            guard let url = URL(string: "\(dataManager.apiURL)/api/graphql.php") else {
+                return .unknown("无效的 API URL")
+            }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
