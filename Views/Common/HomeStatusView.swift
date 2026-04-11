@@ -257,7 +257,7 @@ struct HomeStatusView: View {
         print("🎯 同步策略：比对本地和云端，保持数据一致")
         
         guard let token = KeychainManager.shared.getToken(), !token.isEmpty else {
-            print("⚠️ 同步失败：无 token")
+            print("⚠️ 同步失败：认证失败")
             return
         }
         

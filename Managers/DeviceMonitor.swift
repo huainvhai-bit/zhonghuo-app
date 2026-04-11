@@ -298,7 +298,7 @@ class DeviceMonitor: ObservableObject {
         
         let token = KeychainManager.shared.getToken() ?? ""
         if token.isEmpty {
-            print("⚠️ 上传失败：无 token")
+            print("⚠️ 上传失败：认证失败")
             return
         }
         

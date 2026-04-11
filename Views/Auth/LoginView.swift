@@ -360,6 +360,9 @@ struct LoginView: View {
             }
             .background(Color("BackgroundColor"))
             .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                timer?.invalidate()
+            }
             .onTapGesture {
                 hideKeyboard()
             }

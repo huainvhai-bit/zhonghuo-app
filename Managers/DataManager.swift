@@ -1677,12 +1677,12 @@ class DataManager: ObservableObject {
         
         let token = KeychainManager.shared.getToken() ?? ""
         if token.isEmpty {
-            print("⚠️ 上传失败：无 token")
+            print("⚠️ 上传失败：认证失败")
             return nil
         }
         
         // 创建上传请求
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php?action=upload")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php?action=upload") ?? URL(fileURLWithPath: ""))
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         

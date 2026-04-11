@@ -910,7 +910,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         """
         
-        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/graphql.php")!)
+        var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/graphql.php") ?? URL(fileURLWithPath: ""))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1274,7 +1274,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         print("🔍 GraphQL 查询语句：\(query)")  // 🔥 打印完整查询
         
-        var request = URLRequest(url: URL(string: "\(apiURL)/api/graphql.php")!)
+        var request = URLRequest(url: URL(string: "\(apiURL)/api/graphql.php") ?? URL(fileURLWithPath: ""))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

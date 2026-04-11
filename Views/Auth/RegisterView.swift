@@ -52,7 +52,7 @@ struct RegisterView: View {
         let hasLetter = password.rangeOfCharacter(from: .letters) != nil
         let hasNumber = password.rangeOfCharacter(from: .decimalDigits) != nil
         let result = hasLetter && hasNumber
-        print("🔍 密码验证：长度=\(password.count), 有字母=\(hasLetter), 有数字=\(hasNumber) -> \(result)")
+        print("🔍 密码验证：长度已检查")
         return result
     }
     
@@ -111,8 +111,8 @@ struct RegisterView: View {
     
     private func register() async {
         print("🔵🔵🔵 register() 函数被调用！！！")
-        print("🔍 当前状态：phone=\(phone), password 长度=\(password.count), confirmPassword=\(confirmPassword)")
-        print("🔍 验证结果：isValidPhone=\(isValidPhone(phone)), isValidPassword=\(isValidPassword(password)), 密码匹配=\(password == confirmPassword)")
+        print("🔍 当前状态：验证中", confirmPassword=\(confirmPassword)")
+        print("🔍 验证结果：已检查")
         
         await MainActor.run {
             isLoading = true
@@ -397,6 +397,9 @@ struct RegisterView: View {
         }
         .background(Color("BackgroundColor"))
         .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                timer?.invalidate()
+            }
         // 🔴 移除 onTapGesture 避免拦截按钮点击
     }
     
