@@ -69,9 +69,15 @@ struct AboutSettingsView: View {
                     
                     // 联系方式
                     VStack(spacing: 12) {
-                        Link("官方网站", destination: URL(string: "https://zhonghuo.cn")!)
-                        Link("隐私政策", destination: URL(string: "https://zhonghuo.cn/privacy")!)
-                        Link("服务条款", destination: URL(string: "https://zhonghuo.cn/terms")!)
+                        if let url = URL(string: "https://zhonghuo.cn") {
+                            Link("官方网站", destination: url)
+                        }
+                        if let url = URL(string: "https://zhonghuo.cn/privacy") {
+                            Link("隐私政策", destination: url)
+                        }
+                        if let url = URL(string: "https://zhonghuo.cn/terms") {
+                            Link("服务条款", destination: url)
+                        }
                         
                         HStack {
                             Text("客服邮箱")

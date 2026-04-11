@@ -31,6 +31,11 @@ class OfflineEditorManager: ObservableObject {
         checkNetworkStatus()
     }
     
+    deinit {
+        // ✅ 清理 NotificationCenter 观察者
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     // MARK: - 网络状态
     
     /// 网络状态
