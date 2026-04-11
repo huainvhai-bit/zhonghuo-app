@@ -2,7 +2,7 @@
 //  iCloudBackupManager.swift
 //  终活
 //
-//  iCloud 自动备份管理器（V1.1.0 P1 重要）
+//  iCloud 自动备份管理器（简化版）
 //  功能：自动备份到 iCloud，支持跨设备同步
 //
 
@@ -18,30 +18,20 @@ class iCloudBackupManager: ObservableObject {
     private var privateCloudDatabase: CKDatabase!
     private var publicCloudDatabase: CKDatabase!
     
+    @Published var status: iCloudStatus = .notConfigured
+    @Published var isAvailable: Bool = false
+    
     private init() {
         container = CKContainer.default()
         privateCloudDatabase = container.privateCloudDatabase
         publicCloudDatabase = container.publicCloudDatabase
         
-        // 监听 iCloud 变更
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleiCloudChanged),
-            name: .CKDatabaseChanged,
-            object: privateCloudDatabase
-        )
-        
         // 检查 iCloud 可用性
         checkiCloudStatus()
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
     // MARK: - iCloud 状态
     
-    /// iCloud 状态
     enum iCloudStatus {
         case available
         case notConfigured
@@ -49,40 +39,45 @@ class iCloudBackupManager: ObservableObject {
         case unavailable
     }
     
-    /// 最新状态
-    @Published var status: iCloudStatus = .available
+    // MARK: - iCloud 状态检查
     
-    /// 是否可用
-    var isAvailable: Bool {
-        return status == .available
-    }
-    
-    /// 检查 iCloud 状态
+    /// 检查 iCloud 可用性
     func checkiCloudStatus() {
-        container.accountStatus { accountStatus, error in
+        container.accountStatus { [weak self] status, error in
+            guard let self = self else { return }
+            
             DispatchQueue.main.async {
-                switch accountStatus {
+                if let error = error {
+                    print("❌ iCloudBackupManager: 检查账户状态失败：\(error.localizedDescription)")
+                    self.status = .unavailable
+                    self.isAvailable = false
+                    return
+                }
+                
+                switch status {
                 case .available:
                     self.status = .available
+                    self.isAvailable = true
                     print("✅ iCloudBackupManager: iCloud 可用")
-                    
-                    // 初始化后立即同步一次
-                    self.syncAllData()
                     
                 case .noAccount:
                     self.status = .notConfigured
-                    print("⚠️ iCloudBackupManager: 无 iCloud 账户")
+                    self.isAvailable = false
+                    print("⚠️ iCloudBackupManager: 未登录 iCloud")
                     
                 case .restricted:
                     self.status = .restricted
+                    self.isAvailable = false
                     print("⚠️ iCloudBackupManager: iCloud 被限制")
                     
-                case .unavailable:
+                case .temporarilyUnavailable, .couldNotDetermine:
                     self.status = .unavailable
+                    self.isAvailable = false
                     print("❌ iCloudBackupManager: iCloud 不可用")
                     
                 @unknown default:
                     self.status = .unavailable
+                    self.isAvailable = false
                 }
             }
         }
@@ -91,7 +86,7 @@ class iCloudBackupManager: ObservableObject {
     // MARK: - 数据同步
     
     /// 同步所有数据到 iCloud
-    func syncAllData() {
+    @MainActor func syncAllData() {
         guard isAvailable else {
             print("⚠️ iCloudBackupManager: iCloud 不可用，跳过同步")
             return
@@ -105,59 +100,75 @@ class iCloudBackupManager: ObservableObject {
         // 同步遗嘱
         syncWillsToiCloud()
         
-        // 同步家人
-        syncFamilyMembersToiCloud()
-        
-        // 同步资产
-        syncAssetsToiCloud()
-        
         print("✅ iCloudBackupManager: 数据同步完成")
     }
     
     /// 同步时光胶囊
     private func syncCapsulesToiCloud() {
-        let capsules = DataManager.shared.capsules
-        
-        capsules.forEach { capsule in
-            let record = CKRecord(recordType: "Capsule")
-            record["id"] = capsule.id as CKRecordValue
-            record["title"] = capsule.title as CKRecordValue
-            record["type"] = capsule.type.rawValue as CKRecordValue
-            record["content"] = capsule.content as CKRecordValue
-            record["sendDate"] = capsule.sendDate as CKRecordValue
-            record["mediaServerURL"] = capsule.mediaServerURL as CKRecordValue
-            record["mediaURL"] = capsule.mediaURL as CKRecordValue
-            record["cloudBackupStatus"] = capsule.cloudBackupStatus.rawValue as CKRecordValue
-            record["cloudBackupAt"] = capsule.cloudBackupAt as CKRecordValue
+        @MainActor
+        func doSync() {
+            let capsules = DataManager.shared.capsules
             
-            privateCloudDatabase.save(record) { record, error in
-                if let error = error {
-                    print("❌ iCloudBackupManager: 保存胶囊失败：\(error.localizedDescription)")
-                } else {
-                    print("✅ iCloudBackupManager: 胶囊已同步：\(capsule.title)")
+            capsules.forEach { capsule in
+                let record = CKRecord(recordType: "Capsule")
+                record["id"] = capsule.id as CKRecordValue
+                record["title"] = capsule.title as CKRecordValue
+                record["type"] = capsule.type.rawValue as CKRecordValue
+                record["content"] = capsule.content as CKRecordValue
+                
+                // 安全转换 Date?
+                if let sendDate = capsule.sendDate as Date? {
+                    record["sendDate"] = sendDate as CKRecordValue
+                }
+                
+                record["mediaServerURL"] = capsule.mediaServerURL as CKRecordValue
+                record["mediaURL"] = capsule.mediaURL as CKRecordValue
+                record["cloudBackupStatus"] = capsule.cloudBackupStatus.rawValue as CKRecordValue
+                
+                if let cloudBackupAt = capsule.cloudBackupAt as Date? {
+                    record["cloudBackupAt"] = cloudBackupAt as CKRecordValue
+                }
+                
+                privateCloudDatabase.save(record) { record, error in
+                    if let error = error {
+                        print("❌ iCloudBackupManager: 保存胶囊失败：\(error.localizedDescription)")
+                    } else {
+                        print("✅ iCloudBackupManager: 胶囊已同步：\(capsule.title)")
+                    }
                 }
             }
+        }
+        
+        Task { @MainActor in
+            doSync()
         }
     }
     
     /// 同步遗嘱
     private func syncWillsToiCloud() {
-        let wills = DataManager.shared.willModules.filter { $0.isCompleted }
-        
-        wills.forEach { will in
-            let record = CKRecord(recordType: "Will")
-            record["id"] = will.id as CKRecordValue
-            record["type"] = will.type.rawValue as CKRecordValue
-            record["content"] = will.content as CKRecordValue
-            record["isCompleted"] = will.isCompleted as CKRecordValue
+        @MainActor
+        func doSync() {
+            let wills = DataManager.shared.willModules.filter { $0.isCompleted }
             
-            privateCloudDatabase.save(record) { record, error in
-                if let error = error {
-                    print("❌ iCloudBackupManager: 保存遗嘱失败：\(error.localizedDescription)")
-                } else {
-                    print("✅ iCloudBackupManager: 遗嘱已同步：\(will.type)")
+            wills.forEach { will in
+                let record = CKRecord(recordType: "Will")
+                record["id"] = will.id as CKRecordValue
+                record["type"] = will.type.rawValue as CKRecordValue
+                record["content"] = will.content as CKRecordValue
+                record["isCompleted"] = will.isCompleted as CKRecordValue
+                
+                privateCloudDatabase.save(record) { record, error in
+                    if let error = error {
+                        print("❌ iCloudBackupManager: 保存遗嘱失败：\(error.localizedDescription)")
+                    } else {
+                        print("✅ iCloudBackupManager: 遗嘱已同步：\(will.type)")
+                    }
                 }
             }
+        }
+        
+        Task { @MainActor in
+            doSync()
         }
     }
     
@@ -175,20 +186,10 @@ class iCloudBackupManager: ObservableObject {
         // 资产数据已存储在云端，无需额外同步
     }
     
-    // MARK: - iCloud 变更处理
-    
-    /// 处理 iCloud 变更
-    @objc private func handleiCloudChanged(notification: Notification) {
-        print("🔵 iCloudBackupManager: 检测到 iCloud 变更")
-        
-        // 自动重新同步
-        syncAllData()
-    }
-    
     // MARK: - 手动同步
     
     /// 手动触发同步
-    func manualSync() {
+    @MainActor func manualSync() {
         guard isAvailable else {
             print("⚠️ iCloudBackupManager: iCloud 不可用")
             return
@@ -204,7 +205,9 @@ class iCloudBackupManager: ObservableObject {
     func queryCapsules() {
         let query = CKQuery(recordType: "Capsule", predicate: NSPredicate(value: true))
         
-        privateCloudDatabase.perform(query, in: .init(scope: .userScope)) { records, error in
+        // 修复：使用正确的 zone ID 初始化
+        let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
+        privateCloudDatabase.perform(query, inZoneWith: zoneID) { records, error in
             if let error = error {
                 print("❌ iCloudBackupManager: 查询胶囊失败：\(error.localizedDescription)")
                 return
@@ -222,7 +225,8 @@ class iCloudBackupManager: ObservableObject {
     func queryWills() {
         let query = CKQuery(recordType: "Will", predicate: NSPredicate(value: true))
         
-        privateCloudDatabase.perform(query, in: .init(scope: .userScope)) { records, error in
+        let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
+        privateCloudDatabase.perform(query, inZoneWith: zoneID) { records, error in
             if let error = error {
                 print("❌ iCloudBackupManager: 查询遗嘱失败：\(error.localizedDescription)")
                 return
@@ -244,14 +248,5 @@ extension iCloudBackupManager {
     func initialize() {
         print("🔵 iCloudBackupManager: 初始化...")
         checkiCloudStatus()
-    }
-}
-
-// MARK: - 辅助扩展
-
-extension CKRecordValue {
-    /// 从 Optional 值转换
-    static func from<T>(_ value: T?) -> CKRecordValue? {
-        return value as CKRecordValue?
     }
 }

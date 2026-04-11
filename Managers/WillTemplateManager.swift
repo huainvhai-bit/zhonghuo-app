@@ -32,13 +32,13 @@ class WillTemplateManager: ObservableObject {
     var templates: [WillTemplate] = [
         WillTemplate(
             name: "财产继承遗嘱",
-            type: .full,
+            type: .property,
             description: "传统财产继承遗嘱，适用于房产、存款、股票等财产分配",
             contentTemplate: """
             遗嘱
             
             立遗嘱人：\(UserManager.shared.currentUser?.name ?? "本人")
-            身份证号：\(UserManager.shared.currentUser?.idNumber ?? "未知")
+            身份证号：\(UserManager.shared.currentUser?.phone ?? "未知")
             
             一、遗嘱内容
             
@@ -84,13 +84,13 @@ class WillTemplateManager: ObservableObject {
         
         WillTemplate(
             name: "数字遗产遗嘱",
-            type: .digital,
+            type: .otherInstructions,
             description: "专门用于分配数字资产的遗嘱，适用于社交媒体、加密货币、游戏账号等",
             contentTemplate: """
             数字遗产遗嘱
             
             立遗嘱人：\(UserManager.shared.currentUser?.name ?? "本人")
-            身份证号：\(UserManager.shared.currentUser?.idNumber ?? "未知")
+            身份证号：\(UserManager.shared.currentUser?.phone ?? "未知")
             
             一、数字资产清单
             
@@ -148,13 +148,13 @@ class WillTemplateManager: ObservableObject {
         
         WillTemplate(
             name: "简易继承遗嘱",
-            type: .full,
+            type: .property,
             description: "简洁版遗嘱，适合财产结构简单的用户",
             contentTemplate: """
             遗嘱
             
             立遗嘱人：\(UserManager.shared.currentUser?.name ?? "本人")
-            身份证号：\(UserManager.shared.currentUser?.idNumber ?? "未知")
+            身份证号：\(UserManager.shared.currentUser?.phone ?? "未知")
             
             本人自愿订立本遗嘱，对本人全部财产作如下分配：
             
@@ -191,13 +191,13 @@ class WillTemplateManager: ObservableObject {
         
         WillTemplate(
             name: "遗嘱+安葬安排",
-            type: .full,
+            type: .property,
             description: "包含财产分配和身后事安排的综合遗嘱",
             contentTemplate: """
             综合遗嘱
             
             立遗嘱人：\(UserManager.shared.currentUser?.name ?? "本人")
-            身份证号：\(UserManager.shared.currentUser?.idNumber ?? "未知")
+            身份证号：\(UserManager.shared.currentUser?.phone ?? "未知")
             
             一、财产分配
             
@@ -253,13 +253,13 @@ class WillTemplateManager: ObservableObject {
         
         WillTemplate(
             name: "未成年子女监护遗嘱",
-            type: .full,
+            type: .property,
             description: "专为有未成年子女的用户设计，包含财产管理和监护安排",
             contentTemplate: """
             监护遗嘱
             
             立遗嘱人：\(UserManager.shared.currentUser?.name ?? "本人")
-            身份证号：\(UserManager.shared.currentUser?.idNumber ?? "未知")
+            身份证号：\(UserManager.shared.currentUser?.phone ?? "未知")
             
             本人自愿订立本遗嘱，对未成年子女的监护和财产管理作出如下安排：
             
@@ -368,7 +368,7 @@ class WillTemplateManager: ObservableObject {
         
         return [
             "\(UserManager.shared.currentUser?.name ?? "本人")": user.name ?? "本人",
-            "\(UserManager.shared.currentUser?.idNumber ?? "未知")": user.idNumber ?? "未知",
+            "\(UserManager.shared.currentUser?.phone ?? "未知")": user.idNumber ?? "未知",
             // ✅ 添加更多字段
             "\(UserManager.shared.currentUser?.phone ?? "手机号")": user.phone ?? "手机号",
             "[日期]": DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .none),

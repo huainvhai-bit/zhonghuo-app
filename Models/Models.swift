@@ -394,24 +394,8 @@ struct User: Codable, Identifiable {
     var birthday: Date?     // 出生日期
     var idCard: String?     // 身份证号码
     var address: String?    // 住址
-    
-    // 统计信息（带默认值）
-    var emergencyContactsCount: Int = 0
-    var witnessesCount: Int = 0
-    var capsulesCount: Int = 0
-    var willModulesCount: Int = 0
-    var familyCount: Int = 0
-    
-    struct EmergencyContact: Codable, Identifiable {
-        var id: String = UUID().uuidString
-        var name: String
-        var phone: String
-        var relationship: String
-        var isConfirmed: Bool = false
-        var createdAt: Date = Date()
-        var deletedAt: Date? = nil  // 删除标记
+
     // 财产信息
-    var address: String?
     var propertyId: String?
     var bank: String?
     var account: String?
@@ -461,6 +445,30 @@ struct User: Codable, Identifiable {
     var cloudInstruction: String?
     var gameInstruction: String?
     
+    
+    // 统计信息（带默认值）
+    var emergencyContactsCount: Int = 0
+    var witnessesCount: Int = 0
+    var capsulesCount: Int = 0
+    var willModulesCount: Int = 0
+    var familyCount: Int = 0
+    
+    struct EmergencyContact: Codable, Identifiable {
+        var id: String = UUID().uuidString
+        var name: String
+        var phone: String
+        var relationship: String
+        var isConfirmed: Bool = false
+        var createdAt: Date = Date()
+        var deletedAt: Date? = nil  // 删除标记
+    }
+    
+    // 指示说明
+    var socialInstruction: String?
+    var cryptoInstruction: String?
+    var cloudInstruction: String?
+    var gameInstruction: String?
+    
     // 监护人
     var primaryGuardian: String?
     var secondaryGuardian: String?
@@ -483,7 +491,6 @@ struct User: Codable, Identifiable {
     
     // 身份证号
     var idNumber: String?
-}
 }
 
 // MARK: - 用户设置
