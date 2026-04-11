@@ -346,6 +346,8 @@ class WillTemplateManager: ObservableObject {
         
         // 创建遗嘱对象
         let will = WillModule(
+            title: template.name,
+            subtitle: template.description,
             id: UUID().uuidString,
             type: template.type,
             content: content,
@@ -477,7 +479,6 @@ struct WillTemplatePreviewView: View {
                 ScrollView {
                     Text(template.contentTemplate)
                         .font(.system(size: 13))
-                        .lineHeightMultiple(1.6)
                         .padding()
                         .background(Color(hex: "F6F6F8"))
                         .cornerRadius(8)

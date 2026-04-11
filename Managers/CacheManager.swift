@@ -160,19 +160,6 @@ struct HomeStatus: Codable, Identifiable {
 }
 
 /// 时光胶囊信息（与后端同步）
-struct CapsuleInfo: Codable, Identifiable {
-    let id: String
-    let title: String
-    let type: String  // text, image, video, audio
-    let content: String?
-    let openAt: Date?
-    let createdAt: Date
-    let isSent: Bool
-    let mediaServerURL: String
-    let mediaURL: String?
-}
-
-/// 遗嘱信息（与后端同步）
 // WillInfo 和 FamilyInfo 定义已移至 Models.swift
 
 /// 资产信息

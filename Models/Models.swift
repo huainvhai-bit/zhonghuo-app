@@ -872,7 +872,7 @@ struct UserStats: Decodable {
     let checkinCount: Int
 }
 
-struct CapsuleInfo: Decodable {
+struct CapsuleInfo: Codable {
     let id: String
     let title: String
     let type: String
@@ -881,7 +881,7 @@ struct CapsuleInfo: Decodable {
     let createdAt: String
 }
 
-struct WillInfo: Decodable {
+struct WillInfo: Codable {
     let id: String
     let type: String
     let title: String

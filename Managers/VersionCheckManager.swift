@@ -88,29 +88,3 @@ class VersionCheckManager: ObservableObject {
     }
 }
 
-// MARK: - 更新提示视图
-struct UpdateAlertView: View {
-    @ObservedObject var versionManager = VersionCheckManager.shared
-    @Binding var isPresented: Bool
-    
-// var body: some View {
-//         Alert(
-//             title: Text("版本更新"),
-//             message: Text(versionManager.updateMessage),
-//             primaryButton: .default(Text("立即更新")) {
-//                 versionManager.openUpdateUrl()
-//                 
-//                 // 如果是强制更新，不允许取消
-//                 if !versionManager.isForceUpdate {
-//                     isPresented = false
-//                 }
-//             },
-//             secondaryButton: versionManager.isForceUpdate ? .cancel {
-//                 // 强制更新不允许取消，退出 App
-//                 exit(0)
-//             } : .cancel {
-//                 isPresented = false
-//             }
-//         )
-//     }
-}
