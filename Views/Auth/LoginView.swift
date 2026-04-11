@@ -290,7 +290,8 @@ struct LoginView: View {
                     }
                     
                     Button(action: {
-                        Task {
+                        Task { @MainActor in
+                            try? await Task.checkCancellation()
                             if loginType == "password" {
                                 await loginWithPassword()
                             } else {
@@ -401,7 +402,8 @@ struct LoginView: View {
         startTimer()
         
         // 调用发送验证码 API
-        Task {
+        Task { @MainActor in
+            try? await Task.checkCancellation()
             await sendVerifyCode()
         }
     }

@@ -176,7 +176,8 @@ struct SettingsView: View {
                                     print("   - 当前 currentUser: \(userManager.currentUser?.name ?? "nil")")
                                     print("   - 当前 checkInInterval: \(userManager.checkInInterval.rawValue)")
                                     print("   - 当前 user.checkInInterval: \(userManager.currentUser?.checkInInterval.rawValue ?? "nil")")
-                                    Task {
+                                    Task { @MainActor in
+                                        try? await Task.checkCancellation()
                                         await updateCheckInInterval(interval)
                                     }
                                 }
@@ -317,7 +318,7 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Image(systemName: "arrow.down.circle")
-                            Text("检查更新")
+                            Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
                         }
                         .foregroundColor(.blue)
                     }
@@ -364,7 +365,7 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .foregroundColor(.red)
-                            Text("退出登录")
+                            Text(LocalizedStringKey("退出登录"))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.red)
                             Spacer()
@@ -406,7 +407,8 @@ struct SettingsView: View {
                 startDeviceMonitoring()
                 
                 // 上传设备信息到服务器
-                Task {
+                Task { @MainActor in
+                    try? await Task.checkCancellation()
                     try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 秒后上传
                     await deviceMonitor.uploadDeviceInfo()
                 }
@@ -432,7 +434,7 @@ struct SettingsView: View {
                 Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
             }
             .confirmationDialog("确认退出", isPresented: $showingLogoutConfirm) {
-                Button("退出登录", role: .destructive) {
+                Button(LocalizedStringKey("退出登录"), role: .destructive) {
                     logout()
                 }
                 Button("取消", role: .cancel) {}
@@ -1023,7 +1025,7 @@ extension SettingsView {
                 }
                 Button(action: checkUpdate) {
                     HStack {
-                        Text("检查更新")
+                        Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
                         Spacer()
                         Image(systemName: "arrow.clockwise").foregroundColor(.secondary)
                     }
@@ -1070,7 +1072,7 @@ extension SettingsView {
         }
         .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("检查更新", isPresented: $showingUpdateAlert) {
+        .alert(LocalizedStringKey("检查更新"), isPresented: $showingUpdateAlert) {
             Button("稍后更新", role: .cancel) { }
             Button("立即更新") {
                 if let url = URL(string: "https://apps.apple.com/app/终活/id123456789") {

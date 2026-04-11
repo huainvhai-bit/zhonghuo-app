@@ -111,7 +111,7 @@ struct RegisterView: View {
     
     private func register() async {
         print("🔵🔵🔵 register() 函数被调用！！！")
-        print("🔍 当前状态：验证中", confirmPassword=\(confirmPassword)")
+        print("🔍 当前状态：验证中")
         print("🔍 验证结果：已检查")
         
         await MainActor.run {

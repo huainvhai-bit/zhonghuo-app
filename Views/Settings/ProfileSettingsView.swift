@@ -83,7 +83,8 @@ struct ProfileSettingsView: View {
         
         isSaving = true
         
-        Task {
+        Task { @MainActor in
+            try? await Task.checkCancellation()
             await MainActor.run {
                 guard var user = userManager.currentUser else {
                     isSaving = false

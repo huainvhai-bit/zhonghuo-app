@@ -45,7 +45,7 @@ struct CapsuleList: View {
                         Button(action: { showingAddCapsule = true }) {
                             HStack {
                                 Text("+")
-                                Text("添加胶囊")
+                                Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
                             }
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
@@ -182,7 +182,7 @@ struct CapsuleList: View {
                 ForEach(filteredCapsules) { capsule in
                     // ✅ Bug 修复：点击胶囊跳转到详情页面
                     NavigationLink(destination: CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)) {
-                        CapsuleCard(capsule: capsule)
+                        CapsuleCard(capsule: capsule).accessibilityLabel(capsule.title)
                     }
                 }
                 .onDelete(perform: deleteCapsules)  // ✅ 添加删除功能
@@ -196,11 +196,11 @@ struct CapsuleList: View {
                 .font(.system(size: 48))
                 .foregroundColor(Color(hex: "6366F1").opacity(0.5))
             
-            Text("还没有时光胶囊")
+            Text(LocalizedStringKey("还没有时光胶囊"))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.secondary)
             
-            Text("点击右上角 ➕ 创建第一个胶囊")
+            Text(LocalizedStringKey("点击右上角 ➕ 创建第一个胶囊"))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
             
