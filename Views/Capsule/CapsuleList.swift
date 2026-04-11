@@ -12,6 +12,7 @@ import UIKit
 struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
     @State private var selectedFilter: TimeCapsule.CapsuleType? = nil
+    @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -38,6 +39,21 @@ struct CapsuleList: View {
                         } else {
                             capsuleList
                         }
+                        
+                        // ✅ 底部新增按钮（与嘱托与资产一致）
+                        Button(action: { showingAddCapsule = true }) {
+                            HStack {
+                                Text("+")
+                                Text("添加胶囊")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(hex: "6366F1"))
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                        }
+                        .padding(.bottom, 32)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
@@ -57,6 +73,9 @@ struct CapsuleList: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showingAddCapsule) {
+            CapsuleEditView(dataManager: dataManager)  // ✅ 新增模式
         }
         .refreshable {
             // ✅ 下拉刷新

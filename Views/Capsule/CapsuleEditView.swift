@@ -25,6 +25,7 @@ struct CapsuleEditView: View {
     @State private var showingPlayer = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingDeleteAlert = false  // ✅ 新增：删除确认对话框
     @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
     @State private var showCameraOptions = false  // ✅ Bug 1: 显示摄像头选项
     
@@ -182,11 +183,21 @@ struct CapsuleEditView: View {
                 }
             }
         }
-        .navigationTitle(selectedType == .text ? "编辑胶囊" : "录制胶囊")
+        .navigationTitle(existingCapsule == nil ? (selectedType == .text ? "新增胶囊" : "录制胶囊") : "编辑胶囊")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("取消") { dismiss() }
+            }
+            
+            // ✅ 编辑模式显示删除按钮
+            ToolbarItem(placement: existingCapsule != nil ? .navigationBarLeading : .automatic) {
+                if existingCapsule != nil {
+                    Button(action: { showingDeleteAlert = true }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
             }
             
             ToolbarItem(placement: .confirmationAction) {
@@ -197,6 +208,14 @@ struct CapsuleEditView: View {
                 }
                 .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
             }
+        }
+        .alert("删除胶囊", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                deleteCapsule()
+            }
+        } message: {
+            Text("确定要删除胶囊「\(title)」吗？此操作不可恢复。")
         }
         .sheet(isPresented: $showingRecorder) {
             CapsuleMediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
@@ -278,9 +297,12 @@ struct CapsuleEditView: View {
             
             // ✅ Bug 修复：编辑模式更新，新增模式添加
             if existingCapsule != nil {
-                dataManager.updateCapsule(capsule)  // ✅ 更新现有胶囊
+                // ✅ 编辑模式：更新创建时间为当前时间
+                var updatedCapsule = capsule
+                updatedCapsule.createdAt = Date()  // ✅ 更新编辑时间
+                dataManager.updateCapsule(updatedCapsule)
             } else {
-                dataManager.addCapsule(capsule)  // 新增胶囊
+                dataManager.addCapsule(capsule)
             }
             
             // 📢 通知同步到服务器
@@ -291,6 +313,23 @@ struct CapsuleEditView: View {
             
             dismiss()
         }
+    }
+    
+    // ✅ 删除胶囊方法
+    private func deleteCapsule() {
+        guard let existingCapsule = existingCapsule else { return }
+        dataManager.deleteCapsule(existingCapsule)
+        print("✅ 胶囊已删除：\(existingCapsule.title)")
+        
+        // 📢 通知同步到服务器
+        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+        
+        // 📤 同步到云端
+        Task {
+            _ = await dataManager.batchSyncCapsules()
+        }
+        
+        dismiss()
     }
     
     private func playerView(for url: URL) -> AnyView {
