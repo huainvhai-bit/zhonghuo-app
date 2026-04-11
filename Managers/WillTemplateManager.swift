@@ -1,3 +1,4 @@
+import SwiftUI
 //
 //  WillTemplateManager.swift
 //  终活
@@ -44,28 +45,28 @@ class WillTemplateManager: ObservableObject {
             本人自愿订立本遗嘱，对本人名下财产进行如下分配：
             
             1. 房产
-               - 地址：\(userAddress ?? "待填写")
-               - 产权证号：\(userPropertyId ?? "待填写")
-               - 继承人：\(userSpouseName ?? "待填写")
+               - 地址：\(UserManager.shared.currentUser?.address ?? "待填写")
+               - 产权证号：\(UserManager.shared.currentUser?.propertyId ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.spouseName ?? "待填写")
             
             2. 存款
-               - 银行：\(userBank ?? "待填写")
-               - 账号：\(userAccount ?? "待填写")
-               - 继承人：\(userChildName ?? "待填写")
+               - 银行：\(UserManager.shared.currentUser?.bank ?? "待填写")
+               - 账号：\(UserManager.shared.currentUser?.account ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.childName ?? "待填写")
             
             3. 股票/基金
-               - 席位：\(userStock ?? "待填写")
-               - 账号：\(userFund ?? "待填写")
-               - 继承人：\(userRelativeName ?? "待填写")
+               - 席位：\(UserManager.shared.currentUser?.stock ?? "待填写")
+               - 账号：\(UserManager.shared.currentUser?.fund ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.relativeName ?? "待填写")
             
             4. 其他财产
-               - \(userOtherProperty ?? "待填写")
+               - \(UserManager.shared.currentUser?.otherProperty ?? "待填写")
                - 继承人：待填写
             
             二、遗嘱执行人
             
-            指定：\(userExecutorName ?? "待填写")
-            联系方式：\(userExecutorContact ?? "待填写")
+            指定：\(UserManager.shared.currentUser?.executorName ?? "待填写")
+            联系方式：\(UserManager.shared.currentUser?.executorContact ?? "待填写")
             
             三、其他说明
             
@@ -94,42 +95,42 @@ class WillTemplateManager: ObservableObject {
             一、数字资产清单
             
             1. 社交媒体账号
-               - 微信：\(userWeChat ?? "待填写")
-               - QQ：\(userQQ ?? "待填写")
-               - 微博：\(userWeibo ?? "待填写")
-               - 继承人：\(userSocialInheritor ?? "待填写")
+               - 微信：\(UserManager.shared.currentUser?.wechat ?? "待填写")
+               - QQ：\(UserManager.shared.currentUser?.qq ?? "待填写")
+               - 微博：\(UserManager.shared.currentUser?.weibo ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.socialInheritor ?? "待填写")
             
             2. 加密货币
-               - 比特币地址：\(userBitcoin ?? "待填写")
-               - 钱包密码：\(userWalletPassword ?? "待填写")
-               - 继承人：\(userCryptoInheritor ?? "待填写")
+               - 比特币地址：\(UserManager.shared.currentUser?.bitcoin ?? "待填写")
+               - 钱包密码：\(UserManager.shared.currentUser?.walletPassword ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.cryptoInheritor ?? "待填写")
             
             3. 云存储账户
-               - iCloud：\(userICloud ?? "待填写")
-               - 百度网盘：\(userBaidu ?? "待填写")
-               - 继承人：\(userCloudInheritor ?? "待填写")
+               - iCloud：\(UserManager.shared.currentUser?.iCloud ?? "待填写")
+               - 百度网盘：\(UserManager.shared.currentUser?.baidu ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.cloudInheritor ?? "待填写")
             
             4. 游戏账号
-               - 平台：\(userGamePlatform ?? "待填写")
-               - 账号：\(userGameAccount ?? "待填写")
-               - 继承人：\(userGameInheritor ?? "待填写")
+               - 平台：\(UserManager.shared.currentUser?.gamePlatform ?? "待填写")
+               - 账号：\(UserManager.shared.currentUser?.gameAccount ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.gameInheritor ?? "待填写")
             
             5. 电子邮件
-               - 邮箱：\(userEmail ?? "待填写")
-               - 密码：\(userEmailPassword ?? "待填写")
-               - 继承人：\(userEmailInheritor ?? "待填写")
+               - 邮箱：\(UserManager.shared.currentUser?.email ?? "待填写")
+               - 密码：\(UserManager.shared.currentUser?.emailPassword ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.emailInheritor ?? "待填写")
             
             二、处置意愿
             
-            1. 社交媒体：\(userSocialInstruction ?? "待填写")
-            2. 加密货币：\(userCryptoInstruction ?? "待填写")
-            3. 云存储：\(userCloudInstruction ?? "待填写")
-            4. 游戏账号：\(userGameInstruction ?? "待填写")
+            1. 社交媒体：\(UserManager.shared.currentUser?.socialInstruction ?? "待填写")
+            2. 加密货币：\(UserManager.shared.currentUser?.cryptoInstruction ?? "待填写")
+            3. 云存储：\(UserManager.shared.currentUser?.cloudInstruction ?? "待填写")
+            4. 游戏账号：\(UserManager.shared.currentUser?.gameInstruction ?? "待填写")
             
             三、数字遗产执行人
             
-            指定：\(userDigitalExecutor ?? "待填写")
-            联系方式：\(userDigitalContact ?? "待填写")
+            指定：\(UserManager.shared.currentUser?.digitalExecutor ?? "待填写")
+            联系方式：\(UserManager.shared.currentUser?.digitalContact ?? "待填写")
             
             四、其他说明
             
@@ -158,25 +159,25 @@ class WillTemplateManager: ObservableObject {
             本人自愿订立本遗嘱，对本人全部财产作如下分配：
             
             1. 所有银行存款及理财资金
-               - 继承人：\(userPrimaryInheritor ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.primaryInheritor ?? "待填写")
                - 比例：100%
             
             2. 所有房产
-               - 地址：\(userMainAddress ?? "待填写")
-               - 继承人：\(userPropertyInheritor ?? "待填写")
+               - 地址：\(UserManager.shared.currentUser?.address ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.propertyInheritor ?? "待填写")
                - 比例：100%
             
             3. 所有车辆
-               - 车牌：\(userCarPlate ?? "待填写")
-               - 继承人：\(userCarInheritor ?? "待填写")
+               - 车牌：\(UserManager.shared.currentUser?.carPlate ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.carInheritor ?? "待填写")
                - 比例：100%
             
             4. 其他个人物品
-               - 继承人：\(userOtherInheritor ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.otherInheritor ?? "待填写")
                - 比例：100%
             
-            遗嘱执行人：\(userExecutorName ?? "待填写")
-            联系方式：\(userExecutorContact ?? "待填写")
+            遗嘱执行人：\(UserManager.shared.currentUser?.executorName ?? "待填写")
+            联系方式：\(UserManager.shared.currentUser?.executorContact ?? "待填写")
             
             本遗嘱一式两份，本人及执行人各执一份，自签署之日起生效。
             
@@ -201,40 +202,40 @@ class WillTemplateManager: ObservableObject {
             一、财产分配
             
             1. 银行存款及理财
-               - 继承人：\(userMoneyInheritor ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.moneyInheritor ?? "待填写")
                - 比例：100%
             
             2. 房产
-               - 地址：\(userHouseAddress ?? "待填写")
-               - 继承人：\(userHouseInheritor ?? "待填写")
+               - 地址：\(UserManager.shared.currentUser?.address ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.propertyInheritor ?? "待填写")
                - 比例：100%
             
             3. 车辆
-               - 车牌：\(userCarPlate ?? "待填写")
-               - 继承人：\(userCarInheritor ?? "待填写")
+               - 车牌：\(UserManager.shared.currentUser?.carPlate ?? "待填写")
+               - 继承人：\(UserManager.shared.currentUser?.carInheritor ?? "待填写")
                - 比例：100%
             
             二、身后事安排
             
             1. 治丧方式
-               - 仪式：\(userFuneralType ?? "待填写")
-               - 地点：\(userFuneralLocation ?? "待填写")
+               - 仪式：\(UserManager.shared.currentUser?.funeralType ?? "待填写")
+               - 地点：\(UserManager.shared.currentUser?.funeralLocation ?? "待填写")
             
             2. 安葬方式
-               - 方式：\(userBurialType ?? "待填写")
-               - 墓地：\(userCemetery ?? "待填写")
+               - 方式：\(UserManager.shared.currentUser?.burialType ?? "待填写")
+               - 墓地：\(UserManager.shared.currentUser?.cemetery ?? "待填写")
             
             3. 丧葬费用
-               - 来源：\(userFuneralFund ?? "待填写")
-               - 支配人：\(userFuneralExecutor ?? "待填写")
+               - 来源：\(UserManager.shared.currentUser?.funeralFund ?? "待填写")
+               - 支配人：\(UserManager.shared.currentUser?.funeralExecutor ?? "待填写")
             
             4. 其他安排
-               - \(userOtherArrangement ?? "待填写")
+               - \(UserManager.shared.currentUser?.otherArrangement ?? "待填写")
             
             三、遗嘱执行人
             
-            指定：\(userExecutorName ?? "待填写")
-            联系方式：\(userExecutorContact ?? "待填写")
+            指定：\(UserManager.shared.currentUser?.executorName ?? "待填写")
+            联系方式：\(UserManager.shared.currentUser?.executorContact ?? "待填写")
             
             四、其他说明
             
@@ -265,8 +266,8 @@ class WillTemplateManager: ObservableObject {
             一、子女监护
             
             1. 监护人指定
-               - 第一顺序：\(userPrimaryGuardian ?? "待填写")
-               - 第二顺序：\(userSecondaryGuardian ?? "待填写")
+               - 第一顺序：\(UserManager.shared.currentUser?.primaryGuardian ?? "待填写")
+               - 第二顺序：\(UserManager.shared.currentUser?.secondaryGuardian ?? "待填写")
                - 监护职责：生活照顾、教育培养、医疗决策
             
             2. 监护期限
@@ -276,7 +277,7 @@ class WillTemplateManager: ObservableObject {
             二、财产管理
             
             1. 财产 guardian
-               - 管理人：\(userPropertyGuardian ?? "待填写")
+               - 管理人：\(UserManager.shared.currentUser?.propertyGuardian ?? "待填写")
                - 管理职责：投资、保管、分配
             
             2. 财产范围
@@ -285,19 +286,19 @@ class WillTemplateManager: ObservableObject {
                - 其他：待填写
             
             3. 财产分配
-               - 成年前：每月生活费 \(userMonthlyAllowance ?? "待填写")
+               - 成年前：每月生活费 \(UserManager.shared.currentUser?.monthlyAllowance ?? "待填写")
                - 成年时：全部财产继承
             
             三、其他安排
             
-            1. 探视权：\(userVisitation ?? "待填写")
-            2. 教育安排：\(userEducation ?? "待填写")
-            3. 医疗决定：\(userMedical ?? "待填写")
+            1. 探视权：\(UserManager.shared.currentUser?.visitation ?? "待填写")
+            2. 教育安排：\(UserManager.shared.currentUser?.education ?? "待填写")
+            3. 医疗决定：\(UserManager.shared.currentUser?.medical ?? "待填写")
             
             四、遗嘱执行人
             
-            指定：\(userExecutorName ?? "待填写")
-            联系方式：\(userExecutorContact ?? "待填写")
+            指定：\(UserManager.shared.currentUser?.executorName ?? "待填写")
+            联系方式：\(UserManager.shared.currentUser?.executorContact ?? "待填写")
             
             五、其他说明
             
