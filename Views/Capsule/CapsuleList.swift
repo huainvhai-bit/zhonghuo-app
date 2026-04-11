@@ -45,7 +45,7 @@ struct CapsuleList: View {
                         Button(action: { showingAddCapsule = true }) {
                             HStack {
                                 Text("+")
-                                Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
+                                Text(LocalizedStringKey(LocalizedStringKey("添加胶囊"))).accessibilityLabel("添加新的时光胶囊")
                             }
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
@@ -200,12 +200,12 @@ struct CapsuleList: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.secondary)
             
-            Text(LocalizedStringKey("点击右上角 ➕ 创建第一个胶囊"))
+            Text(LocalizedStringKey(LocalizedStringKey("点击右上角 ➕ 创建第一个胶囊"))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
             
             NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
-                Text("创建胶囊")
+                Text("创建胶囊").accessibilityLabel("创建新的时光胶囊")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24)

@@ -318,7 +318,7 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Image(systemName: "arrow.down.circle")
-                            Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
+                            Text(LocalizedStringKey(LocalizedStringKey("检查更新"))).accessibilityLabel("检查应用更新")
                         }
                         .foregroundColor(.blue)
                     }
@@ -365,7 +365,7 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "rectangle.portrait.and.arrow.right")
                                 .foregroundColor(.red)
-                            Text(LocalizedStringKey("退出登录"))
+                            Text(LocalizedStringKey(LocalizedStringKey("退出登录")))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.red)
                             Spacer()
@@ -434,7 +434,7 @@ struct SettingsView: View {
                 Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
             }
             .confirmationDialog("确认退出", isPresented: $showingLogoutConfirm) {
-                Button(LocalizedStringKey("退出登录"), role: .destructive) {
+                Button(LocalizedStringKey(LocalizedStringKey("退出登录")), role: .destructive) {
                     logout()
                 }
                 Button("取消", role: .cancel) {}
@@ -1025,7 +1025,7 @@ extension SettingsView {
                 }
                 Button(action: checkUpdate) {
                     HStack {
-                        Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
+                        Text(LocalizedStringKey(LocalizedStringKey("检查更新"))).accessibilityLabel("检查应用更新")
                         Spacer()
                         Image(systemName: "arrow.clockwise").foregroundColor(.secondary)
                     }
@@ -1072,7 +1072,7 @@ extension SettingsView {
         }
         .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(LocalizedStringKey("检查更新"), isPresented: $showingUpdateAlert) {
+        .alert(LocalizedStringKey(LocalizedStringKey("检查更新")), isPresented: $showingUpdateAlert) {
             Button("稍后更新", role: .cancel) { }
             Button("立即更新") {
                 if let url = URL(string: "https://apps.apple.com/app/终活/id123456789") {
