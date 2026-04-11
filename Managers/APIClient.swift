@@ -104,7 +104,7 @@ class APIClient {
         
         if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
             let message = errors[0]["message"] as? String ?? "GraphQL 错误"
-            Logger.error("GraphQL 错误：\(message)")
+            Logger.shared.e("GraphQL 错误：\(message)")
             throw GraphQLError.serverError(message)
         }
         

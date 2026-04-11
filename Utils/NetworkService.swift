@@ -152,14 +152,7 @@ class NetworkService {
             }
             
             // 10. 记录网络日志
-            Logger.network(
-                method.rawValue,
-                url: url.absoluteString,
-                statusCode: httpResponse.statusCode,
-                duration: duration,
-                file: fileName,
-                line: line
-            )
+            Logger.network(method.rawValue, url: url.absoluteString, file: fileName, line: line)
             
             // 11. 处理 HTTP 状态码
             switch httpResponse.statusCode {

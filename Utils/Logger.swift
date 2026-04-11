@@ -129,17 +129,30 @@ class Logger {
     }
 }
 
-/// 替换 print 为 Logger
-extension Print {
-    static func debug(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-        Logger.shared.d(items.map { String(describing: $0) }.joined(separator: separator))
+
+// MARK: - 静态便捷方法
+extension Logger {
+    static func error(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.e(message, file: file, function: function, line: line)
     }
     
-    static func info(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-        Logger.shared.i(items.map { String(describing: $0) }.joined(separator: separator))
+    static func debug(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.d(message, file: file, function: function, line: line)
     }
     
-    static func error(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-        Logger.shared.e(items.map { String(describing: $0) }.joined(separator: separator))
+    static func info(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.i(message, file: file, function: function, line: line)
+    }
+    
+    static func warning(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.w(message, file: file, function: function, line: line)
+    }
+    
+    static func critical(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.c(message, file: file, function: function, line: line)
+    }
+    
+    static func network(_ method: String, url: String, file: String = #file, function: String = #function, line: Int = #line) {
+        shared.d("\(method) \(url)", file: file, function: function, line: line)
     }
 }

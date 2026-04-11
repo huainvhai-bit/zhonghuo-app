@@ -25,8 +25,8 @@ class ErrorHandler {
         let fileName = (file as NSString).lastPathComponent
         
         // 记录错误日志 (第 10 章 10.3 节)
-        Logger.error("[\(context)] \(appError.userMessage)", file: fileName, line: line)
-        Logger.debug("💡 建议：\(appError.recoverySuggestion ?? "")", file: fileName, line: line)
+        Logger.shared.e("[\(context)] \(appError.userMessage)", file: fileName, line: line)
+        Logger.shared.d("💡 建议：\(appError.recoverySuggestion ?? "")", file: fileName, line: line)
         
         // 记录错误到稳定性管理器
         AppStabilityManager.shared.logError(error, context: context)
@@ -42,7 +42,7 @@ class ErrorHandler {
         let title = getErrorTitle(for: appError)
         let message = "\(appError.userMessage)\n\n💡 \(appError.recoverySuggestion ?? "请稍后重试")"
         
-        Logger.debug("🔔 错误提示：\(title) - \(message)")
+        Logger.shared.d("🔔 错误提示：\(title) - \(message)")
         
         // 通过闭包通知 UI 层显示弹窗
         DispatchQueue.main.async { [weak self] in
