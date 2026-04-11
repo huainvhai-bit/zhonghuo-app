@@ -22,6 +22,7 @@ struct FamilyGuardView: View {
     @State private var showingError = false
     @State private var inviteCode = ""
     @State private var qrImage: UIImage?
+    @State private var showingFamilyArchive = false  // 📚 家族档案
     
     var body: some View {
         NavigationView {
@@ -64,6 +65,16 @@ struct FamilyGuardView: View {
                             .foregroundColor(.white)
                     }
                 }
+                
+                // 📚 家族档案按钮
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingFamilyArchive = true }) {
+                        Image(systemName: "folder.fill")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingFamilyArchive) {
+                FamilyArchiveView()
             }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {

@@ -67,6 +67,7 @@ struct SettingsView: View {
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
+    @ObservedObject var themeManager = ThemeManager.shared  // 🎨 主题管理
     @State private var showingLogoutConfirm = false  // 退出登录确认
     @State private var errorMessage = ""
     @State private var showingError = false
@@ -196,6 +197,17 @@ struct SettingsView: View {
                 
                 // 🔔 通知设置
                 Section(header: Text("通知设置")) {
+                    // 📱 短信发送配置
+                    NavigationLink(destination: SmsSettingsView()) {
+                        HStack {
+                            Image(systemName: "message")
+                            Text("短信发送配置")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
                     // 🤫 静默模式
                     Toggle(isOn: $silentModeEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -214,6 +226,20 @@ struct SettingsView: View {
                         }
                     }
                     .tint(.orange)
+                }
+                
+                // 🎨 主题设置
+                Section(header: Text("主题设置")) {
+                    Picker("主题", selection: $themeManager.theme) {
+                        Text("跟随系统").tag(ThemeManager.Theme.auto)
+                        Text("浅色模式").tag(ThemeManager.Theme.light)
+                        Text("深色模式").tag(ThemeManager.Theme.dark)
+                    }
+                    .pickerStyle(.segmented)
+                    
+                    Text("选择 App 显示主题，深色模式可保护视力")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
                 }
                 
                 // 🔋 设备信息
@@ -283,6 +309,19 @@ struct SettingsView: View {
                 
                 // 关于 - ✅ 修复 #7: 添加版本检测和关于页面
                 Section(header: Text("关于")) {
+                    // ✅ 检查更新按钮
+                    Button(action: {
+                        print("🔍 手动检查版本更新...")
+                        // TODO: 从服务器获取最新版本信息
+                        // VersionCheckManager.shared.checkVersion(...)
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.down.circle")
+                            Text("检查更新")
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    
                     NavigationLink(destination: aboutView) {
                         HStack {
                             Image(systemName: "info.circle")
@@ -308,6 +347,18 @@ struct SettingsView: View {
                 
                 // 退出登录（放在最底部）
                 Section {
+                    // 🗑️ 数据删除（GDPR 合规）
+                    NavigationLink(destination: DataDeletionView()) {
+                        HStack {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                            Text("删除个人数据")
+                                .font(.system(size: 16))
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
                     Button(action: { showingLogoutConfirm = true }) {
                         HStack {
                             Spacer()
@@ -987,6 +1038,17 @@ extension SettingsView {
                     Link("官方网站", destination: URL(string: "https://zhonghuo.cn")!)
                     Link("隐私政策", destination: URL(string: "https://zhonghuo.cn/privacy")!)
                     Link("服务条款", destination: URL(string: "https://zhonghuo.cn/terms")!)
+                    
+                    // ⚖️ 法律声明
+                    NavigationLink(destination: LegalDisclosureView()) {
+                        HStack {
+                            Image(systemName: "scale")
+                            Text("电子遗嘱效力说明")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 Section(header: Text("联系我们")) {
                     HStack {
