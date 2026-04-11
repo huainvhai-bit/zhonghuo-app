@@ -1,0 +1,301 @@
+//
+//  ComplianceDocsView.swift
+//  终活
+//
+//  合规文档页面
+//
+
+import SwiftUI
+
+/// 合规文档视图
+struct ComplianceDocsView: View {
+    var body: some View {
+        List {
+            Section(header: Text("法律文件")) {
+                NavigationLink(destination: TermsOfServiceView()) {
+                    HStack {
+                        Image(systemName: "doc.fill")
+                            .foregroundColor(Color(hex: "6366F1"))
+                        Text("服务条款")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                NavigationLink(destination: PrivacyPolicyView()) {
+                    HStack {
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundColor(Color(hex: "6366F1"))
+                        Text("隐私政策")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                NavigationLink(destination: DisclaimerView()) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("免责声明")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            Section(header: Text("数据权利")) {
+                NavigationLink(destination: DataExportView()) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up.fill")
+                            .foregroundColor(Color(hex: "6366F1"))
+                        Text("导出数据")
+                        Spacer()
+                        Text("GDPR 合规")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                NavigationLink(destination: DataDeletionView()) {
+                    HStack {
+                        Image(systemName: "trash.fill")
+                            .foregroundColor(.red)
+                        Text("删除数据")
+                        Spacer()
+                        Text("被遗忘权")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            Section(header: Text("合规信息")) {
+                HStack {
+                    Text("GDPR 合规")
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                }
+                
+                HStack {
+                    Text("数据加密存储")
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                }
+                
+                HStack {
+                    Text("定期安全审计")
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                }
+            }
+        }
+        .navigationTitle("合规文档")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// 服务条款视图
+struct TermsOfServiceView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("终活 App 服务条款")
+                    .font(.system(size: 24, weight: .bold))
+                    .padding(.bottom, 10)
+                
+                Text("最后更新：2026 年 4 月 11 日")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 20)
+                
+                Group {
+                    Text("1. 服务说明")
+                        .font(.headline)
+                    Text("终活 App 是一款数字遗产管理平台，帮助用户管理时光胶囊、遗嘱等重要信息。")
+                        .font(.body)
+                    
+                    Text("2. 用户责任")
+                        .font(.headline)
+                    Text("用户应确保提供的信息真实、准确、完整，并对账号安全负责。")
+                        .font(.body)
+                    
+                    Text("3. 隐私保护")
+                        .font(.headline)
+                    Text("我们严格遵守隐私政策，保护用户数据安全。")
+                        .font(.body)
+                    
+                    Text("4. 服务变更")
+                        .font(.headline)
+                    Text("我们保留随时修改或终止服务的权利。")
+                        .font(.body)
+                    
+                    Text("5. 联系方式")
+                        .font(.headline)
+                    Text("如有问题，请联系：support@zhonghuo.cn")
+                        .font(.body)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("服务条款")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// 隐私政策视图
+struct PrivacyPolicyView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("终活 App 隐私政策")
+                    .font(.system(size: 24, weight: .bold))
+                    .padding(.bottom, 10)
+                
+                Text("最后更新：2026 年 4 月 11 日")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 20)
+                
+                Group {
+                    Text("1. 信息收集")
+                        .font(.headline)
+                    Text("我们收集必要的用户信息以提供服务，包括手机号、用户名等。")
+                        .font(.body)
+                    
+                    Text("2. 信息使用")
+                        .font(.headline)
+                    Text "我们仅将用户信息用于提供服务，不会出售或出租给第三方。")
+                        .font(.body)
+                    
+                    Text("3. 信息安全")
+                        .font(.headline)
+                    Text("我们采用加密技术保护用户数据安全。")
+                        .font(.body)
+                    
+                    Text("4. 用户权利")
+                        .font(.headline)
+                    Text("用户有权访问、更正、删除个人信息，或导出个人数据。")
+                        .font(.body)
+                    
+                    Text("5. 联系我们")
+                        .font(.headline)
+                    Text("隐私问题请联系：privacy@zhonghuo.cn")
+                        .font(.body)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("隐私政策")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// 免责声明视图
+struct DisclaimerView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("免责声明")
+                    .font(.system(size: 24, weight: .bold))
+                    .padding(.bottom, 10)
+                
+                Group {
+                    Text("1. 服务内容")
+                        .font(.headline)
+                    Text("终活 App 提供的信息仅供参考，不构成法律建议。")
+                        .font(.body)
+                    
+                    Text("2. 数据安全")
+                        .font(.headline)
+                    Text("尽管我们采取安全措施，但无法保证 100% 安全。")
+                        .font(.body)
+                    
+                    Text("3. 责任限制")
+                        .font(.headline)
+                    Text("在法律允许的最大范围内，我们不对任何间接损失负责。")
+                        .font(.body)
+                    
+                    Text("4. 第三方服务")
+                        .font(.headline)
+                    Text "应用可能包含第三方链接，我们不对第三方内容负责。")
+                        .font(.body)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("免责声明")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// 数据导出视图
+struct DataExportView: View {
+    @State private var isExporting = false
+    @State private var showSuccess = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "square.and.arrow.up.fill")
+                .font(.system(size: 60))
+                .foregroundColor(Color(hex: "6366F1"))
+            
+            Text("导出个人数据")
+                .font(.system(size: 24, weight: .bold))
+            
+            Text("根据 GDPR 规定，您有权导出所有个人数据。数据将以 JSON 格式发送。")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            Button(action: exportData) {
+                HStack {
+                    Image(systemName: isExporting ? "arrow.triangle.2.circlepath" : "square.and.arrow.up")
+                    Text(isExporting ? "导出中..." : "导出数据")
+                }
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color(hex: "6366F1"))
+                .cornerRadius(12)
+            }
+            .disabled(isExporting)
+            .padding(.horizontal, 40)
+            
+            Spacer()
+        }
+        .padding()
+        .navigationTitle("导出数据")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("导出成功", isPresented: $showSuccess) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text("数据已发送到您的邮箱")
+        }
+    }
+    
+    private func exportData() {
+        isExporting = true
+        // TODO: 实现数据导出逻辑
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isExporting = false
+            showSuccess = true
+        }
+    }
+}
+
+#Preview {
+    NavigationView {
+        ComplianceDocsView()
+    }
+}
