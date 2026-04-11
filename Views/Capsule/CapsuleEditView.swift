@@ -183,30 +183,40 @@ struct CapsuleEditView: View {
                 }
             }
         }
-        .navigationTitle(existingCapsule == nil ? (selectedType == .text ? "新增胶囊" : "录制胶囊") : "编辑胶囊")
+        .navigationTitle(existingCapsule == nil ? "新增胶囊" : "编辑胶囊")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // ✅ 取消按钮（左上角）
             ToolbarItem(placement: .cancellationAction) {
                 Button("取消") { dismiss() }
             }
             
-            // ✅ 编辑模式显示删除按钮
-            ToolbarItem(placement: existingCapsule != nil ? .navigationBarLeading : .automatic) {
-                if existingCapsule != nil {
-                    Button(action: { showingDeleteAlert = true }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
-                    }
-                }
-            }
-            
+            // ✅ 保存按钮（右上角）
             ToolbarItem(placement: .confirmationAction) {
                 Button("保存") {
+                    print("🔵 保存按钮被点击")
                     if validateCapsule() {
+                        print("🔵 验证通过，开始保存")
                         saveCapsule()
                     }
                 }
                 .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
+            }
+            
+            // ✅ 删除按钮（仅编辑模式，右上角）
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if existingCapsule != nil {
+                    Button(action: { showingDeleteAlert = true }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trash")
+                            Text("删除")
+                        }
+                        .foregroundColor(.red)
+                    }
+                } else {
+                    // 新增模式显示空按钮占位
+                    EmptyView()
+                }
             }
         }
         .alert("删除胶囊", isPresented: $showingDeleteAlert) {
@@ -292,16 +302,17 @@ struct CapsuleEditView: View {
                 mediaServerURL: mediaServerUrl ?? "",
                 sendDate: sendDate,
                 isSent: existingCapsule?.isSent ?? false,
-                createdAt: existingCapsule?.createdAt ?? Date()  // ✅ Bug 修复：编辑模式保留原创建时间
+                createdAt: existingCapsule != nil ? Date() : (existingCapsule?.createdAt ?? Date())  // ✅ 编辑模式更新为当前时间
             )
+            
+            print("🔵 保存胶囊：id=\(capsule.id), title=\(capsule.title), 编辑模式=\(existingCapsule != nil ? "是" : "否")")
             
             // ✅ Bug 修复：编辑模式更新，新增模式添加
             if existingCapsule != nil {
-                // ✅ 编辑模式：更新创建时间为当前时间
-                var updatedCapsule = capsule
-                updatedCapsule.createdAt = Date()  // ✅ 更新编辑时间
-                dataManager.updateCapsule(updatedCapsule)
+                print("🔵 更新胶囊")
+                dataManager.updateCapsule(capsule)
             } else {
+                print("🔵 添加胶囊")
                 dataManager.addCapsule(capsule)
             }
             
