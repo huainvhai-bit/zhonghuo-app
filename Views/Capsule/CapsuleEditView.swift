@@ -164,6 +164,22 @@ struct CapsuleEditView: View {
                 content = existingCapsule.content
                 selectedType = existingCapsule.type
                 sendDate = existingCapsule.sendDate
+                
+                // ✅ Bug 修复：加载已有胶囊的媒体文件
+                if !existingCapsule.mediaURL.isEmpty {
+                    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    let mediaURL = documentsPath.appendingPathComponent(String(existingCapsule.mediaURL.dropFirst()))
+                    if FileManager.default.fileExists(atPath: mediaURL.path) {
+                        if existingCapsule.type == .audio {
+                            recordedAudioURL = mediaURL
+                        } else if existingCapsule.type == .video {
+                            recordedVideoURL = mediaURL
+                        }
+                        print("✅ 加载已有媒体文件：\(mediaURL.path)")
+                    } else {
+                        print("⚠️ 媒体文件不存在：\(mediaURL.path)")
+                    }
+                }
             }
         }
         .navigationTitle(selectedType == .text ? "编辑胶囊" : "录制胶囊")
