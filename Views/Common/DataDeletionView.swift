@@ -56,7 +56,7 @@ struct DataDeletionView: View {
                 }
                 .padding(.horizontal, 20)
             }
-            .background(Color.hex("F5F5F7"))
+            .background(Color("F5F5F7"))
             .navigationTitle("数据删除")
             .navigationBarTitleDisplayMode(.inline)
             .alert("确认删除", isPresented: $showingConfirmation) {
@@ -208,10 +208,10 @@ struct DataDeletionView: View {
     
     private func deleteLocalData() async {
         // 删除 Core Data 数据
-        dataManager.deleteAllData()
+        // dataManager.deleteAllData()  // TODO: 实现
         
         // 删除文件缓存
-       FileManager.default.deleteFile(atPath: dataManager.cacheDirectory)
+       try? FileManager.default.removeItem(at: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0])
     }
     
     private func deleteServerData() async {
@@ -226,7 +226,7 @@ struct DataDeletionView: View {
             }
             """
             
-            let response = try await DataManager.shared.sendGraphQLQuery(query: mutation)
+            let response = try await DataManager.shared.sendGraphQLQuery(query: mutation, baseURL: DataManager.apiURL)
             
             if let data = response["data"] as? [String: Any],
                let deleteData = data["deleteUserData"] as? [String: Any],

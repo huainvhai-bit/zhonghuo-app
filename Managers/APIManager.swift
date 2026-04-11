@@ -14,7 +14,7 @@ class APIManager {
     
     private let apiClient = APIClient.shared
     
-    private init() {}
+    init() {}
     
     // MARK: - 批量同步胶囊
     

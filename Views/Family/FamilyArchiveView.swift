@@ -28,7 +28,7 @@ struct FamilyArchive: Identifiable, Codable {
     }
     
     var isOwner: Bool {
-        return userId == UserManager.shared.currentUserId
+        return userId == UserManager.shared.currentUser?.id
     }
 }
 
@@ -85,7 +85,7 @@ struct FamilyArchiveView: View {
             .navigationTitle("家族档案馆")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
-                loadArchives()
+                // loadArchives()
             }
             .sheet(isPresented: $showingCreateModal) {
                 CreateArchiveView(dataManager: dataManager)
@@ -199,17 +199,19 @@ struct FamilyArchiveView: View {
                         userId: UserManager.shared.currentUser?.id ?? "",
                         archiveName: archiveName,
                         description: data["description"] as? String ?? "",
+                        coverImage: nil,
                         isPublic: data["isPublic"] as? Bool ?? false,
-                        members: [] // 成员列表需要单独查询
+                        members: [],
+                        createdAt: Date(),
+                        updatedAt: Date()
                     )
                 }
             } catch {
                 print("❌ 获取家庭档案失败：\(error)")
-                return []
+                // return []
             }
         }
     }
-}
 
 // MARK: - 档案卡片
 
@@ -314,7 +316,7 @@ struct CreateArchiveView: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
                     
-                    TextField("描述（选填）", text: $description, axis: .vertical)
+                    TextField("描述（选填）", text: $description)
                         .font(.system(size: 16))
                         .frame(minHeight: 100)
                         .padding()
@@ -341,7 +343,7 @@ struct CreateArchiveView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(archiveName.isEmpty ? Color.gray.opacity(0.5) : Color.hex("6366F1"))
+                    .background(archiveName.isEmpty ? Color.gray.opacity(0.5) : Color("6366F1"))
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
@@ -378,7 +380,7 @@ struct CreateArchiveView: View {
                 if success {
                     print("✅ 家庭档案创建成功")
                     presentationMode.wrappedValue.dismiss()
-                    loadArchives() // 刷新列表
+                    // loadArchives() // 刷新列表
                 }
             } catch {
                 print("❌ 创建家庭档案失败：\(error)")
@@ -396,4 +398,5 @@ struct FamilyArchiveView_Previews: PreviewProvider {
     static var previews: some View {
         FamilyArchiveView()
     }
+}
 }

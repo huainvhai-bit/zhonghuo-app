@@ -131,7 +131,7 @@ struct LegalDisclosureView: View {
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color(hex: "6366F1"))
+                            .background(Color( "6366F1"))
                             .foregroundColor(.white)
                             .cornerRadius(12)
                     }
@@ -140,7 +140,7 @@ struct LegalDisclosureView: View {
                 }
                 .padding(.horizontal, 20)
             }
-            .background(Color.hex("F5F5F7"))
+            .background(Color("F5F5F7"))
             .navigationTitle("电子遗嘱效力")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -151,13 +151,12 @@ struct LegalDisclosureView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundColor(Color.hex("1F2937"))
+                .foregroundColor(Color("1F2937"))
                 .padding(.top, 16)
             
             Text(content)
                 .font(.system(size: 14))
-                .foregroundColor(Color.hex("374151"))
-                .lineHeightMultiple(1.6)
+                .foregroundColor(Color("374151"))
         }
         .padding(16)
         .background(Color.white)

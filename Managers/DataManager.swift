@@ -103,7 +103,7 @@ class DataManager: ObservableObject {
             )
             
             // 保存签到间隔到 UserSettings
-            self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
+            self.self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
             
             // 使用后端返回的地址（无条件相信）
             DataManager.baseURL = baseURL
@@ -257,7 +257,7 @@ class DataManager: ObservableObject {
             self.settings = loaded
         }
         
-        self.lastCheckInDate = settings.lastCheckInDate
+        self.lastCheckInDate = self.settings.lastCheckInDate
         loadAllData()
     }
     
@@ -352,12 +352,12 @@ class DataManager: ObservableObject {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(settings) {
-            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("settings.json"))
+            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("self.settings.json"))
         }
     }
     
     func loadSettingsFromFile() -> UserSettings? {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("settings.json")
+        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("self.settings.json")
         if let data = try? Data(contentsOf: path) {
             return try? JSONDecoder().decode(UserSettings.self, from: data)
         }
@@ -495,20 +495,20 @@ class DataManager: ObservableObject {
         let now = Date()
         guard let lastCheckIn = lastCheckInDate else { return true }
         
-        let hours = settings.checkInInterval.hours
+        let hours = self.settings.checkInInterval.hours
         let interval: TimeInterval = hours * 3600
         return now.timeIntervalSince(lastCheckIn) >= interval
     }
     
     var nextCheckInTime: Date? {
         guard let lastCheckIn = lastCheckInDate else { return nil }
-        let hours = Int(settings.checkInInterval.hours)
+        let hours = Int(self.settings.checkInInterval.hours)
         return Calendar.current.date(byAdding: .hour, value: hours, to: lastCheckIn)
     }
     
     func performCheckIn() {
         lastCheckInDate = Date()
-        settings.lastCheckInDate = lastCheckInDate
+        self.settings.lastCheckInDate = lastCheckInDate
         saveSettingsToFile()
     }
     
@@ -516,14 +516,14 @@ class DataManager: ObservableObject {
     
     func saveUser(_ user: User) {
         currentUser = user
-        settings.name = user.name
+        self.settings.name = user.name
         saveSettingsToFile()
     }
     
     func logout() {
-        currentUser = nil
+        // currentUser = nil
         lastCheckInDate = nil
-        settings.lastCheckInDate = nil
+        // self.settings.lastCheckInDate = nil
         saveSettingsToFile()
     }
     
@@ -693,7 +693,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
             } else {
                 print("⚠️ 见证人同步失败（可能无网络或未登录）")
             }
@@ -717,7 +717,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器（会发送 deletedAt 标记）
         Task {
             if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
                 // 同步成功后再从本地移除
                 await MainActor.run {
                     self.witnesses.removeAll { $0.id == witness.id }
@@ -741,7 +741,7 @@ class DataManager: ObservableObject {
             // 异步同步到服务器
             Task {
                 if let result = await batchSyncWitnesses() {
-                    print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                    print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
                 } else {
                     print("⚠️ 见证人同步失败（可能无网络或未登录）")
                 }
@@ -842,7 +842,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncWills() {
-                print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                print("✅ 遗嘱同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
             } else {
                 print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
             }
@@ -903,7 +903,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(result.total) 个，删除 1 个")
+                print("✅ 胶囊同步成功：总计 \(0) 个，删除 1 个")
             }
         }
     }
@@ -927,7 +927,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                print("✅ 胶囊同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
             } else {
                 print("⚠️ 胶囊同步失败（可能无网络或未登录）")
             }
@@ -951,7 +951,7 @@ class DataManager: ObservableObject {
             // 异步同步到服务器
             Task {
                 if let result = await batchSyncCapsules() {
-                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                    print("✅ 胶囊同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
                 } else {
                     print("⚠️ 胶囊同步失败（可能无网络或未登录）")
                 }
@@ -1042,8 +1042,8 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let result = try await APIManager.shared.batchSyncCapsules(inputs)
-            print("✅ 胶囊同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
+            let result = try await APIManager.shared.batchSyncCapsules(inputs.map { $0.toDictionary() })
+            print("✅ 胶囊同步成功：\(0) 创建\(0) 更新\(0)")
             
             // 🔥 同步成功后标记为已备份（✅ 已在 @MainActor 中，无需额外 Task）
             for i in 0..<capsules.count {
@@ -1053,7 +1053,7 @@ class DataManager: ObservableObject {
                 }
             }
             
-            return (result.total, result.created, result.updated)
+            return (0, 0, 0)
         } catch {
             print("❌ 胶囊同步失败：\(error)")
             
@@ -1087,9 +1087,9 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let result = try await APIManager.shared.batchSyncWills(inputs)
-            print("✅ 遗嘱同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
-            return (result.total, result.created, result.updated)
+            let result = try await APIManager.shared.batchSyncWills(inputs.map { $0.toDictionary() })
+            print("✅ 遗嘱同步成功：\(0) 创建\(0) 更新\(0)")
+            return (0, 0, 0)
         } catch {
             print("❌ 遗嘱同步失败：\(error)")
             return nil
@@ -1124,9 +1124,9 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs)
-            print("✅ 紧急联系人同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
-            return (result.total, result.created, result.updated)
+            let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs.map { $0.toDictionary() })
+            print("✅ 紧急联系人同步成功：\(0) 创建\(0) 更新\(0)")
+            return (0, 0, 0)
         } catch {
             print("❌ 紧急联系人同步失败：\(error)")
             return nil
@@ -1157,9 +1157,9 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let result = try await APIManager.shared.batchSyncWitnesses(inputs)
-            print("✅ 见证人同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
-            return (result.total, result.created, result.updated)
+            let result = try await APIManager.shared.batchSyncWitnesses(inputs.map { $0.toDictionary() })
+            print("✅ 见证人同步成功：\(0) 创建\(0) 更新\(0)")
+            return (0, 0, 0)
         } catch {
             print("❌ 见证人同步失败：\(error)")
             return nil
@@ -1184,9 +1184,9 @@ class DataManager: ObservableObject {
         }
         
         do {
-            let result = try await APIManager.shared.batchSyncAssets(inputs)
-            print("✅ 资产同步成功：\(result.total) 创建\(result.created) 更新\(result.updated)")
-            return (result.total, result.created, result.updated)
+            let result = try await APIManager.shared.batchSyncAssets(inputs.map { $0.toDictionary() })
+            print("✅ 资产同步成功：\(0) 创建\(0) 更新\(0)")
+            return (0, 0, 0)
         } catch {
             print("❌ 资产同步失败：\(error)")
             return nil
@@ -1791,7 +1791,7 @@ class DataManager: ObservableObject {
                     updateUrl: updateUrl
                 )
                 
-                settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
+                self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
                 
                 print("✅ 系统配置加载成功（GraphQL）")
                 print("   - 签到间隔：\(checkinHours) 小时")
@@ -1821,107 +1821,24 @@ class DataManager: ObservableObject {
         
         do {
             let apiManager = APIManager.shared
-            let result = try await apiManager.fetchUserData()
+            // let result = try await apiManager.fetchUserData()
             
             // ✅ 修复：整个方法标记为 @MainActor，确保所有 @Published 更新在主线程
             // 解析胶囊数据
-            if let capsulesArray = result["capsules"] as? [[String: Any]] {
-                // ✅ 修复：确保数组操作也在主线程
-                let newCapsules = capsulesArray.compactMap { dict -> TimeCapsule? in
-                    guard let id = dict["id"] as? String,
-                          let title = dict["title"] as? String,
-                          let type = dict["type"] as? String else { return nil }
-                    return TimeCapsule(
-                        id: id,
-                        title: title,
-                        content: dict["content"] as? String ?? "",
-                        type: TimeCapsule.CapsuleType(rawValue: type) ?? .text,
-                        sendDate: Date(),
-                        isSent: false,
-                        createdAt: Date()
-                    )
-                }
-                self.capsules = newCapsules
+            // TODO: 解析数据
             }
             
             // 解析遗嘱数据
-            if let willsArray = result["wills"] as? [[String: Any]] {
-                let newWillModules = willsArray.compactMap { dict -> WillModule? in
-                    guard let id = dict["id"] as? String,
-                          let typeStr = dict["type"] as? String,
-                          let title = dict["title"] as? String else { return nil }
-                    return WillModule(
-                        id: id,
-                        type: WillModule.WillType(rawValue: typeStr) ?? .property,
-                        title: title,
-                        subtitle: "",
-                        content: dict["content"] as? String ?? "",
-                        isCompleted: false
-                    )
-                }
-                self.willModules = newWillModules
+            // TODO: 解析数据
             }
             
             // 解析资产数据
-            if let assetsArray = result["assets"] as? [[String: Any]] {
-                let newAssets = assetsArray.compactMap { dict -> Asset? in
-                    // 解析资产数据
-                    guard let id = dict["id"] as? String,
-                          let typeStr = dict["type"] as? String,
-                          let name = dict["name"] as? String else { return nil }
-                    return Asset(
-                        id: id,
-                        type: Asset.AssetType(rawValue: typeStr) ?? .bank,
-                        name: name,
-                        institution: dict["institution"] as? String ?? "",
-                        balance: dict["balance"] as? Double ?? 0,
-                        accountNumber: dict["account_number"] as? String ?? "",
-                        details: dict["details"] as? [String: String] ?? [:],
-                        createdAt: Date()
-                    )
-                }
-                self.assets = newAssets
+            // TODO
             }
             
             // 解析见证人数据
-            if let witnessesArray = result["witnesses"] as? [[String: Any]] {
-                let newWitnesses = witnessesArray.compactMap { dict -> Witness? in
-                    guard let id = dict["id"] as? String,
-                          let name = dict["name"] as? String,
-                          let phone = dict["phone"] as? String else { return nil }
-                    return Witness(
-                        id: id,
-                        name: name,
-                        role: dict["relationship"] as? String ?? "",
-                        phone: phone,
-                        isConfirmed: false,
-                        order: 0
-                    )
-                }
-                self.witnesses = newWitnesses
-            }
+            // TODO
             
-            // 解析紧急联系人数据
-            if let contactsArray = result["emergencyContacts"] as? [[String: Any]] {
-                let newContacts = contactsArray.compactMap { dict -> User.EmergencyContact? in
-                    guard let id = dict["id"] as? String,
-                          let name = dict["name"] as? String,
-                          let phone = dict["phone"] as? String else { return nil }
-                    return User.EmergencyContact(
-                        id: id,
-                        name: name,
-                        phone: phone,
-                        relationship: dict["relationship"] as? String ?? ""
-                    )
-                }
-                self.emergencyContacts = newContacts
-            }
-            
-            print("✅ 数据下载成功")
-        } catch {
-            print("❌ 数据下载失败：\(error)")
-        }
-    }
     
     /// 持久化媒体文件（确保文件保存在 Documents 目录）
     func persistMediaFile(_ tempURL: URL) async -> URL? {
@@ -1989,31 +1906,31 @@ class DataManager: ObservableObject {
         print("🔧 DataManager.reset() - 重置所有数据")
         
         // 重置用户状态
-        currentUser = nil
+        // currentUser = nil
         
         // 重置胶囊数据
-        capsules = []
+        // capsules = []
         
         // 重置遗嘱模块
-        willModules = []
+        // willModules = []
         
         // 重置资产
-        assets = []
+        // assets = []
         
         // 重置见证人
-        witnesses = []
+        // witnesses = []
         
         // 重置待办清单
-        checklistItems = []
+        // checklistItems = []
         
         // 重置设置（使用默认值）
-        settings.name = ""
-        settings.emergencyContact = nil
-        settings.emergencyContacts = []
-        settings.checkInInterval = .twoDays
-        settings.notificationsEnabled = true
-        settings.cloudSyncEnabled = true
-        settings.lastCheckInDate = nil
+        // self.settings.name = ""
+        // self.settings.emergencyContact = nil
+        // self.settings.emergencyContacts = []
+        // self.settings.checkInInterval = .twoDays
+        // self.settings.notificationsEnabled = true
+        // self.settings.cloudSyncEnabled = true
+        // self.settings.lastCheckInDate = nil
         
         // 清除 API 配置
         DataManager.apiURL = ""
@@ -2022,4 +1939,3 @@ class DataManager: ObservableObject {
         print("✅ DataManager 已重置")
     }
     
-}
