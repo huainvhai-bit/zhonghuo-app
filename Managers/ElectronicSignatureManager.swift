@@ -4,6 +4,7 @@ extension User {
     struct Witness: Codable, Identifiable {
         var id = UUID()
         var name: String
+        var location: String?
         var phone: String
         var relationship: String
         var idNumber: String?
@@ -24,6 +25,8 @@ struct MultiSignatureState: Codable {
 }
 
 import SwiftUI
+import CryptoKit
+import CommonCrypto
 import UIKit
 
 //
@@ -134,7 +137,7 @@ class ElectronicSignatureManager: ObservableObject {
         
         // 验证见证人资质（如果是见证人签章）
         // ✅ 调用 LegalConsultationManager.checkWitnessQualification()
-        if let witnessId = witnessId {
+        if let witnessId = witness.id {
             let witness = DataManager.shared.witnesses.first { $0.id == witnessId }
             if let witness = witness {
                 let (isValid, message) = LegalConsultationManager.shared.checkWitnessQualification(witness: witness)
@@ -274,7 +277,7 @@ class ElectronicSignatureManager: ObservableObject {
         )
         
         // 记录签署
-        state.signatures[signer.idNumber] = record
+        state.signatures[signer.idNumber ?? ""] = record
         state.signedCount += 1
         
         // 保存状态
@@ -294,6 +297,21 @@ class ElectronicSignatureManager: ObservableObject {
 
 /// Keychain 管理器扩展 - 电子签章持久化
 extension KeychainManager {
+    private func save<T: Codable>(_ data: T, for key: String) {
+        if let encoded = try? JSONEncoder().encode(data) {
+            UserDefaults.standard.set(encoded, forKey: key)
+        }
+    }
+    
+    private func load<T: Codable>(_ type: T.Type, for key: String) -> T? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+    
+    private func delete(for key: String) {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
+
         private let electronicSignaturesKey = "electronic_signatures"
         
         /// 保存电子签章

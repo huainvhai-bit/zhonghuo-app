@@ -16,6 +16,21 @@
 		330A2FA52F865E8F009FE772 /* Managers/UserRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2FA32F865E8F009FE772 /* Managers/UserRegistration.swift */; };
 		330A2FA62F865E8F009FE772 /* Managers/UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 330A2FA42F865E8F009FE772 /* Managers/UserSession.swift */; };
 		3310C2C82F6D87CC0036FB58 /* Views/Common/QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3310C2C72F6D87CB0036FB58 /* Views/Common/QRCodeScannerView.swift */; };
+		331FC1C92F8A391800C04D34 /* LegalConsultationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C32F8A391800C04D34 /* LegalConsultationManager.swift */; };
+		331FC1CA2F8A391800C04D34 /* OfflineEditorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C42F8A391800C04D34 /* OfflineEditorManager.swift */; };
+		331FC1CB2F8A391800C04D34 /* VersionCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C72F8A391800C04D34 /* VersionCheckManager.swift */; };
+		331FC1CC2F8A391800C04D34 /* WillTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C82F8A391800C04D34 /* WillTemplateManager.swift */; };
+		331FC1CD2F8A391800C04D34 /* iCloudBackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C22F8A391800C04D34 /* iCloudBackupManager.swift */; };
+		331FC1CE2F8A391800C04D34 /* ElectronicSignatureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C12F8A391800C04D34 /* ElectronicSignatureManager.swift */; };
+		331FC1CF2F8A391800C04D34 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C02F8A391800C04D34 /* CacheManager.swift */; };
+		331FC1D02F8A391800C04D34 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1BF2F8A391800C04D34 /* APIManager.swift */; };
+		331FC1D12F8A391800C04D34 /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1BE2F8A391800C04D34 /* AccountValidator.swift */; };
+		331FC1D22F8A391800C04D34 /* SyncConflictResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C52F8A391800C04D34 /* SyncConflictResolver.swift */; };
+		331FC1D32F8A391800C04D34 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1C62F8A391800C04D34 /* ThemeManager.swift */; };
+		331FC1D72F8A393E00C04D34 /* SmsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1D62F8A393E00C04D34 /* SmsSettingsView.swift */; };
+		331FC1D82F8A393E00C04D34 /* LegalDisclosureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1D52F8A393E00C04D34 /* LegalDisclosureView.swift */; };
+		331FC1D92F8A393E00C04D34 /* DataDeletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1D42F8A393E00C04D34 /* DataDeletionView.swift */; };
+		331FC1DB2F8A394A00C04D34 /* FamilyArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331FC1DA2F8A394A00C04D34 /* FamilyArchiveView.swift */; };
 		334C2F04C944C07197FE8DE5 /* Managers/KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5AD1F297D03473770EF79D0 /* Managers/KeychainManager.swift */; };
 		3366C40C2F66D4C000129FF3 /* Managers/UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40B2F66D4C000129FF3 /* Managers/UserManager.swift */; };
 		3366C40E2F66D4D500129FF3 /* Views/Will/WillModuleEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3366C40D2F66D4D500129FF3 /* Views/Will/WillModuleEdit.swift */; };
@@ -89,6 +104,21 @@
 		330A2FA32F865E8F009FE772 /* Managers/UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/UserRegistration.swift; sourceTree = "<group>"; };
 		330A2FA42F865E8F009FE772 /* Managers/UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/UserSession.swift; sourceTree = "<group>"; };
 		3310C2C72F6D87CB0036FB58 /* Views/Common/QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/QRCodeScannerView.swift; sourceTree = "<group>"; };
+		331FC1BE2F8A391800C04D34 /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AccountValidator.swift; path = Managers/AccountValidator.swift; sourceTree = "<group>"; };
+		331FC1BF2F8A391800C04D34 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APIManager.swift; path = Managers/APIManager.swift; sourceTree = "<group>"; };
+		331FC1C02F8A391800C04D34 /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CacheManager.swift; path = Managers/CacheManager.swift; sourceTree = "<group>"; };
+		331FC1C12F8A391800C04D34 /* ElectronicSignatureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ElectronicSignatureManager.swift; path = Managers/ElectronicSignatureManager.swift; sourceTree = "<group>"; };
+		331FC1C22F8A391800C04D34 /* iCloudBackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = iCloudBackupManager.swift; path = Managers/iCloudBackupManager.swift; sourceTree = "<group>"; };
+		331FC1C32F8A391800C04D34 /* LegalConsultationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegalConsultationManager.swift; path = Managers/LegalConsultationManager.swift; sourceTree = "<group>"; };
+		331FC1C42F8A391800C04D34 /* OfflineEditorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OfflineEditorManager.swift; path = Managers/OfflineEditorManager.swift; sourceTree = "<group>"; };
+		331FC1C52F8A391800C04D34 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SyncConflictResolver.swift; path = Managers/SyncConflictResolver.swift; sourceTree = "<group>"; };
+		331FC1C62F8A391800C04D34 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThemeManager.swift; path = Managers/ThemeManager.swift; sourceTree = "<group>"; };
+		331FC1C72F8A391800C04D34 /* VersionCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VersionCheckManager.swift; path = Managers/VersionCheckManager.swift; sourceTree = "<group>"; };
+		331FC1C82F8A391800C04D34 /* WillTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WillTemplateManager.swift; path = Managers/WillTemplateManager.swift; sourceTree = "<group>"; };
+		331FC1D42F8A393E00C04D34 /* DataDeletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataDeletionView.swift; path = Views/Common/DataDeletionView.swift; sourceTree = "<group>"; };
+		331FC1D52F8A393E00C04D34 /* LegalDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegalDisclosureView.swift; path = Views/Common/LegalDisclosureView.swift; sourceTree = "<group>"; };
+		331FC1D62F8A393E00C04D34 /* SmsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SmsSettingsView.swift; path = Views/Common/SmsSettingsView.swift; sourceTree = "<group>"; };
+		331FC1DA2F8A394A00C04D34 /* FamilyArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FamilyArchiveView.swift; path = Views/Family/FamilyArchiveView.swift; sourceTree = "<group>"; };
 		3366C40B2F66D4C000129FF3 /* Managers/UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/UserManager.swift; sourceTree = "<group>"; };
 		3366C40D2F66D4D500129FF3 /* Views/Will/WillModuleEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Will/WillModuleEdit.swift; sourceTree = "<group>"; };
 		33B4F2152F742F1700D5E4FA /* Views/Common/CloudStorageStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Common/CloudStorageStatusView.swift; sourceTree = "<group>"; };
@@ -226,6 +256,21 @@
 				B2000012 /* Managers/ConfigManager.swift */,
 				B2000013 /* Managers/APIClient.swift */,
 				B2000014 /* Managers/TokenManager.swift */,
+				331FC1BE2F8A391800C04D34 /* AccountValidator.swift */,
+				331FC1BF2F8A391800C04D34 /* APIManager.swift */,
+				331FC1C02F8A391800C04D34 /* CacheManager.swift */,
+				331FC1C12F8A391800C04D34 /* ElectronicSignatureManager.swift */,
+				331FC1C22F8A391800C04D34 /* iCloudBackupManager.swift */,
+				331FC1C32F8A391800C04D34 /* LegalConsultationManager.swift */,
+				331FC1C42F8A391800C04D34 /* OfflineEditorManager.swift */,
+				331FC1C52F8A391800C04D34 /* SyncConflictResolver.swift */,
+				331FC1C62F8A391800C04D34 /* ThemeManager.swift */,
+				331FC1D42F8A393E00C04D34 /* DataDeletionView.swift */,
+				331FC1D52F8A393E00C04D34 /* LegalDisclosureView.swift */,
+				331FC1D62F8A393E00C04D34 /* SmsSettingsView.swift */,
+				331FC1DA2F8A394A00C04D34 /* FamilyArchiveView.swift */,
+				331FC1C72F8A391800C04D34 /* VersionCheckManager.swift */,
+				331FC1C82F8A391800C04D34 /* WillTemplateManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -316,6 +361,17 @@
 				A100000B /* Managers/DataManager.swift in Sources */,
 				A100000C /* Managers/AuthManager.swift in Sources */,
 				A100000D /* Managers/LifeCheckStatusManager.swift in Sources */,
+				331FC1C92F8A391800C04D34 /* LegalConsultationManager.swift in Sources */,
+				331FC1CA2F8A391800C04D34 /* OfflineEditorManager.swift in Sources */,
+				331FC1CB2F8A391800C04D34 /* VersionCheckManager.swift in Sources */,
+				331FC1CC2F8A391800C04D34 /* WillTemplateManager.swift in Sources */,
+				331FC1CD2F8A391800C04D34 /* iCloudBackupManager.swift in Sources */,
+				331FC1CE2F8A391800C04D34 /* ElectronicSignatureManager.swift in Sources */,
+				331FC1CF2F8A391800C04D34 /* CacheManager.swift in Sources */,
+				331FC1D02F8A391800C04D34 /* APIManager.swift in Sources */,
+				331FC1D12F8A391800C04D34 /* AccountValidator.swift in Sources */,
+				331FC1D22F8A391800C04D34 /* SyncConflictResolver.swift in Sources */,
+				331FC1D32F8A391800C04D34 /* ThemeManager.swift in Sources */,
 				A100000E /* Managers/AppStabilityManager.swift in Sources */,
 				A100000F /* Utils/ErrorHandler.swift in Sources */,
 				A1000010 /* Managers/CloudStorageManager.swift in Sources */,
@@ -326,6 +382,7 @@
 				33DE7DE62F6D493700F8677E /* Views/Family/FamilyMemberDetailView.swift in Sources */,
 				33DE7DE72F6D493700F8677E /* Views/Family/FamilyGuardView.swift in Sources */,
 				A1000011 /* Utils/SecureStorage.swift in Sources */,
+				331FC1DB2F8A394A00C04D34 /* FamilyArchiveView.swift in Sources */,
 				A1000030 /* Views/Common/WitnessView.swift in Sources */,
 				A1075845 /* Views/Common/EmergencyContactsView.swift in Sources */,
 				A1000031 /* Utils/PDFGenerator.swift in Sources */,
@@ -334,6 +391,9 @@
 				33B4F2162F742F1700D5E4FA /* Views/Common/CloudStorageStatusView.swift in Sources */,
 				3310C2C82F6D87CC0036FB58 /* Views/Common/QRCodeScannerView.swift in Sources */,
 				A1000034 /* Managers/NotificationManager.swift in Sources */,
+				331FC1D72F8A393E00C04D34 /* SmsSettingsView.swift in Sources */,
+				331FC1D82F8A393E00C04D34 /* LegalDisclosureView.swift in Sources */,
+				331FC1D92F8A393E00C04D34 /* DataDeletionView.swift in Sources */,
 				A1000035 /* Views/Will/WillPreviewView.swift in Sources */,
 				A1000036 /* Views/Common/HelpPolicyView.swift in Sources */,
 				A1000040 /* Utils/AppConfig.swift in Sources */,

@@ -27,7 +27,7 @@ class CacheManager {
     
     // MARK: - 缓存 Key
     
-    private enum CacheKey: String {
+    enum CacheKey: String {
         case homeStatus = "home_status.json"
         case capsules = "capsules.json"
         case wills = "wills.json"
@@ -45,7 +45,7 @@ class CacheManager {
     // MARK: - 写入缓存
     
     /// 写入 JSON 缓存
-    func save<T: Encodable>(_ data: T, for key: CacheKey) {
+    private func save<T: Encodable>(_ data: T, for key: CacheKey) {
         do {
             let data = try JSONEncoder().encode(data)
             try data.write(to: cachePath(for: key), options: .atomicWrite)
@@ -58,7 +58,7 @@ class CacheManager {
     // MARK: - 读取缓存
     
     /// 读取 JSON 缓存
-    func load<T: Decodable>(_ type: T.Type, for key: CacheKey) -> T? {
+    private func load<T: Decodable>(_ type: T.Type, for key: CacheKey) -> T? {
         let path = cachePath(for: key)
         guard FileManager.default.fileExists(atPath: path.path) else {
             return nil
@@ -78,7 +78,7 @@ class CacheManager {
     // MARK: - 缓存有效性检查
     
     /// 检查缓存是否有效（未过期）
-    func isCacheValid(for key: CacheKey) -> Bool {
+    private func isCacheValid(for key: CacheKey) -> Bool {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: cachePath(for: key).path),
               let modificationDate = attributes[.modificationDate] as? Date else {
             return false
@@ -103,7 +103,7 @@ class CacheManager {
     }
     
     /// 清空特定缓存
-    func clear(for key: CacheKey) {
+    private func clear(for key: CacheKey) {
         let path = cachePath(for: key)
         if FileManager.default.fileExists(atPath: path.path) {
             try? FileManager.default.removeItem(at: path)

@@ -73,7 +73,7 @@ class SyncConflictResolver {
     ) -> WillModule {
         switch strategy {
         case .latestWins:
-            return localupdatedAt > remote.updatedAt ? local : remote
+            return local.updatedAt > remote.updatedAt ? local : remote
             
         case .clientWins:
             return local
@@ -184,13 +184,13 @@ struct RemoteWill: Identifiable {
 extension TimeCapsule {
     /// 获取 updatedAt（这里用 created_at 代替，实际应有 updated_at 字段）
     var updatedAt: Date {
-        return createdAt
+        return Date()  // WillModule 没有 createdAt，使用当前时间
     }
 }
 
 extension WillModule {
     /// 获取 updatedAt
     var updatedAt: Date {
-        return createdAt
+        return Date()  // WillModule 没有 createdAt，使用当前时间
     }
 }

@@ -51,7 +51,7 @@ class AccountValidator: ObservableObject {
         } else {
             print("❌ 账号验证失败：\(validationError ?? "未知错误")")
             // 自动退出登录
-            await logout()
+            logout()
         }
         
         isValidating = false
@@ -91,7 +91,7 @@ class AccountValidator: ObservableObject {
     
     /// 通过获取用户信息验证（兼容旧版本）
     private func validateByUserInfo(user: User) async -> Bool {
-        guard !dataManager.apiURL.isEmpty else {
+        guard !DataManager.apiURL.isEmpty else {
             validationError = "API 未初始化"
             return false
         }
@@ -110,8 +110,8 @@ class AccountValidator: ObservableObject {
             }
             """
             
-            guard let url = URL(string: "\(dataManager.apiURL)/api/graphql.php") else {
-                return .unknown("无效的 API URL")
+            guard let url = URL(string: "\(DataManager.apiURL)/api/graphql.php") else {
+                return false  // 无效的 API URL
             }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
@@ -136,7 +136,7 @@ class AccountValidator: ObservableObject {
                             return false
                         }
                     } else {
-                        validationError = result.message ?? "获取用户信息失败"
+                        validationError = "获取用户信息失败"
                         return false
                     }
                 } else if httpResponse.statusCode == 401 {
