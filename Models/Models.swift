@@ -92,6 +92,91 @@ struct TimeCapsule: Identifiable, Codable {
     var cloudBackupStatus: CloudBackupStatus = .pending
     var cloudBackupAt: Date? = nil
     
+    // MARK: - 手动初始化（用于预览和代码创建）
+    init(id: String = UUID().uuidString, title: String, content: String, type: CapsuleType,
+         mediaURL: String = "", mediaServerURL: String = "", mediaDuration: Double = 0,
+         sendDate: Date, isSent: Bool, createdAt: Date, deletedAt: Date? = nil,
+         cloudBackupStatus: CloudBackupStatus = .pending, cloudBackupAt: Date? = nil) {
+        self.id = id
+        self.title = title
+        self.content = content
+        self.type = type
+        self.mediaURL = mediaURL
+        self.mediaServerURL = mediaServerURL
+        self.mediaDuration = mediaDuration
+        self.sendDate = sendDate
+        self.isSent = isSent
+        self.createdAt = createdAt
+        self.deletedAt = deletedAt
+        self.cloudBackupStatus = cloudBackupStatus
+        self.cloudBackupAt = cloudBackupAt
+    }
+    
+    // MARK: - Codable 字段映射（后端使用 snake_case）
+    enum CodingKeys: String, CodingKey {
+        case id, title, content, type
+        case mediaURL = "media_url"
+        case mediaServerURL = "media_server_url"
+        case mediaDuration = "media_duration"
+        case sendDate = "open_at"       // 后端 open_at -> 前端 sendDate
+        case isSent = "is_opened"       // 后端 is_opened (0/1) -> 前端 isSent (Bool)
+        case createdAt = "created_at"
+        case deletedAt = "deleted_at"
+        case cloudBackupStatus = "cloud_backup_status"
+        case cloudBackupAt = "cloud_backup_at"
+    }
+    
+    // 🔧 自定义解码逻辑，处理 is_opened (0/1) -> Bool 转换
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
+        type = try container.decode(CapsuleType.self, forKey: .type)
+        mediaURL = try container.decodeIfPresent(String.self, forKey: .mediaURL) ?? ""
+        mediaServerURL = try container.decodeIfPresent(String.self, forKey: .mediaServerURL) ?? ""
+        mediaDuration = try container.decodeIfPresent(Double.self, forKey: .mediaDuration) ?? 0
+        
+        // 处理日期格式：后端返回 "yyyy-MM-dd HH:mm:ss"
+        if let sendDateString = try container.decodeIfPresent(String.self, forKey: .sendDate) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            sendDate = formatter.date(from: sendDateString) ?? Date()
+        } else {
+            sendDate = Date()
+        }
+        
+        // 处理 is_opened (0/1) -> Bool 转换
+        if let isOpenedInt = try container.decodeIfPresent(Int.self, forKey: .isSent) {
+            isSent = isOpenedInt != 0
+        } else if let isOpenedBool = try container.decodeIfPresent(Bool.self, forKey: .isSent) {
+            isSent = isOpenedBool
+        } else {
+            isSent = false
+        }
+        
+        // 处理 createdAt 日期格式
+        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            createdAt = formatter.date(from: createdAtString) ?? Date()
+        } else {
+            createdAt = Date()
+        }
+        
+        // 处理 deletedAt 日期格式
+        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            deletedAt = formatter.date(from: deletedAtString)
+        } else {
+            deletedAt = nil
+        }
+        
+        cloudBackupStatus = .pending
+        cloudBackupAt = nil
+    }
+    
     enum CloudBackupStatus: String, Codable {
         case pending = "待备份"
         case uploading = "上传中"

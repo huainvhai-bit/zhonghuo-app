@@ -1043,7 +1043,12 @@ class DataManager: ObservableObject {
         
         do {
             let result = try await APIManager.shared.batchSyncCapsules(inputs.map { $0.toDictionary() })
-            print("✅ 胶囊同步成功：\(0) 创建\(0) 更新\(0)")
+            
+            // ✅ 解析服务器返回的同步结果
+            let total = result["total"] as? Int ?? 0
+            let created = result["created"] as? Int ?? 0
+            let updated = result["updated"] as? Int ?? 0
+            print("✅ 胶囊同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             // 🔥 同步成功后标记为已备份（✅ 已在 @MainActor 中，无需额外 Task）
             for i in 0..<capsules.count {
@@ -1053,7 +1058,7 @@ class DataManager: ObservableObject {
                 }
             }
             
-            return (0, 0, 0)
+            return (total, created, updated)
         } catch {
             print("❌ 胶囊同步失败：\(error)")
             
@@ -1088,8 +1093,14 @@ class DataManager: ObservableObject {
         
         do {
             let result = try await APIManager.shared.batchSyncWills(inputs.map { $0.toDictionary() })
-            print("✅ 遗嘱同步成功：\(0) 创建\(0) 更新\(0)")
-            return (0, 0, 0)
+            
+            // ✅ 解析服务器返回的同步结果
+            let total = result["total"] as? Int ?? 0
+            let created = result["created"] as? Int ?? 0
+            let updated = result["updated"] as? Int ?? 0
+            print("✅ 遗嘱同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            
+            return (total, created, updated)
         } catch {
             print("❌ 遗嘱同步失败：\(error)")
             return nil
@@ -1125,8 +1136,14 @@ class DataManager: ObservableObject {
         
         do {
             let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs.map { $0.toDictionary() })
-            print("✅ 紧急联系人同步成功：\(0) 创建\(0) 更新\(0)")
-            return (0, 0, 0)
+            
+            // ✅ 解析服务器返回的同步结果
+            let total = result["total"] as? Int ?? 0
+            let created = result["created"] as? Int ?? 0
+            let updated = result["updated"] as? Int ?? 0
+            print("✅ 紧急联系人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            
+            return (total, created, updated)
         } catch {
             print("❌ 紧急联系人同步失败：\(error)")
             return nil
@@ -1158,8 +1175,14 @@ class DataManager: ObservableObject {
         
         do {
             let result = try await APIManager.shared.batchSyncWitnesses(inputs.map { $0.toDictionary() })
-            print("✅ 见证人同步成功：\(0) 创建\(0) 更新\(0)")
-            return (0, 0, 0)
+            
+            // ✅ 解析服务器返回的同步结果
+            let total = result["total"] as? Int ?? 0
+            let created = result["created"] as? Int ?? 0
+            let updated = result["updated"] as? Int ?? 0
+            print("✅ 见证人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            
+            return (total, created, updated)
         } catch {
             print("❌ 见证人同步失败：\(error)")
             return nil
@@ -1185,8 +1208,14 @@ class DataManager: ObservableObject {
         
         do {
             let result = try await APIManager.shared.batchSyncAssets(inputs.map { $0.toDictionary() })
-            print("✅ 资产同步成功：\(0) 创建\(0) 更新\(0)")
-            return (0, 0, 0)
+            
+            // ✅ 解析服务器返回的同步结果
+            let total = result["total"] as? Int ?? 0
+            let created = result["created"] as? Int ?? 0
+            let updated = result["updated"] as? Int ?? 0
+            print("✅ 资产同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            
+            return (total, created, updated)
         } catch {
             print("❌ 资产同步失败：\(error)")
             return nil
