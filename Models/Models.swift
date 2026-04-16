@@ -262,6 +262,7 @@ struct WillModule: Identifiable, Codable {
     var subtitle: String
     var content: String
     var isCompleted: Bool
+    var createdAt: Date = Date()  // 后端返回 created_at
     var template: String?
     var deletedAt: Date? = nil  // 删除标记
     
@@ -269,6 +270,66 @@ struct WillModule: Identifiable, Codable {
     var cloudBackupStatus: TimeCapsule.CloudBackupStatus = .pending
     var cloudBackupAt: Date? = nil
     var cloudURL: String = ""  // 云存储 URL
+    
+    // MARK: - 手动初始化（用于预览和代码创建）
+    init(id: String = UUID().uuidString, type: WillType, title: String, subtitle: String = "",
+         content: String = "", isCompleted: Bool = false, createdAt: Date = Date(),
+         template: String? = nil, deletedAt: Date? = nil,
+         cloudBackupStatus: TimeCapsule.CloudBackupStatus = .pending,
+         cloudBackupAt: Date? = nil, cloudURL: String = "") {
+        self.id = id
+        self.type = type
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content
+        self.isCompleted = isCompleted
+        self.createdAt = createdAt
+        self.template = template
+        self.deletedAt = deletedAt
+        self.cloudBackupStatus = cloudBackupStatus
+        self.cloudBackupAt = cloudBackupAt
+        self.cloudURL = cloudURL
+    }
+    
+    // MARK: - Codable 字段映射
+    enum CodingKeys: String, CodingKey {
+        case id, type, title, subtitle, content, template
+        case isCompleted = "is_completed"  // 后端 is_completed -> 前端 isCompleted
+        case createdAt = "created_at"     // 后端 created_at -> 前端 createdAt
+        case deletedAt = "deleted_at"
+    }
+    
+    // 🔧 自定义解码逻辑
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        type = try container.decode(WillType.self, forKey: .type)
+        title = try container.decode(String.self, forKey: .title)
+        subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
+        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
+        template = try container.decodeIfPresent(String.self, forKey: .template)
+        
+        // 处理 is_completed (0/1) -> Bool 转换
+        if let isCompletedInt = try container.decodeIfPresent(Int.self, forKey: .isCompleted) {
+            isCompleted = isCompletedInt != 0
+        } else {
+            isCompleted = false
+        }
+        
+        // 处理 createdAt 日期格式
+        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            createdAt = formatter.date(from: createdAtString) ?? Date()
+        }
+        
+        // 处理 deletedAt 日期格式
+        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            deletedAt = formatter.date(from: deletedAtString)
+        }
+    }
     
     enum WillType: String, Codable, CaseIterable {
         case property = "财产分配"
