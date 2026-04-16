@@ -461,9 +461,72 @@ struct Witness: Identifiable, Codable {
         isConfirmed ? "34C759" : "FF9500"
     }
     
-    // MARK: - Codable 自定义实现（排除计算属性）
+    // MARK: - 手动初始化（用于代码创建）
+    init(id: String = UUID().uuidString, name: String, role: String, phone: String,
+         isConfirmed: Bool = false, order: Int = 0, idNumber: String = "", notes: String = "",
+         confirmedAt: Date? = nil, createdAt: Date = Date(), deletedAt: Date? = nil) {
+        self.id = id
+        self.name = name
+        self.role = role
+        self.phone = phone
+        self.isConfirmed = isConfirmed
+        self.order = order
+        self.idNumber = idNumber
+        self.notes = notes
+        self.confirmedAt = confirmedAt
+        self.createdAt = createdAt
+        self.deletedAt = deletedAt
+    }
+    
+    // MARK: - Codable 字段映射
     enum CodingKeys: String, CodingKey {
-        case id, name, role, phone, isConfirmed, order, idNumber, notes, confirmedAt, createdAt, deletedAt
+        case id, name, role, phone, order, idNumber, notes
+        case isConfirmed = "is_confirmed"
+        case confirmedAt = "confirmed_at"
+        case createdAt = "created_at"
+        case deletedAt = "deleted_at"
+    }
+    
+    // 🔧 自定义解码逻辑
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        role = try container.decode(String.self, forKey: .role)
+        phone = try container.decode(String.self, forKey: .phone)
+        order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
+        idNumber = try container.decodeIfPresent(String.self, forKey: .idNumber) ?? ""
+        notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        
+        // 处理 is_confirmed (0/1) -> Bool 转换
+        if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+            isConfirmed = isConfirmedInt != 0
+        } else {
+            isConfirmed = false
+        }
+        
+        // 处理 confirmedAt 日期格式
+        if let confirmedAtString = try container.decodeIfPresent(String.self, forKey: .confirmedAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            confirmedAt = formatter.date(from: confirmedAtString)
+        } else {
+            confirmedAt = nil
+        }
+        
+        // 处理 createdAt 日期格式
+        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            createdAt = formatter.date(from: createdAtString) ?? Date()
+        }
+        
+        // 处理 deletedAt 日期格式
+        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            deletedAt = formatter.date(from: deletedAtString)
+        }
     }
 }
 
@@ -607,6 +670,55 @@ struct User: Codable, Identifiable {
         var isConfirmed: Bool = false
         var createdAt: Date = Date()
         var deletedAt: Date? = nil  // 删除标记
+        
+        // MARK: - 手动初始化（用于代码创建）
+        init(id: String = UUID().uuidString, name: String, phone: String, relationship: String,
+             isConfirmed: Bool = false, createdAt: Date = Date(), deletedAt: Date? = nil) {
+            self.id = id
+            self.name = name
+            self.phone = phone
+            self.relationship = relationship
+            self.isConfirmed = isConfirmed
+            self.createdAt = createdAt
+            self.deletedAt = deletedAt
+        }
+        
+        // MARK: - Codable 字段映射
+        enum CodingKeys: String, CodingKey {
+            case id, name, phone, relationship, isConfirmed
+            case createdAt = "created_at"
+            case deletedAt = "deleted_at"
+        }
+        
+        // 🔧 自定义解码逻辑
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+            name = try container.decode(String.self, forKey: .name)
+            phone = try container.decode(String.self, forKey: .phone)
+            relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
+            
+            // 处理 is_confirmed (0/1) -> Bool 转换
+            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+                isConfirmed = isConfirmedInt != 0
+            } else {
+                isConfirmed = false
+            }
+            
+            // 处理 createdAt 日期格式
+            if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                createdAt = formatter.date(from: createdAtString) ?? Date()
+            }
+            
+            // 处理 deletedAt 日期格式
+            if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                deletedAt = formatter.date(from: deletedAtString)
+            }
+        }
     }
     
     // 指示说明
@@ -653,6 +765,55 @@ struct UserSettings: Codable {
         var isConfirmed: Bool = false
         var createdAt: Date = Date()
         var deletedAt: Date? = nil  // 删除标记
+        
+        // MARK: - 手动初始化（用于代码创建）
+        init(id: String = UUID().uuidString, name: String, phone: String, relationship: String,
+             isConfirmed: Bool = false, createdAt: Date = Date(), deletedAt: Date? = nil) {
+            self.id = id
+            self.name = name
+            self.phone = phone
+            self.relationship = relationship
+            self.isConfirmed = isConfirmed
+            self.createdAt = createdAt
+            self.deletedAt = deletedAt
+        }
+        
+        // MARK: - Codable 字段映射
+        enum CodingKeys: String, CodingKey {
+            case id, name, phone, relationship, isConfirmed
+            case createdAt = "created_at"
+            case deletedAt = "deleted_at"
+        }
+        
+        // 🔧 自定义解码逻辑
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+            name = try container.decode(String.self, forKey: .name)
+            phone = try container.decode(String.self, forKey: .phone)
+            relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
+            
+            // 处理 is_confirmed (0/1) -> Bool 转换
+            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+                isConfirmed = isConfirmedInt != 0
+            } else {
+                isConfirmed = false
+            }
+            
+            // 处理 createdAt 日期格式
+            if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                createdAt = formatter.date(from: createdAtString) ?? Date()
+            }
+            
+            // 处理 deletedAt 日期格式
+            if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                deletedAt = formatter.date(from: deletedAtString)
+            }
+        }
     }
 }
 
