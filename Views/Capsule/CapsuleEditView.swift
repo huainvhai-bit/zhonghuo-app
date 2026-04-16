@@ -25,7 +25,6 @@ struct CapsuleEditView: View {
     @State private var showingPlayer = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
-    @State private var showingDeleteAlert = false  // ✅ 新增：删除确认对话框
     @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
     @State private var showCameraOptions = false  // ✅ Bug 1: 显示摄像头选项
     
@@ -217,30 +216,6 @@ struct CapsuleEditView: View {
                 }
                 .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
             }
-            
-            // ✅ 删除按钮（仅编辑模式，右上角）
-            ToolbarItem(placement: .navigationBarTrailing) {
-                if existingCapsule != nil {
-                    Button(action: { showingDeleteAlert = true }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "trash")
-                            Text("删除")
-                        }
-                        .foregroundColor(.red)
-                    }
-                } else {
-                    // 新增模式显示空按钮占位
-                    EmptyView()
-                }
-            }
-        }
-        .alert("删除胶囊", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive) {
-                deleteCapsule()
-            }
-        } message: {
-            Text("确定要删除胶囊「\(title)」吗？此操作不可恢复。")
         }
         .sheet(isPresented: $showingRecorder) {
             CapsuleMediaRecorderView(selectedType: selectedType, onRecordComplete: { url in
@@ -317,7 +292,7 @@ struct CapsuleEditView: View {
                 mediaServerURL: mediaServerUrl ?? "",
                 sendDate: sendDate,
                 isSent: existingCapsule?.isSent ?? false,
-                createdAt: existingCapsule != nil ? Date() : (existingCapsule?.createdAt ?? Date())  // ✅ 编辑模式更新为当前时间
+                createdAt: existingCapsule?.createdAt ?? Date()  // ✅ 修复：编辑模式保持原创建时间
             )
             
             print("🔵 保存胶囊：id=\(capsule.id), title=\(capsule.title), 编辑模式=\(existingCapsule != nil ? "是" : "否")")
@@ -341,22 +316,6 @@ struct CapsuleEditView: View {
         }
     }
     
-    // ✅ 删除胶囊方法
-    private func deleteCapsule() {
-        guard let existingCapsule = existingCapsule else { return }
-        dataManager.deleteCapsule(existingCapsule)
-        print("✅ 胶囊已删除：\(existingCapsule.title)")
-        
-        // 📢 通知同步到服务器
-        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
-        
-        // 📤 同步到云端
-        Task {
-            _ = await dataManager.batchSyncCapsules()
-        }
-        
-        dismiss()
-    }
     
     private func playerView(for url: URL) -> AnyView {
         // ✅ Bug 修复：处理相对路径
