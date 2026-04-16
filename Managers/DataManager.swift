@@ -909,6 +909,11 @@ class DataManager: ObservableObject {
     }
     
     func addCapsule(_ capsule: TimeCapsule) {
+        // ✅ 防止重复添加：如果已存在相同 ID 的胶囊，则跳过
+        if capsules.contains(where: { $0.id == capsule.id }) {
+            print("⚠️ 胶囊 \(capsule.id) 已存在，跳过添加")
+            return
+        }
         capsules.append(capsule)
         saveCapsulesToFile()
         print("📦 胶囊已添加到本地，准备同步到服务器...")
@@ -919,15 +924,10 @@ class DataManager: ObservableObject {
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
-        // ✅ 异步同步到服务器
-        Task {
-            await batchSyncCapsules()
-        }
-        
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
             } else {
                 print("⚠️ 胶囊同步失败（可能无网络或未登录）")
             }
@@ -943,15 +943,10 @@ class DataManager: ObservableObject {
             // 发送数据变更通知（触发实时同步）
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
-            // ✅ 异步同步到服务器
-            Task {
-                await batchSyncCapsules()
-            }
-            
             // 异步同步到服务器
             Task {
                 if let result = await batchSyncCapsules() {
-                    print("✅ 胶囊同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 } else {
                     print("⚠️ 胶囊同步失败（可能无网络或未登录）")
                 }
