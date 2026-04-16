@@ -180,10 +180,11 @@ struct CapsuleList: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
-                    // ✅ Bug 修复：点击胶囊跳转到详情页面
-                    NavigationLink(destination: CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)) {
+                    // ✅ 修复：点击胶囊跳转到详情页面
+                    NavigationLink(destination: CapsuleDetailView(dataManager: dataManager, capsule: capsule)) {
                         CapsuleCard(capsule: capsule).accessibilityLabel(capsule.title)
                     }
+                    .buttonStyle(PlainButtonStyle())  // 移除 NavigationLink 默认样式
                 }
                 .onDelete(perform: deleteCapsules)  // ✅ 添加删除功能
             }
@@ -273,65 +274,72 @@ struct CapsuleCard: View {
     let capsule: TimeCapsule
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                // 类型图标
-                Image(systemName: iconForType(capsule.type))
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 40, height: 40)
-                    .background(
+        HStack(spacing: 14) {
+            // 类型图标
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .cornerRadius(10)
+                    .frame(width: 50, height: 50)
                 
-                // 标题和类型
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(capsule.title)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    HStack(spacing: 6) {
-                        Image(systemName: iconForType(capsule.type))
-                            .font(.system(size: 10))
-                        Text(capsule.type.rawValue)
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                // 状态图标
-                VStack(spacing: 4) {
-                    Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(capsule.isSent ? .green : .orange)
-                    
-                    Text(capsule.isSent ? "已发送" : "待发送")
-                        .font(.system(size: 10))
-                        .foregroundColor(capsule.isSent ? .green : .orange)
-                }
+                Image(systemName: iconForType(capsule.type))
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.white)
             }
             
-            // 发送日期
-            HStack(spacing: 6) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 12))
-                Text(formatSendDate(capsule.sendDate))
-                    .font(.system(size: 13))
+            // 中间内容
+            VStack(alignment: .leading, spacing: 6) {
+                Text(capsule.title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                HStack(spacing: 8) {
+                    // 类型标签
+                    Text(capsule.type.rawValue)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color(hex: "6366F1"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "6366F1").opacity(0.1))
+                        .cornerRadius(6)
+                    
+                    // 状态标签
+                    HStack(spacing: 4) {
+                        Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                            .font(.system(size: 10))
+                        Text(capsule.isSent ? "已发送" : "待发送")
+                            .font(.system(size: 11))
+                    }
+                    .foregroundColor(capsule.isSent ? .green : .orange)
+                }
+                
+                // 发送日期
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11))
+                    Text(formatSendDate(capsule.sendDate))
+                        .font(.system(size: 12))
+                }
+                .foregroundColor(.secondary)
             }
-            .foregroundColor(.secondary)
+            
+            Spacer()
+            
+            // 右侧箭头
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.secondary)
         }
         .padding(16)
         .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.08), radius: 8, x: 0, y: 2)
     }
     
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {

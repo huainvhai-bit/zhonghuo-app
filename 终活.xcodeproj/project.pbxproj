@@ -76,6 +76,7 @@
 		B1000007 /* Views/Settings/AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* Views/Settings/AboutSettingsView.swift */; };
 		B1000008 /* Views/Settings/EmergencyContactSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* Views/Settings/EmergencyContactSettingsView.swift */; };
 		B1000009 /* Views/Settings/NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* Views/Settings/NotificationSettingsView.swift */; };
+		B100000A /* Views/Capsule/CapsuleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007A /* Views/Capsule/CapsuleDetailView.swift */; };
 		B1000010 /* Views/Settings/PrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* Views/Settings/PrivacySettingsView.swift */; };
 		B1000011 /* Views/Settings/ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* Views/Settings/ProfileSettingsView.swift */; };
 		B1000012 /* Managers/ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000012 /* Managers/ConfigManager.swift */; };
@@ -420,6 +421,7 @@
 				330A2FA22F865E72009FE772 /* (null) in Sources */,
 				B1000008 /* Views/Settings/EmergencyContactSettingsView.swift in Sources */,
 				B1000009 /* Views/Settings/NotificationSettingsView.swift in Sources */,
+				B100000A /* Views/Capsule/CapsuleDetailView.swift in Sources */,
 				B1000010 /* Views/Settings/PrivacySettingsView.swift in Sources */,
 				B1000011 /* Views/Settings/ProfileSettingsView.swift in Sources */,
 				B1000012 /* Managers/ConfigManager.swift in Sources */,

@@ -394,76 +394,34 @@ struct CapsuleMediaRecorderView: View {
     @State private var timer: Timer?
     @State private var showingPermissionAlert = false
     @State private var showCameraPreview = false
+    @State private var useFrontCamera = true  // ✅ 新增：跟踪摄像头方向
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            // 背景色
+            Color.black
                 .ignoresSafeArea(edges: .all)
             
-            // ✅ 修复：视频模式下始终显示摄像头预览
+            // ✅ 视频模式下显示摄像头预览
             if selectedType == .video {
                 CameraPreviewView(session: recorder.captureSession)
                     .ignoresSafeArea()
             }
             
-            VStack(spacing: 32) {
-                Spacer()
-                
-                // 录制状态
-                VStack(spacing: 16) {
-                    if recorder.isRecording {
-                        Image(systemName: "record.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.red)
-                            .scaleEffect(recorder.isRecording ? 1.1 : 1.0)
-                            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: recorder.isRecording)
-                    } else {
-                        Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Text(recorder.isRecording ? "录制中..." : "点击开始录制")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    if recorder.isRecording {
-                        Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
-                            .font(.system(size: 32))
-                            .monospacedDigit()
-                            .foregroundColor(.secondary)
-                    }
-                }
+            VStack(spacing: 0) {
+                // 顶部工具栏
+                topToolbar
                 
                 Spacer()
                 
-                // 录制按钮
-                Button(action: {
-                    if recorder.isRecording {
-                        stopRecording()
-                    } else {
-                        startRecording()
-                    }
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(recorder.isRecording ? Color.red.opacity(0.2) : Color(hex: "6366F1"))
-                            .frame(width: 80, height: 80)
-                        
-                        Circle()
-                            .fill(recorder.isRecording ? Color.red : Color(hex: "6366F1"))
-                            .frame(width: 60, height: 60)
-                        
-                        if recorder.isRecording {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .padding(.bottom, 32)
+                // 中间录制状态
+                centerContent
                 
                 Spacer()
+                
+                // 底部录制控制栏
+                bottomControls
+                    .padding(.bottom, 50)
             }
         }
         .onAppear {
@@ -471,7 +429,7 @@ struct CapsuleMediaRecorderView: View {
             if selectedType == .video {
                 showCameraPreview = true
                 // ✅ 调用 setupCameraForVideo 初始化摄像头（默认前置）
-                recorder.setupCameraForVideo(useFrontCamera: true)
+                recorder.setupCameraForVideo(useFrontCamera: useFrontCamera)
             }
         }
         .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
@@ -484,6 +442,7 @@ struct CapsuleMediaRecorderView: View {
                     }
                     dismiss()
                 }
+                .foregroundColor(.white)
             }
         }
         .alert("需要访问权限", isPresented: $showingPermissionAlert) {
@@ -499,6 +458,112 @@ struct CapsuleMediaRecorderView: View {
         .onDisappear {
             timer?.invalidate()
         }
+    }
+    
+    // MARK: - 顶部工具栏
+    private var topToolbar: some View {
+        HStack {
+            // 取消按钮
+            Button(action: {
+                if recorder.isRecording {
+                    recorder.stopRecording()
+                }
+                dismiss()
+            }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 36, height: 36)
+                    .background(Color.white.opacity(0.2))
+                    .clipShape(Circle())
+            }
+            
+            Spacer()
+            
+            // 摄像头切换按钮（仅视频模式，且未在录制时显示）
+            if selectedType == .video && !recorder.isRecording {
+                Button(action: switchCamera) {
+                    Image(systemName: "camera.rotate.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.2))
+                        .clipShape(Circle())
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 60)
+    }
+    
+    // MARK: - 中间内容
+    private var centerContent: some View {
+        VStack(spacing: 20) {
+            if recorder.isRecording {
+                // 录制中状态
+                Image(systemName: "record.circle")
+                    .font(.system(size: 60))
+                    .foregroundColor(.red)
+                    .scaleEffect(recorder.isRecording ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: recorder.isRecording)
+                
+                Text("录制中...")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
+                    .font(.system(size: 36, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundColor(.white)
+            } else {
+                // 待机状态
+                Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.white.opacity(0.8))
+                
+                Text("点击下方按钮开始录制")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+        }
+    }
+    
+    // MARK: - 底部控制栏
+    private var bottomControls: some View {
+        VStack(spacing: 24) {
+            // 录制按钮
+            Button(action: {
+                if recorder.isRecording {
+                    stopRecording()
+                } else {
+                    startRecording()
+                }
+            }) {
+                ZStack {
+                    // 外圈
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 4)
+                        .frame(width: 80, height: 80)
+                    
+                    // 内圈
+                    Circle()
+                        .fill(recorder.isRecording ? Color.red : Color.white)
+                        .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
+                        .animation(.spring(response: 0.3), value: recorder.isRecording)
+                }
+            }
+            
+            Text(recorder.isRecording ? "点击停止" : "长按录制")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.7))
+        }
+    }
+    
+    // MARK: - 切换摄像头
+    private func switchCamera() {
+        useFrontCamera.toggle()
+        recorder.switchCamera(useFront: useFrontCamera)
+        print("📷 切换到\(useFrontCamera ? "前置" : "后置")摄像头")
     }
     
     private func startRecording() {
@@ -615,6 +680,42 @@ class MediaRecorder: NSObject, ObservableObject {
             captureSession.startRunning()
             print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
         }
+    }
+    
+    // ✅ 新增：切换前后摄像头
+    func switchCamera(useFront: Bool) {
+        guard let captureSession = captureSession else {
+            print("⚠️ captureSession 未初始化")
+            return
+        }
+        
+        // 停止当前录制
+        if videoOutput?.isRecording == true {
+            videoOutput?.stopRecording()
+        }
+        
+        // 移除所有输入
+        captureSession.inputs.forEach { captureSession.removeInput($0) }
+        
+        // 获取新摄像头
+        let cameraPosition: AVCaptureDevice.Position = useFront ? .front : .back
+        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
+              let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
+              let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+              let audioInput = try? AVCaptureDeviceInput(device: audioDevice) else {
+            print("❌ 无法获取摄像头（前置=\(useFront)）")
+            return
+        }
+        
+        // 添加新输入
+        if captureSession.canAddInput(videoInput) {
+            captureSession.addInput(videoInput)
+        }
+        if captureSession.canAddInput(audioInput) {
+            captureSession.addInput(audioInput)
+        }
+        
+        print("📷 摄像头已切换（前置=\(useFront)）")
     }
     
     func startRecording(type: RecordingType) {

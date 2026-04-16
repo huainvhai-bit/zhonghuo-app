@@ -14,8 +14,9 @@ struct CapsuleDetailView: View {
     let capsule: TimeCapsule
     @State private var showingPlayer = false
     @State private var player: AVPlayer?
-    @State private var showingAlert = false
-    @State private var alertMessage = ""
+    @State private var showingDeleteAlert = false
+    @State private var showingEditView = false
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         ZStack {
@@ -23,15 +24,23 @@ struct CapsuleDetailView: View {
                 .ignoresSafeArea(edges: .all)
             
             ScrollView {
-                VStack(spacing: 16) {
-                    // 胶囊信息卡片
-                    infoCard
+                VStack(spacing: 20) {
+                    // 顶部信息卡片
+                    headerCard
                     
                     // 内容卡片
-                    contentCard
+                    if capsule.type == .text {
+                        textContentCard
+                    } else {
+                        mediaContentCard
+                    }
                     
-                    // 操作按钮
-                    actionButtons
+                    // 日期信息
+                    dateCard
+                    
+                    // 底部操作按钮
+                    bottomButtons
+                        .padding(.top, 20)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -39,166 +48,252 @@ struct CapsuleDetailView: View {
         }
         .navigationTitle("胶囊详情")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingEditView = true }) {
+                    Image(systemName: "pencil")
+                        .foregroundColor(Color(hex: "6366F1"))
+                }
+            }
+        }
         .sheet(isPresented: $showingPlayer) {
             if let player = player {
                 VideoPlayer(player: player)
                     .ignoresSafeArea()
             }
         }
-        .alert("提示", isPresented: $showingAlert) {
-            Button("确定", role: .cancel) {}
+        .sheet(isPresented: $showingEditView) {
+            NavigationView {
+                CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
+            }
+        }
+        .alert("确认删除", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                deleteCapsule()
+            }
         } message: {
-            Text(alertMessage)
+            Text("确定要删除胶囊「\(capsule.title)」吗？此操作不可恢复。")
         }
     }
     
-    private var infoCard: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
+    // MARK: - 顶部信息卡片
+    private var headerCard: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 16) {
                 // 类型图标
-                Image(systemName: iconForType(capsule.type))
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .cornerRadius(12)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(capsule.title)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.primary)
+                        .frame(width: 60, height: 60)
                     
-                    HStack(spacing: 6) {
-                        Label(capsule.type.rawValue, systemImage: iconForType(capsule.type))
-                            .font(.system(size: 12))
-                        
-                        Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
-                            .font(.system(size: 12))
-                        Text(capsule.isSent ? "已发送" : "待发送")
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(.secondary)
+                    Image(systemName: iconForType(capsule.type))
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundColor(.white)
                 }
                 
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(capsule.title)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                    
+                    HStack(spacing: 8) {
+                        // 类型标签
+                        Text(capsule.type.rawValue)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color(hex: "6366F1"))
+                            .cornerRadius(10)
+                        
+                        // 状态标签
+                        HStack(spacing: 4) {
+                            Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                                .font(.system(size: 12))
+                            Text(capsule.isSent ? "已发送" : "待发送")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(capsule.isSent ? .green : .orange)
+                    }
+                }
+                
+                Spacer()
+            }
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - 文字内容卡片
+    private var textContentCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "doc.text.fill")
+                    .foregroundColor(Color(hex: "6366F1"))
+                Text("文字内容")
+                    .font(.headline)
+            }
+            
+            Divider()
+            
+            Text(capsule.content.isEmpty ? "（无内容）" : capsule.content)
+                .font(.system(size: 16))
+                .foregroundColor(capsule.content.isEmpty ? .secondary : .primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - 媒体内容卡片（视频/语音）
+    private var mediaContentCard: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Image(systemName: capsule.type == .audio ? "mic.fill" : "video.fill")
+                    .foregroundColor(Color(hex: "6366F1"))
+                Text(capsule.type == .audio ? "语音内容" : "视频内容")
+                    .font(.headline)
                 Spacer()
             }
             
             Divider()
             
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
+            // 播放按钮
+            Button(action: playMedia) {
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "6366F1"))
+                            .frame(width: 60, height: 60)
+                        
+                        Image(systemName: capsule.type == .audio ? "play.fill" : "play.rectangle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("点击播放")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.primary)
+                        
+                        Text(capsule.type == .audio ? "语音" : "视频")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                }
+                .padding(16)
+                .background(Color(hex: "F5F5F7"))
+                .cornerRadius(12)
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+    }
+    
+    // MARK: - 日期卡片
+    private var dateCard: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image(systemName: "calendar")
+                    .foregroundColor(Color(hex: "6366F1"))
+                Text("日期信息")
+                    .font(.headline)
+                Spacer()
+            }
+            
+            Divider()
+            
+            HStack(spacing: 24) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("发送日期")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     Text(formatSendDate(capsule.sendDate))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.primary)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("创建日期")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     Text(formatCreateDate(capsule.createdAt))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.primary)
                 }
             }
         }
         .padding(16)
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(16)
         .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
     }
     
-    private var contentCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("内容")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            if capsule.type == .text {
-                Text(capsule.content)
-                    .font(.system(size: 15))
-                    .foregroundColor(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else if capsule.type == .audio || capsule.type == .video {
-                // ✅ Bug 2 修复：显示播放按钮
-                Button(action: playMedia) {
-                    HStack(spacing: 12) {
-                        Image(systemName: capsule.type == .audio ? "play.circle.fill" : "play.rectangle.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                        
-                        Text("播放\(capsule.type == .audio ? "语音" : "视频")")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color(hex: "6366F1"))
-                    .cornerRadius(10)
-                }
-            } else {
-                Text(capsule.content)
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
-    }
-    
-    private var actionButtons: some View {
+    // MARK: - 底部操作按钮
+    private var bottomButtons: some View {
         VStack(spacing: 12) {
-            // ✅ 删除按钮
-            Button(action: deleteCapsule) {
-                Label("删除胶囊", systemImage: "trash.fill")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.red)
-                    .cornerRadius(10)
+            // 删除按钮（放在最下方）
+            Button(action: { showingDeleteAlert = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "trash.fill")
+                        .font(.system(size: 16))
+                    Text("删除胶囊")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.red.opacity(0.1))
+                .foregroundColor(.red)
+                .cornerRadius(12)
             }
         }
     }
     
+    // MARK: - 操作方法
     private func playMedia() {
-        // ✅ Bug 2 修复：播放视频/语音
-        guard let mediaPath = capsule.mediaPath, !mediaPath.isEmpty else {
-            alertMessage = "没有找到媒体文件"
-            showingAlert = true
+        var mediaPath = capsule.mediaURL
+        
+        // 处理相对路径
+        if !mediaPath.isEmpty && !mediaPath.hasPrefix("/") {
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            mediaPath = documentsPath.appendingPathComponent(mediaPath).path
+        }
+        
+        guard !mediaPath.isEmpty else {
             return
         }
         
         let fileURL = URL(fileURLWithPath: mediaPath)
         
-        if !FileManager.default.fileExists(atPath: mediaPath) {
-            alertMessage = "媒体文件不存在：\(mediaPath)"
-            showingAlert = true
+        guard FileManager.default.fileExists(atPath: mediaPath) else {
+            print("⚠️ 媒体文件不存在：\(mediaPath)")
             return
         }
         
-        if capsule.type == .video {
-            player = AVPlayer(url: fileURL)
-            showingPlayer = true
-            print("🎥 播放视频：\(fileURL)")
-        } else if capsule.type == .audio {
-            player = AVPlayer(url: fileURL)
-            showingPlayer = true
-            print("🎵 播放语音：\(fileURL)")
-        }
+        player = AVPlayer(url: fileURL)
+        showingPlayer = true
+        print("🎬 播放媒体：\(fileURL)")
     }
     
     private func deleteCapsule() {
@@ -210,11 +305,6 @@ struct CapsuleDetailView: View {
         }
         
         dismiss()
-    }
-    
-    private func dismiss() {
-        // 返回上一页
-        NotificationCenter.default.post(name: NSNotification.Name("CapsuleDeleted"), object: nil)
     }
     
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
@@ -234,7 +324,7 @@ struct CapsuleDetailView: View {
     
     private func formatCreateDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd HH:mm"
+        formatter.dateFormat = "yyyy 年 MM 月 dd 日"
         return formatter.string(from: date)
     }
 }
@@ -244,12 +334,12 @@ struct CapsuleDetailView: View {
         CapsuleDetailView(
             dataManager: DataManager.shared,
             capsule: TimeCapsule(
-                id: UUID(),
+                id: UUID().uuidString,
                 title: "测试胶囊",
-                type: .video,
                 content: "测试内容",
+                type: .video,
                 sendDate: Date(),
-                mediaPath: "",
+                isSent: false,
                 createdAt: Date()
             )
         )
