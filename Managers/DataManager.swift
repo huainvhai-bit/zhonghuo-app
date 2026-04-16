@@ -693,7 +693,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
             } else {
                 print("⚠️ 见证人同步失败（可能无网络或未登录）")
             }
@@ -717,7 +717,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器（会发送 deletedAt 标记）
         Task {
             if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 // 同步成功后再从本地移除
                 await MainActor.run {
                     self.witnesses.removeAll { $0.id == witness.id }
@@ -741,7 +741,7 @@ class DataManager: ObservableObject {
             // 异步同步到服务器
             Task {
                 if let result = await batchSyncWitnesses() {
-                    print("✅ 见证人同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                    print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 } else {
                     print("⚠️ 见证人同步失败（可能无网络或未登录）")
                 }
@@ -826,11 +826,6 @@ class DataManager: ObservableObject {
         saveWillModulesToFile()
         print("📜 遗嘱模块已保存到本地，准备同步到服务器...")
         print("📊 当前 willModules.count: \(willModules.count)")
-        
-        // ✅ 异步同步到服务器
-        Task {
-            await batchSyncWills()
-        }
         print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
@@ -842,7 +837,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncWills() {
-                print("✅ 遗嘱同步成功：总计 \(0) 个，创建 \(0) 个，更新 \(0) 个")
+                print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
             } else {
                 print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
             }
@@ -903,7 +898,7 @@ class DataManager: ObservableObject {
         // 异步同步到服务器
         Task {
             if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(0) 个，删除 1 个")
+                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
             }
         }
     }
