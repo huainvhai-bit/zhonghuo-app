@@ -1817,29 +1817,23 @@ class DataManager: ObservableObject {
     /// ✅ 修复：确保所有 @Published 属性更新在主线程执行
     @MainActor
     func downloadAllData() async {
-        print("📥 开始从云端下载数据...")
+        Logger.shared.i("开始从云端下载数据...")
         
         do {
-            let apiManager = APIManager.shared
-            // let result = try await apiManager.fetchUserData()
+            // TODO: 实现完整的数据下载逻辑
+            // 1. 调用 API 获取用户数据
+            // 2. 解析并更新本地数据模型
+            // 3. 处理冲突（如有）
             
-            // ✅ 修复：整个方法标记为 @MainActor，确保所有 @Published 更新在主线程
-            // 解析胶囊数据
-            // TODO: 解析数据
-            }
-            
-            // 解析遗嘱数据
-            // TODO: 解析数据
-            }
-            
-            // 解析资产数据
-            // TODO
-            }
-            
-            // 解析见证人数据
-            // TODO
-            
-    
+            // 临时实现：仅打印日志
+            Logger.shared.w("downloadAllData 尚未完全实现")
+        } catch {
+            Logger.shared.e("下载数据失败：\(error)")
+        }
+        
+        Logger.shared.i("数据下载完成")
+    }
+
     /// 持久化媒体文件（确保文件保存在 Documents 目录）
     func persistMediaFile(_ tempURL: URL) async -> URL? {
         print("📁 持久化媒体文件：\(tempURL.path)")
@@ -1936,6 +1930,6 @@ class DataManager: ObservableObject {
         DataManager.apiURL = ""
         DataManager.baseURL = ""
         
-        print("✅ DataManager 已重置")
+        Logger.shared.i("DataManager 已重置")
     }
-    
+}

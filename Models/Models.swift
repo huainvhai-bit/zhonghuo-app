@@ -1159,14 +1159,25 @@ extension APIManager {
         }
         """
         
-        // 执行查询
-        // let result = try await client.query(query)
-        
-        print("✅ APIManager.refreshToken 完成")
-        
-        // 解析结果
-        // if let data = result["data"] as? [String: Any],
-           // let refreshData = data["refreshToken"] as? [String: Any] {
-        return TokenRefreshResult(token: "", refreshToken: "", expiresIn: 7200)  // TODO
+        do {
+            // 执行查询
+            let result = try await APIClient.shared.query(query)
+            
+            // 解析结果
+            if let data = result["data"] as? [String: Any],
+               let refreshData = data["refreshToken"] as? [String: Any],
+               let token = refreshData["token"] as? String,
+               let newRefreshToken = refreshData["refreshToken"] as? String,
+               let expiresIn = refreshData["expiresIn"] as? Int {
+                Logger.shared.i("Token 刷新成功")
+                return TokenRefreshResult(token: token, refreshToken: newRefreshToken, expiresIn: expiresIn)
+            } else {
+                Logger.shared.w("Token 刷新返回数据格式异常")
+                throw APIError.invalidResponse
+            }
+        } catch {
+            Logger.shared.e("Token 刷新失败：\(error)")
+            throw error
+        }
     }
 }

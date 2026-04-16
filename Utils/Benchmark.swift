@@ -30,7 +30,7 @@ class Benchmark {
         let average = total / TimeInterval(iterations)
         measurements[name, default: []].append(average)
         
-        print("📊 \(name): \(average * 1000)ms (平均，\(iterations) 次迭代)")
+        Logger.shared.d("📊 \(name): \(average * 1000)ms (平均，\(iterations) 次迭代)")
         return average
     }
     
@@ -48,14 +48,13 @@ class Benchmark {
         let average = total / TimeInterval(iterations)
         measurements[name, default: []].append(average)
         
-        print("📊 \(name): \(average * 1000)ms (平均异步，\(iterations) 次迭代)")
+        Logger.shared.d("📊 \(name): \(average * 1000)ms (平均异步，\(iterations) 次迭代)")
         return average
     }
     
     /// 比较多个实现
     func compare(_ name: String, implementations: [(String, () -> Void)]) {
-        print("\n🔬 比较测试：\(name)")
-        print("================================")
+        var output = "\n🔬 比较测试：\(name)\n================================"
         
         var results: [(String, TimeInterval)] = []
         
@@ -67,21 +66,22 @@ class Benchmark {
         // 排序并显示结果
         results.sort { $0.1 < $1.1 }
         
-        print("\n🏆 排名:")
+        output += "\n\n🏆 排名:"
         for (index, (implName, time)) in results.enumerated() {
-            print("\(index + 1). \(implName): \(time * 1000)ms")
+            output += "\n\(index + 1). \(implName): \(time * 1000)ms"
         }
-        print("================================\n")
+        output += "\n================================\n"
+        Logger.shared.i(output)
     }
     
     /// 获取统计数据
     func getStatistics(for name: String) -> (min: TimeInterval, max: TimeInterval, avg: TimeInterval, count: Int)? {
-        guard let measurements = measurements[name], !measurements.isEmpty else {
+        guard let measurements = measurements[name], !measurements.isEmpty,
+              let min = measurements.min(),
+              let max = measurements.max() else {
             return nil
         }
         
-        let min = measurements.min()!
-        let max = measurements.max()!
         let avg = measurements.reduce(0, +) / TimeInterval(measurements.count)
         
         return (min, max, avg, measurements.count)

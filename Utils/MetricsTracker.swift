@@ -103,15 +103,15 @@ class MetricsTracker {
     
     /// 获取直方图统计
     func getHistogramStats(_ name: String) -> (count: Int, sum: Double, avg: Double, min: Double, max: Double)? {
-        guard let values = histograms[name], !values.isEmpty else {
+        guard let values = histograms[name], !values.isEmpty,
+              let min = values.min(),
+              let max = values.max() else {
             return nil
         }
         
         let count = values.count
         let sum = values.reduce(0, +)
         let avg = sum / Double(count)
-        let min = values.min()!
-        let max = values.max()!
         
         return (count, sum, avg, min, max)
     }
@@ -203,26 +203,26 @@ class MetricsTracker {
     
     /// 打印指标报告
     func printReport() {
-        print("\n📊 指标报告")
-        print("================================")
+        var report = "\n📊 指标报告\n================================"
         
         for (name, data) in metrics {
-            print("\n\(name):")
+            report += "\n\n\(name):"
             if let stats = getHistogramStats(name) {
-                print("  计数：\(stats.count)")
-                print("  平均：\(stats.avg * 1000)ms")
-                print("  最小：\(stats.min * 1000)ms")
-                print("  最大：\(stats.max * 1000)ms")
+                report += "\n  计数：\(stats.count)"
+                report += "\n  平均：\(stats.avg * 1000)ms"
+                report += "\n  最小：\(stats.min * 1000)ms"
+                report += "\n  最大：\(stats.max * 1000)ms"
             }
             if let errorRate = getErrorRate(name) {
-                print("  错误率：\(errorRate * 100)%")
+                report += "\n  错误率：\(errorRate * 100)%"
             }
             if let successRate = getSuccessRate(name) {
-                print("  成功率：\(successRate * 100)%")
+                report += "\n  成功率：\(successRate * 100)%"
             }
         }
         
-        print("================================\n")
+        report += "\n================================\n"
+        Logger.shared.i(report)
     }
 }
 

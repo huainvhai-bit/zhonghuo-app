@@ -1,13 +1,13 @@
-import UIKit
 //
 //  PushNotificationManager.swift
 //  终活
 //
-//  APNs 消息推送管理器（V1.0.1 P0 紧急）
+//  APNs 消息推送管理器
 //  功能：推送倒计时提醒、胶囊开启提醒、遗嘱提醒
 //
 
 import Foundation
+import UIKit
 import UserNotifications
 
 class PushNotificationManager: ObservableObject {
@@ -19,14 +19,14 @@ class PushNotificationManager: ObservableObject {
             options: [.alert, .badge, .sound]
         ) { granted, error in
             if granted {
-                print("✅ PushNotificationManager: 推送权限已授予")
+                Logger.shared.i("PushNotificationManager: 推送权限已授予")
                 
                 // 注册远程通知
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             } else {
-                print("❌ PushNotificationManager: 推送权限被拒绝：\(error?.localizedDescription ?? "未知错误")")
+                Logger.shared.w("PushNotificationManager: 推送权限被拒绝：\(error?.localizedDescription ?? "未知错误")")
             }
         }
     }
@@ -36,10 +36,36 @@ class PushNotificationManager: ObservableObject {
     /// 保存设备 Token 到 Keychain
     func saveDeviceToken(_ token: Data) {
         let tokenString = token.reduce("") { $0 + String(format: "%02x", $1) }
-        print("✅ PushNotificationManager: 设备 Token 已保存：\(tokenString)")
+        Logger.shared.i("PushNotificationManager: 设备 Token 已保存：\(tokenString)")
         
-        // TODO: 上传到服务器
-        // await updateDeviceTokenOnServer(tokenString)
+        // 上传到服务器
+        Task {
+            await uploadDeviceToken(tokenString)
+        }
+    }
+    
+    /// 上传设备 Token 到服务器
+    private func uploadDeviceToken(_ tokenString: String) async {
+        guard !DataManager.apiURL.isEmpty else {
+            Logger.shared.w("API URL 未设置，跳过上传设备 Token")
+            return
+        }
+        
+        do {
+            let query = """
+            mutation {
+                updateDeviceToken(token: "\(tokenString)") {
+                    success
+                    message
+                }
+            }
+            """
+            
+            let _ = try await APIClient.shared.query(query)
+            Logger.shared.i("设备 Token 上传成功")
+        } catch {
+            Logger.shared.e("设备 Token 上传失败：\(error)")
+        }
     }
     
     /// 处理设备 Token
@@ -49,7 +75,7 @@ class PushNotificationManager: ObservableObject {
     
     /// 处理注册失败
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("❌ PushNotificationManager: 注册推送失败：\(error.localizedDescription)")
+        Logger.shared.e("PushNotificationManager: 注册推送失败：\(error.localizedDescription)")
     }
     
     // MARK: - 通知内容
@@ -79,9 +105,9 @@ class PushNotificationManager: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ PushNotificationManager: 添加通知失败：\(error.localizedDescription)")
+                Logger.shared.e("PushNotificationManager: 添加通知失败：\(error.localizedDescription)")
             } else {
-                print("✅ PushNotificationManager: 倒计时通知已添加")
+                Logger.shared.i("PushNotificationManager: 倒计时通知已添加")
             }
         }
     }
@@ -106,7 +132,7 @@ class PushNotificationManager: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ PushNotificationManager: 胶囊通知失败：\(error.localizedDescription)")
+                Logger.shared.e("PushNotificationManager: 胶囊通知失败：\(error.localizedDescription)")
             }
         }
     }
@@ -125,7 +151,7 @@ class PushNotificationManager: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ PushNotificationManager: 遗嘱通知失败：\(error.localizedDescription)")
+                Logger.shared.e("PushNotificationManager: 遗嘱通知失败：\(error.localizedDescription)")
             }
         }
     }
@@ -135,13 +161,13 @@ class PushNotificationManager: ObservableObject {
     /// 取消所有通知
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        print("✅ PushNotificationManager: 所有通知已取消")
+        Logger.shared.i("PushNotificationManager: 所有通知已取消")
     }
     
     /// 取消特定通知
     func cancelNotification(identifier: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
-        print("✅ PushNotificationManager: 通知已取消：\(identifier)")
+        Logger.shared.i("PushNotificationManager: 通知已取消：\(identifier)")
     }
     
     // MARK: - 辅助函数
@@ -166,7 +192,7 @@ class PushNotificationManager: ObservableObject {
     /// 处理前台通知
     func applicationDidBecomeActive(_ application: UIApplication) {
         UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
-            print("📋 PushNotificationManager: 待处理通知：\(requests.count) 个")
+            Logger.shared.d("PushNotificationManager: 待处理通知：\(requests.count) 个")
         }
     }
 }
@@ -176,17 +202,17 @@ class PushNotificationManager: ObservableObject {
 extension PushNotificationManager {
     /// App 启动时初始化
     func initialize() {
-        print("🔵 PushNotificationManager: 初始化...")
+        Logger.shared.d("PushNotificationManager: 初始化...")
         
         // 检查授权状态
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             switch settings.authorizationStatus {
             case .authorized, .provisional:
-                print("✅ PushNotificationManager: 授权状态正常")
+                Logger.shared.i("PushNotificationManager: 授权状态正常")
             case .denied:
-                print("⚠️ PushNotificationManager: 推送被拒绝，请在设置中启用")
+                Logger.shared.w("PushNotificationManager: 推送被拒绝，请在设置中启用")
             case .notDetermined:
-                print("🔵 PushNotificationManager: 等待用户授权")
+                Logger.shared.d("PushNotificationManager: 等待用户授权")
             @unknown default:
                 break
             }
@@ -208,6 +234,6 @@ extension PushNotificationManager {
             )
         ]
         
-        print("✅ PushNotificationManager: 初始化完成")
+        Logger.shared.i("PushNotificationManager: 初始化完成")
     }
 }

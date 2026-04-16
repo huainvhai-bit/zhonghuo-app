@@ -58,7 +58,9 @@ class ResilienceManager {
                 throw NSError(domain: "TimeoutError", code: -1, userInfo: nil)
             }
             
-            let result = try await group.next()!
+            guard let result = try await group.next() else {
+                throw NSError(domain: "TimeoutError", code: -2, userInfo: [NSLocalizedDescriptionKey: "操作超时或无结果"])
+            }
             group.cancelAll()
             return result
         }

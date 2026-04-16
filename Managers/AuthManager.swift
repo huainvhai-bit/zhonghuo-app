@@ -65,20 +65,20 @@ class AuthManager: ObservableObject {
             currentUser = name
             authToken = token
             
-            print("✅ 登录成功：\(name) (\(phone))")
+            Logger.shared.i("登录成功：\(name) (\(phone))")
             
             // 触发数据同步
             DataManager.shared.initializeAPIConfig()
             
+            isLoading = false
             return true
             
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ 登录失败：\(error)")
+            Logger.shared.e("登录失败：\(error)")
+            isLoading = false
             return false
         }
-        
-        isLoading = false
     }
     
     /// 用户注册（GraphQL）
@@ -117,16 +117,16 @@ class AuthManager: ObservableObject {
             // 保存 Token
             KeychainManager.shared.saveToken(token)
             
-            print("✅ 注册成功：\(name)")
+            Logger.shared.i("注册成功：\(name)")
+            isLoading = false
             return true
             
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ 注册失败：\(error)")
+            Logger.shared.e("注册失败：\(error)")
+            isLoading = false
             return false
         }
-        
-        isLoading = false
     }
     
     /// 退出登录
@@ -145,7 +145,7 @@ class AuthManager: ObservableObject {
         authToken = nil
         errorMessage = nil
         
-        print("🚪 退出登录成功")
+        Logger.shared.i("退出登录成功")
     }
     
     /// 检查登录状态（从 Keychain 恢复）

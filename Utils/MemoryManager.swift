@@ -25,7 +25,7 @@ class MemoryManager {
     
     /// 处理内存警告
     @objc private func handleMemoryWarning() {
-        print("⚠️ 收到内存警告")
+        Logger.shared.w("收到内存警告")
         clearCaches()
     }
     
@@ -37,7 +37,7 @@ class MemoryManager {
         // 清理网络缓存
         URLCache.shared.removeAllCachedResponses()
         
-        print("✅ 缓存已清理")
+        Logger.shared.i("缓存已清理")
     }
     
     /// 获取当前内存使用
