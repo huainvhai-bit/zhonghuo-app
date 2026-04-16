@@ -39,22 +39,22 @@ struct CapsuleList: View {
                             emptyState
                         } else {
                             capsuleList
-                        }
-                        
-                        // ✅ 底部新增按钮（与嘱托与资产一致）
-                        Button(action: { showingAddCapsule = true }) {
-                            HStack {
-                                Text("+")
-                                Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
+                            
+                            // ✅ 底部新增按钮（仅列表有内容时显示）
+                            Button(action: { showingAddCapsule = true }) {
+                                HStack {
+                                    Text("+")
+                                    Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
+                                }
+                                .font(.system(size: 16, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color(hex: "6366F1"))
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
                             }
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color(hex: "6366F1"))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .padding(.bottom, 32)
                         }
-                        .padding(.bottom, 32)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
