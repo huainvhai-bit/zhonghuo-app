@@ -76,7 +76,9 @@ struct CapsuleList: View {
             }
         }
         .sheet(isPresented: $showingAddCapsule) {
-            CapsuleEditView(dataManager: dataManager)  // ✅ 新增模式
+            NavigationView {
+                CapsuleEditView(dataManager: dataManager)  // ✅ 新增模式
+            }
         }
         .refreshable {
             // ✅ 下拉刷新
