@@ -27,6 +27,7 @@ struct CapsuleEditView: View {
     @State private var alertMessage = ""
     @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
     @State private var showCameraOptions = false  // ✅ Bug 1: 显示摄像头选项
+    @State private var isSaving = false  // ✅ 防止重复保存
     
     var body: some View {
         ZStack {
@@ -38,9 +39,9 @@ struct CapsuleEditView: View {
                 VStack(spacing: 16) {
                     // 类型卡片
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("类型")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                        Text("胶囊类型")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.secondary)
                         
                         Picker("类型", selection: $selectedType) {
                             Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
@@ -51,19 +52,20 @@ struct CapsuleEditView: View {
                     }
                     .padding(16)
                     .background(Color(.systemBackground))
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
                     .padding(.horizontal, 16)
                     
                     // 内容卡片
                     VStack(alignment: .leading, spacing: 12) {
                         Text("内容")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.secondary)
                         
-                        TextField("标题", text: $title)
-                            .padding(12)
-                            .background(Color(hex: "F2F2F7"))
-                            .cornerRadius(8)
+                        TextField("请输入标题", text: $title)
+                            .padding(14)
+                            .background(Color(hex: "F5F5F7"))
+                            .cornerRadius(10)
                         
                         if selectedType == .text {
                             TextEditor(text: $content)
@@ -74,84 +76,75 @@ struct CapsuleEditView: View {
                         } else {
                             // ✅ 修复：视频/语音录制按钮
                             VStack(spacing: 12) {
-                                HStack {
+                                HStack(spacing: 12) {
+                                    // 录制入口按钮
                                     Button(action: { showingRecorder = true }) {
-                                        HStack(spacing: 12) {
+                                        HStack(spacing: 8) {
                                             Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                                                .font(.system(size: 24))
-                                                .foregroundColor(.white)
-                                            
-                                            Text(recordedAudioURL != nil || recordedVideoURL != nil ? "重新录制" : "开始录制")
-                                                .fontWeight(.semibold)
-                                                .foregroundColor(.white)
+                                                .font(.system(size: 18))
+                                            Text("录制\(selectedType == .audio ? "语音" : "视频")")
+                                                .font(.system(size: 15, weight: .medium))
                                         }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 14)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
                                         .background(Color(hex: "6366F1"))
-                                        .cornerRadius(10)
+                                        .cornerRadius(25)
                                     }
                                     
-                                    // ✅ Bug 1: 摄像头切换按钮（仅视频）
-                                    if selectedType == .video {
-                                        Button(action: { showCameraOptions.toggle() }) {
-                                            Image(systemName: useFrontCamera ? "camera.fill" : "camera.rotate.fill")
-                                                .font(.system(size: 20))
-                                                .foregroundColor(.secondary)
+                                    // 已录制：播放按钮
+                                    if selectedType == .audio, let _ = recordedAudioURL {
+                                        Button(action: { showingPlayer = true }) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "play.fill").font(.system(size: 14))
+                                                Text("播放").font(.system(size: 14, weight: .medium))
+                                            }
+                                            .foregroundColor(Color(hex: "6366F1"))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(Color(hex: "6366F1").opacity(0.1))
+                                            .cornerRadius(20)
                                         }
-                                        .padding(.leading, 8)
-                                    }
-                                }
-                                
-                                // ✅ Bug 1: 摄像头选项菜单
-                                if selectedType == .video && showCameraOptions {
-                                    HStack(spacing: 16) {
-                                        Button(action: {
-                                            useFrontCamera = true
-                                            showCameraOptions = false
-                                        }) {
-                                            Label("前置摄像头", systemImage: "person.fill")
-                                                .foregroundColor(useFrontCamera ? .indigo : .primary)
-                                        }
-                                        
-                                        Button(action: {
-                                            useFrontCamera = false
-                                            showCameraOptions = false
-                                        }) {
-                                            Label("后置摄像头", systemImage: "camera.fill")
-                                                .foregroundColor(!useFrontCamera ? .indigo : .primary)
+                                    } else if selectedType == .video, let _ = recordedVideoURL {
+                                        Button(action: { showingPlayer = true }) {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "play.fill").font(.system(size: 14))
+                                                Text("播放").font(.system(size: 14, weight: .medium))
+                                            }
+                                            .foregroundColor(Color(hex: "6366F1"))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(Color(hex: "6366F1").opacity(0.1))
+                                            .cornerRadius(20)
                                         }
                                     }
-                                    .padding(8)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(8)
-                                }
-                                
-                                if selectedType == .audio, let url = recordedAudioURL {
-                                    PreviewButton(icon: "mic.fill", title: "已录制音频", url: url, showingPlayer: $showingPlayer)
-                                } else if selectedType == .video, let url = recordedVideoURL {
-                                    PreviewButton(icon: "video.fill", title: "已录制视频", url: url, showingPlayer: $showingPlayer)
                                 }
                             }
                         }
                     }
                     .padding(16)
                     .background(Color(.systemBackground))
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
                     .padding(.horizontal, 16)
                     
                     // 发送时间卡片
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("发送时间")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .foregroundColor(Color(hex: "6366F1"))
+                            Text("发送时间")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
                         
                         DatePicker("发送日期", selection: $sendDate)
                             .datePickerStyle(.compact)
-                            .padding(.vertical, 4)
                     }
                     .padding(16)
                     .background(Color(.systemBackground))
-                    .cornerRadius(12)
+                    .cornerRadius(16)
+                    .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 32)
                 }
@@ -207,14 +200,16 @@ struct CapsuleEditView: View {
             
             // ✅ 保存按钮（右上角）
             ToolbarItem(placement: .confirmationAction) {
-                Button("保存") {
+                Button(isSaving ? "保存中..." : "保存") {
+                    guard !isSaving else { return }
                     print("🔵 保存按钮被点击")
                     if validateCapsule() {
                         print("🔵 验证通过，开始保存")
+                        isSaving = true
                         saveCapsule()
                     }
                 }
-                .disabled(title.isEmpty || (selectedType == .text && content.isEmpty))
+                .disabled(title.isEmpty || (selectedType == .text && content.isEmpty) || isSaving)
             }
         }
         .sheet(isPresented: $showingRecorder) {
@@ -312,6 +307,8 @@ struct CapsuleEditView: View {
             // 📤 同步到云端
             _ = await dataManager.batchSyncCapsules()
             
+            // ✅ 防止重复保存：保存完成后重置状态
+            isSaving = false
             dismiss()
         }
     }

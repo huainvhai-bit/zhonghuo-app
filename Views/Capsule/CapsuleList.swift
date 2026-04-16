@@ -113,32 +113,54 @@ struct CapsuleList: View {
     }
     
     private var statsCard: some View {
-        VStack(spacing: 12) {
-            HStack {
+        VStack(spacing: 16) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("⏰ 时光胶囊")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    HStack(spacing: 8) {
+                        Image(systemName: "capsule.fill")
+                            .font(.system(size: 20))
+                        Text("时光胶囊")
+                            .font(.system(size: 20, weight: .bold))
+                    }
+                    .foregroundColor(.white)
                     
                     Text("记录美好，留给未来的自己")
                         .font(.system(size: 13))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
+                        .foregroundColor(.white.opacity(0.85))
                 }
                 
                 Spacer()
                 
-                Text("\(dataManager.capsules.count)")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
+                // 胶囊数量
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(dataManager.capsules.count)")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("个胶囊")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.85))
+                }
             }
             
-            HStack(spacing: 12) {
-                StatItem(icon: "capsule.fill", value: "\(dataManager.capsules.count)", label: "全部", color: .white)
-                StatItem(icon: "clock.fill", value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", color: .white)
-                StatItem(icon: "checkmark.circle.fill", value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", color: .white)
+            // 统计信息
+            HStack(spacing: 0) {
+                StatBox(value: "\(dataManager.capsules.count)", label: "全部", icon: "square.grid.2x2", bgColor: .white.opacity(0.2))
+                
+                Divider()
+                    .background(Color.white.opacity(0.3))
+                    .frame(height: 30)
+                
+                StatBox(value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", icon: "clock.fill", bgColor: .white.opacity(0.2))
+                
+                Divider()
+                    .background(Color.white.opacity(0.3))
+                    .frame(height: 30)
+                
+                StatBox(value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", icon: "checkmark.circle.fill", bgColor: .white.opacity(0.2))
             }
+            .padding(.vertical, 12)
+            .background(Color.white.opacity(0.15))
+            .cornerRadius(12)
         }
         .padding(20)
         .background(
@@ -149,7 +171,7 @@ struct CapsuleList: View {
             )
         )
         .cornerRadius(16)
-        .shadow(color: Color(hex: "6366F1").opacity(0.3), radius: 8, x: 0, y: 4)
+        .shadow(color: Color(hex: "6366F1").opacity(0.25), radius: 10, x: 0, y: 4)
     }
     
     private var filterButtons: some View {
@@ -277,9 +299,9 @@ struct CapsuleCard: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            // 类型图标
+            // 类型图标 - 圆形渐变
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                Circle()
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
@@ -287,7 +309,7 @@ struct CapsuleCard: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 50, height: 50)
+                    .frame(width: 52, height: 52)
                 
                 Image(systemName: iconForType(capsule.type))
                     .font(.system(size: 22, weight: .semibold))
@@ -335,13 +357,13 @@ struct CapsuleCard: View {
             
             // 右侧箭头
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.secondary)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary.opacity(0.6))
         }
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(16)
-        .shadow(color: Color(hex: "6366F1").opacity(0.08), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
     }
     
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
@@ -361,26 +383,28 @@ struct CapsuleCard: View {
 }
 
 // MARK: - 统计项
-struct StatItem: View {
-    let icon: String
+struct StatBox: View {
     let value: String
     let label: String
-    let color: Color
+    let icon: String
+    let bgColor: Color
     
     var body: some View {
-        VStack(spacing: 4) {
+        HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(color)
+                .font(.system(size: 14))
+                .foregroundColor(.white)
             
-            Text(value)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(color)
-            
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundColor(color.opacity(0.8))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.8))
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 }
 

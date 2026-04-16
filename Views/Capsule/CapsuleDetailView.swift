@@ -48,14 +48,6 @@ struct CapsuleDetailView: View {
         }
         .navigationTitle("胶囊详情")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingEditView = true }) {
-                    Image(systemName: "pencil")
-                        .foregroundColor(Color(hex: "6366F1"))
-                }
-            }
-        }
         .sheet(isPresented: $showingPlayer) {
             if let player = player {
                 VideoPlayer(player: player)
@@ -91,36 +83,46 @@ struct CapsuleDetailView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 60, height: 60)
+                        .frame(width: 64, height: 64)
                     
                     Image(systemName: iconForType(capsule.type))
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.system(size: 30, weight: .semibold))
                         .foregroundColor(.white)
                 }
                 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text(capsule.title)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.primary)
                     
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         // 类型标签
                         Text(capsule.type.rawValue)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color(hex: "6366F1"))
-                            .cornerRadius(10)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .cornerRadius(12)
                         
                         // 状态标签
                         HStack(spacing: 4) {
                             Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
-                                .font(.system(size: 12))
+                                .font(.system(size: 11))
                             Text(capsule.isSent ? "已发送" : "待发送")
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, weight: .medium))
                         }
                         .foregroundColor(capsule.isSent ? .green : .orange)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(capsule.isSent ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                        .cornerRadius(12)
                     }
                 }
                 
@@ -130,7 +132,7 @@ struct CapsuleDetailView: View {
         .padding(20)
         .background(Color(.systemBackground))
         .cornerRadius(16)
-        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(hex: "6366F1").opacity(0.08), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - 文字内容卡片
@@ -175,15 +177,21 @@ struct CapsuleDetailView: View {
                 HStack(spacing: 16) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: "6366F1"))
-                            .frame(width: 60, height: 60)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 64, height: 64)
                         
                         Image(systemName: capsule.type == .audio ? "play.fill" : "play.rectangle.fill")
-                            .font(.system(size: 24))
+                            .font(.system(size: 26))
                             .foregroundColor(.white)
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("点击播放")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.primary)
@@ -196,7 +204,8 @@ struct CapsuleDetailView: View {
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.secondary.opacity(0.6))
                 }
                 .padding(16)
                 .background(Color(hex: "F5F5F7"))
@@ -211,7 +220,7 @@ struct CapsuleDetailView: View {
     
     // MARK: - 日期卡片
     private var dateCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             HStack {
                 Image(systemName: "calendar")
                     .foregroundColor(Color(hex: "6366F1"))
@@ -220,40 +229,69 @@ struct CapsuleDetailView: View {
                 Spacer()
             }
             
-            Divider()
-            
-            HStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("发送日期")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+            HStack(spacing: 16) {
+                // 发送日期
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(hex: "6366F1"))
+                        Text("发送日期")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
                     Text(formatSendDate(capsule.sendDate))
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.primary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
-                Spacer()
+                Divider()
+                    .background(Color.secondary.opacity(0.3))
+                    .frame(height: 40)
                 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("创建日期")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                // 创建日期
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(hex: "8B5CF6"))
+                        Text("创建日期")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                    }
                     Text(formatCreateDate(capsule.createdAt))
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.primary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(16)
-        .shadow(color: Color(hex: "6366F1").opacity(0.1), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(hex: "6366F1").opacity(0.08), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - 底部操作按钮
     private var bottomButtons: some View {
         VStack(spacing: 12) {
-            // 删除按钮（放在最下方）
+            // 编辑按钮
+            Button(action: { showingEditView = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16))
+                    Text("编辑胶囊")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color(hex: "6366F1"))
+                .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            
+            // 删除按钮
             Button(action: { showingDeleteAlert = true }) {
                 HStack(spacing: 8) {
                     Image(systemName: "trash.fill")
@@ -300,7 +338,11 @@ struct CapsuleDetailView: View {
         }
         
         player = AVPlayer(url: fileURL)
-        showingPlayer = true
+        
+        // 延迟一下让 player 初始化完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showingPlayer = true
+        }
         print("🎬 播放媒体：\(fileURL)")
     }
     
