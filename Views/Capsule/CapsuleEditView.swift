@@ -283,8 +283,8 @@ struct CapsuleEditView: View {
                 title: title,
                 content: content,
                 type: selectedType,
-                mediaURL: localMediaPath,  // ✅ Bug 修复：保存相对路径
-                mediaServerURL: mediaServerUrl ?? "",
+                mediaURL: localMediaPath.isEmpty ? (existingCapsule?.mediaURL ?? "") : localMediaPath,  // ✅ 保留原有本地路径
+                mediaServerURL: mediaServerUrl ?? existingCapsule?.mediaServerURL ?? "",  // ✅ 保留原有服务器URL
                 sendDate: sendDate,
                 isSent: existingCapsule?.isSent ?? false,
                 createdAt: existingCapsule?.createdAt ?? Date()  // ✅ 修复：编辑模式保持原创建时间
