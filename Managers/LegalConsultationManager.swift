@@ -7,9 +7,13 @@
 //
 
 import Foundation
+import UIKit
 
 class LegalConsultationManager: ObservableObject {
     static let shared = LegalConsultationManager()
+    
+    // 法律咨询电话（示例号码，可配置）
+    private let legalHotlineNumber = "12348"
     
     private init() {}
     
@@ -17,8 +21,28 @@ class LegalConsultationManager: ObservableObject {
     
     /// 拨打法律咨询电话
     func callLegalHotline() {
-        // TODO: 实现法律咨询功能
-        print("🔵 LegalConsultationManager: 拨打法律咨询电话")
+        // ✅ 修复 TODO: 实现法律咨询功能
+        let phoneNumber = legalHotlineNumber.replacingOccurrences(of: " ", with: "")
+        if let phoneURL = URL(string: "tel://\(phoneNumber)") {
+            if UIApplication.shared.canOpenURL(phoneURL) {
+                UIApplication.shared.open(phoneURL, options: [:]) { success in
+                    print("🔵 法律咨询电话拨打\(success ? "成功" : "失败")")
+                }
+            } else {
+                print("⚠️ 无法拨打法律咨询电话：设备不支持")
+            }
+        }
+    }
+    
+    /// 打开法律咨询网页
+    func openLegalConsultationWeb() {
+        // 法律咨询官网（示例）
+        let webURL = "https://www.12348.gov.cn"
+        if let url = URL(string: webURL) {
+            UIApplication.shared.open(url, options: [:]) { success in
+                print("🔵 法律咨询网页打开\(success ? "成功" : "失败")")
+            }
+        }
     }
     
     /// 检查见证人资格
