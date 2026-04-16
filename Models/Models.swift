@@ -418,6 +418,68 @@ struct Asset: Identifiable, Codable {
             }
         }
     }
+    
+    // MARK: - 手动初始化（用于代码创建）
+    init(id: String = UUID().uuidString, type: AssetType, name: String, institution: String = "",
+         balance: Double = 0, accountNumber: String = "", details: [String: String] = [:],
+         createdAt: Date = Date(), deletedAt: Date? = nil) {
+        self.id = id
+        self.type = type
+        self.name = name
+        self.institution = institution
+        self.balance = balance
+        self.accountNumber = accountNumber
+        self.details = details
+        self.createdAt = createdAt
+        self.deletedAt = deletedAt
+    }
+    
+    // MARK: - Codable 字段映射（后端使用 snake_case）
+    enum CodingKeys: String, CodingKey {
+        case id, name, details
+        case type = "type"
+        case institution = "institution"
+        case balance = "balance"
+        case accountNumber = "accountNumber"
+        case createdAt = "created_at"
+        case deletedAt = "deleted_at"
+    }
+    
+    // 🔧 自定义解码逻辑
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        institution = try container.decodeIfPresent(String.self, forKey: .institution) ?? ""
+        balance = try container.decodeIfPresent(Double.self, forKey: .balance) ?? 0
+        accountNumber = try container.decodeIfPresent(String.self, forKey: .accountNumber) ?? ""
+        details = try container.decodeIfPresent([String: String].self, forKey: .details) ?? [:]
+        
+        // 处理 type 字段
+        if let typeString = try container.decodeIfPresent(String.self, forKey: .type) {
+            type = AssetType(rawValue: typeString) ?? .bank
+        } else {
+            type = .bank
+        }
+        
+        // 处理 createdAt 日期格式
+        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            createdAt = formatter.date(from: createdAtString) ?? Date()
+        } else {
+            createdAt = Date()
+        }
+        
+        // 处理 deletedAt 日期格式
+        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            deletedAt = formatter.date(from: deletedAtString)
+        } else {
+            deletedAt = nil
+        }
+    }
 }
 
 // MARK: - 见证人
