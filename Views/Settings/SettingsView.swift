@@ -313,8 +313,13 @@ struct SettingsView: View {
                     // ✅ 检查更新按钮
                     Button(action: {
                         print("🔍 手动检查版本更新...")
-                        // TODO: 从服务器获取最新版本信息
-                        // VersionCheckManager.shared.checkVersion(...)
+                        // ✅ 修复 TODO: 从 systemConfig 获取版本信息
+                        let config = DataManager.shared.systemConfig
+                        VersionCheckManager.shared.checkVersion(
+                            serverVersion: config.latestVersion,
+                            forceUpdateVersion: config.forceUpdateVersion,
+                            updateUrl: config.updateUrl
+                        )
                     }) {
                         HStack {
                             Image(systemName: "arrow.down.circle")

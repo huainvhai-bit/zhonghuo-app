@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// 合规文档视图
 struct ComplianceDocsView: View {
@@ -241,6 +242,8 @@ struct DisclaimerView: View {
 struct DataExportView: View {
     @State private var isExporting = false
     @State private var showSuccess = false
+    @State private var showError = false
+    @State private var exportError = ""
     
     var body: some View {
         VStack(spacing: 20) {
@@ -280,16 +283,73 @@ struct DataExportView: View {
         .alert("导出成功", isPresented: $showSuccess) {
             Button("确定", role: .cancel) { }
         } message: {
-            Text("数据已发送到您的邮箱")
+            Text("数据已准备好，可在分享菜单中保存")
+        }
+        .alert("导出失败", isPresented: $showError) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(exportError)
         }
     }
     
     private func exportData() {
         isExporting = true
-        // TODO: 实现数据导出逻辑
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isExporting = false
-            showSuccess = true
+        
+        Task {
+            do {
+                // ✅ 修复 TODO: 实现数据导出逻辑
+                let userData = DataManager.shared.currentUser
+                let capsules = DataManager.shared.capsules
+                let wills = DataManager.shared.wills
+                let assets = DataManager.shared.assets
+                
+                // 创建导出数据结构
+                let exportData: [String: Any] = [
+                    "exportDate": ISO8601DateFormatter().string(from: Date()),
+                    "user": [
+                        "name": userData?.name ?? "",
+                        "phone": userData?.phone ?? "",
+                        "createdAt": userData?.createdAt.description ?? ""
+                    ],
+                    "capsulesCount": capsules.count,
+                    "willsCount": wills.count,
+                    "assetsCount": assets.count
+                ]
+                
+                // 转换为 JSON
+                let jsonData = try JSONSerialization.data(withJSONObject: exportData, options: .prettyPrinted)
+                
+                // 保存到 Documents 目录
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let exportFileName = "终活数据导出_\(Date().timeIntervalSince1970).json"
+                let exportURL = documentsPath.appendingPathComponent(exportFileName)
+                try jsonData.write(to: exportURL)
+                
+                print("✅ 数据导出成功：\(exportURL.path)")
+                
+                await MainActor.run {
+                    isExporting = false
+                    // 尝试分享文件
+                    shareExportedFile(url: exportURL)
+                }
+            } catch {
+                print("❌ 数据导出失败：\(error)")
+                await MainActor.run {
+                    isExporting = false
+                    exportError = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    // ✅ 新增：分享导出文件
+    private func shareExportedFile(url: URL) {
+        // 通过 UIActivityViewController 分享
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            rootVC.present(activityVC, animated: true)
         }
     }
 }

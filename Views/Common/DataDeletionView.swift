@@ -207,11 +207,27 @@ struct DataDeletionView: View {
     }
     
     private func deleteLocalData() async {
-        // 删除 Core Data 数据
-        // dataManager.deleteAllData()  // TODO: 实现
+        // ✅ 修复 TODO: 实现删除本地数据
+        
+        // 清除 UserDefaults
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.synchronize()
         
         // 删除文件缓存
-       try? FileManager.default.removeItem(at: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0])
+        try? FileManager.default.removeItem(at: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0])
+        
+        // 删除 Documents 目录中的缓存文件
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileManager = FileManager.default
+        if let files = try? fileManager.contentsOfDirectory(atPath: documentsPath.path) {
+            for file in files {
+                let filePath = documentsPath.appendingPathComponent(file).path
+                try? fileManager.removeItem(atPath: filePath)
+            }
+        }
+        
+        print("✅ 本地数据已清除")
     }
     
     private func deleteServerData() async {
