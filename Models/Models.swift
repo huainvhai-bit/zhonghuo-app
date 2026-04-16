@@ -985,7 +985,9 @@ extension AssetInput {
             "id": id,
             "type": type,
             "name": name,
-            "balance": balance
+            "institution": institution,
+            "balance": balance,
+            "accountNumber": accountNumber
         ]
         if let details = details { dict["details"] = details }
         if let deletedAt = deletedAt { dict["deletedAt"] = deletedAt }
