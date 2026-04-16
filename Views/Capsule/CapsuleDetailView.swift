@@ -274,8 +274,16 @@ struct CapsuleDetailView: View {
     private func playMedia() {
         var mediaPath = capsule.mediaURL
         
-        // 处理相对路径
-        if !mediaPath.isEmpty && !mediaPath.hasPrefix("/") {
+        // ✅ 修复：正确的路径处理逻辑
+        if mediaPath.contains("Documents/TimeCapsules") {
+            // 旧数据：已经是完整的Documents路径，直接使用
+            print("📍 使用旧数据路径：\(mediaPath)")
+        } else if !mediaPath.isEmpty && mediaPath.hasPrefix("/") {
+            // 新数据：相对路径格式 /TimeCapsules/xxx，需要拼接Documents
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            mediaPath = documentsPath.path + mediaPath
+        } else if !mediaPath.isEmpty {
+            // 纯相对路径：TimeCapsules/xxx，需要拼接完整Documents路径
             let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             mediaPath = documentsPath.appendingPathComponent(mediaPath).path
         }

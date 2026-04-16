@@ -168,9 +168,24 @@ struct CapsuleEditView: View {
                 
                 // ✅ Bug 修复：加载已有胶囊的媒体文件
                 if !existingCapsule.mediaURL.isEmpty {
-                    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    let mediaURL = documentsPath.appendingPathComponent(String(existingCapsule.mediaURL.dropFirst()))
-                    if FileManager.default.fileExists(atPath: mediaURL.path) {
+                    var mediaPath = existingCapsule.mediaURL
+                    
+                    // ✅ 修复：正确的路径处理逻辑（与 CapsuleDetailView 一致）
+                    if mediaPath.contains("Documents/TimeCapsules") {
+                        // 旧数据：已经是完整的Documents路径，直接使用
+                        print("📍 使用旧数据路径：\(mediaPath)")
+                    } else if mediaPath.hasPrefix("/") {
+                        // 新数据格式：/TimeCapsules/xxx
+                        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                        mediaPath = documentsPath.path + mediaPath
+                    } else {
+                        // 纯相对路径
+                        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                        mediaPath = documentsPath.appendingPathComponent(mediaPath).path
+                    }
+                    
+                    let mediaURL = URL(fileURLWithPath: mediaPath)
+                    if FileManager.default.fileExists(atPath: mediaPath) {
                         if existingCapsule.type == .audio {
                             recordedAudioURL = mediaURL
                         } else if existingCapsule.type == .video {
