@@ -560,11 +560,16 @@ struct Witness: Identifiable, Codable {
         idNumber = try container.decodeIfPresent(String.self, forKey: .idNumber) ?? ""
         notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
         
-        // 处理 is_confirmed (0/1) -> Bool 转换
-        if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-            isConfirmed = isConfirmedInt != 0
-        } else {
-            isConfirmed = false
+        // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
+        do {
+            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+                isConfirmed = isConfirmedInt != 0
+            } else {
+                isConfirmed = false
+            }
+        } catch {
+            // 如果是 Bool 类型，直接获取
+            isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
         }
         
         // 处理 confirmedAt 日期格式
@@ -760,11 +765,15 @@ struct User: Codable, Identifiable {
             phone = try container.decode(String.self, forKey: .phone)
             relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
             
-            // 处理 is_confirmed (0/1) -> Bool 转换
-            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-                isConfirmed = isConfirmedInt != 0
-            } else {
-                isConfirmed = false
+            // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
+            do {
+                if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+                    isConfirmed = isConfirmedInt != 0
+                } else {
+                    isConfirmed = false
+                }
+            } catch {
+                isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
             }
             
             // 处理 createdAt 日期格式
@@ -855,11 +864,15 @@ struct UserSettings: Codable {
             phone = try container.decode(String.self, forKey: .phone)
             relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
             
-            // 处理 is_confirmed (0/1) -> Bool 转换
-            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-                isConfirmed = isConfirmedInt != 0
-            } else {
-                isConfirmed = false
+            // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
+            do {
+                if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
+                    isConfirmed = isConfirmedInt != 0
+                } else {
+                    isConfirmed = false
+                }
+            } catch {
+                isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
             }
             
             // 处理 createdAt 日期格式
