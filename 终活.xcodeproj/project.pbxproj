@@ -176,7 +176,7 @@
 		D5AD1F310 /* Utils/Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/Logger.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F320 /* Utils/NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/NetworkService.swift; sourceTree = SOURCE_ROOT; };
 		D5AD1F330 /* Utils/NetworkUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils/NetworkUtils.swift; sourceTree = SOURCE_ROOT; };
-	8B99ADA4032E458FAA379BBFE293658F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+	8B99ADA4032E458FAA379BBFE293658F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -274,6 +274,7 @@
 				331FC1DA2F8A394A00C04D34 /* FamilyArchiveView.swift */,
 				331FC1C72F8A391800C04D34 /* VersionCheckManager.swift */,
 				331FC1C82F8A391800C04D34 /* WillTemplateManager.swift */,
+				8B99ADA4032E458FAA379BBFE293658F /* Assets.xcassets */,
 			);
 			sourceTree = "<group>";
 		};
