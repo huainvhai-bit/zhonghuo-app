@@ -159,13 +159,17 @@ struct TimeCapsule: Identifiable, Codable {
             }
         }
         
-        // 处理 is_opened (0/1) -> Bool 转换
-        if let isOpenedInt = try container.decodeIfPresent(Int.self, forKey: .isSent) {
+        // 处理 is_opened (0/1 或 true/false) -> Bool 转换
+        do {
+            let isOpenedInt = try container.decode(Int.self, forKey: .isSent)
             isSent = isOpenedInt != 0
-        } else if let isOpenedBool = try container.decodeIfPresent(Bool.self, forKey: .isSent) {
-            isSent = isOpenedBool
-        } else {
-            isSent = false
+        } catch {
+            do {
+                let isOpenedBool = try container.decode(Bool.self, forKey: .isSent)
+                isSent = isOpenedBool
+            } catch {
+                isSent = false
+            }
         }
         
         // 处理 createdAt 日期格式（支持字符串或数字）
@@ -344,11 +348,17 @@ struct WillModule: Identifiable, Codable {
         content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
         template = try container.decodeIfPresent(String.self, forKey: .template)
         
-        // 处理 is_completed (0/1) -> Bool 转换
-        if let isCompletedInt = try container.decodeIfPresent(Int.self, forKey: .isCompleted) {
+        // 处理 is_completed (0/1 或 true/false) -> Bool 转换
+        do {
+            let isCompletedInt = try container.decode(Int.self, forKey: .isCompleted)
             isCompleted = isCompletedInt != 0
-        } else {
-            isCompleted = false
+        } catch {
+            do {
+                let isCompletedBool = try container.decode(Bool.self, forKey: .isCompleted)
+                isCompleted = isCompletedBool
+            } catch {
+                isCompleted = false
+            }
         }
         
         // 处理 createdAt 日期格式（支持字符串或数字）
@@ -645,14 +655,15 @@ struct Witness: Identifiable, Codable {
         
         // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
         do {
-            if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-                isConfirmed = isConfirmedInt != 0
-            } else {
+            let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
+            isConfirmed = isConfirmedInt != 0
+        } catch {
+            do {
+                let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
+                isConfirmed = isConfirmedBool
+            } catch {
                 isConfirmed = false
             }
-        } catch {
-            // 如果是 Bool 类型，直接获取
-            isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
         }
         
         // 处理 confirmedAt 日期格式（支持字符串或数字）
@@ -887,13 +898,15 @@ struct User: Codable, Identifiable {
             
             // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
             do {
-                if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-                    isConfirmed = isConfirmedInt != 0
-                } else {
+                let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
+                isConfirmed = isConfirmedInt != 0
+            } catch {
+                do {
+                    let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
+                    isConfirmed = isConfirmedBool
+                } catch {
                     isConfirmed = false
                 }
-            } catch {
-                isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
             }
             
             // 处理 createdAt 日期格式（支持字符串或数字）
@@ -1012,13 +1025,15 @@ struct UserSettings: Codable {
             
             // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
             do {
-                if let isConfirmedInt = try container.decodeIfPresent(Int.self, forKey: .isConfirmed) {
-                    isConfirmed = isConfirmedInt != 0
-                } else {
+                let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
+                isConfirmed = isConfirmedInt != 0
+            } catch {
+                do {
+                    let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
+                    isConfirmed = isConfirmedBool
+                } catch {
                     isConfirmed = false
                 }
-            } catch {
-                isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
             }
             
             // 处理 createdAt 日期格式
