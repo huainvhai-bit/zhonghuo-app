@@ -51,8 +51,11 @@ class DataManager: ObservableObject {
     @Published var currentUser: User?
     @Published var emergencyContacts: [User.EmergencyContact] = []
     @Published var capsules: [TimeCapsule] = []
+    @Published var deletedCapsules: [TimeCapsule] = []  // 🔥 跟踪已删除的胶囊（用于同步删除到服务器）
     @Published var willModules: [WillModule] = []
+    @Published var deletedWillModules: [WillModule] = []  // 🔥 跟踪已删除的遗嘱（用于同步删除到服务器）
     @Published var assets: [Asset] = []
+    @Published var deletedAssets: [Asset] = []  // 🔥 跟踪已删除的资产（用于同步删除到服务器）
     @Published var witnesses: [Witness] = []
     @Published var familyMembers: [FamilyInfo] = []  // ✅ 家人成员
     @Published var checklistItems: [ChecklistItem] = []
@@ -785,13 +788,81 @@ class DataManager: ObservableObject {
     }
     
     func deleteAsset(_ asset: Asset) {
+        // 🔥 软删除：标记 deletedAt 而不是直接移除
+        var deletedAsset = asset
+        deletedAsset.deletedAt = Date()
+        
+        // 添加到已删除列表
+        deletedAssets.append(deletedAsset)
+        
+        // 从当前列表移除
         assets.removeAll { $0.id == asset.id }
         saveAssetsToFile()
+        
+        // 发送数据变更通知
+        NotificationCenter.default.post(name: NSNotification.Name("AssetChanged"), object: nil)
+        
+        // 异步同步删除到服务器
+        Task {
+            await syncDeletedAssets()
+        }
     }
     
     func deleteAssets(at offsets: IndexSet) {
+        // 🔥 软删除：标记所有要删除的资产
+        for index in offsets {
+            var deletedAsset = assets[index]
+            deletedAsset.deletedAt = Date()
+            deletedAssets.append(deletedAsset)
+        }
+        
+        // 从当前列表移除
         assets.remove(atOffsets: offsets)
         saveAssetsToFile()
+        
+        // 发送数据变更通知
+        NotificationCenter.default.post(name: NSNotification.Name("AssetChanged"), object: nil)
+        
+        // 异步同步删除到服务器
+        Task {
+            await syncDeletedAssets()
+        }
+    }
+    
+    /// 同步已删除的资产到服务器
+    private func syncDeletedAssets() async {
+        guard !deletedAssets.isEmpty else { return }
+        
+        print("💰 同步已删除资产到服务器：共 \(deletedAssets.count) 个")
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let inputs = deletedAssets.map { asset -> AssetInput in
+            AssetInput(
+                id: asset.id,
+                type: asset.type.rawValue,
+                name: asset.name,
+                institution: asset.institution,
+                balance: asset.balance,
+                accountNumber: asset.accountNumber,
+                details: asset.details,
+                deletedAt: asset.deletedAt != nil ? formatter.string(from: asset.deletedAt!) : nil
+            )
+        }
+        
+        do {
+            let result = try await APIManager.shared.batchSyncAssets(inputs.map { $0.toDictionary() })
+            
+            if let batchData = result["data"] as? [String: Any],
+               let syncResult = batchData["batchSyncAssets"] as? [String: Any],
+               let deleted = syncResult["deleted"] as? Int {
+                print("✅ 已删除资产同步成功：\(deleted) 个")
+                deletedAssets.removeAll()
+            }
+        } catch {
+            print("❌ 已删除资产同步失败：\(error)")
+        }
     }
     
     func updateAsset(_ asset: Asset) {
@@ -862,9 +933,17 @@ class DataManager: ObservableObject {
     }
     
     func deleteWillModule(_ module: WillModule) {
+        // 🔥 软删除：标记 deletedAt 而不是直接移除
+        var deletedModule = module
+        deletedModule.deletedAt = Date()
+        
+        // 添加到已删除列表
+        deletedWillModules.append(deletedModule)
+        
+        // 从当前列表移除
         willModules.removeAll { $0.id == module.id }
         saveWillModulesToFile()
-        print("📜 遗嘱模块已从本地删除，准备同步到服务器...")
+        print("📜 遗嘱模块已标记删除，准备同步到服务器...")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
         UserManager.shared.updateWillModulesCount(willModules.count)
@@ -874,11 +953,41 @@ class DataManager: ObservableObject {
         
         // 异步同步删除到服务器
         Task {
-            if let _ = await batchSyncWills() {
-                print("✅ 遗嘱删除同步成功")
-            } else {
-                print("⚠️ 遗嘱删除同步失败")
+            await syncDeletedWillModules()
+        }
+    }
+    
+    /// 同步已删除的遗嘱到服务器
+    private func syncDeletedWillModules() async {
+        guard !deletedWillModules.isEmpty else { return }
+        
+        print("📜 同步已删除遗嘱到服务器：共 \(deletedWillModules.count) 个")
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let inputs = deletedWillModules.map { module -> WillInput in
+            WillInput(
+                id: module.id,
+                type: module.type.rawValue,
+                title: module.title,
+                subtitle: module.subtitle,
+                content: module.content,
+                deletedAt: module.deletedAt != nil ? formatter.string(from: module.deletedAt!) : nil
+            )
+        }
+        
+        do {
+            let result = try await APIManager.shared.batchSyncWills(inputs.map { $0.toDictionary() })
+            
+            if let batchData = result["data"] as? [String: Any],
+               let syncResult = batchData["batchSyncWills"] as? [String: Any],
+               let deleted = syncResult["deleted"] as? Int {
+                print("✅ 已删除遗嘱同步成功：\(deleted) 个")
+                deletedWillModules.removeAll()
             }
+        } catch {
+            print("❌ 已删除遗嘱同步失败：\(error)")
         }
     }
     
@@ -903,6 +1012,14 @@ class DataManager: ObservableObject {
     }
     
     func deleteCapsule(_ capsule: TimeCapsule) {
+        // 🔥 软删除：标记 deletedAt 而不是直接移除
+        var deletedCapsule = capsule
+        deletedCapsule.deletedAt = Date()
+        
+        // 将胶囊添加到已删除列表（用于同步删除到服务器）
+        deletedCapsules.append(deletedCapsule)
+        
+        // 从当前列表移除
         capsules.removeAll { $0.id == capsule.id }
         saveCapsulesToFile()
         
@@ -912,11 +1029,46 @@ class DataManager: ObservableObject {
         // 发送数据变更通知（触发实时同步）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
-        // 异步同步到服务器
+        // 异步同步删除到服务器（传递 deletedAt 标记）
         Task {
-            if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            await syncDeletedCapsules()
+        }
+    }
+    
+    /// 同步已删除的胶囊到服务器
+    private func syncDeletedCapsules() async {
+        guard !deletedCapsules.isEmpty else { return }
+        
+        print("📦 同步已删除胶囊到服务器：共 \(deletedCapsules.count) 个")
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let inputs = deletedCapsules.map { capsule -> CapsuleInput in
+            CapsuleInput(
+                id: capsule.id,
+                title: capsule.title,
+                type: capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
+                mediaType: capsule.type.rawValue == "文字" ? "text" : (capsule.type.rawValue == "语音" ? "audio" : "video"),
+                content: capsule.content,
+                openAt: formatter.string(from: capsule.sendDate),
+                deletedAt: capsule.deletedAt != nil ? formatter.string(from: capsule.deletedAt!) : nil
+            )
+        }
+        
+        do {
+            let result = try await APIManager.shared.batchSyncCapsules(inputs.map { $0.toDictionary() })
+            
+            // 解析服务器返回的同步结果
+            if let batchData = result["data"] as? [String: Any],
+               let syncResult = batchData["batchSyncCapsules"] as? [String: Any],
+               let deleted = syncResult["deleted"] as? Int {
+                print("✅ 已删除胶囊同步成功：\(deleted) 个")
+                // 清空已删除列表（同步成功）
+                deletedCapsules.removeAll()
             }
+        } catch {
+            print("❌ 已删除胶囊同步失败：\(error)")
         }
     }
     
