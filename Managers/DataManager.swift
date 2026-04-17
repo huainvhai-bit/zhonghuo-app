@@ -367,10 +367,22 @@ class DataManager: ObservableObject {
     // 其他数据加载方法...
     func loadCapsulesFromFile() -> [TimeCapsule] {
         let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json")
-        if let data = try? Data(contentsOf: path) {
-            return (try? JSONDecoder().decode([TimeCapsule].self, from: data)) ?? []
+        print("📂 尝试加载胶囊文件：\(path.path)")
+        
+        guard fileManager.fileExists(atPath: path.path) else {
+            print("⚠️ 胶囊文件不存在")
+            return []
         }
-        return []
+        
+        do {
+            let data = try Data(contentsOf: path)
+            let capsules = try JSONDecoder().decode([TimeCapsule].self, from: data)
+            print("✅ 胶囊文件加载成功：\(capsules.count) 个")
+            return capsules
+        } catch {
+            print("❌ 胶囊文件加载失败：\(error)")
+            return []
+        }
     }
     
     func loadWillModulesFromFile() -> [WillModule] {
@@ -456,10 +468,15 @@ class DataManager: ObservableObject {
     }
     
     func saveCapsulesToFile() {
+        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json")
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        if let data = try? encoder.encode(capsules) {
-            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json"))
+        do {
+            let data = try encoder.encode(capsules)
+            try data.write(to: path)
+            print("✅ 胶囊已保存到文件：\(path.path), 数量：\(capsules.count)")
+        } catch {
+            print("❌ 胶囊保存失败：\(error), 路径：\(path.path)")
         }
     }
     
@@ -909,7 +926,9 @@ class DataManager: ObservableObject {
             print("⚠️ 胶囊 \(capsule.id) 已存在，跳过添加")
             return
         }
+        print("📦 addCapsule: 添加前数量=\(capsules.count)")
         capsules.append(capsule)
+        print("📦 addCapsule: 添加后数量=\(capsules.count)")
         saveCapsulesToFile()
         print("📦 胶囊已添加到本地，准备同步到服务器...")
         
