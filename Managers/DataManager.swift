@@ -1641,16 +1641,21 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 从云端恢复数据到本地（会覆盖本地数据）
+    /// ⚠️ 从云端恢复数据到本地（仅用于换手机/数据丢失时）
+    /// ⚠️ 警告：此操作会覆盖本地数据！仅在用户明确要求恢复时调用
     @MainActor
     func restoreFromCloud() async throws {
-        print("☁️ ====== 开始从云端恢复数据 ======")
+        print("☁️ ====== 开始从云端恢复数据（危险操作） ======")
+        
+        // ⚠️ 警告：即将用服务器数据覆盖本地数据
+        // 保存本地数据作为备份（以防万一）
+        let localBackup = capsules
         
         // 1. 下载服务器数据
         let serverData = try await downloadUserData(type: "all")
         
-        // 2. 解析胶囊数据
-        if let capsulesData = serverData["capsules"] as? [[String: Any]] {
+        // 2. 解析胶囊数据（仅在服务器有数据时）
+        if let capsulesData = serverData["capsules"] as? [[String: Any]], !capsulesData.isEmpty {
             capsules.removeAll()
             for item in capsulesData {
                 do {
@@ -1661,7 +1666,12 @@ class DataManager: ObservableObject {
                     print("⚠️ 解析胶囊失败：\(error)")
                 }
             }
-            print("✅ 恢复胶囊：\(capsules.count) 个")
+            print("✅ 从云端恢复胶囊：\(capsules.count) 个（本地备份：\(localBackup.count) 个）")
+            saveCapsulesToFile()
+        } else {
+            print("⚠️ 服务器无胶囊数据，保留本地数据：\(localBackup.count) 个")
+            // 服务器没有数据，保留本地数据
+            capsules = localBackup
         }
         
         // 3. 解析遗嘱数据

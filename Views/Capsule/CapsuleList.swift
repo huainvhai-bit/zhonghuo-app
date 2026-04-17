@@ -88,11 +88,18 @@ struct CapsuleList: View {
         .onAppear {
             setupNavigationBar()
             
-            // 📥 从文件加载胶囊数据
-            let loadedCapsules = dataManager.loadCapsulesFromFile()
-            dataManager.capsules = loadedCapsules
+            // ⚠️ 重要：本地数据优先！只在本地数据为空时从文件加载
+            // 避免服务器数据覆盖本地数据
+            if dataManager.capsules.isEmpty {
+                print("📂 本地胶囊为空，从文件加载...")
+                let loadedCapsules = dataManager.loadCapsulesFromFile()
+                dataManager.capsules = loadedCapsules
+                print("📂 已加载胶囊：\(loadedCapsules.count) 个")
+            } else {
+                print("📂 本地已有胶囊：\(dataManager.capsules.count) 个，优先使用本地数据")
+            }
             
-            // 📤 同步胶囊到云端
+            // 📤 同步胶囊到云端（仅上传，不覆盖本地）
             Task { @MainActor in
                 try? await dataManager.batchSyncCapsules()
             }
