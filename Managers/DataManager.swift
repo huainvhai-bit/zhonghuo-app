@@ -1034,10 +1034,12 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncCapsules(inputs.map { $0.toDictionary() })
             
-            // ✅ 解析服务器返回的同步结果
-            let total = result["total"] as? Int ?? 0
-            let created = result["created"] as? Int ?? 0
-            let updated = result["updated"] as? Int ?? 0
+            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
+            let batchData = result["data"] as? [String: Any]
+            let syncResult = batchData?["batchSyncCapsules"] as? [String: Any]
+            let total = syncResult?["total"] as? Int ?? 0
+            let created = syncResult?["created"] as? Int ?? 0
+            let updated = syncResult?["updated"] as? Int ?? 0
             print("✅ 胶囊同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             // 🔥 同步成功后标记为已备份（✅ 已在 @MainActor 中，无需额外 Task）
@@ -1084,10 +1086,12 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncWills(inputs.map { $0.toDictionary() })
             
-            // ✅ 解析服务器返回的同步结果
-            let total = result["total"] as? Int ?? 0
-            let created = result["created"] as? Int ?? 0
-            let updated = result["updated"] as? Int ?? 0
+            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
+            let batchData = result["data"] as? [String: Any]
+            let syncResult = batchData?["batchSyncWills"] as? [String: Any]
+            let total = syncResult?["total"] as? Int ?? 0
+            let created = syncResult?["created"] as? Int ?? 0
+            let updated = syncResult?["updated"] as? Int ?? 0
             print("✅ 遗嘱同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             return (total, created, updated)
@@ -1127,10 +1131,12 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs.map { $0.toDictionary() })
             
-            // ✅ 解析服务器返回的同步结果
-            let total = result["total"] as? Int ?? 0
-            let created = result["created"] as? Int ?? 0
-            let updated = result["updated"] as? Int ?? 0
+            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
+            let batchData = result["data"] as? [String: Any]
+            let syncResult = batchData?["batchSyncEmergencyContacts"] as? [String: Any]
+            let total = syncResult?["total"] as? Int ?? 0
+            let created = syncResult?["created"] as? Int ?? 0
+            let updated = syncResult?["updated"] as? Int ?? 0
             print("✅ 紧急联系人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             return (total, created, updated)
@@ -1166,10 +1172,12 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncWitnesses(inputs.map { $0.toDictionary() })
             
-            // ✅ 解析服务器返回的同步结果
-            let total = result["total"] as? Int ?? 0
-            let created = result["created"] as? Int ?? 0
-            let updated = result["updated"] as? Int ?? 0
+            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
+            let batchData = result["data"] as? [String: Any]
+            let syncResult = batchData?["batchSyncWitnesses"] as? [String: Any]
+            let total = syncResult?["total"] as? Int ?? 0
+            let created = syncResult?["created"] as? Int ?? 0
+            let updated = syncResult?["updated"] as? Int ?? 0
             print("✅ 见证人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             return (total, created, updated)
@@ -1199,10 +1207,12 @@ class DataManager: ObservableObject {
         do {
             let result = try await APIManager.shared.batchSyncAssets(inputs.map { $0.toDictionary() })
             
-            // ✅ 解析服务器返回的同步结果
-            let total = result["total"] as? Int ?? 0
-            let created = result["created"] as? Int ?? 0
-            let updated = result["updated"] as? Int ?? 0
+            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
+            let batchData = result["data"] as? [String: Any]
+            let syncResult = batchData?["batchSyncAssets"] as? [String: Any]
+            let total = syncResult?["total"] as? Int ?? 0
+            let created = syncResult?["created"] as? Int ?? 0
+            let updated = syncResult?["updated"] as? Int ?? 0
             print("✅ 资产同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             return (total, created, updated)
@@ -1522,8 +1532,10 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["checkIn"] as? [String: Any] {
-            return data
+        // ✅ 解析 GraphQL 嵌套响应
+        if let data = result["data"] as? [String: Any],
+           let checkInData = data["checkIn"] as? [String: Any] {
+            return checkInData
         }
         throw APIError.networkError
     }
