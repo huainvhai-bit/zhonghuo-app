@@ -137,13 +137,26 @@ struct TimeCapsule: Identifiable, Codable {
         mediaServerURL = try container.decodeIfPresent(String.self, forKey: .mediaServerURL) ?? ""
         mediaDuration = try container.decodeIfPresent(Double.self, forKey: .mediaDuration) ?? 0
         
-        // 处理日期格式：后端返回 "yyyy-MM-dd HH:mm:ss"
-        if let sendDateString = try container.decodeIfPresent(String.self, forKey: .sendDate) {
+        // 处理日期格式：支持字符串 "yyyy-MM-dd HH:mm:ss" 或数字（Unix时间戳）
+        // 使用 do-catch 尝试多种类型，因为 decodeIfPresent 在类型不匹配时会抛异常
+        do {
+            let sendDateString = try container.decode(String.self, forKey: .sendDate)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             sendDate = formatter.date(from: sendDateString) ?? Date()
-        } else {
-            sendDate = Date()
+        } catch {
+            // 可能 是数字类型，尝试作为时间戳解码
+            do {
+                let sendDateTimestamp = try container.decode(Double.self, forKey: .sendDate)
+                sendDate = Date(timeIntervalSince1970: sendDateTimestamp)
+            } catch {
+                do {
+                    let sendDateTimestamp = try container.decode(Int.self, forKey: .sendDate)
+                    sendDate = Date(timeIntervalSince1970: Double(sendDateTimestamp))
+                } catch {
+                    sendDate = Date()
+                }
+            }
         }
         
         // 处理 is_opened (0/1) -> Bool 转换
@@ -155,22 +168,44 @@ struct TimeCapsule: Identifiable, Codable {
             isSent = false
         }
         
-        // 处理 createdAt 日期格式
-        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+        // 处理 createdAt 日期格式（支持字符串或数字）
+        do {
+            let createdAtString = try container.decode(String.self, forKey: .createdAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             createdAt = formatter.date(from: createdAtString) ?? Date()
-        } else {
-            createdAt = Date()
+        } catch {
+            do {
+                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
+                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+            } catch {
+                do {
+                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
+                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
+                } catch {
+                    createdAt = Date()
+                }
+            }
         }
         
-        // 处理 deletedAt 日期格式
-        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+        // 处理 deletedAt 日期格式（支持字符串或数字）
+        do {
+            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             deletedAt = formatter.date(from: deletedAtString)
-        } else {
-            deletedAt = nil
+        } catch {
+            do {
+                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
+                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
+            } catch {
+                do {
+                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
+                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
+                } catch {
+                    deletedAt = nil
+                }
+            }
         }
         
         cloudBackupStatus = .pending
@@ -316,18 +351,44 @@ struct WillModule: Identifiable, Codable {
             isCompleted = false
         }
         
-        // 处理 createdAt 日期格式
-        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+        // 处理 createdAt 日期格式（支持字符串或数字）
+        do {
+            let createdAtString = try container.decode(String.self, forKey: .createdAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             createdAt = formatter.date(from: createdAtString) ?? Date()
+        } catch {
+            do {
+                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
+                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+            } catch {
+                do {
+                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
+                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
+                } catch {
+                    createdAt = Date()
+                }
+            }
         }
         
-        // 处理 deletedAt 日期格式
-        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+        // 处理 deletedAt 日期格式（支持字符串或数字）
+        do {
+            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             deletedAt = formatter.date(from: deletedAtString)
+        } catch {
+            do {
+                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
+                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
+            } catch {
+                do {
+                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
+                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
+                } catch {
+                    deletedAt = nil
+                }
+            }
         }
     }
     
@@ -462,22 +523,44 @@ struct Asset: Identifiable, Codable {
             type = .bank
         }
         
-        // 处理 createdAt 日期格式
-        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+        // 处理 createdAt 日期格式（支持字符串或数字）
+        do {
+            let createdAtString = try container.decode(String.self, forKey: .createdAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             createdAt = formatter.date(from: createdAtString) ?? Date()
-        } else {
-            createdAt = Date()
+        } catch {
+            do {
+                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
+                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+            } catch {
+                do {
+                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
+                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
+                } catch {
+                    createdAt = Date()
+                }
+            }
         }
         
-        // 处理 deletedAt 日期格式
-        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+        // 处理 deletedAt 日期格式（支持字符串或数字）
+        do {
+            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             deletedAt = formatter.date(from: deletedAtString)
-        } else {
-            deletedAt = nil
+        } catch {
+            do {
+                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
+                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
+            } catch {
+                do {
+                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
+                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
+                } catch {
+                    deletedAt = nil
+                }
+            }
         }
     }
 }
@@ -572,27 +655,64 @@ struct Witness: Identifiable, Codable {
             isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
         }
         
-        // 处理 confirmedAt 日期格式
-        if let confirmedAtString = try container.decodeIfPresent(String.self, forKey: .confirmedAt) {
+        // 处理 confirmedAt 日期格式（支持字符串或数字）
+        do {
+            let confirmedAtString = try container.decode(String.self, forKey: .confirmedAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             confirmedAt = formatter.date(from: confirmedAtString)
-        } else {
-            confirmedAt = nil
+        } catch {
+            do {
+                let confirmedAtTimestamp = try container.decode(Double.self, forKey: .confirmedAt)
+                confirmedAt = Date(timeIntervalSince1970: confirmedAtTimestamp)
+            } catch {
+                do {
+                    let confirmedAtTimestamp = try container.decode(Int.self, forKey: .confirmedAt)
+                    confirmedAt = Date(timeIntervalSince1970: Double(confirmedAtTimestamp))
+                } catch {
+                    confirmedAt = nil
+                }
+            }
         }
         
-        // 处理 createdAt 日期格式
-        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+        // 处理 createdAt 日期格式（支持字符串或数字）
+        do {
+            let createdAtString = try container.decode(String.self, forKey: .createdAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             createdAt = formatter.date(from: createdAtString) ?? Date()
+        } catch {
+            do {
+                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
+                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+            } catch {
+                do {
+                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
+                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
+                } catch {
+                    createdAt = Date()
+                }
+            }
         }
         
-        // 处理 deletedAt 日期格式
-        if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+        // 处理 deletedAt 日期格式（支持字符串或数字）
+        do {
+            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             deletedAt = formatter.date(from: deletedAtString)
+        } catch {
+            do {
+                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
+                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
+            } catch {
+                do {
+                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
+                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
+                } catch {
+                    deletedAt = nil
+                }
+            }
         }
     }
 }
@@ -776,18 +896,44 @@ struct User: Codable, Identifiable {
                 isConfirmed = (try? container.decodeIfPresent(Bool.self, forKey: .isConfirmed)) ?? false
             }
             
-            // 处理 createdAt 日期格式
-            if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            // 处理 createdAt 日期格式（支持字符串或数字）
+            do {
+                let createdAtString = try container.decode(String.self, forKey: .createdAt)
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                 createdAt = formatter.date(from: createdAtString) ?? Date()
+            } catch {
+                do {
+                    let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
+                    createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+                } catch {
+                    do {
+                        let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
+                        createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
+                    } catch {
+                        createdAt = Date()
+                    }
+                }
             }
             
-            // 处理 deletedAt 日期格式
-            if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
+            // 处理 deletedAt 日期格式（支持字符串或数字）
+            do {
+                let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                 deletedAt = formatter.date(from: deletedAtString)
+            } catch {
+                do {
+                    let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
+                    deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
+                } catch {
+                    do {
+                        let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
+                        deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
+                    } catch {
+                        deletedAt = nil
+                    }
+                }
             }
         }
     }
