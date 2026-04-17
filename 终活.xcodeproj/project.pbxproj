@@ -292,6 +292,7 @@
 		A6000000 /* 终活 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A5000001 /* Build configuration list for PBXNativeTarget "终活" */;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 			buildPhases = (
 				A7000000 /* Sources */,
 				A7B4E810 /* Frameworks */,
