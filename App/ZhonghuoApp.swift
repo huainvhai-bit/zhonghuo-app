@@ -296,10 +296,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await LifeCheckStatusManager.shared.loadNotificationConfig()
         }
         
-        // 临时禁用后台任务（修复白屏问题）
-        // startBackgroundTasks()
-        // setupCheckInNotifications()
-        Logger.shared.w("后台任务已临时禁用")
+        // ✅ 启用后台任务
+        startBackgroundTasks()
+        setupCheckInNotifications()
+        Logger.shared.i("后台任务已启用")
         
         Logger.shared.i("终活 App 启动完成")
         return true
