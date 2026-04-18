@@ -18,6 +18,7 @@ struct FamilyGuardView: View {
     @State private var showingBindFamily = false
     @State private var showingShareQR = false
     @State private var showingScanner = false
+    @State private var showingManualInput = false
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var inviteCode = ""
@@ -119,6 +120,14 @@ struct FamilyGuardView: View {
                     }
                 )
             }
+            .sheet(isPresented: $showingManualInput) {
+                ManualInputInviteCodeView(onBound: {
+                    showingManualInput = false
+                    loadFamilyList()
+                }, onCancel: {
+                    showingManualInput = false
+                })
+            }
             .refreshable {
                 await loadFamilyListAsync()
             }
@@ -167,18 +176,16 @@ struct FamilyGuardView: View {
                         showingShareQR = true
                     }
                     
-                    // 3. 手动输入邀请码 - ✅ 修复 #6: 改为导航到二级页面
-                    NavigationLink(destination: ManualInputInviteCodeView(onBound: {
-                        loadFamilyList()
-                    })) {
-                        actionCard(
-                            icon: "textformat",
-                            iconColor: Color(hex: "F59E0B"),
-                            title: "手动输入邀请码",
-                            subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
-                            buttonTitle: "立即输入",
-                            buttonColor: Color(hex: "F59E0B")
-                        ) { }
+                    // 3. 手动输入邀请码 - ✅ 修复 #8: 改用 sheet 方式
+                    actionCard(
+                        icon: "textformat",
+                        iconColor: Color(hex: "F59E0B"),
+                        title: "手动输入邀请码",
+                        subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
+                        buttonTitle: "立即输入",
+                        buttonColor: Color(hex: "F59E0B")
+                    ) {
+                        showingManualInput = true
                     }
                 }
                 
@@ -257,18 +264,16 @@ struct FamilyGuardView: View {
                         showingShareQR = true
                     }
                     
-                    // 3. 手动输入邀请码 - ✅ 修复 #6: 改为导航到二级页面
-                    NavigationLink(destination: ManualInputInviteCodeView(onBound: {
-                        loadFamilyList()
-                    })) {
-                        actionCard(
-                            icon: "textformat",
-                            iconColor: Color(hex: "F59E0B"),
-                            title: "手动输入邀请码",
-                            subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
-                            buttonTitle: "立即输入",
-                            buttonColor: Color(hex: "F59E0B")
-                        ) { }
+                    // 3. 手动输入邀请码 - ✅ 修复 #8: 改用 sheet 方式
+                    actionCard(
+                        icon: "textformat",
+                        iconColor: Color(hex: "F59E0B"),
+                        title: "手动输入邀请码",
+                        subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
+                        buttonTitle: "立即输入",
+                        buttonColor: Color(hex: "F59E0B")
+                    ) {
+                        showingManualInput = true
                     }
                 }
                 
@@ -900,6 +905,7 @@ struct ManualInputInviteCodeView: View {
     @State private var errorMessage = ""
     
     var onBound: (() -> Void)?
+    var onCancel: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 24) {
@@ -963,7 +969,7 @@ struct ManualInputInviteCodeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") { dismiss() }
+                Button("取消") { onCancel?() }
             }
         }
         .alert("绑定失败", isPresented: $showError) {
