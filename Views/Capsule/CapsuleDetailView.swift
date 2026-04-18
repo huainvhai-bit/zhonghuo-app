@@ -310,40 +310,65 @@ struct CapsuleDetailView: View {
     
     // MARK: - 操作方法
     private func playMedia() {
-        var mediaPath = capsule.mediaURL
+        var localPath = capsule.mediaURL
+        let serverPath = capsule.mediaServerURL
         
-        // ✅ 修复：正确的路径处理逻辑
-        if mediaPath.contains("Documents/TimeCapsules") {
-            // 旧数据：已经是完整的Documents路径，直接使用
-            print("📍 使用旧数据路径：\(mediaPath)")
-        } else if !mediaPath.isEmpty && mediaPath.hasPrefix("/") {
-            // 新数据：相对路径格式 /TimeCapsules/xxx，需要拼接Documents
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            mediaPath = documentsPath.path + mediaPath
-        } else if !mediaPath.isEmpty {
-            // 纯相对路径：TimeCapsules/xxx，需要拼接完整Documents路径
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            mediaPath = documentsPath.appendingPathComponent(mediaPath).path
+        print("🎬 playMedia: mediaURL=\(localPath), mediaServerURL=\(serverPath)")
+        
+        // 优先使用本地文件
+        if !localPath.isEmpty {
+            // 处理本地路径
+            if localPath.contains("Documents/TimeCapsules") {
+                // 旧数据：已经是完整的Documents路径
+                print("📍 使用旧数据本地路径：\(localPath)")
+            } else if localPath.hasPrefix("/") {
+                // 相对路径格式 /TimeCapsules/xxx
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                localPath = documentsPath.path + localPath
+            } else {
+                // 纯相对路径
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                localPath = documentsPath.appendingPathComponent(localPath).path
+            }
+            
+            let fileURL = URL(fileURLWithPath: localPath)
+            if FileManager.default.fileExists(atPath: localPath) {
+                player = AVPlayer(url: fileURL)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showingPlayer = true
+                }
+                print("🎬 播放本地媒体：\(fileURL)")
+                return
+            } else {
+                print("⚠️ 本地媒体文件不存在：\(localPath)")
+            }
         }
         
-        guard !mediaPath.isEmpty else {
+        // 本地文件不存在，使用服务器URL在线播放
+        if !serverPath.isEmpty {
+            // 构建完整的服务器URL
+            let baseURL = "http://8.136.41.211:3395"
+            let fullURL: String
+            if serverPath.hasPrefix("/") {
+                fullURL = baseURL + serverPath
+            } else {
+                fullURL = baseURL + "/" + serverPath
+            }
+            
+            guard let url = URL(string: fullURL) else {
+                print("❌ 无效的服务器URL：\(fullURL)")
+                return
+            }
+            
+            print("🌐 在线播放媒体：\(fullURL)")
+            player = AVPlayer(url: url)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showingPlayer = true
+            }
             return
         }
         
-        let fileURL = URL(fileURLWithPath: mediaPath)
-        
-        guard FileManager.default.fileExists(atPath: mediaPath) else {
-            print("⚠️ 媒体文件不存在：\(mediaPath)")
-            return
-        }
-        
-        player = AVPlayer(url: fileURL)
-        
-        // 延迟一下让 player 初始化完成
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showingPlayer = true
-        }
-        print("🎬 播放媒体：\(fileURL)")
+        print("❌ 没有可用的媒体文件（本地和服务器都没有）")
     }
     
     private func deleteCapsule() {
