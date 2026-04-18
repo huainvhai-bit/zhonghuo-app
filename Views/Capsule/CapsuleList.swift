@@ -14,6 +14,7 @@ struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
     @State private var selectedFilter: TimeCapsule.CapsuleType? = nil
     @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
+    @State private var showingUpgradePrompt = false  // ✅ 升级提示
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -41,7 +42,15 @@ struct CapsuleList: View {
                             capsuleList
                             
                             // ✅ 底部新增按钮（仅列表有内容时显示）
-                            Button(action: { showingAddCapsule = true }) {
+                            Button(action: {
+                                // ✅ 检查胶囊数量限制
+                                let membership = MembershipManager.shared
+                                if !membership.canCreateCapsule(currentCount: dataManager.capsules.count) {
+                                    showingUpgradePrompt = true
+                                    return
+                                }
+                                showingAddCapsule = true
+                            }) {
                                 HStack {
                                     Text("+")
                                     Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
@@ -78,6 +87,24 @@ struct CapsuleList: View {
         .sheet(isPresented: $showingAddCapsule) {
             NavigationView {
                 CapsuleEditView(dataManager: dataManager)  // ✅ 新增模式
+            }
+        }
+        .sheet(isPresented: $showingUpgradePrompt) {
+            ZStack {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                
+                CapsuleLimitPromptView(
+                    currentCount: dataManager.capsules.count,
+                    maxCount: MembershipManager.shared.maxCapsules,
+                    onUpgrade: {
+                        showingUpgradePrompt = false
+                        // TODO: 跳转到会员页面
+                    },
+                    onCancel: {
+                        showingUpgradePrompt = false
+                    }
+                )
             }
         }
         .refreshable {

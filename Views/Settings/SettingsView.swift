@@ -61,7 +61,9 @@ struct SettingsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
+    @ObservedObject var membershipManager = MembershipManager.shared  // 👑 会员管理
     @State private var showingEditProfile = false
+    @State private var showingMembershipView = false  // 👑 会员页面
     @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
@@ -128,6 +130,67 @@ struct SettingsView: View {
                         } else {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(.green)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                // 👑 会员服务
+                Section(header: Text("会员服务")) {
+                    Button(action: {
+                        showingMembershipView = true
+                    }) {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 30, height: 30)
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("开通会员")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.primary)
+                                    
+                                    if membershipManager.isPremium {
+                                        Text("已开通")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.green)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.green.opacity(0.1))
+                                            .cornerRadius(4)
+                                    } else {
+                                        Text("推荐")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.orange)
+                                            .cornerRadius(4)
+                                    }
+                                }
+                                
+                                Text(membershipManager.isPremium ? membershipManager.memberExpireDisplay() ?? "会员有效" : "解锁无限胶囊、云端备份、家庭守护")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
                         }
                     }
                     .padding(.vertical, 8)
@@ -427,6 +490,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingEmergencyContact) {
                 EmergencyContactModal(dataManager: dataManager, userManager: userManager)
+            }
+            .sheet(isPresented: $showingMembershipView) {
+                MembershipView()
             }
             .alert("定位权限", isPresented: $showingLocationAlert) {
                 Button("稍后", role: .cancel) {}
