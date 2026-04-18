@@ -616,6 +616,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func performAutoCheckIn() {
+        // 🔴 防重复：10 秒内不重复签到
+        let now = Date()
+        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < 10 {
+            print("⏭️ performAutoCheckIn 跳过重复签到（防重复机制）")
+            return
+        }
+        
+        isAutoSigningIn = true
+        lastAutoSignInTime = now
+        
+        defer {
+            isAutoSigningIn = false
+        }
+        
         let logPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("checkin_log.txt")
         let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
@@ -634,7 +648,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        let now = Date()
         let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
         let intervalHours = user.checkInInterval.hours
         let requiredInterval = intervalHours * 3600
