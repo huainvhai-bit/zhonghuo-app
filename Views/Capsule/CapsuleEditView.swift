@@ -595,10 +595,12 @@ struct CapsuleMediaRecorderView: View {
         // ✅ 根据类型停止录制
         if selectedType == .video {
             // 视频录制：使用回调机制（解决异步时序问题）
-            recorder.onVideoRecordingComplete = { [weak self] url in
+            // 注意：CapsuleMediaRecorderView 是 struct，不需要 weak self
+            let onComplete = onRecordComplete
+            recorder.onVideoRecordingComplete = { [dismiss] url in
                 DispatchQueue.main.async {
-                    self?.onRecordComplete(url)
-                    self?.dismiss()
+                    onComplete(url)
+                    dismiss()
                 }
             }
             recorder.stopRecording()
@@ -751,8 +753,7 @@ class MediaRecorder: NSObject, ObservableObject {
     
     private func startVideoRecording() {
         // ✅ 使用已初始化的 captureSession（由 setupCameraForVideo 创建）
-        guard let captureSession = captureSession,
-              let videoOutput = videoOutput else {
+        guard let videoOutput = videoOutput else {
             print("❌ 摄像头未初始化，无法录制")
             return
         }
