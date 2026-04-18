@@ -101,40 +101,6 @@ struct SettingsView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 
-                // 定位权限
-                Section(header: Text("安全")) {
-                    HStack {
-                        Image(systemName: "location.fill")
-                            .foregroundColor(Color(hex: "6366F1"))
-                            .frame(width: 30)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("定位服务")
-                                .font(.system(size: 16))
-                            
-                            Text(locationStatusText)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        if userManager.locationAuthStatus != .authorizedAlways {
-                            Button(action: {
-                                userManager.requestLocationPermission()
-                                showingLocationAlert = true
-                            }) {
-                                Text("开启")
-                                    .foregroundColor(Color(hex: "6366F1"))
-                            }
-                        } else {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                
                 // 紧急联系人和见证人
                 Section(header: Text("安全")) {
                     NavigationLink(destination: EmergencyContactsView()) {
@@ -220,20 +186,6 @@ struct SettingsView: View {
                     .tint(.orange)
                 }
                 
-                // 🎨 主题设置
-                Section(header: Text("主题设置")) {
-                    Picker("主题", selection: $themeManager.theme) {
-                        Text("跟随系统").tag(ThemeManager.Theme.auto)
-                        Text("浅色模式").tag(ThemeManager.Theme.light)
-                        Text("深色模式").tag(ThemeManager.Theme.dark)
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    Text("选择 App 显示主题，深色模式可保护视力")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-                
                 // 🔋 设备信息
                 Section(header: Text("设备信息")) {
                     VStack(spacing: 12) {
@@ -299,64 +251,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // 关于 - ✅ 修复 #7: 添加版本检测和关于页面
-                Section(header: Text("关于")) {
-                    // ✅ 检查更新按钮
-                    Button(action: {
-                        print("🔍 手动检查版本更新...")
-                        // ✅ 修复 TODO: 从 systemConfig 获取版本信息
-                        let config = DataManager.shared.systemConfig
-                        VersionCheckManager.shared.checkVersion(
-                            serverVersion: config.latestVersion,
-                            forceUpdateVersion: config.forceUpdateVersion,
-                            updateUrl: config.updateUrl
-                        )
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.down.circle")
-                            Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
-                        }
-                        .foregroundColor(.blue)
-                    }
-                    
-                    NavigationLink(destination: aboutView) {
-                        HStack {
-                            Image(systemName: "info.circle")
-                                .foregroundColor(Color(hex: "6366F1"))
-                                .frame(width: 30)
-                            
-                            Text("关于终活")
-                                .font(.system(size: 16))
-                            
-                            Spacer()
-                            
-                            Text("v\(appVersion)")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-                
-                // 退出登录（放在最底部）
-                Section {
-                    Button(action: { showingLogoutConfirm = true }) {
-                        HStack {
-                            Spacer()
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .foregroundColor(.red)
-                            Text(LocalizedStringKey("退出登录"))
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.red)
-                            Spacer()
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
             }
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
