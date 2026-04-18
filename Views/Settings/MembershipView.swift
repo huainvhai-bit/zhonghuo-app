@@ -183,17 +183,6 @@ struct MembershipView: View {
                 isSelected: selectedPlan == "monthly",
                 onTap: { selectedPlan = "monthly" }
             )
-            
-            // 终身
-            PlanCard(
-                name: "终身",
-                price: "¥298",
-                originalPrice: nil,
-                period: "",
-                badge: "最划算",
-                isSelected: selectedPlan == "lifetime",
-                onTap: { selectedPlan = "lifetime" }
-            )
         }
     }
     
@@ -228,7 +217,6 @@ struct MembershipView: View {
         switch selectedPlan {
         case "monthly": return "月卡会员"
         case "yearly": return "年卡会员"
-        case "lifetime": return "终身会员"
         default: return ""
         }
     }
