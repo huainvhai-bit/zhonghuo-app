@@ -481,8 +481,6 @@ struct CapsuleMediaRecorderView: View {
                 Image(systemName: "record.circle")
                     .font(.system(size: 60))
                     .foregroundColor(.red)
-                    .scaleEffect(recorder.isRecording ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: recorder.isRecording)
                 
                 Text("录制中...")
                     .font(.system(size: 18, weight: .medium))
@@ -526,7 +524,7 @@ struct CapsuleMediaRecorderView: View {
                     Circle()
                         .fill(recorder.isRecording ? Color.red : Color.white)
                         .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
-                        .animation(.spring(response: 0.3), value: recorder.isRecording)
+                        .animation(.easeInOut(duration: 0.2), value: recorder.isRecording)
                 }
             }
             

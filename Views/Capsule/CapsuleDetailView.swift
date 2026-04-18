@@ -16,6 +16,7 @@ struct CapsuleDetailView: View {
     @State private var player: AVPlayer?
     @State private var showingDeleteAlert = false
     @State private var showingEditView = false
+    @State private var isPlayerLoading = false  // ✅ 新增：播放器加载状态
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -49,10 +50,21 @@ struct CapsuleDetailView: View {
         .navigationTitle("胶囊详情")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPlayer) {
-            if let player = player {
-                VideoPlayer(player: player)
-                    .ignoresSafeArea()
+            ZStack {
+                if let player = player {
+                    VideoPlayer(player: player)
+                        .ignoresSafeArea()
+                } else if isPlayerLoading {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("加载中...")
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black)
         }
         .sheet(isPresented: $showingEditView) {
             NavigationView {
@@ -343,11 +355,20 @@ struct CapsuleDetailView: View {
             return
         }
         
-        player = AVPlayer(url: fileURL)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showingPlayer = true
+        // ✅ 先显示加载状态
+        isPlayerLoading = true
+        
+        // 创建播放器并显示
+        let newPlayer = AVPlayer(url: fileURL)
+        newPlayer.automaticallyWaitsToMinimizeStalling = true
+        player = newPlayer
+        
+        // 短暂延迟后显示播放器，让UI先更新
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.isPlayerLoading = false
+            self.showingPlayer = true
         }
-        print("🎬 播放本地媒体：\(fileURL)")
+        print("🎬 播放器已准备好：\(fileURL)")
     }
     
     private func deleteCapsule() {
