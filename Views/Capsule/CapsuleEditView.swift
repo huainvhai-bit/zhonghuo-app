@@ -23,6 +23,8 @@ struct CapsuleEditView: View {
     @State private var recordedVideoURL: URL?
     @State private var showingRecorder = false
     @State private var showingPlayer = false
+    @State private var showingUpgradePrompt = false  // ✅ 升级提示
+    @State private var upgradePromptMessage = ""  // ✅ 升级提示信息
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
@@ -49,6 +51,17 @@ struct CapsuleEditView: View {
                             Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
                         }
                         .pickerStyle(.segmented)
+                        .onChange(of: selectedType) { newType in
+                            // ✅ 检查媒体胶囊数量限制
+                            if newType == .audio || newType == .video {
+                                let membership = MembershipManager.shared
+                                let currentMediaCount = dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count
+                                if !membership.canCreateMediaCapsule(currentMediaCount: currentMediaCount) {
+                                    upgradePromptMessage = "语音/视频胶囊已达上限（\(currentMediaCount)/\(membership.maxMediaCapsules)），升级会员可享受更多"
+                                    showingUpgradePrompt = true
+                                }
+                            }
+                        }
                     }
                     .padding(16)
                     .background(Color(.systemBackground))
@@ -231,6 +244,24 @@ struct CapsuleEditView: View {
             Button("确定", role: .cancel) { }
         } message: {
             Text(alertMessage)
+        }
+        .sheet(isPresented: $showingUpgradePrompt) {
+            ZStack {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                
+                MediaCapsuleLimitPromptView(
+                    currentCount: dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count,
+                    onUpgrade: {
+                        showingUpgradePrompt = false
+                        dismiss()  // 关闭当前页面，让用户去会员页面
+                    },
+                    onCancel: {
+                        showingUpgradePrompt = false
+                        selectedType = .text  // 切换回文字类型
+                    }
+                )
+            }
         }
     }
     
