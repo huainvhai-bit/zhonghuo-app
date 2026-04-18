@@ -91,6 +91,9 @@ targets:
         NSMicrophoneUsageDescription: 终活需要访问麦克风以录制语音胶囊
         NSMotionUsageDescription: 终活需要访问运动数据以进行设备监控
         NSPhotoLibraryAddUsageDescription: 终活需要保存到相册以保存时光胶囊内容
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.zhonghuo.app.sms_notify
+          - com.zhonghuo.app.refresh_notifications
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSExceptionDomains:
