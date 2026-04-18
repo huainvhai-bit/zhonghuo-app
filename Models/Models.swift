@@ -796,6 +796,13 @@ struct User: Codable, Identifiable {
     var lastLoginIp: String?
     var checkinCount: Int
     
+    // 会员信息
+    var isPremium: Bool = false
+    var memberType: String? = nil
+    var memberExpireAt: Date? = nil
+    var memberMaxCapsules: Int = 5
+    var memberMaxVideoMinutes: Int = 2
+    
     // 新增身份信息字段
     var ethnicity: String?  // 民族
     var birthday: Date?     // 出生日期
@@ -1483,6 +1490,12 @@ struct UserInfo: Decodable {
     let lastLoginIp: String?
     let checkinCount: Int
     let stats: UserStats
+    // 会员信息
+    let isPremium: Bool?
+    let memberType: String?
+    let memberExpireAt: String?
+    let memberMaxCapsules: Int?
+    let memberMaxVideoMinutes: Int?
 }
 
 struct UserStats: Decodable {

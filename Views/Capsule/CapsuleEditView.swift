@@ -373,6 +373,17 @@ struct CapsuleMediaRecorderView: View {
     @State private var showCameraPreview = false
     @State private var useFrontCamera = true  // ✅ 新增：跟踪摄像头方向
     
+    // 会员时长限制
+    private var maxRecordingSeconds: Int {
+        MembershipManager.shared.maxVideoRecordingSeconds()
+    }
+    
+    // 是否显示倒计时模式
+    private var isCountdownMode: Bool {
+        // 只有媒体胶囊（语音/视频）才有时长限制
+        return selectedType != .text && maxRecordingSeconds > 0
+    }
+    
     var body: some View {
         ZStack {
             // 背景色
@@ -486,10 +497,28 @@ struct CapsuleMediaRecorderView: View {
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
                 
-                Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
-                    .font(.system(size: 36, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
+                // ✅ 时长显示：倒计时模式或计时模式
+                Group {
+                    if isCountdownMode {
+                        // 倒计时模式
+                        let remaining = max(0, maxRecordingSeconds - Int(recordingTime))
+                        Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
+                            .foregroundColor(remaining < 10 ? .orange : .white)
+                    } else {
+                        // 计时模式
+                        Text(String(format: "%02d:%02d", Int(recordingTime) / 60, Int(recordingTime) % 60))
+                            .foregroundColor(.white)
+                    }
+                }
+                .font(.system(size: 36, weight: .bold))
+                .monospacedDigit()
+                
+                // 显示会员时长限制提示
+                if isCountdownMode && !MembershipManager.shared.isPremium {
+                    Text("升级会员可录制\(MembershipManager.Limits.premiumMaxVideoMinutes)分钟")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange)
+                }
             } else {
                 // 待机状态
                 Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
@@ -614,8 +643,14 @@ struct CapsuleMediaRecorderView: View {
     
     private func startTimer() {
         recordingTime = 0
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            recordingTime += 1
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] _ in
+            self.recordingTime += 1
+            
+            // ✅ 达到最大时长时自动停止
+            if self.isCountdownMode && Int(self.recordingTime) >= self.maxRecordingSeconds {
+                print("⏱️ 达到最大录制时长 \(self.maxRecordingSeconds) 秒，自动停止")
+                self.stopRecording()
+            }
         }
     }
 }
