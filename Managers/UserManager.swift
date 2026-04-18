@@ -1312,6 +1312,13 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let createdAt = userDict["createdAt"] as? String ?? ""
                 let updatedAt = userDict["updatedAt"] as? String ?? ""
                 
+                // 解析会员信息
+                let isPremium = userDict["isPremium"] as? Bool ?? false
+                let memberType = userDict["memberType"] as? String
+                let memberExpireAtString = userDict["memberExpireAt"] as? String
+                let memberMaxCapsules = userDict["memberMaxCapsules"] as? Int ?? 5
+                let memberMaxVideoMinutes = userDict["memberMaxVideoMinutes"] as? Int ?? 2
+                
                 // 解析统计信息
                 var emergencyContactsCount = 0
                 var witnessesCount = 0
