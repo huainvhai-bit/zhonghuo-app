@@ -281,7 +281,7 @@ class MembershipManager: ObservableObject {
         if maxVideoMinutes == 0 { maxVideoMinutes = Limits.freeMaxVideoMinutes }
     }
     
-    // MARK: - 激活会员（测试用）
+    // MARK: - 激活会员
     func activatePremium(type: String = "yearly") {
         isPremium = true
         memberType = type
@@ -289,22 +289,59 @@ class MembershipManager: ObservableObject {
         switch type {
         case "monthly":
             memberExpireAt = Calendar.current.date(byAdding: .month, value: 1, to: Date())
-            maxCapsules = 20
-            maxVideoMinutes = 5
+            maxCapsules = serverLimits.premiumMaxCapsules
+            maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
         case "yearly":
             memberExpireAt = Calendar.current.date(byAdding: .year, value: 1, to: Date())
-            maxCapsules = 20
-            maxVideoMinutes = 5
-        case "lifetime":
-            memberExpireAt = nil
-            maxCapsules = 20
-            maxVideoMinutes = 5
+            maxCapsules = serverLimits.premiumMaxCapsules
+            maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
         default:
             break
         }
         
-        maxMediaCapsules = MembershipManager.Limits.premiumMaxMediaCapsules
+        maxMediaCapsules = serverLimits.premiumMaxMediaCapsules
+        aiAssistEnabled = true  // 开通会员时自动启用 AI 辅助
         saveToCache()
+        
+        // ✅ 同步到服务器
+        Task {
+            await syncMembershipToServer(type: type)
+        }
+    }
+    
+    // MARK: - 同步会员到服务器
+    @MainActor
+    private func syncMembershipToServer(type: String) async {
+        let mutation = """
+        mutation($memberType: String!, $receipt: String) {
+            activateMembership(memberType: $memberType, receipt: $receipt) {
+                success
+                isPremium
+                memberType
+                memberExpireAt
+                memberMaxCapsules
+                memberMaxVideoMinutes
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "memberType": type,
+            "receipt": ""  // 测试模式，无收据
+        ]
+        
+        do {
+            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+            if let data = result["data"] as? [String: Any],
+               let activation = data["activateMembership"] as? [String: Any],
+               let success = activation["success"] as? Bool, success {
+                print("✅ 会员激活已同步到服务器")
+            } else {
+                print("⚠️ 会员激活同步失败，但本地已激活")
+            }
+        } catch {
+            print("❌ 会员激活同步异常：\(error)")
+        }
     }
     
     // MARK: - 取消会员（测试用）

@@ -25,6 +25,7 @@ struct CapsuleEditView: View {
     @State private var showingPlayer = false
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
     @State private var upgradePromptMessage = ""  // ✅ 升级提示信息
+    @State private var showingMembershipView = false  // ✅ 会员页面
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var useFrontCamera = true  // ✅ Bug 1: 默认前置摄像头
@@ -254,13 +255,18 @@ struct CapsuleEditView: View {
                     currentCount: dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count,
                     onUpgrade: {
                         showingUpgradePrompt = false
-                        dismiss()  // 关闭当前页面，让用户去会员页面
+                        showingMembershipView = true
                     },
                     onCancel: {
                         showingUpgradePrompt = false
                         selectedType = .text  // 切换回文字类型
                     }
                 )
+            }
+        }
+        .sheet(isPresented: $showingMembershipView) {
+            NavigationView {
+                MembershipView()
             }
         }
     }

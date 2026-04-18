@@ -12,9 +12,11 @@ import Foundation
 
 struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
+    @Environment(\.dismiss) var dismiss
     @State private var selectedFilter: TimeCapsule.CapsuleType? = nil
     @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
+    @State private var showingMembershipView = false  // ✅ 会员页面
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -99,12 +101,17 @@ struct CapsuleList: View {
                     maxCount: MembershipManager.shared.maxCapsules,
                     onUpgrade: {
                         showingUpgradePrompt = false
-                        // TODO: 跳转到会员页面
+                        showingMembershipView = true
                     },
                     onCancel: {
                         showingUpgradePrompt = false
                     }
                 )
+            }
+        }
+        .sheet(isPresented: $showingMembershipView) {
+            NavigationView {
+                MembershipView()
             }
         }
         .refreshable {
