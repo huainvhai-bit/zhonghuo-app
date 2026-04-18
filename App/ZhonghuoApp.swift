@@ -15,6 +15,7 @@ struct ZhonghuoApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(ThemeManager.shared.preferredColorScheme)
                 .onAppear {
                     Task {
                         await checkVersionUpdate()

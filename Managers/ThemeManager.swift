@@ -40,4 +40,16 @@ class ThemeManager: ObservableObject {
             return true
         }
     }
+    
+    /// 返回适合用于 .preferredColorScheme() 的 ColorScheme
+    var preferredColorScheme: ColorScheme? {
+        switch theme {
+        case .auto:
+            return nil  // 跟随系统
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
 }
