@@ -174,7 +174,7 @@ struct PrivacyPolicyView: View {
                     
                     Text("2. 信息使用")
                         .font(.headline)
-                    Text "我们仅将用户信息用于提供服务，不会出售或出租给第三方。")
+                    Text("我们仅将用户信息用于提供服务，不会出售或出租给第三方。")
                         .font(.body)
                     
                     Text("3. 信息安全")
@@ -227,7 +227,7 @@ struct DisclaimerView: View {
                     
                     Text("4. 第三方服务")
                         .font(.headline)
-                    Text "应用可能包含第三方链接，我们不对第三方内容负责。")
+                    Text("应用可能包含第三方链接，我们不对第三方内容负责。")
                         .font(.body)
                 }
             }

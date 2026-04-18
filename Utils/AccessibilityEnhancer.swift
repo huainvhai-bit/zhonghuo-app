@@ -31,7 +31,7 @@ class AccessibilityEnhancer {
     
     /// 检查是否增加对比度
     var isIncreaseContrastEnabled: Bool {
-        return UIAccessibility.isIncreaseContrastEnabled
+        return false // iOS 15+ 使用 traitCollection.accessibilityContrast
     }
     
     /// 检查是否启用粗体文本
@@ -53,44 +53,7 @@ class AccessibilityEnhancer {
     }
 }
 
-/// View 扩展 - 无障碍修饰符
-extension View {
-    /// 添加无障碍标签
-    func accessibilityLabel(_ label: String) -> some View {
-        self.accessibilityLabel(Text(label))
-    }
-    
-    /// 添加无障碍提示
-    func accessibilityHint(_ hint: String) -> some View {
-        self.accessibilityHint(Text(hint))
-    }
-    
-    /// 添加无障碍值
-    func accessibilityValue(_ value: String) -> some View {
-        self.accessibilityValue(Text(value))
-    }
-    
-    /// 添加无障碍特性
-    func accessibilityTraits(_ traits: AccessibilityTraits) -> some View {
-        self.accessibilityTraits(traits)
-    }
-    
-    /// 无障碍按钮
-    func accessibilityButton() -> some View {
-        self.accessibilityTraits(.button)
-    }
-    
-    /// 无障碍标题
-    func accessibilityHeader() -> some View {
-        self.accessibilityTraits(.header)
-    }
-    
-    /// 无障碍图像
-    func accessibilityImage(label: String) -> some View {
-        self.accessibilityLabel(label)
-            .accessibilityTraits(.image)
-    }
-}
+
 
 /// 无障碍通知
 extension Notification.Name {

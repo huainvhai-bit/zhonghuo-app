@@ -114,7 +114,8 @@ class PushNotificationManager: ObservableObject {
     
     /// 创建胶囊开启提醒
     func scheduleCapsuleOpenNotification(capsule: TimeCapsule) {
-        guard let openAt = capsule.sendDate, openAt > Date() else {
+        let openAt = capsule.sendDate
+        guard openAt > Date() else {
             return
         }
         
@@ -219,20 +220,21 @@ extension PushNotificationManager {
         }
         
         // 注册通知类型
-        UNUserNotificationCenter.current().notificationCategories = [
+        let categories: Set<UNNotificationCategory> = [
             UNNotificationCategory(
                 identifier: "capsule_open",
                 actions: [],
                 intentIdentifiers: [],
                 options: []
             ),
-            UNUserNotificationCenter.current().notificationCategories.first(where: { $0.identifier == "will_reminder" }) ?? UNNotificationCategory(
+            UNNotificationCategory(
                 identifier: "will_reminder",
                 actions: [],
                 intentIdentifiers: [],
                 options: []
             )
         ]
+        UNUserNotificationCenter.current().setNotificationCategories(categories)
         
         Logger.shared.i("PushNotificationManager: 初始化完成")
     }

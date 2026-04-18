@@ -108,7 +108,7 @@ func refreshTokenAPI(_ refreshToken: String) async throws -> TokenRefreshResult 
     print("🔵 refreshTokenAPI 开始...")
     
     // 从 UserDefaults 读取 serverURL
-    let baseURL = UserDefaults.standard.string(forKey: "serverURL") ?? "api.zhonghuo.app"
+    let baseURL = UserDefaults.standard.string(forKey: "serverURL") ?? "8.136.41.211:3395"
     guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
         throw APIError.invalidURL
     }

@@ -20,9 +20,11 @@ struct OnboardingPage: Identifiable {
 class OnboardingData: ObservableObject {
     static let shared = OnboardingData()
     
-    @Published var hasCompletedOnboarding: Bool {
-        get { UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") }
-        set { UserDefaults.standard.set(newValue, forKey: "hasCompletedOnboarding") }
+    @Published var hasCompletedOnboarding: Bool = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    
+    func markAsCompleted() {
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
     }
     
     let pages: [OnboardingPage] = [
@@ -53,14 +55,10 @@ class OnboardingData: ObservableObject {
     ]
     
     private init() {}
-    
-    func markAsCompleted() {
-        hasCompletedOnboarding = true
-    }
 }
 
 /// 引导视图
-struct OnboardingView: View {
+struct UserOnboardingView: View {
     @StateObject private var data = OnboardingData.shared
     @State private var currentPage = 0
     @Environment(\.dismiss) var dismiss
@@ -68,7 +66,7 @@ struct OnboardingView: View {
     var body: some View {
         TabView(selection: $currentPage) {
             ForEach(0..<data.pages.count, id: \.self) { index in
-                OnboardingPageView(page: data.pages[index])
+                UserOnboardingPageView(page: data.pages[index])
                     .tag(index)
             }
         }
@@ -86,7 +84,7 @@ struct OnboardingView: View {
 }
 
 /// 单个引导页面视图
-struct OnboardingPageView: View {
+struct UserOnboardingPageView: View {
     let page: OnboardingPage
     
     var body: some View {

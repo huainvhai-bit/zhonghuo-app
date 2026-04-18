@@ -114,7 +114,7 @@ struct LoginView: View {
     
     /// GraphQL Auth 请求
     private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
-        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "api.zhonghuo.app"
+        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
         guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)
@@ -206,10 +206,20 @@ struct LoginView: View {
         print("❌ \(context) 失败：\(error.localizedDescription)")
         
         let errorMsg = error.localizedDescription
-        if errorMsg.contains("未注册") || errorMsg.contains("不存在") {
+        
+        // ✅ 优先使用错误码进行精确匹配
+        if errorMsg.contains("ACCOUNT_NOT_FOUND:") {
+            errorMessage = "账号不存在，请先注册"
+        } else if errorMsg.contains("PASSWORD_ERROR:") {
+            errorMessage = "密码错误，请重试"
+        } else if errorMsg.contains("PHONE_EXISTS:") {
+            errorMessage = "该手机号已注册，请直接登录"
+        } else if errorMsg.contains("未注册") || errorMsg.contains("不存在") {
             errorMessage = "账号不存在，请先注册"
         } else if errorMsg.contains("密码") || errorMsg.contains("错误") {
             errorMessage = "密码错误，请重试"
+        } else if errorMsg.contains("网络") || errorMsg.contains("网络连接") {
+            errorMessage = "网络连接失败，请检查网络"
         } else {
             errorMessage = "登录失败，请稍后重试"
         }

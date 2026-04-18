@@ -16,16 +16,16 @@ settings:
     CURRENT_PROJECT_VERSION: 1
     INFOPLIST_FILE: Info.plist
     CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "YOUR_TEAM_ID"
     TARGETED_DEVICE_FAMILY: 1,2
     IOS_DEPLOYMENT_TARGET: 15.0
-    SWIFT_VERSION: "6.0"
+    SWIFT_VERSION: "5.9"
     ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: "YES"
     SWIFT_EMIT_LOC_STRINGS: "YES"
     ENABLE_PREVIEWS: "YES"
     GENERATE_STRING_CATALOGS: "YES"
-    SWIFT_STRICT_CONCURRENCY: "complete"
-    SWIFT_TREAT_AS_ERROR_CONCURRENCY_VIOLATIONS: "YES"
+    SWIFT_STRICT_CONCURRENCY: "minimal"
+    SWIFT_TREAT_AS_ERROR_CONCURRENCY_VIOLATIONS: "NO"
     GCC_OPTIMIZATION_LEVEL: 0
     SWIFT_OPTIMIZATION_LEVEL: "-Onone"
     MTL_ENABLE_DEBUG_INFO: "INCLUDE_SOURCE"
@@ -39,17 +39,14 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: .
-        excludes:
-          - "*.md"
-          - "*.txt"
-          - "*.log"
-          - "*/__*"
-          - ".*"
-          - "终活.xcodeproj"
-          - "build"
-          - "DerivedData"
-          - "*.xcodeproj"
+      - path: App
+      - path: Managers
+      - path: Models
+      - path: Utils
+      - path: Views
+      - path: Assets.xcassets
+      - path: Info.plist
+      - path: AppDelegate.swift
     info:
       path: Info.plist
       properties:
@@ -68,7 +65,6 @@ targets:
             UIWindowSceneSessionRoleApplication: []
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
-          UIImageName: LaunchScreenImage
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
@@ -93,18 +89,18 @@ targets:
         ITSAppUsesNonExemptEncryption: NO
         NSPhotoLibraryUsageDescription: 终活需要访问相册以保存时光胶囊内容
         NSMicrophoneUsageDescription: 终活需要访问麦克风以录制语音胶囊
+        NSMotionUsageDescription: 终活需要访问运动数据以进行设备监控
         NSPhotoLibraryAddUsageDescription: 终活需要保存到相册以保存时光胶囊内容
-    dependencies:
-      - package:
-          url: https://github.com/huainvhai-bit/CodeScanner
-          from: 1.0.0
-    preBuildScripts:
-      - script: |
-          echo "🔧 清理旧缓存..."
-          rm -rf "${PROJECT_DIR}/DerivedData"
-          echo "✅ 清理完成"
-        name: "清理缓存"
-        basedOnDependencyAnalysis: false
-        showEnvVars: false
-        outputFiles:
-          - "${PROJECT_DIR}/.cleaned"
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSExceptionDomains:
+            "8.136.41.211":
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+        CFBundleIcons:
+          CFBundlePrimaryIcon:
+            CFBundleIconName: AppIcon
+            CFBundleIconFiles:
+              - AppIcon
+    dependencies: []
+    preBuildScripts: []

@@ -1051,6 +1051,7 @@ class DataManager: ObservableObject {
                 type: capsule.type.rawValue == "文字" ? "text" : capsule.type.rawValue,
                 mediaType: capsule.type.rawValue == "文字" ? "text" : (capsule.type.rawValue == "语音" ? "audio" : "video"),
                 content: capsule.content,
+                mediaUrl: capsule.mediaServerURL.isEmpty ? nil : capsule.mediaServerURL,  // ✅ 媒体文件服务器URL
                 openAt: formatter.string(from: capsule.sendDate),
                 deletedAt: capsule.deletedAt != nil ? formatter.string(from: capsule.deletedAt!) : nil
             )
@@ -1197,6 +1198,7 @@ class DataManager: ObservableObject {
                 type: input["type"] as? String ?? capsule.type.rawValue,
                 mediaType: input["mediaType"] as? String,
                 content: capsule.content,
+                mediaUrl: capsule.mediaServerURL.isEmpty ? nil : capsule.mediaServerURL,  // ✅ 媒体文件服务器URL
                 openAt: input["openAt"] as? String,
                 deletedAt: input["deletedAt"] as? String
             )
@@ -1877,9 +1879,10 @@ class DataManager: ObservableObject {
         NotificationCenter.default.post(name: NSNotification.Name("DataDidRestoreFromCloud"), object: nil)
     }
     
-    /// 上传媒体文件到服务器
+    /// 上传媒体文件到服务器（带重试）
     /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
-    func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
+    /// ✅ 修复: 支持后端返回的 success 字段（而非 status）
+    func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType, maxRetries: Int = 2) async -> String? {
         print("☁️ ====== uploadMediaToServer 开始 ======")
         
         guard !DataManager.apiURL.isEmpty else {
@@ -1893,10 +1896,31 @@ class DataManager: ObservableObject {
             return nil
         }
         
+        // 重试循环
+        for attempt in 1...maxRetries {
+            print("📤 上传尝试 \(attempt)/\(maxRetries)")
+            
+            if let result = await attemptUpload(fileURL: fileURL, type: type, token: token) {
+                return result
+            }
+            
+            if attempt < maxRetries {
+                print("⏳ 上传失败，\(2) 秒后重试...")
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+        
+        print("❌ 上传失败：已尝试 \(maxRetries) 次")
+        return nil
+    }
+    
+    /// 单次上传尝试
+    private func attemptUpload(fileURL: URL, type: TimeCapsule.CapsuleType, token: String) async -> String? {
         // 创建上传请求
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php?action=upload") ?? URL(fileURLWithPath: ""))
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 60 // 60秒超时
         
         // 构建 multipart/form-data
         let boundary = UUID().uuidString
@@ -1904,11 +1928,19 @@ class DataManager: ObservableObject {
         
         var body = Data()
         
-        // 添加文件
         do {
             let fileData = try Data(contentsOf: fileURL)
             let filename = fileURL.lastPathComponent
-            let mimetype = type == .audio ? "audio/mp4" : "video/mp4"
+            // 修正 MIME 类型
+            let mimetype: String
+            switch type {
+            case .audio:
+                mimetype = fileURL.pathExtension.lowercased() == "m4a" ? "audio/mp4" : "audio/\(fileURL.pathExtension.lowercased())"
+            case .video:
+                mimetype = fileURL.pathExtension.lowercased() == "mp4" ? "video/mp4" : "video/\(fileURL.pathExtension.lowercased())"
+            default:
+                mimetype = "application/octet-stream"
+            }
             
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
@@ -1919,7 +1951,7 @@ class DataManager: ObservableObject {
             // 添加类型参数
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"type\"\r\n\r\n".data(using: .utf8)!)
-            body.append("\(type == .audio ? "audio" : "video")\r\n".data(using: .utf8)!)
+            body.append("\(type == .audio ? "capsule" : "capsule")\r\n".data(using: .utf8)!)
             
             // 添加 token
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
@@ -1931,27 +1963,56 @@ class DataManager: ObservableObject {
             request.httpBody = body
             
             let fileSizeMB = String(format: "%.2f", Double(fileData.count) / 1024 / 1024)
-            print("📤 上传文件：\(filename) (\(fileSizeMB) MB)")
+            print("📤 上传文件：\(filename) (\(fileSizeMB) MB), MIME: \(mimetype)")
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let httpResponse = response as? HTTPURLResponse {
-                print("📡 上传响应状态码：\(httpResponse.statusCode)")
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("⚠️ 上传失败：无效的响应")
+                return nil
+            }
+            
+            print("📡 上传响应状态码：\(httpResponse.statusCode)")
+            
+            // 检查 HTTP 状态码
+            guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
+                print("⚠️ 上传失败：HTTP \(httpResponse.statusCode)")
+                if let jsonString = String(data: data, encoding: .utf8), !jsonString.isEmpty {
+                    print("📄 错误响应：\(jsonString)")
+                }
+                return nil
+            }
+            
+            // 检查响应数据
+            guard !data.isEmpty else {
+                print("⚠️ 上传失败：空响应")
+                return nil
             }
             
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("📄 上传响应：\(jsonString)")
                 
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let result = json["status"] as? String, result == "success",
-                   let fileURL = json["url"] as? String {
-                    print("✅ 上传成功：\(fileURL)")
-                    return fileURL
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    // ✅ 修复：支持后端返回的 success 字段（而非 status）
+                    let success = json["success"] as? Bool
+                    let status = json["status"] as? String
+                    
+                    if success == true || status == "success" {
+                        if let fileURL = json["url"] as? String {
+                            print("✅ 上传成功：\(fileURL)")
+                            return fileURL
+                        }
+                    }
+                    
+                    // 检查错误信息
+                    if let error = json["error"] as? String {
+                        print("⚠️ 上传失败：\(error)")
+                    }
                 }
             }
             
         } catch {
-            print("❌ 上传失败：\(error)")
+            print("❌ 上传异常：\(error)")
         }
         
         return nil

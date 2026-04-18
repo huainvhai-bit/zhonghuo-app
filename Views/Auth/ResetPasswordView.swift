@@ -95,7 +95,7 @@ struct ResetPasswordView: View {
     
     /// GraphQL Auth 请求
     private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
-        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "api.zhonghuo.app"
+        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
         guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
             throw NSError(domain: "Invalid URL", code: -1)

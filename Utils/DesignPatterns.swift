@@ -91,7 +91,7 @@ protocol SubjectProtocol {
 }
 
 // MARK: - 状态模式
-protocol State {
+protocol StatePattern {
     associatedtype Context
     func handle(_ context: Context)
 }
@@ -118,15 +118,7 @@ extension TemplateMethod {
     }
 }
 
-// MARK: - 访问者模式
-protocol Visitor {
-    func visit(_ element: ElementA)
-    func visit(_ element: ElementB)
-}
 
-protocol Element {
-    func accept(_ visitor: Visitor)
-}
 
 // MARK: - 享元模式
 class FlyweightFactory {

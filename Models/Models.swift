@@ -1123,7 +1123,10 @@ extension CapsuleInput {
             "type": type
         ]
         if let mediaType = mediaType { dict["mediaType"] = mediaType }
-        if let content = content { dict["content"] = content }
+        // ✅ Bug修复：content 为空字符串时也要上传（if let 无法判断空字符串）
+        if content != nil { dict["content"] = content! }
+        // ✅ 新增：媒体文件服务器URL
+        if let mediaUrl = mediaUrl, !mediaUrl.isEmpty { dict["mediaUrl"] = mediaUrl }
         if let openAt = openAt { dict["openAt"] = openAt }
         if let deletedAt = deletedAt { dict["deletedAt"] = deletedAt }
         return dict
@@ -1135,6 +1138,7 @@ struct CapsuleInput {
     let type: String
     let mediaType: String?  // 媒体类型：text/audio/video
     let content: String?
+    let mediaUrl: String?   // 媒体文件服务器URL（语音/视频）
     let openAt: String?
     let deletedAt: String?  // 删除标记（ISO8601 格式）
 }

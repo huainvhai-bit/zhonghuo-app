@@ -11,32 +11,32 @@ struct OnboardingView: View {
     @Binding var isFirstLaunch: Bool
     @State private var currentPage = 0
     
-    let pages: [OnboardingPage] = [
-        OnboardingPage(
+    let pages: [OnboardingPageItem] = [
+        OnboardingPageItem(
             icon: "hand.thumbsup.fill",
             title: "安全签到",
             description: "每 48 小时签到一次，让家人安心。如果忘记签到，紧急联系人会收到提醒。",
             color: Color(hex: "34C759")
         ),
-        OnboardingPage(
+        OnboardingPageItem(
             icon: "capsule.fill",
             title: "时光胶囊",
             description: "写下想说的话，设置未来的发送时间。让爱与关怀穿越时空，温暖每一个重要时刻。",
             color: Color(hex: "AF52DE")
         ),
-        OnboardingPage(
+        OnboardingPageItem(
             icon: "doc.text.fill",
             title: "遗嘱嘱托",
             description: "提前规划财产分配、丧葬意愿等身后事。内置模板帮助你快速完成，让家人少一份负担。",
             color: Color(hex: "007AFF")
         ),
-        OnboardingPage(
+        OnboardingPageItem(
             icon: "person.2.fill",
             title: "见证人",
             description: "邀请可信赖的人作为见证人，增强遗嘱的法律效力。支持多人管理，随时更新状态。",
             color: Color(hex: "FF9500")
         ),
-        OnboardingPage(
+        OnboardingPageItem(
             icon: "heart.fill",
             title: "温暖陪伴",
             description: "终活不是终点，而是对生命的尊重。我们陪你规划每一天，让爱没有遗憾。",
@@ -125,7 +125,7 @@ struct OnboardingView: View {
 }
 
 // MARK: - 引导页数据
-struct OnboardingPage {
+struct OnboardingPageItem {
     let icon: String
     let title: String
     let description: String
@@ -134,7 +134,7 @@ struct OnboardingPage {
 
 // MARK: - 引导页视图
 struct OnboardingPageView: View {
-    let page: OnboardingPage
+    let page: OnboardingPageItem
     
     var body: some View {
         VStack(spacing: 24) {

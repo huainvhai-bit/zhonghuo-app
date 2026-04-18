@@ -176,7 +176,7 @@ struct RegisterView: View {
     
     /// GraphQL Auth 请求
     private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
-        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "api.zhonghuo.app"
+        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
         print("🌐 注册请求 URL: \(baseURL)/api/graphql.php")
         print("📦 请求数据：name=\(name), phone=\(phone)")
@@ -258,14 +258,20 @@ struct RegisterView: View {
         print("❌ 注册失败：\(error.localizedDescription)")
         
         let errorMsg = error.localizedDescription
-        if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
+        
+        // ✅ 优先使用错误码进行精确匹配
+        if errorMsg.contains("PHONE_EXISTS:") {
+            errorMessage = "该手机号已注册，请直接登录"
+        } else if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
             errorMessage = "账号已注册，请登录"
-        } else if errorMsg.contains("手机号") {
+        } else if errorMsg.contains("手机号") || errorMsg.contains("手机号格式") {
             errorMessage = "手机号格式错误"
+        } else if errorMsg.contains("密码") && errorMsg.contains("不一致") {
+            errorMessage = "两次输入的密码不一致"
         } else if errorMsg.contains("密码") {
             errorMessage = "密码至少 8 位，包含字母和数字"
-        } else if errorMsg.contains("不一致") {
-            errorMessage = "两次输入的密码不一致"
+        } else if errorMsg.contains("验证码") {
+            errorMessage = "验证码错误"
         } else {
             errorMessage = "注册失败，请稍后重试"
         }

@@ -87,10 +87,8 @@ extension Error {
         }
         if let apiError = self as? APIError {
             switch apiError {
-            case .unauthorized, .invalidToken:
+            case .unauthorized:
                 return .authError()
-            case .serverError:
-                return .serverError()
             default:
                 return .networkError(self)
             }

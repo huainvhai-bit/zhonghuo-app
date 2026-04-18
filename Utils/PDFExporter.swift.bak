@@ -233,28 +233,4 @@ extension WillModule {
     }
 }
 
-// MARK: - Color 扩展
 
-extension UIColor {
-    /// 从十六进制字符串创建颜色
-    convenience init?(hex: String) {
-        let r, g, b, a: CGFloat
-        
-        guard hex.count >= 6 else { return nil }
-        
-        let scanner = Scanner(string: hex)
-        var hexValue: UInt64 = 0
-        scanner.scanHexInt64(&hexValue)
-        
-        let rValue = (hexValue & 0xFF0000) >> 16
-        let gValue = (hexValue & 0x00FF00) >> 8
-        let bValue = hexValue & 0x0000FF
-        
-        r = CGFloat(rValue) / 255
-        g = CGFloat(gValue) / 255
-        b = CGFloat(bValue) / 255
-        a = 1.0
-        
-        self.init(red: r, green: g, blue: b, alpha: a)
-    }
-}

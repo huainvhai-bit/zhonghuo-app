@@ -73,21 +73,23 @@ class MemoryManager {
 
 /// 图片缓存
 class UIImageCache {
-    static let shared = NSCache<NSString, UIImage>()
+    static let shared = UIImageCache()
+    
+    private let cache = NSCache<NSString, UIImage>()
     
     func set(_ image: UIImage, forKey key: String) {
-        shared.setObject(image, forKey: key as NSString)
+        cache.setObject(image, forKey: key as NSString)
     }
     
     func get(forKey key: String) -> UIImage? {
-        return shared.object(forKey: key as NSString)
+        return cache.object(forKey: key as NSString)
     }
     
     func remove(forKey key: String) {
-        shared.removeObject(forKey: key as NSString)
+        cache.removeObject(forKey: key as NSString)
     }
     
     func removeAll() {
-        shared.removeAllObjects()
+        cache.removeAllObjects()
     }
 }
