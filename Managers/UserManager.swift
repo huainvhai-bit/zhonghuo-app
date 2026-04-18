@@ -1319,6 +1319,23 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let memberMaxCapsules = userDict["memberMaxCapsules"] as? Int ?? 5
                 let memberMaxVideoMinutes = userDict["memberMaxVideoMinutes"] as? Int ?? 2
                 
+                // 解析会员过期时间
+                var memberExpireAt: Date? = nil
+                if let expireStr = memberExpireAtString, !expireStr.isEmpty {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                    memberExpireAt = formatter.date(from: expireStr)
+                }
+                
+                // ✅ 更新会员状态（会自动检查过期）
+                MembershipManager.shared.updateFromServer(
+                    isPremium: isPremium,
+                    memberType: memberType,
+                    memberExpireAt: memberExpireAt,
+                    memberMaxCapsules: memberMaxCapsules,
+                    memberMaxVideoMinutes: memberMaxVideoMinutes
+                )
+                
                 // 解析统计信息
                 var emergencyContactsCount = 0
                 var witnessesCount = 0

@@ -18,6 +18,7 @@ class MembershipManager: ObservableObject {
     @Published var maxCapsules: Int = 5       // 免费版默认5个
     @Published var maxVideoMinutes: Int = 2   // 免费版默认2分钟
     @Published var maxMediaCapsules: Int = 2  // 免费版默认2个语音/视频胶囊
+    @Published var lastCheckedAt: Date? = nil   // 上次检查时间
     
     // MARK: - Limits
     struct Limits {
@@ -54,7 +55,60 @@ class MembershipManager: ObservableObject {
         maxCapsules = user.memberMaxCapsules
         maxVideoMinutes = user.memberMaxVideoMinutes
         
+        // ✅ 检查会员是否过期
+        checkExpiration()
+        
         // 更新缓存
+        saveToCache()
+    }
+    
+    /// ✅ 检查会员是否过期（基于本地缓存）
+    func checkExpiration() {
+        guard isPremium, let expireAt = memberExpireAt else {
+            return
+        }
+        
+        if Date() >= expireAt {
+            // 会员已过期，自动降级为免费版
+            deactivateMembership()
+            print("⏰ 会员已过期，自动降级为免费版")
+        }
+    }
+    
+    /// ✅ 基于服务器数据更新会员状态（推荐在获取用户数据时调用）
+    func updateFromServer(isPremium: Bool, memberType: String?, memberExpireAt: Date?, memberMaxCapsules: Int, memberMaxVideoMinutes: Int) {
+        // 检查是否过期
+        if isPremium, let expireAt = memberExpireAt, Date() >= expireAt {
+            // 服务器返回已过期状态，降至免费版
+            self.isPremium = false
+            self.memberType = nil
+            self.memberExpireAt = nil
+            self.maxCapsules = Limits.freeMaxCapsules
+            self.maxVideoMinutes = Limits.freeMaxVideoMinutes
+            self.maxMediaCapsules = Limits.freeMaxMediaCapsules
+        } else {
+            self.isPremium = isPremium
+            self.memberType = memberType
+            self.memberExpireAt = memberExpireAt
+            self.maxCapsules = memberMaxCapsules > 0 ? memberMaxCapsules : Limits.freeMaxCapsules
+            self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : Limits.freeMaxVideoMinutes
+            self.maxMediaCapsules = isPremium ? Limits.premiumMaxMediaCapsules : Limits.freeMaxMediaCapsules
+        }
+        
+        lastCheckedAt = Date()
+        saveToCache()
+        
+        print("📋 会员状态更新：isPremium=\(self.isPremium), type=\(self.memberType ?? "nil"), expireAt=\(self.memberExpireAt?.description ?? "nil")")
+    }
+    
+    /// ✅ 手动降级会员（当服务器通知过期时调用）
+    func deactivateMembership() {
+        isPremium = false
+        memberType = nil
+        memberExpireAt = nil
+        maxCapsules = Limits.freeMaxCapsules
+        maxVideoMinutes = Limits.freeMaxVideoMinutes
+        maxMediaCapsules = Limits.freeMaxMediaCapsules
         saveToCache()
     }
     

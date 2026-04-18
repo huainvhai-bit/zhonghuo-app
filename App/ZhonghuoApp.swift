@@ -25,6 +25,9 @@ struct ZhonghuoApp: App {
             if newPhase == .active {
                 Logger.shared.d("App 进入前台")
                 RealTimeSyncManager.shared.appDidBecomeActive()
+                
+                // ✅ 检查会员是否过期（基于本地缓存）
+                MembershipManager.shared.checkExpiration()
             }
         }
     }
