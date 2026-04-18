@@ -77,6 +77,7 @@ class MembershipManager: ObservableObject {
     }
     
     /// ✅ 基于服务器数据更新会员状态（推荐在获取用户数据时调用）
+    @MainActor
     func updateFromServer(isPremium: Bool, memberType: String?, memberExpireAt: Date?, memberMaxCapsules: Int, memberMaxVideoMinutes: Int, aiAssistEnabled: Bool = false) {
         // 检查是否过期
         if isPremium, let expireAt = memberExpireAt, Date() >= expireAt {

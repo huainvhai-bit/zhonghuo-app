@@ -1343,14 +1343,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 
                 // ✅ 更新会员状态（会自动检查过期）
-                MembershipManager.shared.updateFromServer(
+                await MainActor.run {
+                    MembershipManager.shared.updateFromServer(
                     isPremium: isPremium,
                     memberType: memberType,
                     memberExpireAt: memberExpireAt,
                     memberMaxCapsules: memberMaxCapsules,
                     memberMaxVideoMinutes: memberMaxVideoMinutes,
                     aiAssistEnabled: aiAssistEnabled
-                )
+                    )
+                }
                 
                 // 解析统计信息
                 var emergencyContactsCount = 0
