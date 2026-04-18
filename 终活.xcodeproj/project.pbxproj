@@ -79,6 +79,7 @@
 		CE27479DFB23054E62036EE7 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 928E74D96AA295135671DA64 /* LoginView.swift */; };
 		CE3D56066FA0D89ADC6C13E0 /* UserFriendlyError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEED071C64C80A0C49AFE60B /* UserFriendlyError.swift */; };
 		CFA9D84F4DE49FEBA7D95B70 /* Benchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D622115F853427CE6AD0E77 /* Benchmark.swift */; };
+		D366939C46D130021CBB2BC3 /* SettingsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D460568BEE752B6EB7DAB388 /* SettingsDetailView.swift */; };
 		D68CB58ACF9380D9532DBA12 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819C2614594B9222511D669B /* AppError.swift */; };
 		D785AF0EE8FDCD2AB4CB99AB /* DataDeletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EFE316484EEFC0BF46FBCE /* DataDeletionView.swift */; };
 		D8D68264FEA5596BC455FD36 /* AboutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81BDB7105A7DB5563D2AFB69 /* AboutSettingsView.swift */; };
@@ -105,7 +106,7 @@
 		01368677929A0EB1AC0E5171 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		01790E4F2F3D0B3960629C18 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		06D905AE4CFA64BB37BB3CFB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C5985EAC98FF0EDD52C90EF /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		22BFA8438947FDF8248E94D2 /* CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleList.swift; sourceTree = "<group>"; };
 		2385BCE489E0E1D9CC381321 /* MembershipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipView.swift; sourceTree = "<group>"; };
@@ -115,8 +116,8 @@
 		281631AF17B68A506AEA838D /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		2ADD15459D06969677964E9D /* CloudStorageStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageStatusView.swift; sourceTree = "<group>"; };
 		325404E6936A659FD4AFE6F5 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
-		33C706A7AECC8AFD40A2735E /* AboutSettingsView.swift.bak */ = {isa = PBXFileReference; lastKnownFileType = text; path = AboutSettingsView.swift.bak; sourceTree = "<group>"; };
-		37A2BE8086700C49D0A3E3CA /* PDFExporter.swift.bak */ = {isa = PBXFileReference; lastKnownFileType = text; path = PDFExporter.swift.bak; sourceTree = "<group>"; };
+		33C706A7AECC8AFD40A2735E /* AboutSettingsView.swift.bak */ = {isa = PBXFileReference; path = AboutSettingsView.swift.bak; sourceTree = "<group>"; };
+		37A2BE8086700C49D0A3E3CA /* PDFExporter.swift.bak */ = {isa = PBXFileReference; path = PDFExporter.swift.bak; sourceTree = "<group>"; };
 		38A16566FA6A3CFC2001EA6D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3B10AB48C1D6BB26D15F66C0 /* SecureStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorage.swift; sourceTree = "<group>"; };
 		3C937906A598515188A5EFEC /* WitnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WitnessView.swift; sourceTree = "<group>"; };
@@ -139,7 +140,7 @@
 		6B4362804BCCFF90C6A5D529 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuoApp.swift; sourceTree = "<group>"; };
 		6E63E5E4017BEFE3A8B0197C /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
 		6EC7916F03D94A529C5719F1 /* WillTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillTemplateManager.swift; sourceTree = "<group>"; };
-		708344A8009F4F2515970617 /* ComplianceDocsView.swift.bak */ = {isa = PBXFileReference; lastKnownFileType = text; path = ComplianceDocsView.swift.bak; sourceTree = "<group>"; };
+		708344A8009F4F2515970617 /* ComplianceDocsView.swift.bak */ = {isa = PBXFileReference; path = ComplianceDocsView.swift.bak; sourceTree = "<group>"; };
 		74E7C897CF12FE9BA3AA1C69 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		756A694388DC598CABA5FAAC /* UserRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRegistration.swift; sourceTree = "<group>"; };
 		7AA31C7645945200D6D1B2BB /* InputValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidator.swift; sourceTree = "<group>"; };
@@ -183,6 +184,7 @@
 		D26F00E18E8C7FD3C8A78C20 /* CloudStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageManager.swift; sourceTree = "<group>"; };
 		D2D653AEF3D596A2420E332B /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = "<group>"; };
 		D362F8852AD868374DE0B2E8 /* CapsuleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleDetailView.swift; sourceTree = "<group>"; };
+		D460568BEE752B6EB7DAB388 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
 		D7BA78762FC5AB49D8ACC8D6 /* OfflineEditorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineEditorManager.swift; sourceTree = "<group>"; };
 		D84AA0E96ABE23474519AE97 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		DF18D579F81785A766089D84 /* AppStabilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStabilityManager.swift; sourceTree = "<group>"; };
@@ -372,6 +374,7 @@
 				01368677929A0EB1AC0E5171 /* NotificationSettingsView.swift */,
 				3D3C087FA4935C5638A626AB /* PrivacySettingsView.swift */,
 				97491154435EBE352A62149B /* ProfileSettingsView.swift */,
+				D460568BEE752B6EB7DAB388 /* SettingsDetailView.swift */,
 				06D905AE4CFA64BB37BB3CFB /* SettingsView.swift */,
 				671E25C2D29C9E5CC85FB6B8 /* UpgradePromptView.swift */,
 			);
@@ -426,6 +429,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3AC11871DCF9E44D4B53BDC9 = {
+						DevelopmentTeam = YOUR_TEAM_ID;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -537,6 +541,7 @@
 				C833581FEB38AF5EC82B988B /* ResetPasswordView.swift in Sources */,
 				16679F0BF2092C371F1654CC /* ResilienceManager.swift in Sources */,
 				B19415DC45754B86EB057D41 /* SecureStorage.swift in Sources */,
+				D366939C46D130021CBB2BC3 /* SettingsDetailView.swift in Sources */,
 				73D2774E73DD089CCE72EC71 /* SettingsView.swift in Sources */,
 				F3601D31C01F03A4589FDEE7 /* SmsSettingsView.swift in Sources */,
 				C1B8536E5D197A7DD01C1571 /* SyncConflictResolver.swift in Sources */,
@@ -721,7 +726,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 8YCQA59YN7;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -737,7 +741,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 8YCQA59YN7;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

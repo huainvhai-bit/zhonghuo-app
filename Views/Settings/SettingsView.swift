@@ -135,67 +135,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // 👑 会员服务
-                Section(header: Text("会员服务")) {
-                    Button(action: {
-                        showingMembershipView = true
-                    }) {
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(width: 30, height: 30)
-                                
-                                Image(systemName: "crown.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text("开通会员")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.primary)
-                                    
-                                    if membershipManager.isPremium {
-                                        Text("已开通")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.green)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.green.opacity(0.1))
-                                            .cornerRadius(4)
-                                    } else {
-                                        Text("推荐")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.orange)
-                                            .cornerRadius(4)
-                                    }
-                                }
-                                
-                                Text(membershipManager.isPremium ? membershipManager.memberExpireDisplay() ?? "会员有效" : "解锁无限胶囊、云端备份、家庭守护")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                
                 // 紧急联系人和见证人
                 Section(header: Text("安全")) {
                     NavigationLink(destination: EmergencyContactsView()) {
@@ -261,17 +200,6 @@ struct SettingsView: View {
                 
                 // 🔔 通知设置
                 Section(header: Text("通知设置")) {
-                    // 📱 短信发送配置
-                    NavigationLink(destination: SmsSettingsView()) {
-                        HStack {
-                            Image(systemName: "message")
-                            Text("短信发送配置")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
                     // 🤫 静默模式
                     Toggle(isOn: $silentModeEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -416,18 +344,6 @@ struct SettingsView: View {
                 
                 // 退出登录（放在最底部）
                 Section {
-                    // 🗑️ 数据删除（GDPR 合规）
-                    NavigationLink(destination: DataDeletionView()) {
-                        HStack {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
-                            Text("删除个人数据")
-                                .font(.system(size: 16))
-                            Spacer()
-                        }
-                        .padding(.vertical, 8)
-                    }
-                    
                     Button(action: { showingLogoutConfirm = true }) {
                         HStack {
                             Spacer()
@@ -457,12 +373,8 @@ struct SettingsView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        // 手动刷新设备信息
-                        deviceMonitor.updateStepCount()
-                        deviceMonitor.updateBatteryInfo()
-                    }) {
-                        Image(systemName: "arrow.clockwise")
+                    NavigationLink(destination: SettingsDetailView()) {
+                        Image(systemName: "gearshape.fill")
                             .foregroundColor(.white)
                     }
                 }
@@ -606,9 +518,17 @@ struct SettingsView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(userManager.currentUser?.name ?? "用户")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack {
+                        Text(userManager.currentUser?.name ?? "用户")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        if membershipManager.isPremium {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(hex: "FFD700"))
+                        }
+                    }
                     
                     HStack(spacing: 12) {
                         Label(userManager.currentUser?.phone ?? "未设置", systemImage: "phone.fill")
@@ -635,6 +555,38 @@ struct SettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(Color.white.opacity(0.2))
+                    .cornerRadius(20)
+                }
+                
+                if !membershipManager.isPremium {
+                    Button(action: { showingMembershipView = true }) {
+                        HStack {
+                            Image(systemName: "crown.fill")
+                            Text("开通会员")
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            LinearGradient(
+                                colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(20)
+                    }
+                } else {
+                    HStack {
+                        Image(systemName: "checkmark.seal.fill")
+                        Text("会员有效")
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.green.opacity(0.8))
                     .cornerRadius(20)
                 }
             }
