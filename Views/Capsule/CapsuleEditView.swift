@@ -263,19 +263,25 @@ struct CapsuleEditView: View {
             var mediaServerUrl: String? = nil
             var localMediaPath: String = ""  // ✅ Bug 修复：保存相对路径
             
+            print("🔵 saveCapsule 开始: selectedType=\(selectedType), recordedAudioURL=\(recordedAudioURL?.absoluteString ?? "nil"), recordedVideoURL=\(recordedVideoURL?.absoluteString ?? "nil")")
+            
             // 📤 上传媒体文件到服务器
             if let audioURL = recordedAudioURL {
+                print("📤 开始上传音频: \(audioURL)")
                 mediaServerUrl = await DataManager.shared.uploadMediaToServer(audioURL, type: .audio)
                 print("📤 音频上传结果：\(mediaServerUrl ?? "失败")")
                 // ✅ Bug 修复：保存相对路径（避免 iOS sandbox 变化导致无法播放）
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
                 localMediaPath = audioURL.path.replacingOccurrences(of: documentsPath, with: "")
             } else if let videoURL = recordedVideoURL {
+                print("📤 开始上传视频: \(videoURL)")
                 mediaServerUrl = await DataManager.shared.uploadMediaToServer(videoURL, type: .video)
                 print("📤 视频上传结果：\(mediaServerUrl ?? "失败")")
                 // ✅ Bug 修复：保存相对路径
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
                 localMediaPath = videoURL.path.replacingOccurrences(of: documentsPath, with: "")
+            } else {
+                print("⚠️ 没有录制文件（recordedAudioURL 和 recordedVideoURL 都是 nil）")
             }
             
             let capsule = TimeCapsule(
@@ -585,11 +591,24 @@ struct CapsuleMediaRecorderView: View {
     
     private func stopRecording() {
         timer?.invalidate()
-        recorder.stopRecording()
         
-        if let url = recorder.recordingURL {
-            onRecordComplete(url)
-            dismiss()
+        // ✅ 根据类型停止录制
+        if selectedType == .video {
+            // 视频录制：使用回调机制（解决异步时序问题）
+            recorder.onVideoRecordingComplete = { [weak self] url in
+                DispatchQueue.main.async {
+                    self?.onRecordComplete(url)
+                    self?.dismiss()
+                }
+            }
+            recorder.stopRecording()
+        } else {
+            // 音频录制：同步完成
+            recorder.stopRecording()
+            if let url = recorder.recordingURL {
+                onRecordComplete(url)
+                dismiss()
+            }
         }
     }
     
@@ -609,6 +628,9 @@ class MediaRecorder: NSObject, ObservableObject {
     private var audioRecorder: AVAudioRecorder?
     private var videoOutput: AVCaptureMovieFileOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    
+    // ✅ 新增：视频录制完成回调（解决异步时序问题）
+    var onVideoRecordingComplete: ((URL) -> Void)?
     
     enum RecordingType {
         case audio
@@ -769,11 +791,17 @@ class MediaRecorder: NSObject, ObservableObject {
 // MARK: - AVCaptureFileOutputRecordingDelegate
 extension MediaRecorder: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-        if let error = error {
-            print("❌ 视频录制失败：\(error)")
-        } else {
-            print("✅ 视频录制成功：\(outputFileURL)")
-            recordingURL = outputFileURL
+        DispatchQueue.main.async { [weak self] in
+            if let error = error {
+                print("❌ 视频录制失败：\(error)")
+            } else {
+                print("✅ 视频录制成功：\(outputFileURL)")
+                self?.recordingURL = outputFileURL
+                // ✅ 触发回调通知录制完成
+                if let url = self?.recordingURL {
+                    self?.onVideoRecordingComplete?(url)
+                }
+            }
         }
     }
 }
