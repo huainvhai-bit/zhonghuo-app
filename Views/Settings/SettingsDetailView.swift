@@ -15,6 +15,7 @@ struct SettingsDetailView: View {
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false
     @State private var showingLogoutConfirm = false
     @State private var showingRestoreAlert = false
+    @State private var showingRestoreConfirmAlert = false
     @State private var restoreMessage = ""
     
     var body: some View {
@@ -40,7 +41,7 @@ struct SettingsDetailView: View {
                 // ☁️ 云端恢复
                 Section(header: Text("数据")) {
                     Button(action: {
-                        restoreFromCloud()
+                        showingRestoreConfirmAlert = true
                     }) {
                         SettingsRow(icon: "icloud.and.arrow.down.fill", iconColor: .cyan, title: "云端恢复数据", subtitle: "从服务器恢复本地数据")
                     }
@@ -92,6 +93,14 @@ struct SettingsDetailView: View {
             Button("确定", role: .cancel) {}
         } message: {
             Text(restoreMessage)
+        }
+        .alert("确认恢复", isPresented: $showingRestoreConfirmAlert) {
+            Button("取消", role: .cancel) {}
+            Button("确定恢复") {
+                restoreFromCloud()
+            }
+        } message: {
+            Text("确定要从云端恢复数据吗？这将覆盖本地数据。")
         }
     }
     

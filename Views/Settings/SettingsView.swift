@@ -454,12 +454,15 @@ struct SettingsView: View {
                 
                 if !membershipManager.isPremium {
                     Button(action: { showingMembershipView = true }) {
-                        HStack {
+                        HStack(spacing: 6) {
                             Image(systemName: "crown.fill")
+                                .font(.system(size: 14))
                             Text("开通会员")
+                                .font(.system(size: 14, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
                         }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(
@@ -470,6 +473,7 @@ struct SettingsView: View {
                             )
                         )
                         .cornerRadius(20)
+                        .shadow(color: Color(hex: "FFD700").opacity(0.4), radius: 4, x: 0, y: 2)
                     }
                 } else {
                     HStack {
