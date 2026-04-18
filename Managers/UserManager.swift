@@ -1142,6 +1142,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let userLoadLock = NSLock()  // 加载锁
     
     // ✅ P2 修复 #3: 使用加载锁防止重复请求
+    @MainActor
     func loadUser() {
         // ✅ 如果已加载，直接返回（避免重复）
         if isUserLoaded && currentUser != nil {
