@@ -79,6 +79,14 @@ class DataManager: ObservableObject {
                 checkinReminderThresholdHours
                 checkinReminderIntervalHours
                 smsIsDevelopment
+                memberPriceMonthly
+                memberPriceYearly
+                freeMaxCapsules
+                freeMaxMediaCapsules
+                freeMaxVideoMinutes
+                premiumMaxCapsules
+                premiumMaxMediaCapsules
+                premiumMaxVideoMinutes
             }
         }
         """
@@ -2043,12 +2051,20 @@ class DataManager: ObservableObject {
             query {
                 getConfig {
                     checkinIntervalHours
-                    notificationReminderThresholdHours
-                    notificationPushIntervalHours
+                    checkinReminderThresholdHours
+                    checkinReminderIntervalHours
                     smsIsDevelopment
                     latestVersion
                     forceUpdateVersion
                     updateUrl
+                    memberPriceMonthly
+                    memberPriceYearly
+                    freeMaxCapsules
+                    freeMaxMediaCapsules
+                    freeMaxVideoMinutes
+                    premiumMaxCapsules
+                    premiumMaxMediaCapsules
+                    premiumMaxVideoMinutes
                 }
             }
             """
@@ -2058,11 +2074,21 @@ class DataManager: ObservableObject {
             if let data = response["data"] as? [String: Any],
                let configData = data["getConfig"] as? [String: Any] {
                 let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
-                let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
-                let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+                let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
+                let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
                 let latestVersion = configData["latestVersion"] as? String ?? "1.0.0"
                 let forceUpdateVersion = configData["forceUpdateVersion"] as? String ?? "0.0.0"
                 let updateUrl = configData["updateUrl"] as? String ?? ""
+                
+                // 会员配置
+                let priceMonthly = configData["memberPriceMonthly"] as? Double ?? 8.0
+                let priceYearly = configData["memberPriceYearly"] as? Double ?? 68.0
+                let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 5
+                let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 2
+                let freeMaxVideoMinutes = configData["freeMaxVideoMinutes"] as? Int ?? 2
+                let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 20
+                let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 10
+                let premiumMaxVideoMinutes = configData["premiumMaxVideoMinutes"] as? Int ?? 5
                 
                 systemConfig = SystemConfig(
                     checkinReminderThresholdHours: Double(reminderHours),
@@ -2070,7 +2096,25 @@ class DataManager: ObservableObject {
                     minimumEmergencyContacts: 2,
                     latestVersion: latestVersion,
                     forceUpdateVersion: forceUpdateVersion,
-                    updateUrl: updateUrl
+                    updateUrl: updateUrl,
+                    memberPriceMonthly: priceMonthly,
+                    memberPriceYearly: priceYearly,
+                    freeMaxCapsules: freeMaxCapsules,
+                    freeMaxMediaCapsules: freeMaxMediaCapsules,
+                    freeMaxVideoMinutes: freeMaxVideoMinutes,
+                    premiumMaxCapsules: premiumMaxCapsules,
+                    premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+                    premiumMaxVideoMinutes: premiumMaxVideoMinutes
+                )
+                
+                // ✅ 应用会员限制
+                MembershipManager.shared.applyLimits(
+                    freeMaxCapsules: freeMaxCapsules,
+                    freeMaxMediaCapsules: freeMaxMediaCapsules,
+                    freeMaxVideoMinutes: freeMaxVideoMinutes,
+                    premiumMaxCapsules: premiumMaxCapsules,
+                    premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+                    premiumMaxVideoMinutes: premiumMaxVideoMinutes
                 )
                 
                 self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
@@ -2082,6 +2126,8 @@ class DataManager: ObservableObject {
                 print("   - 最新版本：\(latestVersion)")
                 print("   - 强制更新版本：\(forceUpdateVersion)")
                 print("   - 更新地址：\(updateUrl)")
+                print("   - 会员价格：月卡\(priceMonthly)/年卡\(priceYearly)")
+                print("   - 免费版限制：\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟")
             } else {
                 print("⚠️ 系统配置加载失败：数据格式错误")
             }

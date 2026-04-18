@@ -77,6 +77,24 @@ class ConfigManager: ObservableObject {
                 notificationReminderThresholdHours
                 notificationPushIntervalHours
                 smsIsDevelopment
+                memberPriceMonthly
+                memberPriceYearly
+                freeMaxCapsules
+                freeMaxMediaCapsules
+                freeMaxVideoMinutes
+                freeMaxWillModules
+                freeMaxFamily
+                freeCloudBackup
+                freeDataExport
+                freeAiAssist
+                premiumMaxCapsules
+                premiumMaxMediaCapsules
+                premiumMaxVideoMinutes
+                premiumMaxWillModules
+                premiumMaxFamily
+                premiumCloudBackup
+                premiumDataExport
+                premiumAiAssist
             }
         }
         """
@@ -97,6 +115,30 @@ class ConfigManager: ObservableObject {
             let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
             _ = configData["smsIsDevelopment"] as? Int ?? 1
             
+            // 会员价格配置
+            let priceMonthly = configData["memberPriceMonthly"] as? Double ?? 8.0
+            let priceYearly = configData["memberPriceYearly"] as? Double ?? 68.0
+            
+            // 免费版限制
+            let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 5
+            let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 2
+            let freeMaxVideoMinutes = configData["freeMaxVideoMinutes"] as? Int ?? 2
+            let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 3
+            let freeMaxFamily = configData["freeMaxFamily"] as? Int ?? 1
+            let freeCloudBackup = configData["freeCloudBackup"] as? Bool ?? false
+            let freeDataExport = configData["freeDataExport"] as? Bool ?? false
+            let freeAiAssist = configData["freeAiAssist"] as? Bool ?? false
+            
+            // 会员版限制
+            let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 20
+            let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 10
+            let premiumMaxVideoMinutes = configData["premiumMaxVideoMinutes"] as? Int ?? 5
+            let premiumMaxWillModules = configData["premiumMaxWillModules"] as? Int ?? 999
+            let premiumMaxFamily = configData["premiumMaxFamily"] as? Int ?? 5
+            let premiumCloudBackup = configData["premiumCloudBackup"] as? Bool ?? true
+            let premiumDataExport = configData["premiumDataExport"] as? Bool ?? true
+            let premiumAiAssist = configData["premiumAiAssist"] as? Bool ?? true
+            
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderHours),
                 checkinReminderIntervalHours: Double(pushInterval),
@@ -106,12 +148,43 @@ class ConfigManager: ObservableObject {
                 appVersionLatest: "2.0.0",
                 appVersionForceUpdate: "1.0.0",
                 appMaintenanceMode: false,
-                appMaintenanceMessage: "系统维护中，请稍后再试"
+                appMaintenanceMessage: "系统维护中，请稍后再试",
+                // 会员价格
+                memberPriceMonthly: priceMonthly,
+                memberPriceYearly: priceYearly,
+                // 免费版限制
+                freeMaxCapsules: freeMaxCapsules,
+                freeMaxMediaCapsules: freeMaxMediaCapsules,
+                freeMaxVideoMinutes: freeMaxVideoMinutes,
+                freeMaxWillModules: freeMaxWillModules,
+                freeMaxFamily: freeMaxFamily,
+                freeCloudBackup: freeCloudBackup,
+                freeDataExport: freeDataExport,
+                freeAiAssist: freeAiAssist,
+                // 会员版限制
+                premiumMaxCapsules: premiumMaxCapsules,
+                premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+                premiumMaxVideoMinutes: premiumMaxVideoMinutes,
+                premiumMaxWillModules: premiumMaxWillModules,
+                premiumMaxFamily: premiumMaxFamily,
+                premiumCloudBackup: premiumCloudBackup,
+                premiumDataExport: premiumDataExport,
+                premiumAiAssist: premiumAiAssist
+            )
+            
+            // ✅ 应用会员限制到 MembershipManager
+            MembershipManager.shared.applyLimits(
+                freeMaxCapsules: freeMaxCapsules,
+                freeMaxMediaCapsules: freeMaxMediaCapsules,
+                freeMaxVideoMinutes: freeMaxVideoMinutes,
+                premiumMaxCapsules: premiumMaxCapsules,
+                premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+                premiumMaxVideoMinutes: premiumMaxVideoMinutes
             )
             
             // 检查后端是否在线
             self.isBackendOnline = true
-            print("✅ 服务器配置已更新")
+            print("✅ 服务器配置已更新（会员限制已应用）")
         }
     }
 }

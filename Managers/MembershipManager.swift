@@ -40,6 +40,26 @@ class MembershipManager: ObservableObject {
         static let premiumFamilyMembers = 5
     }
     
+    // 服务器配置的限制（运行时覆盖）
+    struct ServerLimits {
+        var freeMaxCapsules: Int
+        var freeMaxMediaCapsules: Int
+        var freeMaxVideoMinutes: Int
+        var premiumMaxCapsules: Int
+        var premiumMaxMediaCapsules: Int
+        var premiumMaxVideoMinutes: Int
+    }
+    
+    // 默认使用编译时常量
+    private var serverLimits = ServerLimits(
+        freeMaxCapsules: Limits.freeMaxCapsules,
+        freeMaxMediaCapsules: Limits.freeMaxMediaCapsules,
+        freeMaxVideoMinutes: Limits.freeMaxVideoMinutes,
+        premiumMaxCapsules: Limits.premiumMaxCapsules,
+        premiumMaxMediaCapsules: Limits.premiumMaxMediaCapsules,
+        premiumMaxVideoMinutes: Limits.premiumMaxVideoMinutes
+    )
+    
     private let userDefaults = UserDefaults.standard
     
     private init() {
@@ -110,9 +130,9 @@ class MembershipManager: ObservableObject {
         isPremium = false
         memberType = nil
         memberExpireAt = nil
-        maxCapsules = Limits.freeMaxCapsules
-        maxVideoMinutes = Limits.freeMaxVideoMinutes
-        maxMediaCapsules = Limits.freeMaxMediaCapsules
+        maxCapsules = serverLimits.freeMaxCapsules
+        maxVideoMinutes = serverLimits.freeMaxVideoMinutes
+        maxMediaCapsules = serverLimits.freeMaxMediaCapsules
         aiAssistEnabled = false  // 关闭AI辅助
         saveToCache()
     }
@@ -180,6 +200,36 @@ class MembershipManager: ObservableObject {
     /// 检查是否有AI辅助功能
     func hasAIAssistance() -> Bool {
         return isPremium
+    }
+    
+    /// ✅ 从服务器应用会员限制配置
+    func applyLimits(
+        freeMaxCapsules: Int,
+        freeMaxMediaCapsules: Int,
+        freeMaxVideoMinutes: Int,
+        premiumMaxCapsules: Int,
+        premiumMaxMediaCapsules: Int,
+        premiumMaxVideoMinutes: Int
+    ) {
+        // 更新静态常量（通过覆盖默认值）
+        // 注意：这是运行时覆盖，不影响编译时常量
+        self.serverLimits = ServerLimits(
+            freeMaxCapsules: freeMaxCapsules,
+            freeMaxMediaCapsules: freeMaxMediaCapsules,
+            freeMaxVideoMinutes: freeMaxVideoMinutes,
+            premiumMaxCapsules: premiumMaxCapsules,
+            premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+            premiumMaxVideoMinutes: premiumMaxVideoMinutes
+        )
+        
+        // 如果当前是免费版，更新当前限制
+        if !isPremium {
+            maxCapsules = serverLimits.freeMaxCapsules
+            maxMediaCapsules = serverLimits.freeMaxMediaCapsules
+            maxVideoMinutes = serverLimits.freeMaxVideoMinutes
+        }
+        
+        print("✅ 会员限制已从服务器更新：免费\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟，会员\(premiumMaxCapsules)胶囊/\(premiumMaxMediaCapsules)媒体/\(premiumMaxVideoMinutes)分钟")
     }
     
     // MARK: - 会员类型显示
