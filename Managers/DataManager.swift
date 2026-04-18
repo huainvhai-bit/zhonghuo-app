@@ -1814,7 +1814,16 @@ class DataManager: ObservableObject {
             for item in capsulesData {
                 do {
                     let jsonData = try JSONSerialization.data(withJSONObject: item)
-                    let capsule = try JSONDecoder().decode(TimeCapsule.self, from: jsonData)
+                    var capsule = try JSONDecoder().decode(TimeCapsule.self, from: jsonData)
+                    
+                    // ✅ 恢复数据时：如果服务器有媒体路径（mediaServerURL），
+                    // ✅ 同时存入 mediaURL，这样恢复的数据也能播放
+                    // ✅ （本地录制上传的胶囊，mediaURL 保留本地路径；恢复的胶囊用服务器路径播放）
+                    if !capsule.mediaServerURL.isEmpty && capsule.mediaURL.isEmpty {
+                        capsule.mediaURL = capsule.mediaServerURL
+                        print("📱 恢复胶囊媒体地址：\(capsule.title) -> \(capsule.mediaURL)")
+                    }
+                    
                     capsules.append(capsule)
                 } catch {
                     print("⚠️ 解析胶囊失败：\(error)")
