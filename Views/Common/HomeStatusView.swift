@@ -24,10 +24,8 @@ struct HomeStatusView: View {
     @StateObject private var timerManager = CountdownTimerManager.shared
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
-    @State private var navigateToWitness = false
-    @State private var showingWitnessSheet = false
+    @State private var navigateToFamilyTab = false  // 跳转到家人守护 tab
     @State private var showingEmergencyContactAlert = false
-    @State private var showingEmergencyContactsSheet = false  // 紧急联系人弹窗
     @State private var hasSentOverdueAlert = false  // 防止重复发送
     
     var body: some View {
@@ -59,7 +57,7 @@ struct HomeStatusView: View {
                 }
                 .opacity(0)
                 
-                // 👥 紧急联系人不足提示
+                // 👥 家人不足提示（家人直接替代紧急联系人）
                 if showingEmergencyContactAlert {
                     VStack {
                         Spacer()
@@ -68,10 +66,10 @@ struct HomeStatusView: View {
                                 .font(.system(size: 40))
                                 .foregroundColor(.orange)
                             
-                            Text("紧急联系人不足")
+                            Text("家人不足")
                                 .font(.headline)
                             
-                            Text("为了您的安全，请至少添加 2 位紧急联系人。\n在紧急情况下，他们可以及时联系到您的家人朋友。")
+                            Text("为了您的安全，请至少添加 1 位家人。\n在紧急情况下，家人可以及时帮助您。")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -88,7 +86,7 @@ struct HomeStatusView: View {
                                 
                                 Button("去添加") {
                                     showingEmergencyContactAlert = false
-                                    showingEmergencyContactsSheet = true  // 跳转到紧急联系人页面
+                                    navigateToFamilyTab = true  // 跳转到家人守护 tab
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
@@ -172,13 +170,6 @@ struct HomeStatusView: View {
                 print("🔔 收到场景激活通知，刷新倒计时")
                 updateStatus()
             }
-            // ✅ 修复：不在 onDisappear 中取消 Timer，切换界面后继续运行
-            .sheet(isPresented: $showingWitnessSheet) {
-                WitnessView()
-            }
-            .sheet(isPresented: $showingEmergencyContactsSheet) {
-                EmergencyContactsView()
-            }
         }
     }
     
@@ -224,18 +215,13 @@ struct HomeStatusView: View {
     
     /// 👥 检查紧急联系人数量（低于配置数量提示）
     private func checkEmergencyContactsCount() {
-        guard let user = UserManager.shared.currentUser else {
-            print("⚠️ 无法检查紧急联系人：无用户数据")
-            return
-        }
+        // ✅ 改为检查家人数量（家人直接替代紧急联系人）
+        let familyCount = DataManager.shared.familyMembers.count
+        let minimumFamily = 1  // 至少添加 1 位家人
+        print("👥 检查家人数量：\(familyCount) 人（要求：至少 \(minimumFamily) 人）")
         
-        // 📱 优先使用后端配置，其次使用默认值
-        let minimumContacts = dataManager.systemConfig.minimumEmergencyContacts
-        let contactCount = user.emergencyContacts.count
-        print("👥 检查紧急联系人数量：\(contactCount) 人（要求：\(minimumContacts) 人）")
-        
-        if contactCount < minimumContacts {
-            print("⚠️ 紧急联系人不足 \(minimumContacts) 人，显示提示")
+        if familyCount < minimumFamily {
+            print("⚠️ 家人不足，显示提示")
             showingEmergencyContactAlert = true
         }
     }
@@ -629,10 +615,6 @@ struct HomeStatusView: View {
             ProgressRow(label: "身后嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
                 print("🔵 点击身后嘱托进度")
                 navigateToWillAssets = true
-            })
-            ProgressRow(label: "见证人", progress: dataManager.getWitnessProgress(), color: Color(hex: "FF9500"), action: {
-                print("🔵 点击见证人进度")
-                showingWitnessSheet = true
             })
             ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
                 print("🔵 点击资产管理进度")

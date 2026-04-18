@@ -2,7 +2,7 @@
 //  SettingsView.swift
 //  终活
 //
-//  设置页面 - 个人信息、紧急联系人、通知
+//  设置页面 - 个人信息、家人守护、通知
 //
 
 import SwiftUI
@@ -64,7 +64,6 @@ struct SettingsView: View {
     @ObservedObject var membershipManager = MembershipManager.shared  // 👑 会员管理
     @State private var showingEditProfile = false
     @State private var showingMembershipView = false  // 👑 会员页面
-    @State private var showingEmergencyContact = false
     @State private var showingLocationAlert = false
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
@@ -100,29 +99,6 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
-                
-                // 紧急联系人和见证人
-                Section(header: Text("安全")) {
-                    NavigationLink(destination: EmergencyContactsView()) {
-                        HStack {
-                            Image(systemName: "person.crop.circle.badge.exclamationmark")
-                                .foregroundColor(Color(hex: "FF3B30"))
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("紧急联系人")
-                                    .font(.system(size: 16))
-                                
-                                Text("紧急联系人和见证人管理")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
                 
                 // 签到间隔
                 Section(header: Text("设置")) {
@@ -294,9 +270,6 @@ struct SettingsView: View {
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileModal(dataManager: dataManager, userManager: userManager)
             }
-            .sheet(isPresented: $showingEmergencyContact) {
-                EmergencyContactModal(dataManager: dataManager, userManager: userManager)
-            }
             .sheet(isPresented: $showingMembershipView) {
                 MembershipView()
             }
@@ -326,8 +299,6 @@ struct SettingsView: View {
     @ViewBuilder
     private var statsCard: some View {
         // ✅ 从本地 DataManager 获取数据（不依赖云端）
-        let emergencyCount = DataManager.shared.emergencyContacts.count
-        let witnessesCount = DataManager.shared.witnesses.count
         let capsulesCount = DataManager.shared.capsules.count
         let willsCount = DataManager.shared.willModules.count
         let familyCount = DataManager.shared.familyMembers.count  // ✅ 家人
@@ -342,28 +313,12 @@ struct SettingsView: View {
             
             HStack(spacing: 12) {
                 StatItemView(
-                    icon: "person.crop.circle.badge.exclamationmark",
-                    color: Color(hex: "FF3B30"),
-                    count: emergencyCount,
-                    label: "紧急联系人"
-                )
-                
-                StatItemView(
-                    icon: "checkmark.shield.fill",
-                    color: Color(hex: "FF9500"),
-                    count: witnessesCount,
-                    label: "见证人"
-                )
-                
-                StatItemView(
                     icon: "capsule.fill",
                     color: Color(hex: "AF52DE"),
                     count: capsulesCount,
                     label: "胶囊"
                 )
-            }
-            
-            HStack(spacing: 12) {
+                
                 StatItemView(
                     icon: "doc.text.fill",
                     color: Color(hex: "FF2D55"),
@@ -708,82 +663,6 @@ struct EditProfileModal: View {
                     idCard = user.idCard ?? ""
                     address = user.address ?? ""
                     print("🔵 编辑资料：name=\(name), phone=\(phone)")
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 紧急联系人弹窗
-struct EmergencyContactModal: View {
-    @ObservedObject var dataManager: DataManager
-    @ObservedObject var userManager: UserManager
-    @Environment(\.dismiss) var dismiss
-    @State private var name = ""
-    @State private var phone = ""
-    @State private var relationship = ""
-    @State private var showingAddWitness = false
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("联系人信息")) {
-                    TextField("姓名", text: $name)
-                    TextField("手机号", text: $phone)
-                        .keyboardType(.phonePad)
-                    TextField("关系", text: $relationship)
-                }
-                
-                Section {
-                    Button(action: {
-                        if !name.isEmpty && !phone.isEmpty {
-                            let witness = Witness(
-                                id: UUID().uuidString,
-                                name: name,
-                                role: relationship,
-                                phone: phone,
-                                isConfirmed: false,
-                                order: 0
-                            )
-                            dataManager.addWitness(witness)
-                            
-                            dataManager.settings.emergencyContact = UserSettings.EmergencyContact(
-                                name: name,
-                                phone: phone,
-                                relationship: relationship
-                            )
-                            dataManager.saveSettingsToFile()
-                            
-                            // 同步到 UserManager 的 currentUser
-                            if var user = userManager.currentUser {
-                                user.emergencyContacts.append(User.EmergencyContact(
-                                    id: witness.id,
-                                    name: witness.name,
-                                    phone: witness.phone,
-                                    relationship: witness.role
-                                ))
-                                userManager.currentUser = user
-                                _ = userManager.saveUser(user)
-                                
-                                // 确保登录状态保持
-                                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                            }
-                            
-                            print("✅ 紧急联系人已保存，登录状态保持")
-                            dismiss()
-                        }
-                    }) {
-                        Text("保存")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .disabled(name.isEmpty || phone.isEmpty)
-                }
-            }
-            .navigationTitle("紧急联系人")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
                 }
             }
         }
