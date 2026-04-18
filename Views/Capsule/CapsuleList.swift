@@ -19,6 +19,7 @@ struct CapsuleList: View {
     @State private var showingMembershipView = false  // ✅ 会员页面
     @State private var showingShareSheet = false  // ✅ 分享弹窗
     @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的胶囊
+    @State private var showingUpgradeForShare = false  // ✅ 分享功能需要会员
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -116,6 +117,56 @@ struct CapsuleList: View {
                 MembershipView()
             }
         }
+        .sheet(isPresented: $showingUpgradeForShare) {
+            ZStack {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    VStack(spacing: 16) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(Color(hex: "6366F1"))
+                        
+                        Text("胶囊分享是会员功能")
+                            .font(.system(size: 20, weight: .bold))
+                        
+                        Text("升级到会员版，即可将时光胶囊分享给家人，让他们及时收到您的祝福")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding(30)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(20)
+                    
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            showingUpgradeForShare = false
+                            showingMembershipView = true
+                        }) {
+                            Text("升级会员")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(hex: "6366F1"))
+                                .cornerRadius(12)
+                        }
+                        
+                        Button(action: {
+                            showingUpgradeForShare = false
+                        }) {
+                            Text("稍后再说")
+                                .font(.system(size: 16))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                }
+            }
+        }
         .sheet(isPresented: $showingShareSheet) {
             if let capsule = selectedCapsuleForShare {
                 ShareCapsuleSheet(
@@ -132,7 +183,15 @@ struct CapsuleList: View {
                                     self.selectedCapsuleForShare = nil
                                 }
                             } catch {
-                                print("❌ 胶囊分享失败：\(error)")
+                                let errorMsg = error.localizedDescription
+                                print("❌ 胶囊分享失败：\(errorMsg)")
+                                // 检查是否是会员限制错误
+                                if errorMsg.contains("会员") || errorMsg.contains("premium") {
+                                    await MainActor.run {
+                                        self.showingShareSheet = false
+                                        self.showingUpgradeForShare = true
+                                    }
+                                }
                             }
                         }
                     },
