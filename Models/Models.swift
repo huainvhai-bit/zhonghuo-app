@@ -802,6 +802,7 @@ struct User: Codable, Identifiable {
     var memberExpireAt: Date?
     var memberMaxCapsules: Int?
     var memberMaxVideoMinutes: Int?
+    var aiAssistEnabled: Bool = false  // AI智能辅助是否启用
     
     // 新增身份信息字段
     var ethnicity: String?  // 民族

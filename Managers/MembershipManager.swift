@@ -18,6 +18,7 @@ class MembershipManager: ObservableObject {
     @Published var maxCapsules: Int = 5       // 免费版默认5个
     @Published var maxVideoMinutes: Int = 2   // 免费版默认2分钟
     @Published var maxMediaCapsules: Int = 2  // 免费版默认2个语音/视频胶囊
+    @Published var aiAssistEnabled: Bool = false  // AI智能辅助是否启用
     @Published var lastCheckedAt: Date? = nil   // 上次检查时间
     
     // MARK: - Limits
@@ -76,7 +77,7 @@ class MembershipManager: ObservableObject {
     }
     
     /// ✅ 基于服务器数据更新会员状态（推荐在获取用户数据时调用）
-    func updateFromServer(isPremium: Bool, memberType: String?, memberExpireAt: Date?, memberMaxCapsules: Int, memberMaxVideoMinutes: Int) {
+    func updateFromServer(isPremium: Bool, memberType: String?, memberExpireAt: Date?, memberMaxCapsules: Int, memberMaxVideoMinutes: Int, aiAssistEnabled: Bool = false) {
         // 检查是否过期
         if isPremium, let expireAt = memberExpireAt, Date() >= expireAt {
             // 服务器返回已过期状态，降至免费版
@@ -86,6 +87,7 @@ class MembershipManager: ObservableObject {
             self.maxCapsules = Limits.freeMaxCapsules
             self.maxVideoMinutes = Limits.freeMaxVideoMinutes
             self.maxMediaCapsules = Limits.freeMaxMediaCapsules
+            self.aiAssistEnabled = false  // 过期时关闭AI辅助
         } else {
             self.isPremium = isPremium
             self.memberType = memberType
@@ -93,12 +95,13 @@ class MembershipManager: ObservableObject {
             self.maxCapsules = memberMaxCapsules > 0 ? memberMaxCapsules : Limits.freeMaxCapsules
             self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : Limits.freeMaxVideoMinutes
             self.maxMediaCapsules = isPremium ? Limits.premiumMaxMediaCapsules : Limits.freeMaxMediaCapsules
+            self.aiAssistEnabled = aiAssistEnabled && isPremium  // 仅会员且服务器启用时开启
         }
         
         lastCheckedAt = Date()
         saveToCache()
         
-        print("📋 会员状态更新：isPremium=\(self.isPremium), type=\(self.memberType ?? "nil"), expireAt=\(self.memberExpireAt?.description ?? "nil")")
+        print("📋 会员状态更新：isPremium=\(self.isPremium), type=\(self.memberType ?? "nil"), expireAt=\(self.memberExpireAt?.description ?? "nil"), aiAssist=\(self.aiAssistEnabled)")
     }
     
     /// ✅ 手动降级会员（当服务器通知过期时调用）
@@ -109,6 +112,7 @@ class MembershipManager: ObservableObject {
         maxCapsules = Limits.freeMaxCapsules
         maxVideoMinutes = Limits.freeMaxVideoMinutes
         maxMediaCapsules = Limits.freeMaxMediaCapsules
+        aiAssistEnabled = false  // 关闭AI辅助
         saveToCache()
     }
     

@@ -1318,6 +1318,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let memberExpireAtString = userDict["memberExpireAt"] as? String
                 let memberMaxCapsules = userDict["memberMaxCapsules"] as? Int ?? 5
                 let memberMaxVideoMinutes = userDict["memberMaxVideoMinutes"] as? Int ?? 2
+                let aiAssistEnabled = userDict["aiAssistEnabled"] as? Bool ?? false
                 
                 // 解析会员过期时间
                 var memberExpireAt: Date? = nil
@@ -1333,7 +1334,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     memberType: memberType,
                     memberExpireAt: memberExpireAt,
                     memberMaxCapsules: memberMaxCapsules,
-                    memberMaxVideoMinutes: memberMaxVideoMinutes
+                    memberMaxVideoMinutes: memberMaxVideoMinutes,
+                    aiAssistEnabled: aiAssistEnabled
                 )
                 
                 // 解析统计信息
