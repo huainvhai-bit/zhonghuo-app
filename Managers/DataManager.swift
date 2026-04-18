@@ -51,6 +51,7 @@ class DataManager: ObservableObject {
     @Published var currentUser: User?
     @Published var emergencyContacts: [User.EmergencyContact] = []
     @Published var capsules: [TimeCapsule] = []
+    @Published var receivedCapsules: [ReceivedCapsule] = []  // ✅ 我收到的胶囊
     @Published var deletedCapsules: [TimeCapsule] = []  // 🔥 跟踪已删除的胶囊（用于同步删除到服务器）
     @Published var willModules: [WillModule] = []
     @Published var deletedWillModules: [WillModule] = []  // 🔥 跟踪已删除的遗嘱（用于同步删除到服务器）
@@ -1078,6 +1079,76 @@ class DataManager: ObservableObject {
             }
         } catch {
             print("❌ 已删除胶囊同步失败：\(error)")
+        }
+    }
+    
+    // MARK: - 胶囊分享
+    
+    /// 分享胶囊给家人
+    func shareCapsule(capsuleId: String, receiverIds: [String]) async throws -> [String: Any] {
+        let mutation = """
+        mutation($capsuleId: String!, $receiverIds: [String!]!) {
+            shareCapsule(capsuleId: $capsuleId, receiverIds: $receiverIds) {
+                success
+                shareCount
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "capsuleId": capsuleId,
+            "receiverIds": receiverIds
+        ]
+        
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+        if let data = result["data"] as? [String: Any],
+           let shareResult = data["shareCapsule"] as? [String: Any],
+           let success = shareResult["success"] as? Bool, success {
+            return shareResult
+        }
+        throw APIError.networkError
+    }
+    
+    /// 加载我收到的胶囊
+    func loadReceivedCapsules() async {
+        let query = """
+        query {
+            receivedCapsules {
+                id
+                capsuleId
+                title
+                type
+                content
+                mediaUrl
+                mediaServerUrl
+                openAt
+                isOpened
+                sentAt
+                senderId
+                senderName
+                senderPhone
+                createdAt
+            }
+        }
+        """
+        
+        do {
+            let result = try await GraphQLClient.shared.query(query, variables: [:])
+            if let data = result["data"] as? [String: Any],
+               let capsules = data["receivedCapsules"] as? [[String: Any]] {
+                await MainActor.run {
+                    self.receivedCapsules = capsules.compactMap { dict in
+                        guard let jsonData = try? JSONSerialization.data(withJSONObject: dict),
+                              let capsule = try? JSONDecoder().decode(ReceivedCapsule.self, from: jsonData) else {
+                            return nil
+                        }
+                        return capsule
+                    }
+                }
+                print("✅ 收到胶囊加载成功：\(self.receivedCapsules.count) 个")
+            }
+        } catch {
+            print("❌ 收到胶囊加载失败：\(error)")
         }
     }
     

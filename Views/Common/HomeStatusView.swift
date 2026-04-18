@@ -126,6 +126,7 @@ struct HomeStatusView: View {
                 // 📥 加载系统配置（后端可配置）
                 Task {
                     await DataManager.shared.loadSystemConfig()
+                    await DataManager.shared.loadReceivedCapsules()  // ✅ 加载我收到的胶囊
                 }
                 
                 // 🎯 打开 App 自动签到（延迟执行，确保用户数据已加载）
@@ -133,7 +134,7 @@ struct HomeStatusView: View {
                     handleAutoCheckIn()
                 }
                 
-                // 👥 检查紧急联系人数量（使用后端配置）
+                // 👥 检查家人数量
                 checkEmergencyContactsCount()
                 
                 // 📞 检查是否需要通知监护人
@@ -627,14 +628,14 @@ struct HomeStatusView: View {
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 胶囊预览
+    // MARK: - 收到的胶囊预览
     private var capsulePreview: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "capsule.fill")
                         .font(.system(size: 16))
-                    Text("最近的时光胶囊")
+                    Text("我收到的时光胶囊")
                         .font(.headline)
                 }
                 .foregroundColor(.primary)
@@ -655,7 +656,7 @@ struct HomeStatusView: View {
                 }
             }
             
-            if dataManager.capsules.isEmpty {
+            if dataManager.receivedCapsules.isEmpty {
                 VStack(spacing: 14) {
                     ZStack {
                         Circle()
@@ -667,33 +668,21 @@ struct HomeStatusView: View {
                             .foregroundColor(Color(hex: "6366F1"))
                     }
                     
-                    Text("暂无时光胶囊")
+                    Text("暂无收到的胶囊")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
-                    Button(action: {
-                        print("🔵 点击创建胶囊")
-                        navigateToTimeCapsule = true
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                            Text("创建第一个胶囊")
-                        }
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color(hex: "6366F1"))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color(hex: "6366F1").opacity(0.1))
-                        .cornerRadius(20)
-                    }
+                    Text("家人分享的胶囊会出现在这里")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 36)
             } else {
-                ForEach(dataManager.capsules.prefix(3)) { capsule in
-                    CapsulePreviewRow(capsule: capsule, onTap: {
-                        print("🔵 点击胶囊：\(capsule.title)")
-                        navigateToTimeCapsule = true
+                ForEach(dataManager.receivedCapsules.prefix(3)) { capsule in
+                    ReceivedCapsulePreviewRow(capsule: capsule, onTap: {
+                        print("🔵 点击收到的胶囊：\(capsule.title)")
+                        // TODO: 打开胶囊详情
                     })
                 }
             }
@@ -849,6 +838,74 @@ struct CapsulePreviewRow: View {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - 收到的胶囊预览行
+struct ReceivedCapsulePreviewRow: View {
+    let capsule: ReceivedCapsule
+    let onTap: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // 图标
+            Image(systemName: capsule.typeEnum.systemImage)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 48, height: 48)
+                .background(Color(hex: capsule.typeEnum.color).opacity(0.12))
+                .foregroundColor(Color(hex: capsule.typeEnum.color))
+                .cornerRadius(14)
+            
+            VStack(alignment: .leading, spacing: 5) {
+                Text(capsule.title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 11))
+                    Text("来自：\(capsule.senderName)")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // 未打开状态标签
+            if !capsule.isOpened {
+                HStack(spacing: 4) {
+                    Image(systemName: "envelope.fill")
+                        .font(.system(size: 11))
+                    Text("未读")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(hex: "6366F1").opacity(0.12))
+                .foregroundColor(Color(hex: "6366F1"))
+                .cornerRadius(10)
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 11))
+                    Text("已读")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(hex: "34C759").opacity(0.12))
+                .foregroundColor(Color(hex: "34C759"))
+                .cornerRadius(10)
+            }
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            print("🔵 ReceivedCapsulePreviewRow 点击：\(capsule.title)")
+            onTap()
+        }
+        .buttonStyle(.plain)
     }
 }
 

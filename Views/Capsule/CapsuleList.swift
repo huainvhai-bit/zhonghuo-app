@@ -17,6 +17,8 @@ struct CapsuleList: View {
     @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
     @State private var showingMembershipView = false  // ✅ 会员页面
+    @State private var showingShareSheet = false  // ✅ 分享弹窗
+    @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的胶囊
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -112,6 +114,33 @@ struct CapsuleList: View {
         .sheet(isPresented: $showingMembershipView) {
             NavigationView {
                 MembershipView()
+            }
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let capsule = selectedCapsuleForShare {
+                ShareCapsuleSheet(
+                    capsule: capsule,
+                    familyMembers: dataManager.familyMembers,
+                    onShare: { [self] selectedMembers in
+                        let receiverIds = selectedMembers.map { $0.relatedUserId }
+                        Task {
+                            do {
+                                let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
+                                print("✅ 胶囊分享成功：\(result)")
+                                await MainActor.run {
+                                    self.showingShareSheet = false
+                                    self.selectedCapsuleForShare = nil
+                                }
+                            } catch {
+                                print("❌ 胶囊分享失败：\(error)")
+                            }
+                        }
+                    },
+                    onCancel: {
+                        showingShareSheet = false
+                        selectedCapsuleForShare = nil
+                    }
+                )
             }
         }
         .refreshable {
@@ -247,7 +276,10 @@ struct CapsuleList: View {
                 ForEach(filteredCapsules) { capsule in
                     // ✅ 修复：点击胶囊跳转到详情页面
                     NavigationLink(destination: CapsuleDetailView(dataManager: dataManager, capsule: capsule)) {
-                        CapsuleCard(capsule: capsule).accessibilityLabel(capsule.title)
+                        CapsuleCard(capsule: capsule, onSend: {
+                            selectedCapsuleForShare = capsule
+                            showingShareSheet = true
+                        }).accessibilityLabel(capsule.title)
                     }
                     .buttonStyle(PlainButtonStyle())  // 移除 NavigationLink 默认样式
                 }
@@ -337,6 +369,7 @@ struct FilterButton: View {
 // MARK: - 胶囊卡片（✅ 优化：增强视觉效果）
 struct CapsuleCard: View {
     let capsule: TimeCapsule
+    let onSend: () -> Void
     
     var body: some View {
         HStack(spacing: 14) {
@@ -396,6 +429,16 @@ struct CapsuleCard: View {
             
             Spacer()
             
+            // 发送按钮
+            Button(action: onSend) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                    .frame(width: 36, height: 36)
+                    .background(Color(hex: "6366F1"))
+                    .cornerRadius(10)
+            }
+            
             // 右侧箭头
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
@@ -446,6 +489,172 @@ struct StatBox: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - 分享胶囊弹窗
+struct ShareCapsuleSheet: View {
+    let capsule: TimeCapsule
+    let familyMembers: [FamilyInfo]
+    let onShare: ([FamilyInfo]) -> Void
+    let onCancel: () -> Void
+    
+    @State private var selectedMembers: Set<String> = []  // 选中的家人 ID
+    @State private var isAllSelected = false
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // 胶囊信息
+                HStack(spacing: 12) {
+                    Image(systemName: capsule.type.icon)
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                        .frame(width: 50, height: 50)
+                        .background(Color(hex: "6366F1"))
+                        .cornerRadius(12)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(capsule.title)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("选择要发送的家人")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                
+                // 全选按钮
+                Button(action: {
+                    isAllSelected.toggle()
+                    if isAllSelected {
+                        selectedMembers = Set(familyMembers.map { $0.relatedUserId })
+                    } else {
+                        selectedMembers.removeAll()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: isAllSelected ? "checkmark.square.fill" : "square")
+                            .foregroundColor(isAllSelected ? Color(hex: "6366F1") : .secondary)
+                        Text("全选")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text("\(selectedMembers.count)/\(familyMembers.count) 人已选")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // 家人列表
+                if familyMembers.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "person.2.slash")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("暂无已绑定的家人")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        Text("请先在「家人守护」中添加家人")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(familyMembers) { member in
+                                FamilyShareRow(
+                                    member: member,
+                                    isSelected: selectedMembers.contains(member.relatedUserId),
+                                    onToggle: {
+                                        if selectedMembers.contains(member.relatedUserId) {
+                                            selectedMembers.remove(member.relatedUserId)
+                                        } else {
+                                            selectedMembers.insert(member.relatedUserId)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // 底部按钮
+                VStack(spacing: 12) {
+                    Button(action: {
+                        let selected = familyMembers.filter { selectedMembers.contains($0.relatedUserId) }
+                        onShare(selected)
+                    }) {
+                        Text("发送给家人")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(selectedMembers.isEmpty ? Color.gray : Color(hex: "6366F1"))
+                            .cornerRadius(12)
+                    }
+                    .disabled(selectedMembers.isEmpty)
+                    
+                    Button(action: onCancel) {
+                        Text("取消")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding()
+            .navigationTitle("分享胶囊")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("取消") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 家人分享行
+struct FamilyShareRow: View {
+    let member: FamilyInfo
+    let isSelected: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 24))
+                    .foregroundColor(isSelected ? Color(hex: "6366F1") : .secondary)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(member.relatedUserName ?? "家人")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.primary)
+                    Text(member.relationType)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                if let phone = member.relatedUserPhone, !phone.isEmpty {
+                    Text(phone)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
     }
 }
 

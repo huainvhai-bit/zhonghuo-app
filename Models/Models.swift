@@ -293,6 +293,37 @@ struct TimeCapsule: Identifiable, Codable {
     }
 }
 
+// MARK: - 收到的时光胶囊
+struct ReceivedCapsule: Identifiable, Codable {
+    let id: String
+    let capsuleId: String
+    let title: String
+    let type: String  // text/audio/video
+    let content: String?
+    let mediaUrl: String?
+    let mediaServerUrl: String?
+    let openAt: String?
+    let isOpened: Bool
+    let sentAt: String
+    let senderId: String
+    let senderName: String
+    let senderPhone: String?
+    let createdAt: String
+    
+    var typeEnum: TimeCapsule.CapsuleType {
+        switch type {
+        case "audio", "voice": return .audio
+        case "video": return .video
+        case "image": return .image
+        default: return .text
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, capsuleId, title, type, content, mediaUrl, mediaServerUrl, openAt, isOpened, sentAt, senderId, senderName, senderPhone, createdAt
+    }
+}
+
 // MARK: - 遗嘱模块
 struct WillModule: Identifiable, Codable {
     var id: String
@@ -1550,7 +1581,7 @@ struct WillInfo: Codable {
     let createdAt: String
 }
 
-struct FamilyInfo: Decodable {
+struct FamilyInfo: Decodable, Identifiable {
     let id: String
     let relationType: String
     let relatedUserId: String
