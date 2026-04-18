@@ -796,12 +796,12 @@ struct User: Codable, Identifiable {
     var lastLoginIp: String?
     var checkinCount: Int
     
-    // 会员信息
-    var isPremium: Bool = false
-    var memberType: String? = nil
-    var memberExpireAt: Date? = nil
-    var memberMaxCapsules: Int = 5
-    var memberMaxVideoMinutes: Int = 2
+    // 会员信息（使用 Optional 以兼容旧版缓存）
+    var isPremium: Bool?
+    var memberType: String?
+    var memberExpireAt: Date?
+    var memberMaxCapsules: Int?
+    var memberMaxVideoMinutes: Int?
     
     // 新增身份信息字段
     var ethnicity: String?  // 民族

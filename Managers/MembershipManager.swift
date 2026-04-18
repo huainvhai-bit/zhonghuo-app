@@ -49,11 +49,11 @@ class MembershipManager: ObservableObject {
     func updateFromUserData(_ user: User?) {
         guard let user = user else { return }
         
-        isPremium = user.isPremium
+        isPremium = user.isPremium ?? false
         memberType = user.memberType
         memberExpireAt = user.memberExpireAt
-        maxCapsules = user.memberMaxCapsules
-        maxVideoMinutes = user.memberMaxVideoMinutes
+        maxCapsules = user.memberMaxCapsules ?? Limits.freeMaxCapsules
+        maxVideoMinutes = user.memberMaxVideoMinutes ?? Limits.freeMaxVideoMinutes
         
         // ✅ 检查会员是否过期
         checkExpiration()
