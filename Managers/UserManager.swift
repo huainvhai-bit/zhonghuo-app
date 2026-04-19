@@ -1005,8 +1005,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 createdAt
                 updatedAt
                 stats {
-                    emergencyContactsCount
-                    witnessesCount
                     capsulesCount
                     willModulesCount
                     familyCount
@@ -1086,8 +1084,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 }
                 
                 // 解析统计信息
-                var emergencyContactsCount = 0
-                var witnessesCount = 0
                 var capsulesCount = 0
                 var willModulesCount = 0
                 var familyCount = 0
@@ -1103,13 +1099,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 if let stats = userDict["stats"] as? [String: Any] {
                     print("✅ stats 存在：\(stats)")
-                    emergencyContactsCount = stats["emergencyContactsCount"] as? Int ?? 0
-                    witnessesCount = stats["witnessesCount"] as? Int ?? 0
                     capsulesCount = stats["capsulesCount"] as? Int ?? 0
                     willModulesCount = stats["willModulesCount"] as? Int ?? 0
                     familyCount = stats["familyCount"] as? Int ?? 0
                     assetsCount = stats["assetsCount"] as? Int ?? 0
-                    print("✅ 解析后的统计：紧急=\(emergencyContactsCount), 见证=\(witnessesCount), 胶囊=\(capsulesCount), 嘱托=\(willModulesCount), 家人=\(familyCount)")
                 } else {
                     print("❌ stats 不存在于 userDict 中！或者类型转换失败")
                     print("❌ userDict[\"stats\"] 实际类型：\(type(of: userDict["stats"]))")
@@ -1122,8 +1115,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 await MainActor.run {
                     // ✅ Swift 6 并发安全：在 MainActor 内使用局部变量副本
-                    let localEmergencyContactsCount = emergencyContactsCount
-                    let localWitnessesCount = witnessesCount
                     let localCapsulesCount = capsulesCount
                     let localWillModulesCount = willModulesCount
                     let localFamilyCount = familyCount
@@ -1137,8 +1128,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     // 🔧 修复：如果 currentUser 是 nil，创建新用户对象
                     if var currentUser = self.currentUser {
                         // 更新已存在的用户
-                        currentUser.emergencyContactsCount = localEmergencyContactsCount
-                        currentUser.witnessesCount = localWitnessesCount
                         currentUser.capsulesCount = localCapsulesCount
                         currentUser.willModulesCount = localWillModulesCount
                         currentUser.familyCount = localFamilyCount
@@ -1148,7 +1137,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         currentUser.lastLoginIp = lastLoginIp.isEmpty ? currentUser.lastLoginIp : lastLoginIp
                         self.currentUser = currentUser
                         
-                        print("✅ 用户统计信息已更新：紧急=\(localEmergencyContactsCount), 见证=\(localWitnessesCount), 胶囊=\(localCapsulesCount), 嘱托=\(localWillModulesCount)")
                     } else {
                         // 🔴 创建新用户对象（从服务器数据）
                         let user = User(
@@ -1168,8 +1156,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             birthday: nil,
                             idCard: nil,
                             address: nil,
-                            emergencyContactsCount: localEmergencyContactsCount,
-                            witnessesCount: localWitnessesCount,
                             capsulesCount: localCapsulesCount,
                             willModulesCount: localWillModulesCount,
                             familyCount: localFamilyCount
