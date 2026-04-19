@@ -1986,7 +1986,8 @@ class DataManager: ObservableObject {
                     checkinReminderThresholdHours
                     checkinReminderIntervalHours
                     overduePushIntervalHours
-                    smsIsDevelopment
+                    maintenanceMode
+                    maintenanceMessage
                     latestVersion
                     forceUpdateVersion
                     updateUrl
@@ -1995,9 +1996,21 @@ class DataManager: ObservableObject {
                     freeMaxCapsules
                     freeMaxMediaCapsules
                     freeMaxVideoMinutes
+                    freeMaxWillModules
+                    freeMaxFamily
+                    freeCloudBackup
+                    freeDataExport
+                    freeAiAssist
                     premiumMaxCapsules
                     premiumMaxMediaCapsules
                     premiumMaxVideoMinutes
+                    premiumMaxWillModules
+                    premiumMaxFamily
+                    premiumCloudBackup
+                    premiumDataExport
+                    premiumAiAssist
+                    customerServicePhone
+                    customerServiceEmail
                 }
             }
             """
@@ -2006,29 +2019,56 @@ class DataManager: ObservableObject {
             
             if let data = response["data"] as? [String: Any],
                let configData = data["getConfig"] as? [String: Any] {
-                // 🔧 移除 checkinIntervalHours：签到间隔由用户在 App 设置，后端不再控制
+                // 推送配置
                 let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
                 let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
                 let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
+                
+                // 维护模式
+                let maintenanceMode = configData["maintenanceMode"] as? Bool ?? false
+                let maintenanceMessage = configData["maintenanceMessage"] as? String ?? "系统维护中，请稍后再试"
+                
+                // 版本更新
                 let latestVersion = configData["latestVersion"] as? String ?? "1.0.0"
                 let forceUpdateVersion = configData["forceUpdateVersion"] as? String ?? "0.0.0"
                 let updateUrl = configData["updateUrl"] as? String ?? ""
                 
-                // 会员配置
+                // 会员价格
                 let priceMonthly = configData["memberPriceMonthly"] as? Double ?? 8.0
                 let priceYearly = configData["memberPriceYearly"] as? Double ?? 68.0
+                
+                // 免费版限制
                 let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 5
                 let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 2
                 let freeMaxVideoMinutes = configData["freeMaxVideoMinutes"] as? Int ?? 2
+                let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 3
+                let freeMaxFamily = configData["freeMaxFamily"] as? Int ?? 1
+                let freeCloudBackup = configData["freeCloudBackup"] as? Bool ?? false
+                let freeDataExport = configData["freeDataExport"] as? Bool ?? false
+                let freeAiAssist = configData["freeAiAssist"] as? Bool ?? false
+                
+                // 会员版限制
                 let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 20
                 let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 10
                 let premiumMaxVideoMinutes = configData["premiumMaxVideoMinutes"] as? Int ?? 5
+                let premiumMaxWillModules = configData["premiumMaxWillModules"] as? Int ?? 999
+                let premiumMaxFamily = configData["premiumMaxFamily"] as? Int ?? 5
+                let premiumCloudBackup = configData["premiumCloudBackup"] as? Bool ?? true
+                let premiumDataExport = configData["premiumDataExport"] as? Bool ?? true
+                let premiumAiAssist = configData["premiumAiAssist"] as? Bool ?? true
                 
+                // 客服配置
+                let customerServicePhone = configData["customerServicePhone"] as? String ?? "400-123-4567"
+                let customerServiceEmail = configData["customerServiceEmail"] as? String ?? "support@zhonghuo.cn"
+                
+                // 更新系统配置
                 systemConfig = SystemConfig(
                     checkinReminderThresholdHours: Double(reminderHours),
                     checkinReminderIntervalHours: Double(pushInterval),
                     overduePushIntervalHours: Double(overduePushInterval),
                     minimumEmergencyContacts: 2,
+                    appMaintenanceMode: maintenanceMode,
+                    appMaintenanceMessage: maintenanceMessage,
                     latestVersion: latestVersion,
                     forceUpdateVersion: forceUpdateVersion,
                     updateUrl: updateUrl,
@@ -2037,9 +2077,21 @@ class DataManager: ObservableObject {
                     freeMaxCapsules: freeMaxCapsules,
                     freeMaxMediaCapsules: freeMaxMediaCapsules,
                     freeMaxVideoMinutes: freeMaxVideoMinutes,
+                    freeMaxWillModules: freeMaxWillModules,
+                    freeMaxFamily: freeMaxFamily,
+                    freeCloudBackup: freeCloudBackup,
+                    freeDataExport: freeDataExport,
+                    freeAiAssist: freeAiAssist,
                     premiumMaxCapsules: premiumMaxCapsules,
                     premiumMaxMediaCapsules: premiumMaxMediaCapsules,
-                    premiumMaxVideoMinutes: premiumMaxVideoMinutes
+                    premiumMaxVideoMinutes: premiumMaxVideoMinutes,
+                    premiumMaxWillModules: premiumMaxWillModules,
+                    premiumMaxFamily: premiumMaxFamily,
+                    premiumCloudBackup: premiumCloudBackup,
+                    premiumDataExport: premiumDataExport,
+                    premiumAiAssist: premiumAiAssist,
+                    customerServicePhone: customerServicePhone,
+                    customerServiceEmail: customerServiceEmail
                 )
                 
                 // ✅ 应用会员限制
@@ -2047,12 +2099,23 @@ class DataManager: ObservableObject {
                     freeMaxCapsules: freeMaxCapsules,
                     freeMaxMediaCapsules: freeMaxMediaCapsules,
                     freeMaxVideoMinutes: freeMaxVideoMinutes,
+                    freeMaxWillModules: freeMaxWillModules,
+                    freeMaxFamily: freeMaxFamily,
+                    freeCloudBackup: freeCloudBackup,
+                    freeDataExport: freeDataExport,
+                    freeAiAssist: freeAiAssist,
                     premiumMaxCapsules: premiumMaxCapsules,
                     premiumMaxMediaCapsules: premiumMaxMediaCapsules,
-                    premiumMaxVideoMinutes: premiumMaxVideoMinutes
+                    premiumMaxVideoMinutes: premiumMaxVideoMinutes,
+                    premiumMaxWillModules: premiumMaxWillModules,
+                    premiumMaxFamily: premiumMaxFamily,
+                    premiumCloudBackup: premiumCloudBackup,
+                    premiumDataExport: premiumDataExport,
+                    premiumAiAssist: premiumAiAssist
                 )
                 
                 print("✅ 系统配置加载成功（GraphQL）")
+                print("   - 维护模式：\(maintenanceMode ? "开启" : "关闭")")
                 print("   - 签到提醒阈值：\(reminderHours) 小时")
                 print("   - 签到提醒间隔：\(pushInterval) 小时")
                 print("   - 超时推送间隔：\(overduePushInterval) 小时")
@@ -2061,12 +2124,13 @@ class DataManager: ObservableObject {
                 print("   - 更新地址：\(updateUrl)")
                 print("   - 会员价格：月卡\(priceMonthly)/年卡\(priceYearly)")
                 print("   - 免费版限制：\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟")
+                print("   - 免费版遗嘱：\(freeMaxWillModules)/家庭\(freeMaxFamily)/云备份\(freeCloudBackup ? "是" : "否")")
+                print("   - 客服电话：\(customerServicePhone)")
             } else {
                 print("⚠️ 系统配置加载失败：数据格式错误")
             }
         } catch {
             print("❌ 系统配置加载失败：\(error)")
-            // 使用默认配置
             print("ℹ️ 使用默认系统配置")
         }
     }

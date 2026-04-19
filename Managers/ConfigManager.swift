@@ -178,15 +178,15 @@ class ConfigManager: ObservableObject {
                 premiumAiAssist: premiumAiAssist
             )
             
-            // ✅ 应用会员限制到 MembershipManager
-            MembershipManager.shared.applyLimits(
-                freeMaxCapsules: freeMaxCapsules,
-                freeMaxMediaCapsules: freeMaxMediaCapsules,
-                freeMaxVideoMinutes: freeMaxVideoMinutes,
-                premiumMaxCapsules: premiumMaxCapsules,
-                premiumMaxMediaCapsules: premiumMaxMediaCapsules,
-                premiumMaxVideoMinutes: premiumMaxVideoMinutes
-            )
+            // ✅ 应用会员限制到 MembershipManager（已迁移到 DataManager）
+            // MembershipManager.shared.applyLimits(
+            //     freeMaxCapsules: freeMaxCapsules,
+            //     freeMaxMediaCapsules: freeMaxMediaCapsules,
+            //     freeMaxVideoMinutes: freeMaxVideoMinutes,
+            //     premiumMaxCapsules: premiumMaxCapsules,
+            //     premiumMaxMediaCapsules: premiumMaxMediaCapsules,
+            //     premiumMaxVideoMinutes: premiumMaxVideoMinutes
+            // )
             
             // 检查后端是否在线
             self.isBackendOnline = true

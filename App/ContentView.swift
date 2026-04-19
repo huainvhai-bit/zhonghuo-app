@@ -22,13 +22,17 @@ struct ContentView: View {
     @State private var showingUpdateAlert = false  // 📱 版本更新提示
     @State private var updateVersion = ""  // 📱 更新版本号
     @State private var updateUrl = ""  // 📱 更新地址
-    @State private var isForceUpdate = false  // 📱 是否强制更新
+    @State private var isForceUpdate = false  // 是否强制更新
+    @State private var isMaintenanceMode = false  // 维护模式
+    @State private var maintenanceMessage = "系统维护中，请稍后再试"  // 维护信息
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         Group {
-            // ✅ 先检查是否首次启动（引导页面）
-            if isFirstLaunch {
+            // 维护模式优先显示
+            if isMaintenanceMode {
+                MaintenanceView(message: maintenanceMessage)
+            } else if isFirstLaunch {
                 OnboardingView(isFirstLaunch: $isFirstLaunch)
             } else {
                 // 🔴 等待登录状态检查完成
@@ -57,7 +61,12 @@ struct ContentView: View {
             Text("发现新版本 \(updateVersion)，是否立即更新？")
         }
         .onAppear {
-            // 🔴 关键修复：等待 UserManager 完成加载后再检查登录状态
+            // 检查维护模式
+            Task {
+                await checkMaintenanceMode()
+            }
+            
+            // 等待 UserManager 完成加载后再检查登录状态
             Task {
                 await checkLoginStatus()
             }
@@ -146,6 +155,24 @@ struct ContentView: View {
         }
     }
     
+
+    // 🔧 检查维护模式
+    private func checkMaintenanceMode() async {
+        // 加载系统配置（包含维护模式信息）
+        await DataManager.shared.loadSystemConfig()
+        
+        let config = DataManager.shared.systemConfig
+        
+        // 检查是否在维护模式
+        if config.appMaintenanceMode {
+            print("🔧 维护模式开启：\(config.appMaintenanceMessage)")
+            await MainActor.run {
+                self.isMaintenanceMode = true
+                self.maintenanceMessage = config.appMaintenanceMessage
+            }
+        }
+    }
+
     // 🔴 检查登录状态的函数（可重复调用）
     private func checkLoginStatus() async {
         print("🔍 开始检查登录状态...")
@@ -470,6 +497,44 @@ extension Color {
 }
 
 // 🔴 加载视图 - 等待登录状态检查
+// 🔧 维护模式视图
+struct MaintenanceView: View {
+    let message: String
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            Spacer()
+            
+            // 维护图标
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.orange)
+            
+            // 标题
+            Text("系统维护中")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.primary)
+            
+            // 维护信息
+            Text(message)
+                .font(.system(size: 16))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            Spacer()
+            
+            // 底部信息
+            Text("请稍后再试")
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+                .padding(.bottom, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(hex: "F5F5F7"))
+    }
+}
+
 struct LoadingView: View {
     @State private var opacity = 0.5
     

@@ -901,6 +901,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             if let savedUser = loadUserFromFile() {
                 print("✅ 验证保存：\(savedUser.checkInInterval.rawValue)")
             }
+            
+            // 🔄 同步签到间隔到服务器（异步，不阻塞主线程）
+            Task {
+                do {
+                    try await APIManager.shared.updateCheckInInterval(hours: Int(interval.hours))
+                } catch {
+                    print("⚠️ 同步签到间隔到服务器失败：\(error)")
+                }
+            }
+            
             return .success(())
         } catch {
             print("❌ 保存用户文件失败：\(error)")

@@ -70,6 +70,35 @@ class APIManager {
         return try await apiClient.query(mutation, variables: variables)
     }
     
+    // MARK: - 签到相关
+    
+    /// 更新签到间隔到服务器
+    func updateCheckInInterval(hours: Int) async throws -> Bool {
+        let mutation = """
+        mutation($checkInIntervalHours: Int!) {
+            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = ["checkInIntervalHours": hours]
+        
+        do {
+            let result = try await apiClient.query(mutation, variables: variables)
+            if let data = result["updateCheckInInterval"] as? [String: Any],
+               let success = data["success"] as? Bool {
+                print("📤 签到间隔已同步到服务器：\(hours) 小时")
+                return success
+            }
+            return false
+        } catch {
+            print("❌ 同步签到间隔失败：\(error)")
+            throw error
+        }
+    }
+    
     // MARK: - 家人相关
     
     /// 绑定家人

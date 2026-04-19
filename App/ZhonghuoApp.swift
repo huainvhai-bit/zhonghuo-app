@@ -19,7 +19,7 @@ struct ZhonghuoApp: App {
                 .preferredColorScheme(themeManager.preferredColorScheme)
                 .onAppear {
                     Task {
-                        await checkVersionUpdate()
+                        await checkMaintenanceAndVersion()
                     }
                 }
         }
@@ -36,20 +36,23 @@ struct ZhonghuoApp: App {
     
     /// 检查版本更新
     @MainActor
-    private func checkVersionUpdate() async {
+    private func checkMaintenanceAndVersion() async {
         // 等待网络
         _ = await waitForNetwork(timeout: 5.0)
         
         guard !DataManager.apiURL.isEmpty else {
-            Logger.shared.w("API URL 未设置，跳过版本检查")
+            Logger.shared.w("API URL 未设置，跳过维护/版本检查")
             return
         }
         
         do {
-            // 加载系统配置（包含版本信息）
+            // 加载系统配置（包含维护模式和版本信息）
             await DataManager.shared.loadSystemConfig()
             
             let config = DataManager.shared.systemConfig
+            
+            
+            // 版本检查
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
             
             Logger.shared.d("版本检查：当前=\(currentVersion), 最新=\(config.latestVersion)")

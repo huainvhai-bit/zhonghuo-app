@@ -30,6 +30,11 @@ class MembershipManager: ObservableObject {
         static let freeMaxEmergencyContacts = 2
         static let freeMaxWills = 3
         static let freeFamilyMembers = 1
+        static let freeMaxWillModules = 3
+        static let freeMaxFamily = 1
+        static let freeCloudBackup = false
+        static let freeDataExport = false
+        static let freeAiAssist = false
         
         // 会员版
         static let premiumMaxCapsules = 20
@@ -38,6 +43,11 @@ class MembershipManager: ObservableObject {
         static let premiumMaxEmergencyContacts = 999
         static let premiumMaxWills = 999
         static let premiumFamilyMembers = 5
+        static let premiumMaxWillModules = 999
+        static let premiumMaxFamily = 5
+        static let premiumCloudBackup = true
+        static let premiumDataExport = true
+        static let premiumAiAssist = true
     }
     
     // 服务器配置的限制（运行时覆盖）
@@ -45,9 +55,19 @@ class MembershipManager: ObservableObject {
         var freeMaxCapsules: Int
         var freeMaxMediaCapsules: Int
         var freeMaxVideoMinutes: Int
+        var freeMaxWillModules: Int
+        var freeMaxFamily: Int
+        var freeCloudBackup: Bool
+        var freeDataExport: Bool
+        var freeAiAssist: Bool
         var premiumMaxCapsules: Int
         var premiumMaxMediaCapsules: Int
         var premiumMaxVideoMinutes: Int
+        var premiumMaxWillModules: Int
+        var premiumMaxFamily: Int
+        var premiumCloudBackup: Bool
+        var premiumDataExport: Bool
+        var premiumAiAssist: Bool
     }
     
     // 默认使用编译时常量
@@ -55,9 +75,19 @@ class MembershipManager: ObservableObject {
         freeMaxCapsules: Limits.freeMaxCapsules,
         freeMaxMediaCapsules: Limits.freeMaxMediaCapsules,
         freeMaxVideoMinutes: Limits.freeMaxVideoMinutes,
+        freeMaxWillModules: Limits.freeMaxWillModules,
+        freeMaxFamily: Limits.freeMaxFamily,
+        freeCloudBackup: Limits.freeCloudBackup,
+        freeDataExport: Limits.freeDataExport,
+        freeAiAssist: Limits.freeAiAssist,
         premiumMaxCapsules: Limits.premiumMaxCapsules,
         premiumMaxMediaCapsules: Limits.premiumMaxMediaCapsules,
-        premiumMaxVideoMinutes: Limits.premiumMaxVideoMinutes
+        premiumMaxVideoMinutes: Limits.premiumMaxVideoMinutes,
+        premiumMaxWillModules: Limits.premiumMaxWillModules,
+        premiumMaxFamily: Limits.premiumMaxFamily,
+        premiumCloudBackup: Limits.premiumCloudBackup,
+        premiumDataExport: Limits.premiumDataExport,
+        premiumAiAssist: Limits.premiumAiAssist
     )
     
     private let userDefaults = UserDefaults.standard
@@ -218,19 +248,38 @@ class MembershipManager: ObservableObject {
         freeMaxCapsules: Int,
         freeMaxMediaCapsules: Int,
         freeMaxVideoMinutes: Int,
+        freeMaxWillModules: Int,
+        freeMaxFamily: Int,
+        freeCloudBackup: Bool,
+        freeDataExport: Bool,
+        freeAiAssist: Bool,
         premiumMaxCapsules: Int,
         premiumMaxMediaCapsules: Int,
-        premiumMaxVideoMinutes: Int
+        premiumMaxVideoMinutes: Int,
+        premiumMaxWillModules: Int,
+        premiumMaxFamily: Int,
+        premiumCloudBackup: Bool,
+        premiumDataExport: Bool,
+        premiumAiAssist: Bool
     ) {
-        // 更新静态常量（通过覆盖默认值）
-        // 注意：这是运行时覆盖，不影响编译时常量
+        // 更新服务器限制
         self.serverLimits = ServerLimits(
             freeMaxCapsules: freeMaxCapsules,
             freeMaxMediaCapsules: freeMaxMediaCapsules,
             freeMaxVideoMinutes: freeMaxVideoMinutes,
+            freeMaxWillModules: freeMaxWillModules,
+            freeMaxFamily: freeMaxFamily,
+            freeCloudBackup: freeCloudBackup,
+            freeDataExport: freeDataExport,
+            freeAiAssist: freeAiAssist,
             premiumMaxCapsules: premiumMaxCapsules,
             premiumMaxMediaCapsules: premiumMaxMediaCapsules,
-            premiumMaxVideoMinutes: premiumMaxVideoMinutes
+            premiumMaxVideoMinutes: premiumMaxVideoMinutes,
+            premiumMaxWillModules: premiumMaxWillModules,
+            premiumMaxFamily: premiumMaxFamily,
+            premiumCloudBackup: premiumCloudBackup,
+            premiumDataExport: premiumDataExport,
+            premiumAiAssist: premiumAiAssist
         )
         
         // 如果当前是免费版，更新当前限制
@@ -240,7 +289,9 @@ class MembershipManager: ObservableObject {
             maxVideoMinutes = serverLimits.freeMaxVideoMinutes
         }
         
-        print("✅ 会员限制已从服务器更新：免费\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟，会员\(premiumMaxCapsules)胶囊/\(premiumMaxMediaCapsules)媒体/\(premiumMaxVideoMinutes)分钟")
+        print("✅ 会员限制已从服务器更新")
+        print("   免费版：\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟")
+        print("   会员版：\(premiumMaxCapsules)胶囊/\(premiumMaxMediaCapsules)媒体/\(premiumMaxVideoMinutes)分钟")
     }
     
     // MARK: - 会员类型显示
