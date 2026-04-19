@@ -77,6 +77,7 @@ targets:
         NSLocationAlwaysAndWhenInUseUsageDescription: 终活需要获取您的位置用于家人守护功能
         UIBackgroundModes:
           - location
+          - remote-notification
         NSUserNotificationUsageDescription: 终活需要发送通知提醒您签到
         UIUserNotificationSettings:
           UIUserNotificationType:
