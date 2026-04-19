@@ -317,13 +317,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // 初始化 JPush
         JPushManager.shared.setup()
         
-        // 设置通知监听
-        JPushManager.shared.addObserver(JPushNotificationDelegate())
-        
-        // 设置别名（用户 ID）
-        if let userId = UserManager.shared.currentUser?.id {
-            JPushManager.shared.setAlias(userId: userId)
-        }
+        // 设置别名（用户 ID）- 在 setup 中已设置代理，无需单独调用
+        // 如果需要重新设置别名，调用以下方法：
+        // JPushManager.shared.setAlias(userId: userId)
         
         // 监听登录状态变化，登录后设置别名
         NotificationCenter.default.addObserver(
