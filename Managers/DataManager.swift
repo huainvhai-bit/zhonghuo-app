@@ -1951,6 +1951,25 @@ class DataManager: ObservableObject {
         return nil
     }
     
+    /// 上传媒体文件到服务器（断点续传）
+    /// - Parameters:
+    ///   - fileURL: 本地文件 URL
+    ///   - type: 胶囊类型
+    /// - Returns: 服务器上的文件 URL
+    func uploadMediaChunked(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
+        print("📦 ====== uploadMediaChunked 开始（断点续传）======")
+        
+        do {
+            let typeString = type == .audio ? "audio" : "video"
+            let url = try await ChunkedUploadManager.shared.uploadFile(fileURL: fileURL, type: "capsule")
+            print("✅ 断点续传上传成功：\(url)")
+            return url
+        } catch {
+            print("❌ 断点续传上传失败：\(error)")
+            return nil
+        }
+    }
+    
     // MARK: - 系统配置
     
     /// 加载系统配置（后端可配置）
