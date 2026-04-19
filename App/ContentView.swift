@@ -13,8 +13,6 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
-    @State private var showingEmergencyContactAlert = false
-    @AppStorage("hasShownEmergencyContactAlert") private var hasShownEmergencyContactAlert = false
     @State private var showingFamilyGuard = false  // 👨‍👩‍👧‍👦 家人守护
     @State private var forceLogout = false  // 强制退出登录
     @State private var isCheckingAuth = true  // 🔴 添加加载状态
@@ -140,29 +138,11 @@ struct ContentView: View {
         } message: {
             Text(logoutReason)
         }
-        .alert("紧急联系人提醒", isPresented: $showingEmergencyContactAlert) {
-            Button("稍后设置", role: .cancel) {}
-            Button("立即设置") {
-                selectedTab = 3  // 跳转到家人守护
-            }
-        } message: {
-            Text("为了您的安全，请至少设置 2 位紧急联系人。添加家人守护会自动同步到紧急联系人。")
-        }
         .sheet(isPresented: $showingFamilyGuard) {
             FamilyGuardView()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenFamilyGuard"))) { _ in
             showingFamilyGuard = true
-        }
-    }
-    
-    private func checkEmergencyContacts() {
-        // 只有紧急联系人数量少于 2 人时才提醒，且只提示一次
-        if let user = userManager.currentUser,
-           user.emergencyContacts.count < 2,
-           !hasShownEmergencyContactAlert {
-            showingEmergencyContactAlert = true
-            hasShownEmergencyContactAlert = true
         }
     }
     
@@ -238,7 +218,6 @@ struct ContentView: View {
             
             if isLoggedIn {
                 print("✅ 用户已登录，跳过自动签到")
-                self.checkEmergencyContacts()
             } else {
                 print("⚠️ 用户未登录，显示登录界面")
             }
