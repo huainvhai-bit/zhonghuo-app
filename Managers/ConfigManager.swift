@@ -74,8 +74,10 @@ class ConfigManager: ObservableObject {
         query {
             getConfig {
                 checkinIntervalHours
-                notificationReminderThresholdHours
-                notificationPushIntervalHours
+                checkinReminderThresholdHours
+                checkinReminderIntervalHours
+                maintenanceMode
+                maintenanceMessage
                 smsIsDevelopment
                 memberPriceMonthly
                 memberPriceYearly
@@ -111,8 +113,8 @@ class ConfigManager: ObservableObject {
         await MainActor.run {
             // 解析配置
             let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
-            let reminderHours = configData["notificationReminderThresholdHours"] as? Int ?? 12
-            let pushInterval = configData["notificationPushIntervalHours"] as? Int ?? 2
+            let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
+            let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
             _ = configData["smsIsDevelopment"] as? Int ?? 1
             
             // 会员价格配置
@@ -139,6 +141,10 @@ class ConfigManager: ObservableObject {
             let premiumDataExport = configData["premiumDataExport"] as? Bool ?? true
             let premiumAiAssist = configData["premiumAiAssist"] as? Bool ?? true
             
+            // 维护模式配置
+            let maintenanceMode = configData["maintenanceMode"] as? Bool ?? false
+            let maintenanceMessage = configData["maintenanceMessage"] as? String ?? "系统维护中，请稍后再试"
+            
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderHours),
                 checkinReminderIntervalHours: Double(pushInterval),
@@ -147,8 +153,8 @@ class ConfigManager: ObservableObject {
                 offlineTimeoutHours: 24.0,
                 appVersionLatest: "2.0.0",
                 appVersionForceUpdate: "1.0.0",
-                appMaintenanceMode: false,
-                appMaintenanceMessage: "系统维护中，请稍后再试",
+                appMaintenanceMode: maintenanceMode,
+                appMaintenanceMessage: maintenanceMessage,
                 // 会员价格
                 memberPriceMonthly: priceMonthly,
                 memberPriceYearly: priceYearly,
