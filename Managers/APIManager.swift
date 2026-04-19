@@ -52,42 +52,6 @@ class APIManager {
         return try await apiClient.query(mutation, variables: variables)
     }
     
-    // MARK: - 批量同步紧急联系人
-    
-    /// 批量同步紧急联系人
-    func batchSyncEmergencyContacts(_ inputs: [[String: Any]]) async throws -> [String: Any] {
-        let mutation = """
-        mutation($contacts: [EmergencyContactInput!]!) {
-            batchSyncEmergencyContacts(contacts: $contacts) {
-                total
-                created
-                updated
-            }
-        }
-        """
-        
-        let variables: [String: Any] = ["contacts": inputs]
-        return try await apiClient.query(mutation, variables: variables)
-    }
-    
-    // MARK: - 批量同步见证人
-    
-    /// 批量同步见证人
-    func batchSyncWitnesses(_ inputs: [[String: Any]]) async throws -> [String: Any] {
-        let mutation = """
-        mutation($witnesses: [WitnessInput!]!) {
-            batchSyncWitnesses(witnesses: $witnesses) {
-                total
-                created
-                updated
-            }
-        }
-        """
-        
-        let variables: [String: Any] = ["witnesses": inputs]
-        return try await apiClient.query(mutation, variables: variables)
-    }
-    
     // MARK: - 批量同步资产
     
     /// 批量同步资产

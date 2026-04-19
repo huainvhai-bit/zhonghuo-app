@@ -280,18 +280,6 @@ struct HomeStatusView: View {
                 print("✅ 遗嘱同步完成：\(result)")
             }
             
-            // 同步紧急联系人（本地→云端）
-            print("👥 同步紧急联系人...")
-            if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                print("✅ 紧急联系人同步完成：\(result)")
-            }
-            
-            // 同步见证人（本地→云端）
-            print("👤 同步见证人...")
-            if let result = await DataManager.shared.batchSyncWitnesses() {
-                print("✅ 见证人同步完成：\(result)")
-            }
-            
             print("🎉 所有数据同步完成！")
             print("📊 本地和云端数据已保持一致")
             print("🔄 ====== 同步完成 ======")

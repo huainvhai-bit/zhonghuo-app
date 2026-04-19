@@ -503,9 +503,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func isLocalDataEmpty() -> Bool {
         let dataManager = DataManager.shared
         return dataManager.capsules.isEmpty && 
-               dataManager.willModules.isEmpty && 
-               dataManager.emergencyContacts.isEmpty && 
-               dataManager.witnesses.isEmpty
+               dataManager.willModules.isEmpty
     }
     
     func login(phone: String) -> Result<User, Error> {
@@ -543,7 +541,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             await RealTimeSyncManager.shared.userDidLogin()
         }
         
-        self.checkEmergencyContacts()
         startUpdatingLocation()
         return .success(user)
     }
@@ -682,133 +679,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: hoursRemaining)
     }
     
-    // 通知紧急联系人（倒计时结束时）
-    private func notifyEmergencyContactsIfNeeded() {
-        guard let user = currentUser,
-              !user.emergencyContacts.isEmpty else {
-            print("❌ 没有紧急联系人，无法通知")
-            return
-        }
-        
-        let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
-        let intervalHours = user.checkInInterval.hours
-        let timeSinceLastCheckIn = Date().timeIntervalSince(lastCheckIn)
-        let hoursOverdue = (timeSinceLastCheckIn - (Double(intervalHours) * 3600)) / 3600
-        
-        // 只有超过签到间隔才通知
-        guard hoursOverdue > 0 else {
-            return
-        }
-        
-        print("🚨 签到已过期 \(String(format: "%.1f", hoursOverdue)) 小时，准备通知 \(user.emergencyContacts.count) 位紧急联系人")
-        
-        for contact in user.emergencyContacts {
-            print("📱 通知紧急联系人：\(contact.name) (\(contact.phone))")
-            
-            // 📲 发送短信通知（使用 Message Framework）
-            let message = "【终活 App】\(user.name) 已超过 \(String(format: "%.0f", hoursOverdue)) 小时未签到，请您关注其安全状况。"
-            sendSmsToContact(contact.phone, message: message)
-        }
-    }
-    
-    // 发送短信给紧急联系人
-    // 支持 3 种方案：
-    // 1. Message Framework（iOS 原生，可单独开关）
-    // 2. 阿里云短信 API（可开关）
-    // 3. 腾讯云短信 API（可开关，与阿里云任选其一）
-    private func sendSmsToContact(_ phone: String, message: String) {
-        print("📲 准备发送短信到：\(phone)")
-        print("   内容：\(message)")
-        
-        // 📱 方案 1: Message Framework（iOS 原生）
-        let useMessageFramework = UserDefaults.standard.bool(forKey: "sms_use_message_framework")
-        if useMessageFramework {
-            sendViaMessageFramework(phone: phone, message: message)
-        }
-        
-        // ☁️ 方案 2: 阿里云短信 API
-        let useAliyunSms = UserDefaults.standard.bool(forKey: "sms_use_aliyun")
-        if useAliyunSms {
-            sendViaAliyunSms(phone: phone, message: message)
-        }
-        
-        // ☁️ 方案 3: 腾讯云短信 API（与阿里云任选其一）
-        let useTencentSms = UserDefaults.standard.bool(forKey: "sms_use_tencent")
-        if useTencentSms {
-            sendViaTencentSms(phone: phone, message: message)
-        }
-        
-        // 如果都没有启用，仅记录日志
-        if !useMessageFramework && !useAliyunSms && !useTencentSms {
-            print("⚠️ 未启用任何短信发送方案，仅记录日志")
-        }
-    }
-    
-    // MARK: - 短信发送方案
-    
-    /// 方案 1: Message Framework（iOS 原生）
-    private func sendViaMessageFramework(phone: String, message: String) {
-        print("📱 [方案 1] Message Framework 发送短信")
-        // ✅ 使用 MFMessageComposeViewController 需要用户交互，不适合后台发送
-        // 已移至 MessageManager 实现
-        print("   ⚠️ Message Framework 需要用户交互，使用 MessageManager 代替")
-    }
-    
-    /// 方案 2: 阿里云短信 API
-    private func sendViaAliyunSms(phone: String, message: String) {
-        print("☁️ [方案 2] 阿里云短信 API 发送短信")
-        
-        // 🔒 安全修复：从 Keychain 读取密钥
-        let accessKeyId = KeychainManager.shared.getAliyunAccessKeyId() ?? ""
-        let accessKeySecret = KeychainManager.shared.getAliyunAccessKeySecret() ?? ""
-        
-        guard !accessKeyId.isEmpty && !accessKeySecret.isEmpty else {
-            print("   ❌ 阿里云短信配置不完整，跳过发送")
-            return
-        }
-        
-        Task {
-            // ✅ 调用后端短信发送 API
-            do {
-                let result = try await DataManager.shared.sendSmsNotification(phone: phone, message: message)
-                if result {
-                    print("   ✅ 阿里云短信发送成功")
-                } else {
-                    print("   ⚠️ 阿里云短信发送失败")
-                }
-            } catch {
-                print("   ❌ 阿里云短信发送失败：\(error)")
-            }
-        }
-    }
-    
-    /// 方案 3: 腾讯云短信 API
-    private func sendViaTencentSms(phone: String, message: String) {
-        print("☁️ [方案 3] 腾讯云短信 API 发送短信")
-        
-        // 🔒 安全修复：从 Keychain 读取密钥
-        let secretId = KeychainManager.shared.getTencentSecretId() ?? ""
-        let secretKey = KeychainManager.shared.getTencentSecretKey() ?? ""
-        
-        guard !secretId.isEmpty && !secretKey.isEmpty else {
-            print("   ❌ 腾讯云短信配置不完整，跳过发送")
-            return
-        }
-        
-        Task {
-            // ✅ 调用后端短信发送 API
-            do {
-                let result = try await DataManager.shared.sendSmsNotification(phone: phone, message: message)
-                if result {
-                    print("   ✅ 腾讯云短信发送成功")
-                } else {
-                    print("   ⚠️ 腾讯云短信发送失败")
-                }
-            } catch {
-                print("   ❌ 腾讯云短信发送失败：\(error)")
-            }
-        }
-    }
+    // 紧急联系人功能已移除（由家人替代）
     
     @MainActor
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
@@ -867,26 +738,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("❌ 遗嘱同步失败或无数据")
                 }
                 
-                print("📦 5. 同步紧急联系人...")
-                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                    print("✅ 紧急联系人同步完成：\(result)")
-                } else {
-                    print("❌ 紧急联系人同步失败或无数据")
-                }
-                
-                print("📦 6. 同步见证人...")
-                if let result = await DataManager.shared.batchSyncWitnesses() {
-                    print("✅ 见证人同步完成：\(result)")
-                } else {
-                    print("❌ 见证人同步失败或无数据")
-                }
-                
                 print("🎉 所有同步任务完成！")
                 print("🔵 ====== recordCheckIn 结束 ======")
             }
-            
-            // 🚨 检查是否需要通知紧急联系人（如果之前已过期）
-            notifyEmergencyContactsIfNeeded()
             
             return .success(())
         } else {
@@ -992,123 +846,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     @MainActor
-    func addEmergencyContact(name: String, phone: String, relationship: String) -> Result<User.EmergencyContact, Error> {
-        guard var user = currentUser else {
-            return .failure(Error.userNotLoggedIn)
-        }
-        
-        let contact = User.EmergencyContact(
-            id: UUID().uuidString,
-            name: name,
-            phone: phone,
-            relationship: relationship,
-            isConfirmed: false,
-            createdAt: Date()
-        )
-        
-        user.emergencyContacts.append(contact)
-        self.currentUser = user
-        
-        // 🔧 修复：同时更新 DataManager
-        DataManager.shared.emergencyContacts.append(contact)
-        
-        if saveUser(user) {
-            print("📞 紧急联系人已添加到本地，准备同步到服务器...")
-            
-            // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
-            
-            // 异步同步到服务器
-            Task {
-                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                    print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                } else {
-                    print("⚠️ 紧急联系人同步失败（可能无网络或未登录）")
-                }
-            }
-            
-            return .success(contact)
-        } else {
-            return .failure(Error.saveFailed)
-        }
-    }
-    
-    @MainActor
-    func deleteEmergencyContact(id: String) -> Result<Void, Error> {
-        guard var user = currentUser else {
-            return .failure(Error.userNotLoggedIn)
-        }
-        
-        // 🔧 修复：标记删除而不是直接删除（用于同步到服务器）
-        if let index = user.emergencyContacts.firstIndex(where: { $0.id == id }) {
-            user.emergencyContacts[index].deletedAt = Date()
-        }
-        
-        // 从 DataManager 中移除（UI 立即更新）
-        DataManager.shared.emergencyContacts.removeAll { $0.id == id }
-        
-        self.currentUser = user
-        
-        if saveUser(user) {
-            print("📞 紧急联系人已标记删除，准备同步到服务器...")
-            
-            // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
-            
-            // 异步同步删除到服务器
-            Task {
-                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                    print("✅ 紧急联系人删除同步成功")
-                } else {
-                    print("⚠️ 紧急联系人删除同步失败")
-                }
-            }
-            
-            return .success(())
-        } else {
-            return .failure(Error.saveFailed)
-        }
-    }
-    
-    @MainActor
-    func updateEmergencyContact(_ contact: User.EmergencyContact) -> Result<Void, Error> {
-        guard var user = currentUser,
-              let index = user.emergencyContacts.firstIndex(where: { $0.id == contact.id }) else {
-            return .failure(Error.userNotLoggedIn)
-        }
-        
-        user.emergencyContacts[index] = contact
-        self.currentUser = user
-        
-        if saveUser(user) {
-            print("📞 紧急联系人已更新到本地，准备同步到服务器...")
-            
-            // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
-            
-            // 异步同步到服务器
-            Task {
-                if let result = await DataManager.shared.batchSyncEmergencyContacts() {
-                    print("✅ 紧急联系人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                } else {
-                    print("⚠️ 紧急联系人同步失败（可能无网络或未登录）")
-                }
-            }
-            
-            return .success(())
-        } else {
-            return .failure(Error.saveFailed)
-        }
-    }
-    
-    func checkEmergencyContacts() {
-        guard let user = currentUser else { return }
-        
-        let count = user.emergencyContacts.count
-        self.needsEmergencyContactCheck = (count < 2)
-        print("🔍 检查紧急联系人：\(count) 个，需要提醒：\(needsEmergencyContactCheck)")
-    }
-    
     func updateCheckInInterval(_ interval: CheckInInterval) -> Result<Void, Error> {
         guard var user = currentUser else {
             print("❌ 用户未登录，无法更新签到间隔")
@@ -1142,10 +879,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("❌ 保存用户文件失败：\(error)")
             return .failure(Error.saveFailed)
         }
-    }
-    
-    func getEmergencyContactsCount() -> Int {
-        return currentUser?.emergencyContacts.count ?? 0
     }
     
     // ✅ P2 修复 #3: 添加加载锁，防止重复请求
@@ -1207,7 +940,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.currentUser = user
                 self.checkInInterval = user.checkInInterval
                 self.lastCheckInDate = user.lastCheckInDate
-                self.checkEmergencyContacts()
                 isUserLoaded = true
                 print("🔐 从 Keychain 恢复永久登录状态")
             }
@@ -1223,7 +955,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.isLoggedIn = true
                 self.checkInInterval = user.checkInInterval
                 self.lastCheckInDate = user.lastCheckInDate
-                self.checkEmergencyContacts()
                 isUserLoaded = true
             }
         }
@@ -1511,19 +1242,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.currentUser = user
                 self.isLoggedIn = true  // 确保登录状态保持
                 
-                // 🔥 自动更新所有统计信息（让 SettingsView 立即显示）
-                self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
-                // witnesses 和 family 是独立管理的，这里不更新
-                // self.currentUser?.witnessesCount = user.witnesses.count
-                // self.currentUser?.familyCount = user.family.count
-                
-                self.checkEmergencyContacts()  // 保存后重新检查
-                
                 // ✅ P0 修复 #3: 仅使用 Keychain 存储用户 ID（安全存储）
                 KeychainManager.shared.saveUserId(user.id)
                 
-                print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
-                print("   统计信息：紧急=\(user.emergencyContacts.count)")
+                print("✅ 用户已保存：\(user.name)")
                 print("   isLoggedIn: \(self.isLoggedIn)")
             }
             return true
@@ -1552,22 +1274,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         DispatchQueue.main.async {
             self.currentUser?.willModulesCount = count
             print("📊 遗嘱数量已更新：\(count)")
-        }
-    }
-    
-    // 🔥 更新紧急联系人数量（让 SettingsView 立即显示）
-    func updateEmergencyContactsCount(_ count: Int) {
-        DispatchQueue.main.async {
-            self.currentUser?.emergencyContactsCount = count
-            print("📊 紧急联系人数量已更新：\(count)")
-        }
-    }
-    
-    // 🔥 更新见证人数量（让 SettingsView 立即显示）
-    func updateWitnessesCount(_ count: Int) {
-        DispatchQueue.main.async {
-            self.currentUser?.witnessesCount = count
-            print("📊 见证人数量已更新：\(count)")
         }
     }
     

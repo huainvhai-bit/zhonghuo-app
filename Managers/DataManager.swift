@@ -49,7 +49,6 @@ class DataManager: ObservableObject {
     
     // MARK: - 用户数据
     @Published var currentUser: User?
-    @Published var emergencyContacts: [User.EmergencyContact] = []
     @Published var capsules: [TimeCapsule] = []
     @Published var receivedCapsules: [ReceivedCapsule] = []  // ✅ 我收到的胶囊
     @Published var deletedCapsules: [TimeCapsule] = []  // 🔥 跟踪已删除的胶囊（用于同步删除到服务器）
@@ -253,8 +252,6 @@ class DataManager: ObservableObject {
     init() {
         self.settings = UserSettings(
             name: "用户",
-            emergencyContact: nil,
-            emergencyContacts: [],
             checkInInterval: .twoDays,
             notificationsEnabled: true,
             cloudSyncEnabled: true,
@@ -710,72 +707,36 @@ class DataManager: ObservableObject {
         return NotificationConfig()
     }
     
-    // MARK: - 见证人管理
+    // MARK: - 见证人管理（本地存储，无后端同步）
     func addWitness(_ witness: Witness) {
         witnesses.append(witness)
         saveWitnessesToFile()
-        print("👥 见证人已添加到本地，准备同步到服务器...")
+        print("👥 见证人已添加")
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知
         NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-        
-        // 异步同步到服务器
-        Task {
-            if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-            } else {
-                print("⚠️ 见证人同步失败（可能无网络或未登录）")
-            }
-        }
     }
     
     func deleteWitness(_ witness: Witness) {
-        // 🔧 修复：先标记 deletedAt，再同步到服务器（让后端执行删除）
-        var deletedWitness = witness
-        deletedWitness.deletedAt = Date()
-        
         if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
-            witnesses[index] = deletedWitness
+            witnesses.remove(at: index)
+            saveWitnessesToFile()
+            print("👥 见证人已删除")
         }
-        saveWitnessesToFile()
-        print("👥 见证人已标记删除，准备同步到服务器...")
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知
         NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-        
-        // 异步同步到服务器（会发送 deletedAt 标记）
-        Task {
-            if let result = await batchSyncWitnesses() {
-                print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                // 同步成功后再从本地移除
-                await MainActor.run {
-                    self.witnesses.removeAll { $0.id == witness.id }
-                    self.saveWitnessesToFile()
-                }
-            } else {
-                print("⚠️ 见证人同步失败（可能无网络或未登录）")
-            }
-        }
     }
     
     func updateWitness(_ witness: Witness) {
         if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
             witnesses[index] = witness
             saveWitnessesToFile()
-            print("👥 见证人已更新到本地，准备同步到服务器...")
-            
-            // 发送数据变更通知（触发实时同步）
-            NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-            
-            // 异步同步到服务器
-            Task {
-                if let result = await batchSyncWitnesses() {
-                    print("✅ 见证人同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                } else {
-                    print("⚠️ 见证人同步失败（可能无网络或未登录）")
-                }
-            }
+            print("👥 见证人已更新")
         }
+        
+        // 发送数据变更通知
+        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
     }
     
     func getWitnessProgress() -> Double {
@@ -1353,92 +1314,6 @@ class DataManager: ObservableObject {
         }
     }
     
-    func batchSyncEmergencyContacts() async -> (total: Int, created: Int, updated: Int)? {
-        // 🔧 修复：从 currentUser 读取数据
-        guard UserManager.shared.currentUser?.id != nil else {
-            print("⚠️ 紧急联系人同步：用户未登录")
-            return nil
-        }
-        
-        // 使用 currentUser 的 emergencyContacts
-        let contacts = UserManager.shared.currentUser?.emergencyContacts ?? []
-        
-        print("📞 开始同步紧急联系人：共 \(contacts.count) 个")
-        guard !contacts.isEmpty else { 
-            print("📞 紧急联系人：无数据需要同步")
-            return (0, 0, 0) 
-        }
-        
-        // 转换为 API 输入格式
-        let inputs = contacts.map { contact in
-            ContactInput(
-                id: contact.id,
-                name: contact.name,
-                phone: contact.phone,
-                relationship: contact.relationship,
-                deletedAt: contact.deletedAt != nil ? ISO8601DateFormatter().string(from: contact.deletedAt!) : nil
-            )
-        }
-        
-        do {
-            let result = try await APIManager.shared.batchSyncEmergencyContacts(inputs.map { $0.toDictionary() })
-            
-            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
-            let batchData = result["data"] as? [String: Any]
-            let syncResult = batchData?["batchSyncEmergencyContacts"] as? [String: Any]
-            let total = syncResult?["total"] as? Int ?? 0
-            let created = syncResult?["created"] as? Int ?? 0
-            let updated = syncResult?["updated"] as? Int ?? 0
-            print("✅ 紧急联系人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
-            
-            return (total, created, updated)
-        } catch {
-            print("❌ 紧急联系人同步失败：\(error)")
-            return nil
-        }
-    }
-    
-    func batchSyncWitnesses() async -> (total: Int, created: Int, updated: Int)? {
-        print("👥 开始同步见证人：共 \(witnesses.count) 个")
-        
-        // 🔧 修复：包含已标记删除的见证人（deletedAt != nil）
-        let witnessesToSync = witnesses.filter { !$0.id.isEmpty }
-        guard !witnessesToSync.isEmpty else { return (0, 0, 0) }
-        
-        let inputs = witnessesToSync.map { witness in
-            var deletedAtStr: String? = nil
-            if let deletedAt = witness.deletedAt {
-                let formatter = ISO8601DateFormatter()
-                deletedAtStr = formatter.string(from: deletedAt)
-            }
-            return WitnessInput(
-                id: witness.id,
-                name: witness.name,
-                phone: witness.phone,
-                relationship: witness.relationship,
-                isConfirmed: witness.isConfirmed,
-                deletedAt: deletedAtStr
-            )
-        }
-        
-        do {
-            let result = try await APIManager.shared.batchSyncWitnesses(inputs.map { $0.toDictionary() })
-            
-            // ✅ 解析服务器返回的同步结果（GraphQL 嵌套结构）
-            let batchData = result["data"] as? [String: Any]
-            let syncResult = batchData?["batchSyncWitnesses"] as? [String: Any]
-            let total = syncResult?["total"] as? Int ?? 0
-            let created = syncResult?["created"] as? Int ?? 0
-            let updated = syncResult?["updated"] as? Int ?? 0
-            print("✅ 见证人同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
-            
-            return (total, created, updated)
-        } catch {
-            print("❌ 见证人同步失败：\(error)")
-            return nil
-        }
-    }
-    
     func batchSyncAssets() async -> (total: Int, created: Int, updated: Int)? {
         print("💰 开始同步资产：共 \(assets.count) 个")
         guard !assets.isEmpty else { return (0, 0, 0) }
@@ -1931,36 +1806,6 @@ class DataManager: ObservableObject {
             print("✅ 恢复遗嘱：\(willModules.count) 个")
         }
         
-        // 4. 解析紧急联系人
-        if let contactsData = serverData["contacts"] as? [[String: Any]] {
-            emergencyContacts.removeAll()
-            for item in contactsData {
-                do {
-                    let jsonData = try JSONSerialization.data(withJSONObject: item)
-                    let contact = try JSONDecoder().decode(User.EmergencyContact.self, from: jsonData)
-                    emergencyContacts.append(contact)
-                } catch {
-                    print("⚠️ 解析联系人失败：\(error)")
-                }
-            }
-            print("✅ 恢复紧急联系人：\(emergencyContacts.count) 个")
-        }
-        
-        // 5. 解析见证人
-        if let witnessesData = serverData["witnesses"] as? [[String: Any]] {
-            witnesses.removeAll()
-            for item in witnessesData {
-                do {
-                    let jsonData = try JSONSerialization.data(withJSONObject: item)
-                    let witness = try JSONDecoder().decode(Witness.self, from: jsonData)
-                    witnesses.append(witness)
-                } catch {
-                    print("⚠️ 解析见证人失败：\(error)")
-                }
-            }
-            print("✅ 恢复见证人：\(witnesses.count) 个")
-        }
-        
         print("☁️ ====== 云端恢复完成 ======")
         
         // 6. 通知其他视图刷新
@@ -2239,16 +2084,6 @@ class DataManager: ObservableObject {
                 Logger.shared.i("资产同步完成：\(assetsResult.total) 个，\(assetsResult.created) 新增，\(assetsResult.updated) 更新")
             } else {
                 Logger.shared.w("资产同步失败")
-            }
-            
-            // 4. 同步紧急联系人（通过 GraphQL）
-            let query = """
-            query { emergencyContacts { id name phone relationship createdAt }
-            """
-            if let _ = try? await sendGraphQLQuery(query: query, variables: [:], baseURL: DataManager.apiURL) {
-                Logger.shared.i("紧急联系人同步完成")
-            } else {
-                Logger.shared.w("紧急联系人同步失败")
             }
             
             Logger.shared.i("数据下载完成")
