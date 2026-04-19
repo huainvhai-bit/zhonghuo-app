@@ -289,6 +289,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await initializeAPIConfig()
         }
         
+        // ========== JPush 极光推送初始化 ==========
+        setupJPush()
+        
         // 请求通知权限
         NotificationManager.shared.requestPermission()
         
@@ -307,6 +310,33 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         Logger.shared.i("终活 App 启动完成")
         return true
+    }
+    
+    // MARK: - JPush 极光推送
+    private func setupJPush() {
+        // 初始化 JPush
+        JPushManager.shared.setup()
+        
+        // 设置通知监听
+        JPushManager.shared.addObserver(JPushNotificationDelegate())
+        
+        // 设置别名（用户 ID）
+        if let userId = UserManager.shared.currentUser?.id {
+            JPushManager.shared.setAlias(userId: userId)
+        }
+        
+        // 监听登录状态变化，登录后设置别名
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("UserDidLogin"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let userId = notification.userInfo?["userId"] as? String {
+                JPushManager.shared.setAlias(userId: userId)
+            }
+        }
+        
+        Logger.shared.i("JPush 极光推送初始化完成")
     }
     
     /// 设置签到提醒通知
@@ -423,6 +453,43 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
             group.cancelAll()
             return result
+        }
+    }
+    
+    // MARK: - APNs Token 处理
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // JPush 处理 Token
+        JPushManager.shared.handleRemoteNotification(deviceToken: deviceToken)
+        
+        // 保存 Token 到服务器
+        let tokenString = deviceToken.reduce("") { $0 + String(format: "%02x", $1) }
+        Logger.shared.i("APNs Token: \(tokenString)")
+        
+        Task {
+            await uploadDeviceToken(tokenString)
+        }
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Logger.shared.e("注册推送失败：\(error.localizedDescription)")
+    }
+    
+    private func uploadDeviceToken(_ token: String) async {
+        guard !DataManager.apiURL.isEmpty else { return }
+        
+        do {
+            let mutation = """
+            mutation {
+                updateDeviceToken(token: "\(token)") {
+                    success
+                    message
+                }
+            }
+            """
+            let _ = try await APIClient.shared.query(mutation)
+            Logger.shared.i("设备 Token 上传成功")
+        } catch {
+            Logger.shared.e("设备 Token 上传失败：\(error)")
         }
     }
 }
