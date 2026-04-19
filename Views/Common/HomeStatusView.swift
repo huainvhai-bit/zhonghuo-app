@@ -25,17 +25,19 @@ struct HomeStatusView: View {
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
     @State private var navigateToFamilyTab = false  // 跳转到家人守护 tab
+    @State private var navigateToReceivedCapsules = false  // 跳转到我收到的胶囊列表
     @State private var showingEmergencyContactAlert = false
     @State private var hasSentOverdueAlert = false  // 防止重复发送
     
     var body: some View {
         NavigationView {
-            ZStack {
+            ZStack(alignment: .top) {
                 // ✅ 修复 #5: 背景色全屏覆盖
                 Color(hex: "F5F5F7")
-                    .ignoresSafeArea(edges: .all)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
                 
-                ScrollView {
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
                         checkInCard
                         statusCard
@@ -53,6 +55,16 @@ struct HomeStatusView: View {
                 .opacity(0)
                 
                 NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                NavigationLink(destination: FamilyGuardView(), isActive: $navigateToFamilyTab) {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                NavigationLink(destination: ReceivedCapsuleListView(), isActive: $navigateToReceivedCapsules) {
                     EmptyView()
                 }
                 .opacity(0)
@@ -105,7 +117,7 @@ struct HomeStatusView: View {
                     .animation(.easeInOut, value: showingEmergencyContactAlert)
                 }
             }
-            .navigationTitle("终活")
+            .navigationTitle("终活与您相伴")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
@@ -116,7 +128,7 @@ struct HomeStatusView: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("终活 v2.0 ✅")
+                        Text("终活与您相伴 v2.0 ✅")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -666,7 +678,7 @@ struct HomeStatusView: View {
                 
                 Button(action: {
                     print("🔵 点击全部胶囊")
-                    navigateToTimeCapsule = true
+                    navigateToReceivedCapsules = true
                 }) {
                     HStack(spacing: 4) {
                         Text("全部")

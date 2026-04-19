@@ -58,6 +58,7 @@
 		97501D39E274F50B537F2C1F /* UserRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756A694388DC598CABA5FAAC /* UserRegistration.swift */; };
 		97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC4F388F156F28F282BCEED /* AppDelegate.swift */; };
 		98F1357A060FC30A4D245F6A /* CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BFA8438947FDF8248E94D2 /* CapsuleList.swift */; };
+		98F1357A060FC30A4D245F6B /* ReceivedCapsuleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BFA8438947FDF8248E94D3 /* ReceivedCapsuleListView.swift */; };
 		9AC21E948DB60E4B03E1F991 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38A16566FA6A3CFC2001EA6D /* Assets.xcassets */; };
 		A45FFBE7475207A7E7ACD6CA /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84AA0E96ABE23474519AE97 /* AuthManager.swift */; };
 		BA1C277BDA6DB2B0A2FE1F60 /* AppStabilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF18D579F81785A766089D84 /* AppStabilityManager.swift */; };
@@ -100,6 +101,7 @@
 		1C5985EAC98FF0EDD52C90EF /* CacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		22B1C2207AA0A72A3E491CCF /* JPushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JPushManager.swift; sourceTree = "<group>"; };
 		22BFA8438947FDF8248E94D2 /* CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleList.swift; sourceTree = "<group>"; };
+		22BFA8438947FDF8248E94D3 /* ReceivedCapsuleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceivedCapsuleListView.swift; sourceTree = "<group>"; };
 		2385BCE489E0E1D9CC381321 /* MembershipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipView.swift; sourceTree = "<group>"; };
 		24093F404A9CDA5C0009ADA3 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
 		25EB1D416461C0F9C39C204D /* ElectronicSignatureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicSignatureManager.swift; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 				D362F8852AD868374DE0B2E8 /* CapsuleDetailView.swift */,
 				BF96CA00BF4BBF71A809D788 /* CapsuleEditView.swift */,
 				22BFA8438947FDF8248E94D2 /* CapsuleList.swift */,
+				22BFA8438947FDF8248E94D3 /* ReceivedCapsuleListView.swift */,
 			);
 			path = Capsule;
 			sourceTree = "<group>";
@@ -474,6 +477,7 @@
 				BFDB09BCFD9D3B4BFAA140D0 /* CapsuleDetailView.swift in Sources */,
 				EC785AEBB076D3BF08DB675A /* CapsuleEditView.swift in Sources */,
 				98F1357A060FC30A4D245F6A /* CapsuleList.swift in Sources */,
+				98F1357A060FC30A4D245F6B /* ReceivedCapsuleListView.swift in Sources */,
 				96E0839C93AB01E58042A0AD /* CloudStorageManager.swift in Sources */,
 				6861066F0060556303486D0E /* Colors.swift in Sources */,
 				20D9C65D3B49436EA54491B1 /* ConfigManager.swift in Sources */,
