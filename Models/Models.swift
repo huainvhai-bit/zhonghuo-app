@@ -1107,6 +1107,9 @@ struct SystemConfig: Codable {
     /// 签到提醒：推送间隔时间（小时）（默认 2 小时）
     var checkinReminderIntervalHours: Double = 2.0
     
+    /// 超时推送间隔（小时）（默认 1 小时）
+    var overduePushIntervalHours: Double = 1.0
+    
     /// 紧急联系人：最少数量要求（默认 2 人）
     var minimumEmergencyContacts: Int = 2
     

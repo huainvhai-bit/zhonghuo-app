@@ -75,9 +75,9 @@ class DataManager: ObservableObject {
         let query = """
         query {
             getConfig {
-                checkinIntervalHours
                 checkinReminderThresholdHours
                 checkinReminderIntervalHours
+                overduePushIntervalHours
                 smsIsDevelopment
                 memberPriceMonthly
                 memberPriceYearly
@@ -101,20 +101,18 @@ class DataManager: ObservableObject {
         
         await MainActor.run {
             // ✅ 修复：解析配置使用正确的字段名（匹配后端返回）
-            let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
+            // 🔧 移除 checkinIntervalHours：签到间隔由用户在 App 设置，后端不再控制
             let reminderThreshold = configData["checkinReminderThresholdHours"] as? Int ?? 12
             let reminderInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
+            let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
             let smsDev = configData["smsIsDevelopment"] as? Int ?? 1
             
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderThreshold),
                 checkinReminderIntervalHours: Double(reminderInterval),
-                minimumEmergencyContacts: 2,
-                checkinIntervalHours: Double(checkinHours)
+                overduePushIntervalHours: Double(overduePushInterval),
+                minimumEmergencyContacts: 2
             )
-            
-            // 保存签到间隔到 UserSettings
-            self.self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
             
             // 使用后端返回的地址（无条件相信）
             DataManager.baseURL = baseURL
@@ -129,9 +127,9 @@ class DataManager: ObservableObject {
             if DebugConfig.enableLogs {
                 print("✅ 后端配置获取成功（GraphQL）")
                 print("   Base URL: \(DataManager.baseURL)")
-                print("   签到间隔：\(checkinHours) 小时")
                 print("   提醒阈值：\(reminderThreshold) 小时")
                 print("   推送间隔：\(reminderInterval) 小时")
+                print("   超时推送间隔：\(overduePushInterval) 小时")
                 print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
             }
         }
@@ -280,7 +278,7 @@ class DataManager: ObservableObject {
         guard !DataManager.apiURL.isEmpty else { return false }
         
         do {
-            let query = "query { getConfig { checkinIntervalHours } }"
+            let query = "query { getConfig { checkinReminderThresholdHours checkinReminderIntervalHours } }"
             guard let url = URL(string: "\(DataManager.apiURL)/api/graphql.php") else {
                 print("❌ 无效的 API URL")
                 return false
@@ -668,12 +666,13 @@ class DataManager: ObservableObject {
         
         do {
             // ✅ 修复：使用正确的字段名（匹配后端返回）
+            // 🔧 移除 checkinIntervalHours：签到间隔由用户在 App 设置，后端不再控制
             let query = """
             query {
                 getConfig {
-                    checkinIntervalHours
                     checkinReminderThresholdHours
                     checkinReminderIntervalHours
+                    overduePushIntervalHours
                 }
             }
             """
@@ -684,15 +683,14 @@ class DataManager: ObservableObject {
                let configData = data["getConfig"] as? [String: Any] {
                 
                 // ✅ 修复：使用正确的字段名解析
-                let checkinInterval = configData["checkinIntervalHours"] as? Int ?? 48
                 let firstReminder = configData["checkinReminderThresholdHours"] as? Int ?? 12
                 let reminderInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
+                let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
                 
                 let config = NotificationConfig(
-                    checkInInterval: checkinInterval,
                     firstReminderHours: firstReminder,
                     reminderInterval: reminderInterval,
-                    overduePushInterval: 1,
+                    overduePushInterval: overduePushInterval,
                     enableSmsNotification: true
                 )
                 
@@ -1985,9 +1983,9 @@ class DataManager: ObservableObject {
             let query = """
             query {
                 getConfig {
-                    checkinIntervalHours
                     checkinReminderThresholdHours
                     checkinReminderIntervalHours
+                    overduePushIntervalHours
                     smsIsDevelopment
                     latestVersion
                     forceUpdateVersion
@@ -2008,9 +2006,10 @@ class DataManager: ObservableObject {
             
             if let data = response["data"] as? [String: Any],
                let configData = data["getConfig"] as? [String: Any] {
-                let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
+                // 🔧 移除 checkinIntervalHours：签到间隔由用户在 App 设置，后端不再控制
                 let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
                 let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
+                let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
                 let latestVersion = configData["latestVersion"] as? String ?? "1.0.0"
                 let forceUpdateVersion = configData["forceUpdateVersion"] as? String ?? "0.0.0"
                 let updateUrl = configData["updateUrl"] as? String ?? ""
@@ -2028,6 +2027,7 @@ class DataManager: ObservableObject {
                 systemConfig = SystemConfig(
                     checkinReminderThresholdHours: Double(reminderHours),
                     checkinReminderIntervalHours: Double(pushInterval),
+                    overduePushIntervalHours: Double(overduePushInterval),
                     minimumEmergencyContacts: 2,
                     latestVersion: latestVersion,
                     forceUpdateVersion: forceUpdateVersion,
@@ -2052,12 +2052,10 @@ class DataManager: ObservableObject {
                     premiumMaxVideoMinutes: premiumMaxVideoMinutes
                 )
                 
-                self.settings.checkInInterval = checkinHours == 24 ? .oneDay : .twoDays
-                
                 print("✅ 系统配置加载成功（GraphQL）")
-                print("   - 签到间隔：\(checkinHours) 小时")
                 print("   - 签到提醒阈值：\(reminderHours) 小时")
                 print("   - 签到提醒间隔：\(pushInterval) 小时")
+                print("   - 超时推送间隔：\(overduePushInterval) 小时")
                 print("   - 最新版本：\(latestVersion)")
                 print("   - 强制更新版本：\(forceUpdateVersion)")
                 print("   - 更新地址：\(updateUrl)")

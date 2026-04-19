@@ -73,9 +73,9 @@ class ConfigManager: ObservableObject {
         let query = """
         query {
             getConfig {
-                checkinIntervalHours
                 checkinReminderThresholdHours
                 checkinReminderIntervalHours
+                overduePushIntervalHours
                 maintenanceMode
                 maintenanceMessage
                 smsIsDevelopment
@@ -111,10 +111,10 @@ class ConfigManager: ObservableObject {
         }
         
         await MainActor.run {
-            // 解析配置
-            let checkinHours = configData["checkinIntervalHours"] as? Int ?? 48
+            // 解析配置（签到间隔由用户在 App 设置，后端不再控制）
             let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
             let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
+            let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
             _ = configData["smsIsDevelopment"] as? Int ?? 1
             
             // 会员价格配置
@@ -148,8 +148,8 @@ class ConfigManager: ObservableObject {
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderHours),
                 checkinReminderIntervalHours: Double(pushInterval),
+                overduePushIntervalHours: Double(overduePushInterval),
                 minimumEmergencyContacts: 2,
-                checkinIntervalHours: Double(checkinHours),
                 offlineTimeoutHours: 24.0,
                 appVersionLatest: "2.0.0",
                 appVersionForceUpdate: "1.0.0",
