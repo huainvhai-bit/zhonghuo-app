@@ -12,7 +12,7 @@ settings:
   base:
     PRODUCT_NAME: 终活
     PRODUCT_BUNDLE_IDENTIFIER: com.zhonghuo.app
-    MARKETING_VERSION: 2.0
+    MARKETING_VERSION: 2.0.0
     CURRENT_PROJECT_VERSION: 1
     INFOPLIST_FILE: Info.plist
     CODE_SIGN_STYLE: Automatic

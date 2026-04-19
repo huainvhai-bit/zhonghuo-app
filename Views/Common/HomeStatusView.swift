@@ -128,7 +128,7 @@ struct HomeStatusView: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("终活与您相伴 v2.0 ✅")
+                        Text("终活与您相伴 v2.0.0 ✅")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -635,7 +635,7 @@ struct HomeStatusView: View {
                 
                 Button(action: {
                     print("🔵 点击查看全部")
-                    navigateToWillAssets = true
+                    navigateToTimeCapsule = true
                 }) {
                     HStack(spacing: 4) {
                         Text("查看全部")
@@ -647,8 +647,8 @@ struct HomeStatusView: View {
                 }
             }
             
-            ProgressRow(label: "身后嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
-                print("🔵 点击身后嘱托进度")
+            ProgressRow(label: "我的嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
+                print("🔵 点击我的嘱托进度")
                 navigateToWillAssets = true
             })
             ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {

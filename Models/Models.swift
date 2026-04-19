@@ -1153,6 +1153,10 @@ struct SystemConfig: Codable {
     var premiumCloudBackup: Bool = true
     var premiumDataExport: Bool = true
     var premiumAiAssist: Bool = true
+    
+    // MARK: - 客服配置
+    var customerServicePhone: String = "400-123-4567"
+    var customerServiceEmail: String = "support@zhonghuo.cn"
 }
 
 // MARK: - 配置 API 响应
