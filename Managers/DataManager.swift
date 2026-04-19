@@ -2083,7 +2083,7 @@ class DataManager: ObservableObject {
         Logger.shared.i("开始从云端下载数据...")
         
         do {
-            // ✅ 修复 TODO: 实现完整的数据下载逻辑
+            // ✅ 已实现完整的数据下载逻辑
             // 1. 同步胶囊数据
             if let capsulesResult = await batchSyncCapsules() {
                 Logger.shared.i("胶囊同步完成：\(capsulesResult.total) 个，\(capsulesResult.created) 新增，\(capsulesResult.updated) 更新")
