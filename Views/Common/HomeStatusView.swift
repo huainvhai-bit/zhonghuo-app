@@ -178,6 +178,14 @@ struct HomeStatusView: View {
     @MainActor
     private func handleAutoCheckIn() {
         let userManager = UserManager.shared
+        
+        // 👨‍👩‍👧 如果是家人模式，跳过自动签到
+        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        if isFamilyMode {
+            print("👨‍👩‍👧 家人模式：跳过自动签到")
+            return
+        }
+        
         guard userManager.isLoggedIn else {
             print("⚠️ 自动签到：用户未登录")
             return
@@ -365,6 +373,12 @@ struct HomeStatusView: View {
     }
     
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
+        // 👨‍👩‍👧 家人模式永远返回安全
+        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        if isFamilyMode {
+            return (true, 999)  // 大的数字表示安全
+        }
+        
         let hours = dataManager.settings.checkInInterval.hours
         
         // 📱 使用后端配置的离线阈值（默认 24 小时）
@@ -393,50 +407,70 @@ struct HomeStatusView: View {
     
     // MARK: - 签到卡片
     private var checkInCard: some View {
-        VStack(spacing: 18) {
+        // 👨‍👩‍👧 家人模式显示不同的 UI
+        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        
+        return VStack(spacing: 18) {
             HStack {
                 HStack(spacing: 8) {
-                    Image(systemName: "checkmark.shield.fill")
+                    Image(systemName: isFamilyMode ? "person.2.fill" : "checkmark.shield.fill")
                         .font(.system(size: 18))
-                    Text("安全签到")
+                    Text(isFamilyMode ? "家人守护中" : "安全签到")
                         .font(.headline)
                 }
                 .foregroundColor(.white.opacity(0.95))
                 
                 Spacer()
                 
-                // 倒计时标签
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 12))
-                    Text("距下次签到")
-                        .font(.system(size: 12))
+                if !isFamilyMode {
+                    // 倒计时标签
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 12))
+                        Text("距下次签到")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
                 }
-                .foregroundColor(.white.opacity(0.8))
             }
             
-            Text(formatCountdown(timerManager.secondsRemaining))
-                .font(.system(size: 52, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
-                .monospacedDigit()
-            
-            // ✅ 提示文字：打开 App 即可自动签到
-            Text("打开 App 即可自动签到")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+            if isFamilyMode {
+                // 👨‍👩‍👧 家人模式显示守护图标
+                Image(systemName: "heart.circle.fill")
+                    .font(.system(size: 72))
+                    .foregroundColor(.white)
+                
+                Text("您正在守护家人的安全")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+                
+                Text("查看家人的签到状态")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.8))
+            } else {
+                Text(formatCountdown(timerManager.secondsRemaining))
+                    .font(.system(size: 52, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+                
+                // ✅ 提示文字：打开 App 即可自动签到
+                Text("打开 App 即可自动签到")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+            }
             
             // 🚫 已移除手动签到按钮 - 打开 App 自动签到
         }
         .padding(26)
         .background(
             LinearGradient(
-                gradient: Gradient(colors: checkInColors),
+                gradient: Gradient(colors: isFamilyMode ? [Color.green.opacity(0.8), Color.blue.opacity(0.8)] : checkInColors),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .cornerRadius(22)
-        .shadow(color: checkInShadowColor.opacity(0.35), radius: 12, x: 0, y: 6)
+        .shadow(color: (isFamilyMode ? Color.green : checkInShadowColor).opacity(0.35), radius: 12, x: 0, y: 6)
     }
     
     // 🎨 签到卡片颜色（根据倒计时状态变化）

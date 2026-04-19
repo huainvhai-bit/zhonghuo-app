@@ -13,6 +13,7 @@ struct SettingsDetailView: View {
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var themeManager = ThemeManager.shared
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false
+    @AppStorage("isFamilyMode") private var isFamilyMode = false
     @State private var showingLogoutConfirm = false
     @State private var showingRestoreAlert = false
     @State private var showingRestoreConfirmAlert = false
@@ -29,6 +30,20 @@ struct SettingsDetailView: View {
                     NavigationLink(destination: LocationSettingsView()) {
                         SettingsRow(icon: "location.fill", iconColor: .blue, title: "定位服务", subtitle: "签到时获取位置")
                     }
+                }
+                
+                // 👨‍👩‍👧 家人守护模式
+                Section(header: Text("家人守护")) {
+                    Toggle(isOn: $isFamilyMode) {
+                        SettingsRow(icon: "person.2.fill", iconColor: .green, title: "我是家人", subtitle: "停止签到倒计时")
+                    }
+                    .tint(Color(hex: "6366F1"))
+                }
+                
+                Section(header: Text("说明")) {
+                    Text("开启「我是家人」后，您将不需要进行安全签到。此设备作为守护者使用，负责查看家人的安全状态，不再进行自我签到倒计时。")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
                 }
                 
                 // 🎨 主题设置
