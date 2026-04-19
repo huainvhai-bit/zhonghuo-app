@@ -1031,6 +1031,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 checkinCount
                 createdAt
                 updatedAt
+                isPremium
+                memberType
+                memberExpireAt
+                memberMaxCapsules
+                memberMaxVideoMinutes
+                aiAssistEnabled
                 stats {
                     capsulesCount
                     willModulesCount
