@@ -9,10 +9,12 @@ import SwiftUI
 
 struct MembershipView: View {
     @StateObject private var membership = MembershipManager.shared
+    @StateObject private var iapManager = IAPManager.shared
     @Environment(\.dismiss) var dismiss
     @State private var selectedPlan: String = "yearly"
     @State private var showingPurchaseAlert = false
     @State private var purchaseMessage = ""
+    @State private var isPurchasing = false
     
     var body: some View {
         NavigationView {
@@ -192,20 +194,28 @@ struct MembershipView: View {
             Button(action: {
                 purchaseMembership()
             }) {
-                Text("立即开通 \(selectedPlanName)")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                Group {
+                    if isPurchasing {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("立即开通 \(selectedPlanName)")
+                    }
+                }
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-                    .cornerRadius(12)
+                )
+                .cornerRadius(12)
             }
+            .disabled(isPurchasing)
             
             Text("7天免费试用 · 随时取消")
                 .font(.system(size: 12))
@@ -222,11 +232,83 @@ struct MembershipView: View {
     }
     
     private func purchaseMembership() {
-        // TODO: 接入 Apple IAP
-        // 目前先模拟购买成功
-        membership.activatePremium(type: selectedPlan)
-        purchaseMessage = "\(selectedPlanName)开通成功！"
-        showingPurchaseAlert = true
+        Task {
+            isPurchasing = true
+            
+            // 确保商品已加载
+            if iapManager.products.isEmpty {
+                await iapManager.loadProducts()
+            }
+            
+            // 确定商品类型
+            let productType: IAPProductType = selectedPlan == "monthly" ? .monthly : .yearly
+            
+            // 执行购买
+            let result = await iapManager.purchase(productType)
+            
+            isPurchasing = false
+            
+            switch result {
+            case .success(let transactionId, let expiryDate):
+                // 购买成功，激活会员
+                print("✅ IAP 购买成功: transactionId=\(transactionId), expiry=\(expiryDate)")
+                
+                // 调用服务器激活会员
+                await activateMembershipOnServer(type: selectedPlan, transactionId: transactionId, expiryDate: expiryDate)
+                
+                purchaseMessage = "\(selectedPlanName)开通成功！"
+                showingPurchaseAlert = true
+                
+            case .pending:
+                purchaseMessage = "购买处理中，请稍候..."
+                showingPurchaseAlert = true
+                
+            case .cancelled:
+                // 用户取消，不显示提示
+                break
+                
+            case .failure(let error):
+                purchaseMessage = "购买失败：\(error)"
+                showingPurchaseAlert = true
+            }
+        }
+    }
+    
+    /// 在服务器上激活会员
+    private func activateMembershipOnServer(type: String, transactionId: String, expiryDate: Date) async {
+        // 1. 先在本地激活
+        membership.activatePremium(type: type)
+        
+        // 2. 同步到服务器
+        do {
+            let mutation = """
+            mutation($memberType: String!, $receipt: String!) {
+                activateMembership(memberType: $memberType, receipt: $receipt) {
+                    success
+                    isPremium
+                    memberType
+                    memberExpireAt
+                }
+            }
+            """
+            
+            let variables: [String: Any] = [
+                "memberType": type,
+                "receipt": transactionId  // 发送交易ID用于验证
+            ]
+            
+            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+            
+            if let data = result["data"] as? [String: Any],
+               let activation = data["activateMembership"] as? [String: Any],
+               let success = activation["success"] as? Bool, success {
+                print("✅ 会员激活已同步到服务器")
+            } else {
+                print("⚠️ 会员激活同步失败，但本地已激活")
+            }
+        } catch {
+            print("❌ 会员激活同步异常：\(error)")
+        }
     }
 }
 

@@ -55,6 +55,9 @@
 		8D6774B58E51706262FFE6A9 /* iCloudBackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D3517D4F96B7198C41F90E /* iCloudBackupManager.swift */; };
 		91B4413C33A9BC292E66334D /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF48D9A24F5A11D85970B1D9 /* NotificationManager.swift */; };
 		96E0839C93AB01E58042A0AD /* CloudStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26F00E18E8C7FD3C8A78C20 /* CloudStorageManager.swift */; };
+		C22222222222222222222222 /* ChunkedUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11111111111111111111111 /* ChunkedUploadManager.swift */; };
+		D22222222222222222222222 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11111111111111111111111 /* IAPManager.swift */; };
+
 		97501D39E274F50B537F2C1F /* UserRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756A694388DC598CABA5FAAC /* UserRegistration.swift */; };
 		97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC4F388F156F28F282BCEED /* AppDelegate.swift */; };
 		98F1357A060FC30A4D245F6A /* CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BFA8438947FDF8248E94D2 /* CapsuleList.swift */; };
@@ -149,6 +152,9 @@
 		9565B8C236626500A835ED98 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictResolver.swift; sourceTree = "<group>"; };
 		95C8821E01F5E6D6F9DE4CDB /* PDFExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportSheet.swift; sourceTree = "<group>"; };
 		9E8CFE86A4D1E78431CED3AB /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
+		C11111111111111111111111 /* ChunkedUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkedUploadManager.swift; sourceTree = "<group>"; };
+		D11111111111111111111111 /* IAPManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
+
 		A2A3E01C9ACADA450D2015E9 /* AccessibilityEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityEnhancer.swift; sourceTree = "<group>"; };
 		A34C0CBE2069F104EE75A3ED /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		A3F40F41BA91031BF285AB47 /* FamilyGuardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyGuardView.swift; sourceTree = "<group>"; };
@@ -315,6 +321,8 @@
 				1C5985EAC98FF0EDD52C90EF /* CacheManager.swift */,
 				D26F00E18E8C7FD3C8A78C20 /* CloudStorageManager.swift */,
 				9E8CFE86A4D1E78431CED3AB /* ConfigManager.swift */,
+				C11111111111111111111111 /* ChunkedUploadManager.swift */,
+				D11111111111111111111111 /* IAPManager.swift */,
 				74E7C897CF12FE9BA3AA1C69 /* DataManager.swift */,
 				E94B7C8DB86285832F630F88 /* DeviceMonitor.swift */,
 				25EB1D416461C0F9C39C204D /* ElectronicSignatureManager.swift */,
@@ -479,6 +487,8 @@
 				98F1357A060FC30A4D245F6A /* CapsuleList.swift in Sources */,
 				98F1357A060FC30A4D245F6B /* ReceivedCapsuleListView.swift in Sources */,
 				96E0839C93AB01E58042A0AD /* CloudStorageManager.swift in Sources */,
+				C22222222222222222222222 /* ChunkedUploadManager.swift in Sources */,
+				D22222222222222222222222 /* IAPManager.swift in Sources */,
 				6861066F0060556303486D0E /* Colors.swift in Sources */,
 				20D9C65D3B49436EA54491B1 /* ConfigManager.swift in Sources */,
 				031A92067F1801ED26FAB895 /* ContentView.swift in Sources */,
