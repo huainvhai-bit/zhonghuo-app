@@ -362,7 +362,7 @@ struct SettingsView: View {
                 Button(action: { showingEditProfile = true }) {
                     ZStack {
                         Circle()
-                            .fill(Color.white.opacity(0.2))
+                            .fill(userAvatarGradient())
                             .frame(width: 70, height: 70)
                         
                         Image(systemName: "person.fill")
@@ -459,6 +459,33 @@ struct SettingsView: View {
         )
         .cornerRadius(20)
         .shadow(color: Color(hex: "6366F1").opacity(0.4), radius: 16, x: 0, y: 8)
+    }
+    
+    /// 返回用户头像对应的渐变色
+    private func userAvatarGradient() -> LinearGradient {
+        let avatar = userManager.currentUser?.avatar ?? "male_1"
+        let colors: [Color]
+        
+        if avatar.hasPrefix("male") {
+            switch avatar {
+            case "male_1": colors = [Color(hex: "3B82F6"), Color(hex: "1E40AF")]
+            case "male_2": colors = [Color(hex: "6366F1"), Color(hex: "4338CA")]
+            case "male_3": colors = [Color(hex: "10B981"), Color(hex: "059669")]
+            case "male_4": colors = [Color(hex: "F59E0B"), Color(hex: "D97706")]
+            case "male_5": colors = [Color(hex: "EF4444"), Color(hex: "DC2626")]
+            default: colors = [Color(hex: "6366F1"), Color(hex: "8B5CF6")]
+            }
+        } else {
+            switch avatar {
+            case "female_1": colors = [Color(hex: "EC4899"), Color(hex: "DB2777")]
+            case "female_2": colors = [Color(hex: "F472B6"), Color(hex: "C026D3")]
+            case "female_3": colors = [Color(hex: "FB7185"), Color(hex: "E11D48")]
+            case "female_4": colors = [Color(hex: "FBBF24"), Color(hex: "F59E0B")]
+            case "female_5": colors = [Color(hex: "34D399"), Color(hex: "10B981")]
+            default: colors = [Color(hex: "EC4899"), Color(hex: "DB2777")]
+            }
+        }
+        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
     
     private var locationStatusText: String {
@@ -581,10 +608,75 @@ struct EditProfileModal: View {
     @State private var birthday = Date()
     @State private var idCard = ""
     @State private var address = ""
+    @State private var gender: User.Gender = .male
+    @State private var selectedAvatar = "male_1"
+    
+    // 默认头像列表
+    private let maleAvatars = ["male_1", "male_2", "male_3", "male_4", "male_5"]
+    private let femaleAvatars = ["female_1", "female_2", "female_3", "female_4", "female_5"]
+    
+    private var currentAvatars: [String] {
+        gender == .male ? maleAvatars : femaleAvatars
+    }
     
     var body: some View {
         NavigationView {
             Form {
+                // 头像选择区域
+                Section(header: Text("头像")) {
+                    VStack(spacing: 16) {
+                        // 当前选中头像显示
+                        ZStack {
+                            Circle()
+                                .fill(avatarGradient(for: selectedAvatar))
+                                .frame(width: 80, height: 80)
+                            
+                            Image(systemName: avatarSymbol(for: selectedAvatar))
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.top, 8)
+                        
+                        // 性别选择
+                        Picker("性别", selection: $gender) {
+                            ForEach(User.Gender.allCases, id: \.self) { g in
+                                Text(g.rawValue).tag(g)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 40)
+                        .onChange(of: gender) { newGender in
+                            // 切换性别时自动选择该性别的第一个头像
+                            selectedAvatar = newGender == .male ? "male_1" : "female_1"
+                        }
+                        
+                        // 头像网格选择
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                            ForEach(currentAvatars, id: \.self) { avatar in
+                                Button(action: {
+                                    selectedAvatar = avatar
+                                }) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(avatarGradient(for: avatar))
+                                            .frame(width: 50, height: 50)
+                                        
+                                        Image(systemName: avatarSymbol(for: avatar))
+                                            .font(.system(size: 22))
+                                            .foregroundColor(.white)
+                                    }
+                                    .overlay(
+                                        Circle()
+                                            .stroke(selectedAvatar == avatar ? Color(hex: "6366F1") : Color.clear, lineWidth: 3)
+                                    )
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
+                }
+                
                 Section(header: Text("姓名")) {
                     TextField("请输入姓名", text: $name)
                 }
@@ -601,6 +693,13 @@ struct EditProfileModal: View {
                 }
                 
                 Section(header: Text("身份信息")) {
+                    // 性别选择
+                    Picker("性别", selection: $gender) {
+                        ForEach(User.Gender.allCases, id: \.self) { g in
+                            Text(g.rawValue).tag(g)
+                        }
+                    }
+                    
                     TextField("民族", text: $ethnicity)
                     
                     DatePicker("出生日期", selection: $birthday, displayedComponents: .date)
@@ -626,6 +725,8 @@ struct EditProfileModal: View {
                                 user.birthday = birthday
                                 user.idCard = idCard
                                 user.address = address
+                                user.gender = gender
+                                user.avatar = selectedAvatar
                                 
                                 // 先更新 currentUser，再保存
                                 userManager.currentUser = user
@@ -667,9 +768,45 @@ struct EditProfileModal: View {
                     birthday = user.birthday ?? Date()
                     idCard = user.idCard ?? ""
                     address = user.address ?? ""
-                    print("🔵 编辑资料：name=\(name), phone=\(phone)")
+                    gender = user.gender ?? .male
+                    selectedAvatar = user.avatar ?? "male_1"
+                    print("🔵 编辑资料：name=\(name), phone=\(phone), gender=\(gender.rawValue), avatar=\(selectedAvatar)")
                 }
             }
+        }
+    }
+    
+    // 根据头像名称返回渐变色
+    private func avatarGradient(for avatar: String) -> LinearGradient {
+        let colors: [Color]
+        if avatar.hasPrefix("male") {
+            switch avatar {
+            case "male_1": colors = [Color(hex: "3B82F6"), Color(hex: "1E40AF")]  // 蓝色
+            case "male_2": colors = [Color(hex: "6366F1"), Color(hex: "4338CA")]  // 紫色
+            case "male_3": colors = [Color(hex: "10B981"), Color(hex: "059669")]  // 绿色
+            case "male_4": colors = [Color(hex: "F59E0B"), Color(hex: "D97706")]  // 橙色
+            case "male_5": colors = [Color(hex: "EF4444"), Color(hex: "DC2626")]  // 红色
+            default: colors = [Color(hex: "6366F1"), Color(hex: "8B5CF6")]
+            }
+        } else {
+            switch avatar {
+            case "female_1": colors = [Color(hex: "EC4899"), Color(hex: "DB2777")]  // 粉色
+            case "female_2": colors = [Color(hex: "F472B6"), Color(hex: "C026D3")]  // 紫红
+            case "female_3": colors = [Color(hex: "FB7185"), Color(hex: "E11D48")]  // 玫红
+            case "female_4": colors = [Color(hex: "FBBF24"), Color(hex: "F59E0B")]  // 金色
+            case "female_5": colors = [Color(hex: "34D399"), Color(hex: "10B981")]  // 翠绿
+            default: colors = [Color(hex: "EC4899"), Color(hex: "DB2777")]
+            }
+        }
+        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    
+    // 根据头像名称返回 SF Symbol
+    private func avatarSymbol(for avatar: String) -> String {
+        if avatar.hasPrefix("male") {
+            return "person.fill"
+        } else {
+            return "person.fill"
         }
     }
 }

@@ -840,6 +840,13 @@ struct User: Codable, Identifiable {
     var birthday: Date?     // 出生日期
     var idCard: String?     // 身份证号码
     var address: String?    // 住址
+    var gender: Gender?  // 性别
+    var avatar: String?  // 头像名称
+    
+    enum Gender: String, Codable, CaseIterable {
+        case male = "男"
+        case female = "女"
+    }
 
     // 财产信息
     var propertyId: String?
