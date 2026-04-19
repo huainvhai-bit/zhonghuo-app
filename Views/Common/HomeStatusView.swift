@@ -26,6 +26,8 @@ struct HomeStatusView: View {
     @State private var navigateToTimeCapsule = false
     @State private var navigateToFamilyTab = false  // 跳转到家人守护 tab
     @State private var navigateToReceivedCapsules = false  // 跳转到我收到的胶囊列表
+    @State private var navigateToCapsuleDetail = false  // 跳转胶囊详情
+    @State private var selectedReceivedCapsule: ReceivedCapsule?  // 选中的胶囊
     @State private var showingEmergencyContactAlert = false
     @State private var hasSentOverdueAlert = false  // 防止重复发送
     
@@ -65,6 +67,15 @@ struct HomeStatusView: View {
                 .opacity(0)
                 
                 NavigationLink(destination: ReceivedCapsuleListView(), isActive: $navigateToReceivedCapsules) {
+                    EmptyView()
+                }
+                .opacity(0)
+                
+                NavigationLink(destination: Group {
+                    if let capsule = selectedReceivedCapsule {
+                        ReceivedCapsuleDetailView(capsule: capsule)
+                    }
+                }, isActive: $navigateToCapsuleDetail) {
                     EmptyView()
                 }
                 .opacity(0)
@@ -716,7 +727,8 @@ struct HomeStatusView: View {
                 ForEach(dataManager.receivedCapsules.prefix(3)) { capsule in
                     ReceivedCapsulePreviewRow(capsule: capsule, onTap: {
                         print("🔵 点击收到的胶囊：\(capsule.title)")
-                        // TODO: 打开胶囊详情
+                        selectedReceivedCapsule = capsule
+                        navigateToCapsuleDetail = true
                     })
                 }
             }
