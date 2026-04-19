@@ -202,6 +202,17 @@ class MembershipManager: ObservableObject {
         return isPremium
     }
     
+    /// 检查是否允许导出数据（会员功能）
+    @MainActor
+    func canExportData() -> Bool {
+        let config = DataManager.shared.systemConfig
+        if isPremium {
+            return config.premiumDataExport
+        } else {
+            return config.freeDataExport
+        }
+    }
+    
     /// ✅ 从服务器应用会员限制配置
     func applyLimits(
         freeMaxCapsules: Int,

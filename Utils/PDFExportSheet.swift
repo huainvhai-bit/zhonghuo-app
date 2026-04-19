@@ -14,6 +14,7 @@ struct PDFExportSheet: View {
     let modules: [WillModule]
     let witnesses: [Witness]
     let assets: [Asset]
+    let capsules: [TimeCapsule]  // 时光胶囊（用于导出下载地址）
     let onSuccess: () -> Void
     
     @State private var isExporting = false
@@ -59,6 +60,7 @@ struct PDFExportSheet: View {
                         ContentRow(icon: "doc.text.fill", text: "已完成的遗嘱模块", count: modules.filter { $0.isCompleted }.count)
                         ContentRow(icon: "person.2.fill", text: "见证人信息", count: witnesses.count)
                         ContentRow(icon: "yensign.circle.fill", text: "资产记录", count: assets.count)
+                        ContentRow(icon: "capsule.fill", text: "媒体胶囊地址", count: capsules.count)
                     }
                     .padding(16)
                     .background(Color(hex: "F2F2F7"))
@@ -137,7 +139,7 @@ struct PDFExportSheet: View {
         isExporting = true
         
         // 生成 PDF
-        guard let pdfData = PDFGenerator.exportWillModulesToPDF(modules: modules, witnesses: witnesses, assets: assets) else {
+        guard let pdfData = PDFGenerator.exportWillModulesToPDF(modules: modules, witnesses: witnesses, assets: assets, capsules: capsules) else {
             print("❌ PDF 生成失败")
             isExporting = false
             return
@@ -225,6 +227,7 @@ struct PDFDocument: FileDocument {
         modules: [],
         witnesses: [],
         assets: [],
+        capsules: [],
         onSuccess: {}
     )
 }

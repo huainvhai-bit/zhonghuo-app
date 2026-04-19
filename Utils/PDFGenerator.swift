@@ -21,7 +21,7 @@ class PDFGenerator {
     
     /// 导出遗嘱模块为 PDF
     // ✅ P2 修复 #5: 添加自动分页逻辑
-    static func exportWillModulesToPDF(modules: [WillModule], witnesses: [Witness], assets: [Asset]) -> Data? {
+    static func exportWillModulesToPDF(modules: [WillModule], witnesses: [Witness], assets: [Asset], capsules: [TimeCapsule]) -> Data? {
         let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pdfPageWidth, height: pdfPageHeight))
         
         let data = pdfRenderer.pdfData { ctx in
@@ -63,6 +63,12 @@ class PDFGenerator {
             // 资产信息
             currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
             currentY = drawAssetSection(ctx: ctx, assets: assets, startY: currentY + 30)
+            
+            // 媒体胶囊下载地址（无论存储在哪里，都导出真实下载地址）
+            if !capsules.isEmpty {
+                currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 150)
+                currentY = drawMediaCapsulesSection(ctx: ctx, capsules: capsules, startY: currentY + 30)
+            }
             
             // 页脚
             drawFooter(ctx: ctx)
@@ -220,6 +226,90 @@ class PDFGenerator {
         path.lineWidth = 0.5  // ✅ P2 修复 #8: 魔法数字，但此处为行业标准线宽，保留
         UIColor.gray.setStroke()
         path.stroke()
+    }
+    
+    /// 绘制媒体胶囊下载地址 section
+    private static func drawMediaCapsulesSection(ctx: UIGraphicsPDFRendererContext, capsules: [TimeCapsule], startY: CGFloat) -> CGFloat {
+        var currentY = startY
+        
+        // 章节标题
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 18),
+            .foregroundColor: UIColor(hex: "AF52DE")
+        ]
+        "媒体胶囊下载地址".draw(at: CGPoint(x: pdfMargin, y: currentY))
+        currentY += 30
+        
+        // 子标题说明
+        let subtitleAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 12),
+            .foregroundColor: UIColor.gray
+        ]
+        "以下胶囊的媒体文件可在服务器、阿里云 OSS 或腾讯云 COS 上访问：".draw(at: CGPoint(x: pdfMargin, y: currentY))
+        currentY += 20
+        
+        if capsules.isEmpty {
+            let emptyAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.gray
+            ]
+            "暂无媒体胶囊".draw(at: CGPoint(x: pdfMargin, y: currentY))
+            currentY += 25
+        } else {
+            for capsule in capsules {
+                // 检查是否需要分页
+                if currentY > pdfPageBreakThreshold - 80 {
+                    ctx.beginPage()
+                    currentY = 50
+                }
+                
+                // 胶囊标题和类型
+                let capsuleTitle = "• \(capsule.title)（\(capsule.type.rawValue)）"
+                let capsuleTitleAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 14, weight: .medium),
+                    .foregroundColor: UIColor.black
+                ]
+                capsuleTitle.draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: capsuleTitleAttributes)
+                currentY += 20
+                
+                // 下载地址
+                let downloadURL = getMediaDownloadURL(capsule: capsule)
+                let urlAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 12),
+                    .foregroundColor: UIColor(hex: "007AFF")
+                ]
+                downloadURL.draw(at: CGPoint(x: pdfMargin + 10, y: currentY), withAttributes: urlAttributes)
+                currentY += 25
+            }
+        }
+        
+        // 分隔线
+        drawLine(ctx: ctx, from: CGPoint(x: pdfMargin, y: currentY), to: CGPoint(x: pdfPageWidth - pdfMargin, y: currentY))
+        currentY += 20
+        
+        return currentY
+    }
+    
+    /// 获取胶囊的真实下载地址
+    /// 无论媒体文件保存在服务器、阿里云OSS还是腾讯云COS，都返回真实可访问的下载地址
+    private static func getMediaDownloadURL(capsule: TimeCapsule) -> String {
+        // 优先使用服务器媒体URL
+        if !capsule.mediaServerURL.isEmpty {
+            let serverURL = capsule.mediaServerURL
+            // 如果已经是完整URL（http/https开头），直接返回
+            if serverURL.hasPrefix("http://") || serverURL.hasPrefix("https://") {
+                return serverURL
+            }
+            // 否则是相对路径，拼接API基础地址
+            return "\(AppConfig.defaultAPIURL)/\(serverURL)"
+        }
+        
+        // 如果没有服务器URL但有本地URL，返回本地路径说明
+        if !capsule.mediaURL.isEmpty {
+            return "本地文件：\(capsule.mediaURL)"
+        }
+        
+        return "无媒体文件"
     }
     
     private static func drawFooter(ctx: UIGraphicsPDFRendererContext) {

@@ -15,6 +15,7 @@ struct WillAssetsView: View {
     @State private var editingModule: WillModule? = nil
     @State private var editingAsset: Asset? = nil
     @State private var showingPDFExport = false
+    @State private var showingUpgradeForExport = false  // 导出功能需要会员
     @State private var pdfExportSuccess = false
     @State private var templateContent = ""
     @State private var templateIsCompleted = false
@@ -69,7 +70,13 @@ struct WillAssetsView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingPDFExport = true }) {
+                    Button(action: {
+                        if MembershipManager.shared.canExportData() {
+                            showingPDFExport = true
+                        } else {
+                            showingUpgradeForExport = true
+                        }
+                    }) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 18))
                             .foregroundColor(.white)
@@ -89,9 +96,23 @@ struct WillAssetsView: View {
                 AddAssetModal(dataManager: dataManager, asset: asset)
             }
             .sheet(isPresented: $showingPDFExport) {
-                PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, onSuccess: {
+                PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, capsules: dataManager.capsules, onSuccess: {
                     pdfExportSuccess = true
                 })
+            }
+            .sheet(isPresented: $showingUpgradeForExport) {
+                UpgradePromptView(
+                    feature: "导出 PDF",
+                    currentLimit: "免费版无法导出",
+                    targetLimit: "会员版可导出",
+                    onUpgrade: {
+                        showingUpgradeForExport = false
+                        // 跳转到会员页面
+                    },
+                    onCancel: {
+                        showingUpgradeForExport = false
+                    }
+                )
             }
         }
     }
