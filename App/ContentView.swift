@@ -283,6 +283,12 @@ struct ContentView: View {
                 case 200:
                     // 🔧 修复：解析响应体，区分成功和服务器错误
                     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                        // 检查响应是否包含 PHP 错误（Parse error, Fatal error 等）
+                        if let responseString = String(data: data, encoding: .utf8),
+                           (responseString.contains("Parse error") || responseString.contains("Fatal error") || responseString.contains("Warning")) {
+                            print("❌ validateToken: Server returned PHP error instead of JSON, treating as unauthorized")
+                            return .unauthorized
+                        }
                         print("❌ validateToken: Failed to parse JSON response (server error)")
                         return .serverError
                     }
