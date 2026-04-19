@@ -40,26 +40,44 @@ struct CapsuleEditView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    // 类型卡片
+                    // 类型卡片（编辑模式只显示当前类型，不允许修改）
                     VStack(alignment: .leading, spacing: 12) {
                         Text("胶囊类型")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.secondary)
                         
-                        Picker("类型", selection: $selectedType) {
-                            Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
-                            Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
-                            Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
-                        }
-                        .pickerStyle(.segmented)
-                        .onChange(of: selectedType) { newType in
-                            // ✅ 检查媒体胶囊数量限制
-                            if newType == .audio || newType == .video {
-                                let membership = MembershipManager.shared
-                                let currentMediaCount = dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count
-                                if !membership.canCreateMediaCapsule(currentMediaCount: currentMediaCount) {
-                                    upgradePromptMessage = "语音/视频胶囊已达上限（\(currentMediaCount)/\(membership.maxMediaCapsules)），升级会员可享受更多"
-                                    showingUpgradePrompt = true
+                        if existingCapsule != nil {
+                            // 编辑模式：只显示当前类型
+                            HStack {
+                                Image(systemName: iconForType(existingCapsule!.type))
+                                    .foregroundColor(Color(hex: "6366F1"))
+                                Text(existingCapsule!.type.rawValue)
+                                    .font(.system(size: 16, weight: .medium))
+                                Spacer()
+                                Text("不可修改")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(12)
+                            .background(Color(hex: "6366F1").opacity(0.1))
+                            .cornerRadius(10)
+                        } else {
+                            // 新建模式：显示类型选择器
+                            Picker("类型", selection: $selectedType) {
+                                Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
+                                Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
+                                Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: selectedType) { newType in
+                                // ✅ 检查媒体胶囊数量限制
+                                if newType == .audio || newType == .video {
+                                    let membership = MembershipManager.shared
+                                    let currentMediaCount = dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count
+                                    if !membership.canCreateMediaCapsule(currentMediaCount: currentMediaCount) {
+                                        upgradePromptMessage = "语音/视频胶囊已达上限（\(currentMediaCount)/\(membership.maxMediaCapsules)），升级会员可享受更多"
+                                        showingUpgradePrompt = true
+                                    }
                                 }
                             }
                         }
@@ -356,6 +374,15 @@ struct CapsuleEditView: View {
         }
     }
     
+    /// 根据胶囊类型返回图标名称
+    private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
+        switch type {
+        case .text: return "doc.text.fill"
+        case .audio, .voice: return "mic.fill"
+        case .video, .image, .sticker: return "video.fill"
+        @unknown default: return "capsule.fill"
+        }
+    }
     
     private func playerView(for url: URL) -> AnyView {
         // ✅ Bug 修复：处理相对路径

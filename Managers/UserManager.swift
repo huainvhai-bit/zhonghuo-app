@@ -113,6 +113,33 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestWhenInUseAuthorization()
     }
     
+    /// 检查定位权限并在需要时请求
+    /// - Parameter forceRequest: 是否强制请求（用户已拒绝时不再请求）
+    /// - Returns: 是否成功获取权限
+    @discardableResult
+    func checkAndRequestLocationPermission(forceRequest: Bool = false) -> Bool {
+        let status = CLLocationManager.authorizationStatus()
+        
+        switch status {
+        case .notDetermined:
+            // 首次请求
+            requestLocationPermission()
+            return false
+        case .denied, .restricted:
+            if forceRequest {
+                // 强制请求（从设置打开）
+                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsUrl)
+                }
+            }
+            return false
+        case .authorizedAlways, .authorizedWhenInUse:
+            return true
+        @unknown default:
+            return false
+        }
+    }
+    
     func requestAlwaysAuthorizationIfNeeded() {
         // ✅ P2 修复 #6: 更新注释
         // 如果用户修改了签到间隔（不是测试模式），请求后台定位

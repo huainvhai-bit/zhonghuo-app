@@ -256,6 +256,9 @@ struct SettingsView: View {
                 // 启动设备监控
                 startDeviceMonitoring()
                 
+                // 检查定位权限
+                checkLocationPermission()
+                
                 // 上传设备信息到服务器
                 Task { @MainActor in
                     try? await Task.checkCancellation()
@@ -356,14 +359,27 @@ struct SettingsView: View {
     private var userInfoCard: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 70, height: 70)
-                    
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.white)
+                Button(action: { showingEditProfile = true }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 70, height: 70)
+                        
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                        
+                        // 编辑指示器
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(Color(hex: "6366F1"))
+                            )
+                            .offset(x: 25, y: 25)
+                    }
                 }
                 
                 VStack(alignment: .leading, spacing: 6) {
@@ -393,55 +409,44 @@ struct SettingsView: View {
                 Spacer()
             }
             
-            HStack(spacing: 12) {
-                Button(action: { showingEditProfile = true }) {
-                    HStack {
-                        Image(systemName: "pencil.circle.fill")
-                        Text("编辑资料")
+            if !membershipManager.isPremium {
+                Button(action: { showingMembershipView = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 18))
+                        Text("开通会员")
+                            .font(.system(size: 16, weight: .bold))
+                        Spacer()
+                        Text("限时特惠")
+                            .font(.system(size: 12))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.3))
+                            .cornerRadius(12)
                     }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.2))
-                    .cornerRadius(20)
-                }
-                
-                if !membershipManager.isPremium {
-                    Button(action: { showingMembershipView = true }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "crown.fill")
-                                .font(.system(size: 14))
-                            Text("开通会员")
-                                .font(.system(size: 14, weight: .semibold))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                        }
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            LinearGradient(
-                                colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .cornerRadius(20)
-                        .shadow(color: Color(hex: "FFD700").opacity(0.4), radius: 4, x: 0, y: 2)
-                    }
-                } else {
-                    HStack {
-                        Image(systemName: "checkmark.seal.fill")
-                        Text("会员有效")
-                    }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.green.opacity(0.8))
-                    .cornerRadius(20)
+                    )
+                    .cornerRadius(25)
                 }
+            } else {
+                HStack {
+                    Image(systemName: "checkmark.seal.fill")
+                    Text("会员有效")
+                }
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.green.opacity(0.8))
+                .cornerRadius(20)
             }
         }
         .padding(20)
@@ -894,6 +899,25 @@ extension SettingsView {
     func stopDeviceMonitoring() {
         deviceMonitor.stopMonitoring()
         print("🔋 设备监控已停止")
+    }
+    
+    /// 检查定位权限并在需要时提示用户
+    private func checkLocationPermission() {
+        let status = userManager.locationAuthStatus
+        
+        // 如果已经确定过权限，不再提示
+        guard status == .notDetermined || status == .denied else {
+            return
+        }
+        
+        // 如果是被拒绝，显示提示让用户去设置
+        if status == .denied {
+            showingLocationAlert = true
+            return
+        }
+        
+        // 请求定位权限
+        userManager.requestLocationPermission()
     }
     
     // 设置紫色导航栏背景（与首页一致）

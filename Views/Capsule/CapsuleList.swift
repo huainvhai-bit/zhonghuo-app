@@ -20,6 +20,10 @@ struct CapsuleList: View {
     @State private var showingShareSheet = false  // ✅ 分享弹窗
     @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的胶囊
     @State private var showingUpgradeForShare = false  // ✅ 分享功能需要会员
+    @State private var selectedCapsuleForEdit: TimeCapsule? = nil  // 待编辑的胶囊
+    @State private var showingEditSheet = false  // ✅ 编辑弹窗
+    @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的胶囊
+    @State private var showingDeleteAlert = false  // ✅ 删除确认弹窗
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -202,6 +206,25 @@ struct CapsuleList: View {
                 )
             }
         }
+        .sheet(isPresented: $showingEditSheet) {
+            if let capsule = selectedCapsuleForEdit {
+                CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
+            }
+        }
+        .alert("删除胶囊", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {
+                capsuleToDelete = nil
+            }
+            Button("删除", role: .destructive) {
+                if let capsule = capsuleToDelete {
+                    dataManager.capsules.removeAll { $0.id == capsule.id }
+                    dataManager.saveCapsulesToFile()
+                }
+                capsuleToDelete = nil
+            }
+        } message: {
+            Text("确定要删除这个胶囊吗？此操作不可撤销。")
+        }
         .refreshable {
             // ✅ 下拉刷新
             print("🔄 胶囊列表刷新...")
@@ -333,16 +356,22 @@ struct CapsuleList: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
                 ForEach(filteredCapsules) { capsule in
-                    // ✅ 修复：点击胶囊跳转到详情页面
-                    NavigationLink(destination: CapsuleDetailView(dataManager: dataManager, capsule: capsule)) {
-                        CapsuleCard(capsule: capsule, onSend: {
+                    SwipeableCapsuleCard(
+                        capsule: capsule,
+                        onEdit: {
+                            selectedCapsuleForEdit = capsule
+                            showingEditSheet = true
+                        },
+                        onDelete: {
+                            showingDeleteAlert = true
+                            capsuleToDelete = capsule
+                        },
+                        onSend: {
                             selectedCapsuleForShare = capsule
                             showingShareSheet = true
-                        }).accessibilityLabel(capsule.title)
-                    }
-                    .buttonStyle(PlainButtonStyle())  // 移除 NavigationLink 默认样式
+                        }
+                    )
                 }
-                .onDelete(perform: deleteCapsules)  // ✅ 添加删除功能
             }
         }
     }
@@ -769,6 +798,186 @@ struct CapsuleRow: View {
             }
         }
         .padding(.vertical, 8)
+    }
+    
+    private func formatSendDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
+        return formatter.string(from: date)
+    }
+}
+
+
+// MARK: - 可滑动的胶囊卡片
+struct SwipeableCapsuleCard: View {
+    let capsule: TimeCapsule
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onSend: () -> Void
+    
+    @State private var offset: CGFloat = 0
+    @State private var isShowingActions = false
+    
+    var body: some View {
+        ZStack {
+            // 背景操作按钮
+            HStack(spacing: 0) {
+                // 左侧：编辑按钮（滑出时显示）
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        offset = 0
+                        isShowingActions = false
+                    }
+                    onEdit()
+                }) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
+                        .frame(width: 60)
+                }
+                .opacity(offset < -10 ? 1 : 0)
+                
+                Spacer()
+                
+                // 右侧：删除按钮
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        offset = 0
+                        isShowingActions = false
+                    }
+                    onDelete()
+                }) {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
+                        .frame(width: 60)
+                }
+                .opacity(offset > 10 ? 1 : 0)
+            }
+            .background(Color.red)
+            .cornerRadius(16)
+            
+            // 主卡片
+            HStack(spacing: 14) {
+                // 类型图标
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 52, height: 52)
+                    
+                    Image(systemName: iconForType(capsule.type))
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                
+                // 中间内容
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(capsule.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    HStack(spacing: 8) {
+                        Text(capsule.type.rawValue)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color(hex: "6366F1"))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color(hex: "6366F1").opacity(0.1))
+                            .cornerRadius(6)
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                                .font(.system(size: 10))
+                            Text(capsule.isSent ? "已发送" : "待发送")
+                                .font(.system(size: 11))
+                        }
+                        .foregroundColor(capsule.isSent ? .green : .orange)
+                    }
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 11))
+                        Text(formatSendDate(capsule.sendDate))
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // 发送按钮
+                Button(action: onSend) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color(hex: "6366F1"))
+                        .cornerRadius(10)
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
+            .padding(16)
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
+            .offset(x: offset)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        // 限制滑动范围
+                        let translation = value.translation.width
+                        if translation < 0 {
+                            offset = max(translation, -120)
+                        } else if translation > 0 {
+                            offset = min(translation, 60)
+                        }
+                    }
+                    .onEnded { value in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            if value.translation.width < -80 {
+                                // 向左滑显示编辑
+                                offset = -100
+                                isShowingActions = true
+                            } else if value.translation.width > 40 {
+                                // 向右滑暂时不支持操作
+                                offset = 0
+                                isShowingActions = false
+                            } else {
+                                offset = 0
+                                isShowingActions = false
+                            }
+                        }
+                    }
+            )
+            .onTapGesture {
+                if isShowingActions {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        offset = 0
+                        isShowingActions = false
+                    }
+                }
+            }
+        }
+    }
+    
+    private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
+        switch type {
+        case .text: return "doc.text.fill"
+        case .audio, .voice: return "mic.fill"
+        case .video, .image, .sticker: return "video.fill"
+        @unknown default: return "capsule.fill"
+        }
     }
     
     private func formatSendDate(_ date: Date) -> String {

@@ -11,11 +11,12 @@ import BackgroundTasks
 struct ZhonghuoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var themeManager = ThemeManager.shared  // 使用 @StateObject 监听主题变化
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(ThemeManager.shared.preferredColorScheme)
+                .preferredColorScheme(themeManager.preferredColorScheme)
                 .onAppear {
                     Task {
                         await checkVersionUpdate()
