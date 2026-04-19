@@ -32,7 +32,7 @@ class AuthManager: ObservableObject {
         do {
             let query = """
             mutation {
-                login(phone: "\(phone)", code: "\(code)") {
+                verifyCodeLogin(phone: "\(phone)", code: "\(code)") {
                     token
                     user {
                         id
@@ -47,7 +47,7 @@ class AuthManager: ObservableObject {
             let response = try await client.query(query)
             
             guard let data = response["data"] as? [String: Any],
-                  let loginData = data["login"] as? [String: Any],
+                  let loginData = data["verifyCodeLogin"] as? [String: Any],
                   let token = loginData["token"] as? String,
                   let userData = loginData["user"] as? [String: Any],
                   let userId = userData["id"] as? String,
