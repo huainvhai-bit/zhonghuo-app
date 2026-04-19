@@ -2,20 +2,21 @@
 //  JPushManager.swift
 //  终活
 //
-//  极光推送管理
-//  ⚠️ 占位符版本 - 需通过 Xcode 完成 SDK 集成
+//  极光推送管理 (JPush 6.x)
 //
 
 import Foundation
 import UIKit
 import UserNotifications
 
+// JPush 通过 bridging header 导入
+// import JPUSHService.h (in Bridging-Header.h)
+
 class JPushManager: NSObject {
     static let shared = JPushManager()
     
     // MARK: - 配置
-    // ⚠️ 替换为实际的极光 AppKey
-    private let jpushAppKey = "你的极光AppKey"
+    private let jpushAppKey = "a8ce5336b2833bfe4c91618c"
     
     // MARK: - 回调
     var onReceiveNotification: (([AnyHashable: Any]) -> Void)?
@@ -27,17 +28,40 @@ class JPushManager: NSObject {
     
     // MARK: - 初始化
     func setup() {
-        print("JPush 初始化完成（占位符）")
+        // 初始化 JPush
+        JPUSHService.setup(withOption: nil, appKey: jpushAppKey, channel: "App Store", apsForProduction: true)
+        
+        // 设置推送代理
+        let entity = JPUSHRegisterEntity()
+        entity.types = Int(UInt(UNAuthorizationOptions.alert.rawValue | UNAuthorizationOptions.sound.rawValue | UNAuthorizationOptions.badge.rawValue))
+        JPUSHService.register(forRemoteNotificationConfig: entity, delegate: self)
+        
+        // 获取 Registration ID
+        JPUSHService.getAllTags({ (resCode, tags, seq) in
+            print("JPush Tags: resCode=\(resCode)")
+        }, seq: 0)
+        
+        print("JPush 初始化完成，AppKey: \(jpushAppKey)")
     }
     
     // MARK: - 设置别名（绑定用户 ID）
     func setAlias(userId: String) {
-        print("JPush 设置别名: \(userId)")
+        JPUSHService.setAlias(userId, completion: { (resCode, alias, seq) in
+            print("JPush 设置别名: resCode=\(resCode), alias=\(alias ?? "nil")")
+            if resCode == 0 {
+                print("别名绑定成功")
+                UserDefaults.standard.set(userId, forKey: "jpush_alias")
+            } else {
+                print("别名绑定失败，错误码: \(resCode)")
+            }
+        }, seq: 0)
     }
     
     // MARK: - 删除别名
     func deleteAlias() {
-        print("JPush 删除别名")
+        JPUSHService.deleteAlias({ (resCode, alias, seq) in
+            print("JPush 删除别名: resCode=\(resCode)")
+        }, seq: 0)
     }
     
     // MARK: - 获取 Registration ID
@@ -47,9 +71,9 @@ class JPushManager: NSObject {
     
     // MARK: - 处理 Device Token
     func handleRemoteNotification(deviceToken: Data) {
+        JPUSHService.registerDeviceToken(deviceToken)
         let tokenString = deviceToken.reduce("") { $0 + String(format: "%02x", $1) }
         print("JPush Device Token: \(tokenString)")
-        saveRegistrationID(tokenString)
     }
     
     // MARK: - 处理通知
@@ -122,4 +146,41 @@ class JPushManager: NSObject {
 extension Notification.Name {
     static let didReceiveCapsuleShare = Notification.Name("didReceiveCapsuleShare")
     static let didReceiveCheckInMissed = Notification.Name("didReceiveCheckInMissed")
+}
+
+// MARK: - JPush Delegate
+extension JPushManager: JPUSHRegisterDelegate {
+    
+    // MARK: - 收到通知（App 在前台）
+    func jpushNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (Int) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        print("JPush 收到通知（前台）: \(userInfo)")
+        handleNotification(userInfo: userInfo as? [AnyHashable: Any] ?? [:])
+        completionHandler(Int(UNNotificationPresentationOptions.banner.rawValue | UNNotificationPresentationOptions.sound.rawValue))
+    }
+    
+    // MARK: - 通知被点击
+    func jpushNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        print("JPush 通知被点击: \(userInfo)")
+        handleNotification(userInfo: userInfo as? [AnyHashable: Any] ?? [:])
+        completionHandler()
+    }
+    
+    // MARK: - 打开设置
+    @available(iOS 12.0, *)
+    func jpushNotificationCenter(_ center: UNUserNotificationCenter, openSettingsFor notification: UNNotification) {
+        print("JPush 打开通知设置")
+    }
+    
+    // MARK: - 授权状态
+    func jpushNotificationAuthorization(_ status: JPAuthorizationStatus, withInfo info: [AnyHashable: Any]?) {
+        print("JPush 通知授权状态: \(status.rawValue)")
+    }
+    
+    // MARK: - 收到自定义消息
+    func jpushReceive(_ center: Any!, didReceive remoteNotification: [AnyHashable: Any]) {
+        print("JPush 收到自定义消息: \(remoteNotification)")
+        handleNotification(userInfo: remoteNotification)
+    }
 }

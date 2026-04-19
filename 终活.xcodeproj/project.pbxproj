@@ -25,11 +25,17 @@
 		282767E29A64DBE59325CBA2 /* PDFExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95C8821E01F5E6D6F9DE4CDB /* PDFExportSheet.swift */; };
 		29E00B2F8273BA0C42B0B806 /* PerformanceOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB368D6F7CC697522F8E6504 /* PerformanceOptimizer.swift */; };
 		3331F4A22F94AB210014308D /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4A12F94AB210014308D /* UserNotifications.framework */; };
+		JPUSHREF00000001 /* jpush-ios-6.0.0.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jpush-ios-6.0.0.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework"; sourceTree = "<group>"; };
+		JPUSHREF00000002 /* jcore-ios-5.3.0.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jcore-ios-5.3.0.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jcore-ios-5.3.0.xcframework"; sourceTree = "<group>"; };
+		JPUSHREF00000003 /* jpush-extension-ios-2.0.6.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jpush-extension-ios-2.0.6.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-extension-ios-2.0.6.xcframework"; sourceTree = "<group>"; };
+		JPUSHE4A7F8B2C3D4E5F6 /* jpush-ios-6.0.0.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = JPUSHREF00000001 /* jpush-ios-6.0.0.xcframework */; };
+		JPUSHE4A7F8B2C3D4E5F7 /* jcore-ios-5.3.0.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = JPUSHREF00000002 /* jcore-ios-5.3.0.xcframework */; };
+		JPUSHE4A7F8B2C3D4E5F8 /* jpush-extension-ios-2.0.6.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = JPUSHREF00000003 /* jpush-extension-ios-2.0.6.xcframework */; };
 		3331F4A42F94AB2C0014308D /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4A32F94AB2C0014308D /* SystemConfiguration.framework */; };
 		3331F4A62F94AB3A0014308D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4A52F94AB3A0014308D /* CoreFoundation.framework */; };
 		3331F4A82F94AB5A0014308D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4A72F94AB5A0014308D /* Foundation.framework */; };
 		3331F4AA2F94AB660014308D /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4A92F94AB660014308D /* UIKit.framework */; };
-		LIBRESTLV00000001 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = LBRARY000000001 /* libresolv.tbd */; };
+		3331F4AC2F94B2960014308D /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3331F4AB2F94B2960014308D /* libresolv.tbd */; };
 		37444D66A9BE5F84D0A82BE2 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E63E5E4017BEFE3A8B0197C /* UserSession.swift */; };
 		3A6C79DE21D5EFF98B4127A6 /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24093F404A9CDA5C0009ADA3 /* TokenManager.swift */; };
 		3F10065798B2262347A3923D /* WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF12F0BE3E71A01C0A341139 /* WillPreviewView.swift */; };
@@ -119,12 +125,12 @@
 		281631AF17B68A506AEA838D /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
 		2ADD15459D06969677964E9D /* CloudStorageStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudStorageStatusView.swift; sourceTree = "<group>"; };
 		325404E6936A659FD4AFE6F5 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
-		
 		3331F4A12F94AB210014308D /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		3331F4A32F94AB2C0014308D /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		3331F4A52F94AB3A0014308D /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		3331F4A72F94AB5A0014308D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		3331F4A92F94AB660014308D /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		3331F4AB2F94B2960014308D /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		33C706A7AECC8AFD40A2735E /* AboutSettingsView.swift.bak */ = {isa = PBXFileReference; lastKnownFileType = text; path = AboutSettingsView.swift.bak; sourceTree = "<group>"; };
 		37A2BE8086700C49D0A3E3CA /* PDFExporter.swift.bak */ = {isa = PBXFileReference; lastKnownFileType = text; path = PDFExporter.swift.bak; sourceTree = "<group>"; };
 		38A16566FA6A3CFC2001EA6D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -209,11 +215,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3331F4AC2F94B2960014308D /* libresolv.tbd in Frameworks */,
 				3331F4AA2F94AB660014308D /* UIKit.framework in Frameworks */,
 				3331F4A82F94AB5A0014308D /* Foundation.framework in Frameworks */,
 				3331F4A62F94AB3A0014308D /* CoreFoundation.framework in Frameworks */,
 				3331F4A42F94AB2C0014308D /* SystemConfiguration.framework in Frameworks */,
 				3331F4A22F94AB210014308D /* UserNotifications.framework in Frameworks */,
+				JPUSHE4A7F8B2C3D4E5F6 /* jpush-ios-6.0.0.xcframework in Frameworks */,
+				JPUSHE4A7F8B2C3D4E5F7 /* jcore-ios-5.3.0.xcframework in Frameworks */,
+				JPUSHE4A7F8B2C3D4E5F8 /* jpush-extension-ios-2.0.6.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +257,7 @@
 		3331F4A02F94AB210014308D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3331F4AB2F94B2960014308D /* libresolv.tbd */,
 				3331F4A92F94AB660014308D /* UIKit.framework */,
 				3331F4A72F94AB5A0014308D /* Foundation.framework */,
 				3331F4A52F94AB3A0014308D /* CoreFoundation.framework */,
