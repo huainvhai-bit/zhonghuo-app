@@ -277,6 +277,11 @@ struct HomeStatusView: View {
         
         // 📱 安排签到提醒（使用后端配置的阈值和间隔）
         NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
+        
+        // ✅ 上传签到倒计时到服务器（用于管理员观测用户签到情况）
+        Task {
+            await DataManager.shared.recordLastActive(hoursRemaining: status.hoursRemaining)
+        }
     }
     
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {

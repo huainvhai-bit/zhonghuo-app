@@ -1224,6 +1224,35 @@ class DataManager: ObservableObject {
         return nil
     }
     
+    /// 上传签到倒计时到服务器（用于管理员观测用户签到情况）
+    /// 每次打开App时调用，上传当前本地计算的倒计时剩余时间
+    func recordLastActive(hoursRemaining: Double) async -> Bool {
+        guard !DataManager.apiURL.isEmpty else { return false }
+        
+        do {
+            let mutation = """
+            mutation RecordLastActive($hoursRemaining: Float!) {
+                recordLastActive(hoursRemaining: $hoursRemaining) {
+                    success
+                    recordedAt
+                }
+            }
+            """
+            
+            let variables: [String: Any] = ["hoursRemaining": hoursRemaining]
+            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+            
+            if let data = result["recordLastActive"] as? [String: Any],
+               let success = data["success"] as? Bool, success {
+                print("✅ 上传签到倒计时成功：\(hoursRemaining) 小时")
+                return true
+            }
+        } catch {
+            print("❌ 上传签到倒计时失败：\(error)")
+        }
+        return false
+    }
+    
     
     /// 批量同步胶囊到服务器
     /// ✅ 修复：标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
