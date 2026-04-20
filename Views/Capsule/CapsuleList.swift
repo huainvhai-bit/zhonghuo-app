@@ -24,6 +24,8 @@ struct CapsuleList: View {
     @State private var showingEditSheet = false  // ✅ 编辑弹窗
     @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的胶囊
     @State private var showingDeleteAlert = false  // ✅ 删除确认弹窗
+    @State private var selectedCapsuleForDetail: TimeCapsule? = nil  // 待查看详情的胶囊
+    @State private var showingCapsuleDetail = false  // 胶囊详情弹窗
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -211,6 +213,21 @@ struct CapsuleList: View {
                 CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
             }
         }
+        .sheet(isPresented: $showingCapsuleDetail) {
+            if let capsule = selectedCapsuleForDetail {
+                NavigationView {
+                    CapsuleDetailView(dataManager: dataManager, capsule: capsule)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("关闭") {
+                                    showingCapsuleDetail = false
+                                    selectedCapsuleForDetail = nil
+                                }
+                            }
+                        }
+                }
+            }
+        }
         .alert("删除胶囊", isPresented: $showingDeleteAlert) {
             Button("取消", role: .cancel) {
                 capsuleToDelete = nil
@@ -369,6 +386,11 @@ struct CapsuleList: View {
                         onSend: {
                             selectedCapsuleForShare = capsule
                             showingShareSheet = true
+                        },
+                        onTap: {
+                            // 点击打开胶囊详情
+                            selectedCapsuleForDetail = capsule
+                            showingCapsuleDetail = true
                         }
                     )
                 }
@@ -815,12 +837,18 @@ struct SwipeableCapsuleCard: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onSend: () -> Void
+    let onTap: () -> Void  // 点击打开详情
     
     @State private var offset: CGFloat = 0
     @State private var isShowingActions = false
     
+    // 是否向左滑出显示了操作按钮
+    private var isSwipedLeft: Bool {
+        offset < -50
+    }
+    
     var body: some View {
-        ZStack {
+        ZStack(alignment: .leading) {
             // 背景操作按钮
             HStack(spacing: 0) {
                 // 左侧：编辑按钮（滑出时显示）
@@ -834,9 +862,9 @@ struct SwipeableCapsuleCard: View {
                     Image(systemName: "pencil.circle.fill")
                         .font(.system(size: 28))
                         .foregroundColor(.white)
-                        .frame(width: 60)
+                        .frame(width: 60, height: 80)
                 }
-                .opacity(offset < -10 ? 1 : 0)
+                .frame(width: 60)
                 
                 Spacer()
                 
@@ -851,9 +879,9 @@ struct SwipeableCapsuleCard: View {
                     Image(systemName: "trash.circle.fill")
                         .font(.system(size: 28))
                         .foregroundColor(.white)
-                        .frame(width: 60)
+                        .frame(width: 60, height: 80)
                 }
-                .opacity(offset > 10 ? 1 : 0)
+                .frame(width: 60)
             }
             .background(Color.red)
             .cornerRadius(16)
@@ -946,7 +974,7 @@ struct SwipeableCapsuleCard: View {
                     .onEnded { value in
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             if value.translation.width < -80 {
-                                // 向左滑显示编辑
+                                // 向左滑显示编辑和删除按钮
                                 offset = -100
                                 isShowingActions = true
                             } else if value.translation.width > 40 {
@@ -960,12 +988,18 @@ struct SwipeableCapsuleCard: View {
                         }
                     }
             )
+            // 点击空白处关闭滑动菜单，点击卡片本身打开详情
+            .contentShape(Rectangle())
             .onTapGesture {
                 if isShowingActions {
+                    // 关闭滑动菜单
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         offset = 0
                         isShowingActions = false
                     }
+                } else {
+                    // 打开详情
+                    onTap()
                 }
             }
         }
