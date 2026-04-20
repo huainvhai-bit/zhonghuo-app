@@ -89,7 +89,7 @@ struct HomeStatusView: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("终活与您相伴 v2.0.0 ✅")
+                        Text("终活与您相伴")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
