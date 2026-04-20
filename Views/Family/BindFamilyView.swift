@@ -22,7 +22,7 @@ struct BindFamilyView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "F5F5F7").ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
                 
                 VStack(spacing: 30) {
                     // 说明

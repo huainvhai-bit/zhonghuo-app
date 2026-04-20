@@ -37,7 +37,7 @@ struct WillAssetsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
             }
-            .background(Color(hex: "F5F5F7"))
+            .background(Color(.systemBackground))
             .navigationTitle("嘱托与资产")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

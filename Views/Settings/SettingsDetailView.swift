@@ -21,7 +21,7 @@ struct SettingsDetailView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea()
             
             List {
@@ -177,7 +177,7 @@ struct LocationSettingsView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea()
             
             List {
@@ -213,7 +213,7 @@ struct ThemeSettingsView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea()
             
             List {

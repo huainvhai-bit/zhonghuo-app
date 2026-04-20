@@ -35,7 +35,7 @@ struct CapsuleEditView: View {
     var body: some View {
         ZStack {
             // ✅ UI 统一：背景色与其他界面一致
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea(edges: .all)
             
             ScrollView {
@@ -96,14 +96,14 @@ struct CapsuleEditView: View {
                         
                         TextField("请输入标题", text: $title)
                             .padding(14)
-                            .background(Color(hex: "F5F5F7"))
+                            .background(Color(.systemBackground))
                             .cornerRadius(10)
                         
                         if selectedType == .text {
                             TextEditor(text: $content)
                                 .frame(minHeight: 150)
                                 .padding(12)
-                                .background(Color(hex: "F2F2F7"))
+                                .background(Color(.secondarySystemBackground))
                                 .cornerRadius(8)
                         } else {
                             // ✅ 修复：视频/语音录制按钮

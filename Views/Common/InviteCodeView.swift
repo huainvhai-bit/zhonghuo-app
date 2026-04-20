@@ -21,7 +21,7 @@ struct InviteCodeView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "F5F5F7").ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
                 
                 if isLoading {
                     loadingView

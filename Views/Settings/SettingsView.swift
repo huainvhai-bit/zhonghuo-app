@@ -81,7 +81,7 @@ struct SettingsView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea()
             
             NavigationView {

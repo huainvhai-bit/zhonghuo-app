@@ -35,7 +35,7 @@ struct HomeStatusView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 ZStack(alignment: .top) {
                     // ✅ 修复: 背景色全屏覆盖
-                    Color(hex: "F5F5F7")
+                    Color(.systemBackground)
                         .ignoresSafeArea()
                     
                     VStack(spacing: 16) {

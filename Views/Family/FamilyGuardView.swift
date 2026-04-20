@@ -28,7 +28,7 @@ struct FamilyGuardView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "F5F5F7").ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
                 
                 if isLoading {
                     // 加载状态
@@ -940,7 +940,7 @@ struct ManualInputInviteCodeView: View {
                         inviteCode = newValue.uppercased()
                     }
                     .padding()
-                    .background(Color(hex: "F5F5F7"))
+                    .background(Color(.systemBackground))
                     .cornerRadius(12)
             }
             .padding(.horizontal)

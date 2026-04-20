@@ -21,7 +21,7 @@ struct CapsuleDetailView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "F5F5F7")
+            Color(.systemBackground)
                 .ignoresSafeArea(edges: .all)
             
             ScrollView {
@@ -220,7 +220,7 @@ struct CapsuleDetailView: View {
                         .foregroundColor(.secondary.opacity(0.6))
                 }
                 .padding(16)
-                .background(Color(hex: "F5F5F7"))
+                .background(Color(.systemBackground))
                 .cornerRadius(12)
             }
         }

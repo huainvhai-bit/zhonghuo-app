@@ -16,7 +16,7 @@ struct ReceivedCapsuleListView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "F5F5F7")
+                Color(.systemBackground)
                     .ignoresSafeArea(edges: .all)
                 
                 if dataManager.receivedCapsules.isEmpty {
@@ -158,7 +158,7 @@ struct ReceivedCapsuleDetailView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "F5F5F7")
+                Color(.systemBackground)
                     .ignoresSafeArea(edges: .all)
                 
                 ScrollView {

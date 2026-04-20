@@ -81,7 +81,7 @@ struct FamilyArchiveView: View {
                 }
                 .padding()
             }
-            .background(Color(hex: "F5F5F7"))
+            .background(Color(.systemBackground))
             .navigationTitle("家族档案馆")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
@@ -351,7 +351,7 @@ struct CreateArchiveView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
             }
-            .background(Color(hex: "F5F5F7"))
+            .background(Color(.systemBackground))
             .navigationTitle("创建家族档案")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -33,7 +33,7 @@ struct CapsuleList: View {
         NavigationView {
             ZStack {
                 // ✅ 背景色全屏覆盖（与首页一致）
-                Color(hex: "F5F5F7")
+                Color(.systemBackground)
                     .ignoresSafeArea(edges: .all)
                 
                 ScrollView {

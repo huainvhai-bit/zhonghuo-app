@@ -41,7 +41,7 @@ struct MembershipView: View {
                 }
                 .padding()
             }
-            .background(Color(hex: "F5F5F7"))
+            .background(Color(.systemBackground))
             .navigationTitle("开通会员")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
