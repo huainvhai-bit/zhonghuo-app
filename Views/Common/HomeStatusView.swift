@@ -32,13 +32,12 @@ struct HomeStatusView: View {
     
     var body: some View {
         NavigationView {
-            ZStack(alignment: .top) {
-                // ✅ 修复 #5: 背景色全屏覆盖
-                Color(hex: "F5F5F7")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-                
-                ScrollView(.vertical, showsIndicators: false) {
+            ScrollView(.vertical, showsIndicators: false) {
+                ZStack(alignment: .top) {
+                    // ✅ 修复: 背景色全屏覆盖
+                    Color(hex: "F5F5F7")
+                        .ignoresSafeArea()
+                    
                     VStack(spacing: 16) {
                         checkInCard
                         statusCard
@@ -525,8 +524,13 @@ struct HomeStatusView: View {
                 Spacer()
                 
                 Button(action: {
-                    print("🔵 点击查看全部")
-                    navigateToTimeCapsule = true
+                    print("🔵 点击查看全部，切换到时光胶囊Tab")
+                    // ✅ 修复：直接切换到时光胶囊Tab（Tab index = 1）
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("SwitchToTab"),
+                        object: nil,
+                        userInfo: ["tab": 1]
+                    )
                 }) {
                     HStack(spacing: 4) {
                         Text("查看全部")

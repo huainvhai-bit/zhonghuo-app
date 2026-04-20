@@ -121,17 +121,6 @@ struct AboutSettingsView: View {
             }
             .navigationTitle("关于")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: "6366F1"))
-                        Text("关于")
-                            .font(.system(size: 16, weight: .bold))
-                    }
-                }
-            }
             .alert("检查更新", isPresented: $showingUpdateAlert) {
                 Button("稍后更新", role: .cancel) { }
                 Button("立即更新") {

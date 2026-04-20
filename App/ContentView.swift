@@ -153,6 +153,11 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenFamilyGuard"))) { _ in
             showingFamilyGuard = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToTab"))) { notification in
+            if let tabIndex = notification.userInfo?["tab"] as? Int {
+                self.selectedTab = tabIndex
+            }
+        }
     }
     
 
