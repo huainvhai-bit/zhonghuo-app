@@ -210,14 +210,14 @@ struct LoginView: View {
         // ✅ 优先使用错误码进行精确匹配
         if errorMsg.contains("ACCOUNT_NOT_FOUND:") {
             errorMessage = "账号不存在，请先注册"
-        } else if errorMsg.contains("PASSWORD_ERROR:") {
-            errorMessage = "密码错误，请重试"
+        } else if errorMsg.contains("PASSWORD_ERROR:") || errorMsg.contains("CODE_ERROR:") {
+            errorMessage = "验证码错误或已过期"
         } else if errorMsg.contains("PHONE_EXISTS:") {
             errorMessage = "该手机号已注册，请直接登录"
         } else if errorMsg.contains("未注册") || errorMsg.contains("不存在") {
             errorMessage = "账号不存在，请先注册"
         } else if errorMsg.contains("密码") || errorMsg.contains("错误") {
-            errorMessage = "密码错误，请重试"
+            errorMessage = "验证码错误或已过期"
         } else if errorMsg.contains("网络") || errorMsg.contains("网络连接") {
             errorMessage = "网络连接失败，请检查网络"
         } else {
