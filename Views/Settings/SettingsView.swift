@@ -801,12 +801,20 @@ struct EditProfileModal: View {
         return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
     
-    // 根据头像名称返回 SF Symbol
+    // 根据头像名称返回 SF Symbol（每个头像使用不同的图标样式）
     private func avatarSymbol(for avatar: String) -> String {
-        if avatar.hasPrefix("male") {
-            return "person.fill"
-        } else {
-            return "person.fill"
+        switch avatar {
+        case "male_1": return "person.fill"                    // 标准男性
+        case "male_2": return "person.circle.fill"              // 圆形男性
+        case "male_3": return "figure.stand"                   // 站立的男性
+        case "male_4": return "person.fill.viewfinder"         // 搜索中的男性
+        case "male_5": return "person.badge.plus"               // 带加号的男性
+        case "female_1": return "person.fill"                   // 标准女性
+        case "female_2": return "person.circle.fill"             // 圆形女性
+        case "female_3": return "figure.stand"                  // 站立的女性
+        case "female_4": return "person.fill.viewfinder"        // 搜索中的女性
+        case "female_5": return "person.badge.plus"             // 带加号的女性
+        default: return "person.fill"
         }
     }
 }
