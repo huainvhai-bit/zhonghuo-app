@@ -136,14 +136,14 @@ struct ReceivedCapsuleRow: View {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: dateString) {
             let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "M月d日 HH:mm"
+            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
             return displayFormatter.string(from: date)
         }
         // 尝试不带毫秒的格式
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: dateString) {
             let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "M月d日 HH:mm"
+            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
             return displayFormatter.string(from: date)
         }
         return dateString
@@ -269,13 +269,13 @@ struct ReceivedCapsuleDetailView: View {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: dateString) {
             let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy年M月d日 HH:mm:ss"
+            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm:ss"
             return displayFormatter.string(from: date)
         }
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: dateString) {
             let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy年M月d日 HH:mm:ss"
+            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm:ss"
             return displayFormatter.string(from: date)
         }
         return dateString
