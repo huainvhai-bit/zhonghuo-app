@@ -22,7 +22,7 @@ import UIKit
 /// 
 /// 功能模块：
 /// - **API 配置**：动态获取服务器地址（`apiURL`）
-/// - **用户数据**：`capsules`, `willModules`, `assets`, `witnesses`
+/// - **用户数据**：`capsules`, `willModules`, `assets`
 /// - **系统配置**：签到间隔、通知配置等
 /// - **数据同步**：GraphQL + REST API 混合架构
 /// 
@@ -56,7 +56,6 @@ class DataManager: ObservableObject {
     @Published var deletedWillModules: [WillModule] = []  // 🔥 跟踪已删除的遗嘱（用于同步删除到服务器）
     @Published var assets: [Asset] = []
     @Published var deletedAssets: [Asset] = []  // 🔥 跟踪已删除的资产（用于同步删除到服务器）
-    @Published var witnesses: [Witness] = []
     @Published var familyMembers: [FamilyInfo] = []  // ✅ 家人成员
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
@@ -110,8 +109,7 @@ class DataManager: ObservableObject {
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderThreshold),
                 checkinReminderIntervalHours: Double(reminderInterval),
-                overduePushIntervalHours: Double(overduePushInterval),
-                minimumEmergencyContacts: 2
+                overduePushIntervalHours: Double(overduePushInterval)
             )
             
             // 使用后端返回的地址（无条件相信）
@@ -349,7 +347,6 @@ class DataManager: ObservableObject {
         capsules = loadCapsulesFromFile()
         willModules = loadWillModulesFromFile()
         assets = loadAssetsFromFile()
-        witnesses = loadWitnessesFromFile()
         checklistItems = loadChecklistItemsFromFile()
     }
     
@@ -487,21 +484,6 @@ class DataManager: ObservableObject {
         }
     }
     
-    func saveWitnessesToFile() {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        if let data = try? encoder.encode(witnesses) {
-            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("witnesses.json"))
-        }
-    }
-    
-    func loadWitnessesFromFile() -> [Witness] {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("witnesses.json")
-        if let data = try? Data(contentsOf: path) {
-            return (try? JSONDecoder().decode([Witness].self, from: data)) ?? []
-        }
-        return []
-    }
     
     func loadChecklistItemsFromFile() -> [ChecklistItem] {
         let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("checklist.json")
@@ -705,51 +687,6 @@ class DataManager: ObservableObject {
         return NotificationConfig()
     }
     
-    // MARK: - 见证人管理（本地存储，无后端同步）
-    func addWitness(_ witness: Witness) {
-        witnesses.append(witness)
-        saveWitnessesToFile()
-        print("👥 见证人已添加")
-        
-        // 发送数据变更通知
-        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-    }
-    
-    func deleteWitness(_ witness: Witness) {
-        if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
-            witnesses.remove(at: index)
-            saveWitnessesToFile()
-            print("👥 见证人已删除")
-        }
-        
-        // 发送数据变更通知
-        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-    }
-    
-    func updateWitness(_ witness: Witness) {
-        if let index = witnesses.firstIndex(where: { $0.id == witness.id }) {
-            witnesses[index] = witness
-            saveWitnessesToFile()
-            print("👥 见证人已更新")
-        }
-        
-        // 发送数据变更通知
-        NotificationCenter.default.post(name: NSNotification.Name("WitnessChanged"), object: nil)
-    }
-    
-    func getWitnessProgress() -> Double {
-        guard !witnesses.isEmpty else { return 0 }
-        let confirmed = witnesses.filter { $0.isConfirmed }.count
-        return Double(confirmed) / Double(witnesses.count)
-    }
-    
-    func getWitnessProgressString() -> String {
-        let total = witnesses.count
-        let confirmed = witnesses.filter { $0.isConfirmed }.count
-        return "\(confirmed)/\(total)"
-    }
-    
-    // MARK: - 资产管理
     func addAsset(_ asset: Asset) {
         assets.append(asset)
         saveAssetsToFile()
@@ -1606,34 +1543,6 @@ class DataManager: ObservableObject {
         return false
     }
     
-    /// 创建紧急联系人（GraphQL）
-    // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
-    func createEmergencyContact(name: String, phone: String, relation: String, priority: Int = 1) async throws -> [String: Any] {
-        let mutation = """
-        mutation($name: String!, $phone: String!, $relation: String!, $priority: Int) {
-            createEmergencyContact(name: $name, phone: $phone, relation: $relation, priority: $priority) {
-                success
-                id
-                message
-            }
-        }
-        """
-        
-        let variables: [String: Any] = [
-            "name": name,
-            "phone": phone,
-            "relation": relation,
-            "priority": priority
-        ]
-        
-        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
-        
-        if let data = result["createEmergencyContact"] as? [String: Any] {
-            return data
-        }
-        throw APIError.networkError
-    }
-    
     /// 签到（GraphQL）
     // ✅ 统一：将 LifeCheckStatusManager 调用迁移到 DataManager
     func checkIn(checkInIntervalHours: Int = 48, location: [String: Any]? = nil) async throws -> [String: Any] {
@@ -1731,8 +1640,7 @@ class DataManager: ObservableObject {
             downloadUserData(type: $type) {
                 capsules
                 wills
-                contacts
-                witnesses
+                assets
             }
         }
         """
@@ -2066,7 +1974,6 @@ class DataManager: ObservableObject {
                     checkinReminderThresholdHours: Double(reminderHours),
                     checkinReminderIntervalHours: Double(pushInterval),
                     overduePushIntervalHours: Double(overduePushInterval),
-                    minimumEmergencyContacts: 2,
                     appMaintenanceMode: maintenanceMode,
                     appMaintenanceMessage: maintenanceMessage,
                     latestVersion: latestVersion,
@@ -2250,16 +2157,11 @@ class DataManager: ObservableObject {
         // 重置资产
         // assets = []
         
-        // 重置见证人
-        // witnesses = []
-        
         // 重置待办清单
         // checklistItems = []
         
         // 重置设置（使用默认值）
         // self.settings.name = ""
-        // self.settings.emergencyContact = nil
-        // self.settings.emergencyContacts = []
         // self.settings.checkInInterval = .twoDays
         // self.settings.notificationsEnabled = true
         // self.settings.cloudSyncEnabled = true

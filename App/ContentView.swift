@@ -237,7 +237,6 @@ struct ContentView: View {
             //     print("✅ 用户已登录，执行自动签到...")
             //     Task {
             //         await self.userManager.performAutoSignIn()
-            //         self.checkEmergencyContacts()
             //     }
             // } else {
             //     print("⚠️ 用户未登录，显示登录界面")

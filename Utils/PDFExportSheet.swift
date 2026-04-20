@@ -12,7 +12,6 @@ struct PDFExportSheet: View {
     @Environment(\.dismiss) var dismiss
     @Binding var isPresented: Bool
     let modules: [WillModule]
-    let witnesses: [Witness]
     let assets: [Asset]
     let capsules: [TimeCapsule]  // 时光胶囊（用于导出下载地址）
     let onSuccess: () -> Void
@@ -58,7 +57,6 @@ struct PDFExportSheet: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         ContentRow(icon: "doc.text.fill", text: "已完成的遗嘱模块", count: modules.filter { $0.isCompleted }.count)
-                        ContentRow(icon: "person.2.fill", text: "见证人信息", count: witnesses.count)
                         ContentRow(icon: "yensign.circle.fill", text: "资产记录", count: assets.count)
                         ContentRow(icon: "capsule.fill", text: "媒体胶囊地址", count: capsules.count)
                     }
@@ -139,7 +137,7 @@ struct PDFExportSheet: View {
         isExporting = true
         
         // 生成 PDF
-        guard let pdfData = PDFGenerator.exportWillModulesToPDF(modules: modules, witnesses: witnesses, assets: assets, capsules: capsules) else {
+        guard let pdfData = PDFGenerator.exportWillModulesToPDF(modules: modules, assets: assets, capsules: capsules) else {
             print("❌ PDF 生成失败")
             isExporting = false
             return
@@ -225,7 +223,6 @@ struct PDFDocument: FileDocument {
     PDFExportSheet(
         isPresented: .constant(true),
         modules: [],
-        witnesses: [],
         assets: [],
         capsules: [],
         onSuccess: {}

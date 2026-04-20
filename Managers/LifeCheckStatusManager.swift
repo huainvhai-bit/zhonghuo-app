@@ -406,41 +406,9 @@ class LifeCheckStatusManager: ObservableObject {
     }
     
     /// 通知所有监护人
-    func notifyGuardians() async {
-        // 获取当前用户
-        guard let user = DataManager.shared.currentUser else {
-            print("❌ 无用户数据，无法通知监护人")
-            return
-        }
-        
-        // 获取紧急联系人列表
-        let emergencyContacts = user.emergencyContacts
-        
-        // 计算超时时长
-        let hoursOverdue = -hoursRemaining
-        
-        print("📞 开始通知 \(emergencyContacts.count) 位紧急联系人...")
-        
-        // 遍历通知所有紧急联系人
-        for contact in emergencyContacts {
-            do {
-                let success = try await DataManager.shared.notifyGuardian(
-                    guardianPhone: contact.phone,
-                    userName: user.name,
-                    hoursOverdue: hoursOverdue
-                )
-                
-                if success {
-                    print("✅ 已通知紧急联系人：\(contact.name) (\(contact.phone))")
-                } else {
-                    print("❌ 通知失败：\(contact.name)")
-                }
-            } catch {
-                print("❌ 通知异常：\(contact.name), 错误：\(error)")
-            }
-        }
-        
-        print("📞 监护人通知完成")
+        func notifyGuardians() async {
+        // 见证人和紧急联系人功能已移除
+        print("📞 监护人通知功能已禁用")
     }
 }
 

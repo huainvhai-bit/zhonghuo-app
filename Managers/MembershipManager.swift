@@ -27,7 +27,6 @@ class MembershipManager: ObservableObject {
         static let freeMaxCapsules = 5
         static let freeMaxMediaCapsules = 2
         static let freeMaxVideoMinutes = 2
-        static let freeMaxEmergencyContacts = 2
         static let freeMaxWills = 3
         static let freeFamilyMembers = 1
         static let freeMaxWillModules = 3
@@ -40,7 +39,6 @@ class MembershipManager: ObservableObject {
         static let premiumMaxCapsules = 20
         static let premiumMaxMediaCapsules = 10
         static let premiumMaxVideoMinutes = 5
-        static let premiumMaxEmergencyContacts = 999
         static let premiumMaxWills = 999
         static let premiumFamilyMembers = 5
         static let premiumMaxWillModules = 999
@@ -197,11 +195,6 @@ class MembershipManager: ObservableObject {
     /// 获取语音录制最大时长（秒）- 与视频相同
     func maxAudioRecordingSeconds() -> Int {
         return maxVideoMinutes * 60
-    }
-    
-    /// 检查是否可以添加紧急联系人
-    func canAddEmergencyContact(currentCount: Int) -> Bool {
-        return isPremium || currentCount < Limits.freeMaxEmergencyContacts
     }
     
     /// 检查是否可以创建遗嘱模块

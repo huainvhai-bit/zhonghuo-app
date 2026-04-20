@@ -179,8 +179,4 @@ extension NotificationCenter {
     func postAccountInvalid() {
         post(name: NSNotification.Name("AccountInvalid"), object: nil)
     }
-    
-    func postContactChanged() {
-        post(name: NSNotification.Name("EmergencyContactChanged"), object: nil)
-    }
 }

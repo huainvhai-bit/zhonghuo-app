@@ -96,7 +96,7 @@ struct WillAssetsView: View {
                 AddAssetModal(dataManager: dataManager, asset: asset)
             }
             .sheet(isPresented: $showingPDFExport) {
-                PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, witnesses: dataManager.witnesses, assets: dataManager.assets, capsules: dataManager.capsules, onSuccess: {
+                PDFExportSheet(isPresented: $showingPDFExport, modules: dataManager.willModules, assets: dataManager.assets, capsules: dataManager.capsules, onSuccess: {
                     pdfExportSuccess = true
                 })
             }

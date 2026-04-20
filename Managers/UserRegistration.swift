@@ -42,7 +42,6 @@ class UserRegistration {
             name: name,
             phone: phone,
             createdAt: Date(),
-            emergencyContacts: [],
             checkInInterval: .twoDays,
             notificationsEnabled: true,
             cloudSyncEnabled: true,

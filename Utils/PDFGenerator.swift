@@ -21,7 +21,7 @@ class PDFGenerator {
     
     /// 导出遗嘱模块为 PDF
     // ✅ P2 修复 #5: 添加自动分页逻辑
-    static func exportWillModulesToPDF(modules: [WillModule], witnesses: [Witness], assets: [Asset], capsules: [TimeCapsule]) -> Data? {
+    static func exportWillModulesToPDF(modules: [WillModule], assets: [Asset], capsules: [TimeCapsule]) -> Data? {
         let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pdfPageWidth, height: pdfPageHeight))
         
         let data = pdfRenderer.pdfData { ctx in
@@ -55,10 +55,6 @@ class PDFGenerator {
                 currentY = checkPageBreak(ctx: ctx, currentY: currentY, moduleHeight: estimateModuleHeight(module))
                 currentY = drawModuleSection(ctx: ctx, module: module, startY: currentY)
             }
-            
-            // 见证人信息
-            currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
-            currentY = drawWitnessSection(ctx: ctx, witnesses: witnesses, startY: currentY + 30)
             
             // 资产信息
             currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
@@ -149,39 +145,6 @@ class PDFGenerator {
         // 分隔线
         drawLine(ctx: ctx, from: CGPoint(x: pdfMargin, y: currentY), to: CGPoint(x: pdfPageWidth - pdfMargin, y: currentY))
         currentY += 20
-        
-        return currentY
-    }
-    
-    private static func drawWitnessSection(ctx: UIGraphicsPDFRendererContext, witnesses: [Witness], startY: CGFloat) -> CGFloat {
-        var currentY = startY
-        
-        // 章节标题
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: 18),
-            .foregroundColor: UIColor(hex: "AF52DE")
-        ]
-        "见证人信息".draw(at: CGPoint(x: pdfMargin, y: currentY))
-        currentY += 30
-        
-        if witnesses.isEmpty {
-            let emptyAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 14),
-                .foregroundColor: UIColor.gray
-            ]
-            "暂无见证人".draw(at: CGPoint(x: pdfMargin, y: currentY))
-            currentY += 25
-        } else {
-            for witness in witnesses {
-                let witnessStr = "• \(witness.name)（\(witness.role)）- \(witness.isConfirmed ? "已确认" : "待确认")"
-                let witnessAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 14),
-                    .foregroundColor: UIColor.black
-                ]
-                witnessStr.draw(at: CGPoint(x: pdfMargin, y: currentY))
-                currentY += 22
-            }
-        }
         
         return currentY
     }

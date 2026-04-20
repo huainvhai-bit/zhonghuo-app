@@ -28,7 +28,6 @@ struct HomeStatusView: View {
     @State private var navigateToReceivedCapsules = false  // 跳转到我收到的胶囊列表
     @State private var navigateToCapsuleDetail = false  // 跳转胶囊详情
     @State private var selectedReceivedCapsule: ReceivedCapsule?  // 选中的胶囊
-    @State private var showingEmergencyContactAlert = false
     @State private var hasSentOverdueAlert = false  // 防止重复发送
     
     var body: some View {
@@ -79,54 +78,6 @@ struct HomeStatusView: View {
                     EmptyView()
                 }
                 .opacity(0)
-                
-                // 👥 家人不足提示（家人直接替代紧急联系人）
-                if showingEmergencyContactAlert {
-                    VStack {
-                        Spacer()
-                        VStack(spacing: 16) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(.orange)
-                            
-                            Text("家人不足")
-                                .font(.headline)
-                            
-                            Text("为了您的安全，请至少添加 1 位家人。\n在紧急情况下，家人可以及时帮助您。")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                            
-                            HStack(spacing: 12) {
-                                Button("稍后再说") {
-                                    showingEmergencyContactAlert = false
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color.gray.opacity(0.2))
-                                .foregroundColor(.primary)
-                                .cornerRadius(10)
-                                
-                                Button("去添加") {
-                                    showingEmergencyContactAlert = false
-                                    navigateToFamilyTab = true  // 跳转到家人守护 tab
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "6366F1"))
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                            }
-                        }
-                        .padding(24)
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(radius: 20)
-                        .padding(40)
-                    }
-                    .transition(.opacity)
-                    .animation(.easeInOut, value: showingEmergencyContactAlert)
-                }
             }
             .navigationTitle("终活与您相伴")
             .navigationBarTitleDisplayMode(.inline)
@@ -157,23 +108,8 @@ struct HomeStatusView: View {
                     handleAutoCheckIn()
                 }
                 
-                // 👥 检查家人数量
-                checkEmergencyContactsCount()
-                
-                // 📞 检查是否需要通知监护人
-                checkGuardianNotification()
-                
                 // 然后更新倒计时显示
                 updateStatus()
-                
-                // ✅ 修复：启动 Timer（切换界面后继续运行）
-                timerManager.start {
-                    // 检查是否刚进入危险状态（倒计时归零）
-                    if self.timerManager.secondsRemaining <= 0 && !self.hasSentOverdueAlert {
-                        // 倒计时结束，发送 iMessage 通知紧急联系人
-                        self.sendOverdueAlertToEmergencyContacts()
-                    }
-                }
                 
                 // 🔔 监听签到完成通知（刷新倒计时）
                 NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
@@ -214,7 +150,14 @@ struct HomeStatusView: View {
             return
         }
         
+        // 🔴 防重复签到：5 分钟内不重复签到
         let now = Date()
+        let autoCheckInCooldown: TimeInterval = 300 // 5 分钟
+        if now.timeIntervalSince(userManager.lastAutoSignInTimeValue) < autoCheckInCooldown {
+            print("⏭️ handleAutoCheckIn 跳过：\(Int(autoCheckInCooldown - now.timeIntervalSince(userManager.lastAutoSignInTimeValue))) 秒后可再次签到")
+            return
+        }
+        
         let lastCheckIn = userManager.lastCheckInDate
         let intervalSeconds = userManager.checkInInterval.hours * 3600
         
@@ -243,30 +186,6 @@ struct HomeStatusView: View {
         
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
         print("📍 位置和数据已自动上传到服务器")
-    }
-    
-    /// 👥 检查紧急联系人数量（低于配置数量提示）
-    private func checkEmergencyContactsCount() {
-        // ✅ 改为检查家人数量（家人直接替代紧急联系人）
-        let familyCount = DataManager.shared.familyMembers.count
-        let minimumFamily = 1  // 至少添加 1 位家人
-        print("👥 检查家人数量：\(familyCount) 人（要求：至少 \(minimumFamily) 人）")
-        
-        if familyCount < minimumFamily {
-            print("⚠️ 家人不足，显示提示")
-            showingEmergencyContactAlert = true
-        }
-    }
-    
-    /// 📞 检查是否需要通知监护人
-    private func checkGuardianNotification() {
-        // 使用 statusManager 检查状态
-        statusManager.updateStatus()
-        
-        if !statusManager.isSafe {
-            print("⚠️ 用户已超时未签到，检查是否需要通知监护人")
-            statusManager.notifyGuardianIfNeeded()
-        }
     }
     
     /// 🆕 打开 App 时智能同步数据（双向同步：本地↔云端）
@@ -321,49 +240,10 @@ struct HomeStatusView: View {
     
     // 🚫 已移除手动签到功能 - 只保留自动签到
     
-    /// 发送超时通知给紧急联系人（使用苹果原生 iMessage）
+        /// 发送超时通知给紧急联系人（已禁用）
     private func sendOverdueAlertToEmergencyContacts() {
-        print("🚨 倒计时结束，准备发送 iMessage 通知紧急联系人")
-        
-        guard let user = UserManager.shared.currentUser else {
-            print("⚠️ 无用户数据，跳过通知")
-            return
-        }
-        
-        // 获取紧急联系人，转换为 MessageManager 需要的格式
-        let contacts = user.emergencyContacts
-            .filter { $0.deletedAt == nil }  // 只选择未删除的联系人
-            .map { EmergencyContactInfo(
-                id: $0.id,
-                name: $0.name,
-                phone: $0.phone,
-                relationship: $0.relationship
-            )}
-        
-        guard !contacts.isEmpty else {
-            print("⚠️ 没有紧急联系人，跳过通知")
-            return
-        }
-        
-        // 计算超时小时数
-        let hoursOverdue = Int(DataManager.shared.systemConfig.offlineTimeoutHours)
-        
-        print("📱 发送 iMessage 给 \(contacts.count) 个紧急联系人")
-        print("   - 超时阈值：\(hoursOverdue) 小时")
-        
-        // 使用苹果原生 iMessage 发送通知
-        MessageManager.shared.sendLifeCheckAlert(
-            to: contacts,
-            userName: user.name,
-            hoursOverdue: hoursOverdue
-        ) { success, message in
-            if success {
-                print("✅ iMessage 通知发送成功")
-                hasSentOverdueAlert = true  // 标记已发送，防止重复
-            } else {
-                print("❌ iMessage 通知失败：\(message ?? "未知错误")")
-            }
-        }
+        // 见证人和紧急联系人功能已移除
+        print("🚨 紧急联系人通知功能已禁用")
     }
     
     // ✅ 修复：确保所有状态更新在主线程执行

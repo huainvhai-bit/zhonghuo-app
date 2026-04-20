@@ -213,8 +213,6 @@ struct BindFamilyView: View {
             
             let success = result["success"] as? Bool ?? false
             if success {
-                // 绑定成功后，自动添加到紧急联系人
-                await addEmergencyContactIfNeeded()
                 showingSuccess = true
                 return
             } else {
@@ -245,65 +243,7 @@ struct BindFamilyView: View {
         return ""
     }
     
-    @MainActor
-    private func addEmergencyContactIfNeeded() async {
-        // 绑定成功后，获取家人信息并添加到紧急联系人
-        guard !DataManager.apiURL.isEmpty else {
-            return
-        }
-        
-        let token = KeychainManager.shared.getToken() ?? ""
-        guard !token.isEmpty else {
-            return
-        }
-        
-        do {
-            // ✅ 修复：使用 DataManager 统一函数
-            let members = try await DataManager.shared.fetchFamilyMembers()
-            
-            if !members.isEmpty {
-                // 获取最后一个绑定的家人
-                guard let lastMember = members.last else { return }
-                let name = lastMember["name"] as? String ?? ""
-                let phone = lastMember["phone"] as? String ?? ""
-                let relation = lastMember["role"] as? String ?? "家人"
-                
-                // 自动添加到紧急联系人
-                await addEmergencyContact(name: name, phone: phone, relation: relation)
-                print("✅ 家人绑定成功：\(name)，已自动添加到紧急联系人")
-            }
-        } catch {
-            print("❌ 紧急联系人自动添加失败：\(error)")
-        }
     }
-    
-    /// 自动添加家人到紧急联系人
-    private func addEmergencyContact(name: String, phone: String, relation: String) async {
-        guard !name.isEmpty && !phone.isEmpty else {
-            print("⚠️ 家人信息不完整，跳过添加紧急联系人")
-            return
-        }
-        
-        do {
-            // ✅ 修复：使用 DataManager 统一函数
-            let result = try await DataManager.shared.createEmergencyContact(
-                name: name,
-                phone: phone,
-                relation: relation,
-                priority: 1
-            )
-            
-            let success = result["success"] as? Bool ?? false
-            if success {
-                print("✅ 紧急联系人自动添加成功：\(name)")
-            } else {
-                print("⚠️ 紧急联系人已存在或添加失败")
-            }
-        } catch {
-            print("❌ 添加紧急联系人失败：\(error)")
-        }
-    }
-}
 
 #Preview {
     BindFamilyView(onBound: nil)

@@ -153,7 +153,7 @@ class RealTimeSyncManager: ObservableObject {
         let timestamp: Date
         
         enum SyncType: String, Equatable {
-            case capsule, will, emergencyContact, witness, location, checkin, full
+            case capsule, will, location, checkin, full
         }
     }
     

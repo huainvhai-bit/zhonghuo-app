@@ -9,14 +9,6 @@ import Foundation
 import MessageUI
 import UIKit
 
-/// 紧急联系人模型（简化版，避免依赖 Models.swift）
-struct EmergencyContactInfo {
-    let id: String
-    let name: String
-    let phone: String
-    let relationship: String
-}
-
 /// iMessage 管理器 - 用于发送紧急通知
 class MessageManager: NSObject {
     static let shared = MessageManager()
@@ -99,36 +91,14 @@ class MessageManager: NSObject {
     ///   - hoursOverdue: 超时小时数
     ///   - completion: 完成回调
     func sendLifeCheckAlert(
-        to contacts: [EmergencyContactInfo],
+        to phoneNumbers: [String],
         userName: String,
         hoursOverdue: Int,
         completion: ((Bool, String?) -> Void)? = nil
     ) {
-        guard !contacts.isEmpty else {
-            print("⚠️ 没有紧急联系人，跳过短信通知")
-            completion?(false, "没有紧急联系人")
-            return
-        }
-        
-        // 提取手机号
-        let phoneNumbers = contacts.map { $0.phone }
-        
-        // 构建短信内容
-        let message = """
-        【终活】紧急通知
-        
-        \(userName) 已超过 \(hoursOverdue) 小时未签到，可能遇到危险。
-        
-        请尽快联系确认其安全状况！
-        
-        终活 App - 生命守护
-        """
-        
-        print("🚨 发送生命体征确认通知")
-        print("   - 联系人：\(contacts.count) 人")
-        print("   - 超时：\(hoursOverdue) 小时")
-        
-        sendMessage(to: phoneNumbers, body: message, completion: completion)
+        // 紧急联系人功能已移除
+        print("⚠️ 紧急联系人功能已移除，跳过短信通知")
+        completion?(false, "紧急联系人功能已移除")
     }
 }
 

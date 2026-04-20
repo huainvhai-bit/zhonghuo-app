@@ -33,7 +33,6 @@ struct ServerConfig: Codable {
             let capsuleSync: Bool
             let willSync: Bool
             let checkinSync: Bool
-            let witnessSync: Bool
         }
         
         struct Limits: Codable {
@@ -605,160 +604,6 @@ struct Asset: Identifiable, Codable {
         }
     }
 }
-
-// MARK: - 见证人
-struct WillWitness: Identifiable, Codable {
-    var id: String
-    var name: String
-    var relationship: String
-    var phone: String
-    var idNumber: String
-    var notes: String
-    var isConfirmed: Bool
-    var createdAt: Date
-    var confirmedAt: Date?
-}
-
-// 兼容旧代码
-struct Witness: Identifiable, Codable {
-    var id: String
-    var name: String
-    var role: String
-    var phone: String
-    var isConfirmed: Bool
-    var order: Int
-    var idNumber: String = ""
-    var notes: String = ""
-    var confirmedAt: Date?
-    var createdAt: Date = Date()
-    var deletedAt: Date? = nil  // 删除标记
-    
-    // 兼容 relationship 字段（计算属性，不参与 Codable）
-    var relationship: String {
-        get { role }
-        set { role = newValue }
-    }
-    
-    var statusText: String {
-        isConfirmed ? "已确认" : "待确认"
-    }
-    
-    var statusColor: String {
-        isConfirmed ? "34C759" : "FF9500"
-    }
-    
-    // MARK: - 手动初始化（用于代码创建）
-    init(id: String = UUID().uuidString, name: String, role: String, phone: String,
-         isConfirmed: Bool = false, order: Int = 0, idNumber: String = "", notes: String = "",
-         confirmedAt: Date? = nil, createdAt: Date = Date(), deletedAt: Date? = nil) {
-        self.id = id
-        self.name = name
-        self.role = role
-        self.phone = phone
-        self.isConfirmed = isConfirmed
-        self.order = order
-        self.idNumber = idNumber
-        self.notes = notes
-        self.confirmedAt = confirmedAt
-        self.createdAt = createdAt
-        self.deletedAt = deletedAt
-    }
-    
-    // MARK: - Codable 字段映射
-    enum CodingKeys: String, CodingKey {
-        case id, name, role, phone, order, idNumber, notes
-        case isConfirmed = "is_confirmed"
-        case confirmedAt = "confirmed_at"
-        case createdAt = "created_at"
-        case deletedAt = "deleted_at"
-    }
-    
-    // 🔧 自定义解码逻辑
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(String.self, forKey: .id)
-        name = try container.decode(String.self, forKey: .name)
-        role = try container.decode(String.self, forKey: .role)
-        phone = try container.decode(String.self, forKey: .phone)
-        order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
-        idNumber = try container.decodeIfPresent(String.self, forKey: .idNumber) ?? ""
-        notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
-        
-        // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
-        do {
-            let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
-            isConfirmed = isConfirmedInt != 0
-        } catch {
-            do {
-                let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
-                isConfirmed = isConfirmedBool
-            } catch {
-                isConfirmed = false
-            }
-        }
-        
-        // 处理 confirmedAt 日期格式（支持字符串或数字）
-        do {
-            let confirmedAtString = try container.decode(String.self, forKey: .confirmedAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            confirmedAt = formatter.date(from: confirmedAtString)
-        } catch {
-            do {
-                let confirmedAtTimestamp = try container.decode(Double.self, forKey: .confirmedAt)
-                confirmedAt = Date(timeIntervalSince1970: confirmedAtTimestamp)
-            } catch {
-                do {
-                    let confirmedAtTimestamp = try container.decode(Int.self, forKey: .confirmedAt)
-                    confirmedAt = Date(timeIntervalSince1970: Double(confirmedAtTimestamp))
-                } catch {
-                    confirmedAt = nil
-                }
-            }
-        }
-        
-        // 处理 createdAt 日期格式（支持字符串或数字）
-        do {
-            let createdAtString = try container.decode(String.self, forKey: .createdAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            createdAt = formatter.date(from: createdAtString) ?? Date()
-        } catch {
-            do {
-                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
-                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-            } catch {
-                do {
-                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
-                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
-                } catch {
-                    createdAt = Date()
-                }
-            }
-        }
-        
-        // 处理 deletedAt 日期格式（支持字符串或数字）
-        do {
-            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            deletedAt = formatter.date(from: deletedAtString)
-        } catch {
-            do {
-                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
-                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
-            } catch {
-                do {
-                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
-                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
-                } catch {
-                    deletedAt = nil
-                }
-            }
-        }
-    }
-}
-
 // MARK: - 待办事项
 struct ChecklistItem: Identifiable, Codable {
     var id: String
@@ -816,7 +661,6 @@ struct User: Codable, Identifiable {
     var name: String
     var phone: String
     var createdAt: Date
-    var emergencyContacts: [EmergencyContact]
     var checkInInterval: CheckInInterval
     var notificationsEnabled: Bool
     var cloudSyncEnabled: Bool
@@ -900,102 +744,9 @@ struct User: Codable, Identifiable {
     
     
     // 统计信息（带默认值）
-    var emergencyContactsCount: Int = 0
-    var witnessesCount: Int = 0
     var capsulesCount: Int = 0
     var willModulesCount: Int = 0
     var familyCount: Int = 0
-    
-    struct EmergencyContact: Codable, Identifiable {
-        var id: String = UUID().uuidString
-        var name: String
-        var phone: String
-        var relationship: String
-        var isConfirmed: Bool = false
-        var createdAt: Date = Date()
-        var deletedAt: Date? = nil  // 删除标记
-        
-        // MARK: - 手动初始化（用于代码创建）
-        init(id: String = UUID().uuidString, name: String, phone: String, relationship: String,
-             isConfirmed: Bool = false, createdAt: Date = Date(), deletedAt: Date? = nil) {
-            self.id = id
-            self.name = name
-            self.phone = phone
-            self.relationship = relationship
-            self.isConfirmed = isConfirmed
-            self.createdAt = createdAt
-            self.deletedAt = deletedAt
-        }
-        
-        // MARK: - Codable 字段映射
-        enum CodingKeys: String, CodingKey {
-            case id, name, phone, relationship, isConfirmed
-            case createdAt = "created_at"
-            case deletedAt = "deleted_at"
-        }
-        
-        // 🔧 自定义解码逻辑
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
-            name = try container.decode(String.self, forKey: .name)
-            phone = try container.decode(String.self, forKey: .phone)
-            relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
-            
-            // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
-            do {
-                let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
-                isConfirmed = isConfirmedInt != 0
-            } catch {
-                do {
-                    let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
-                    isConfirmed = isConfirmedBool
-                } catch {
-                    isConfirmed = false
-                }
-            }
-            
-            // 处理 createdAt 日期格式（支持字符串或数字）
-            do {
-                let createdAtString = try container.decode(String.self, forKey: .createdAt)
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                createdAt = formatter.date(from: createdAtString) ?? Date()
-            } catch {
-                do {
-                    let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
-                    createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-                } catch {
-                    do {
-                        let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
-                        createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
-                    } catch {
-                        createdAt = Date()
-                    }
-                }
-            }
-            
-            // 处理 deletedAt 日期格式（支持字符串或数字）
-            do {
-                let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                deletedAt = formatter.date(from: deletedAtString)
-            } catch {
-                do {
-                    let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
-                    deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
-                } catch {
-                    do {
-                        let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
-                        deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
-                    } catch {
-                        deletedAt = nil
-                    }
-                }
-            }
-        }
-    }
     
     // 指示说明
     
@@ -1026,77 +777,10 @@ struct User: Codable, Identifiable {
 // MARK: - 用户设置
 struct UserSettings: Codable {
     var name: String
-    var emergencyContact: EmergencyContact?
-    var emergencyContacts: [EmergencyContact] = [] // 新增：支持多个紧急联系人
     var checkInInterval: CheckInInterval = .twoDays
     var notificationsEnabled: Bool
     var cloudSyncEnabled: Bool
     var lastCheckInDate: Date?
-    
-    struct EmergencyContact: Codable, Identifiable {
-        var id: String = UUID().uuidString
-        var name: String
-        var phone: String
-        var relationship: String
-        var isConfirmed: Bool = false
-        var createdAt: Date = Date()
-        var deletedAt: Date? = nil  // 删除标记
-        
-        // MARK: - 手动初始化（用于代码创建）
-        init(id: String = UUID().uuidString, name: String, phone: String, relationship: String,
-             isConfirmed: Bool = false, createdAt: Date = Date(), deletedAt: Date? = nil) {
-            self.id = id
-            self.name = name
-            self.phone = phone
-            self.relationship = relationship
-            self.isConfirmed = isConfirmed
-            self.createdAt = createdAt
-            self.deletedAt = deletedAt
-        }
-        
-        // MARK: - Codable 字段映射
-        enum CodingKeys: String, CodingKey {
-            case id, name, phone, relationship, isConfirmed
-            case createdAt = "created_at"
-            case deletedAt = "deleted_at"
-        }
-        
-        // 🔧 自定义解码逻辑
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
-            name = try container.decode(String.self, forKey: .name)
-            phone = try container.decode(String.self, forKey: .phone)
-            relationship = try container.decodeIfPresent(String.self, forKey: .relationship) ?? ""
-            
-            // 处理 is_confirmed (0/1 或 true/false) -> Bool 转换
-            do {
-                let isConfirmedInt = try container.decode(Int.self, forKey: .isConfirmed)
-                isConfirmed = isConfirmedInt != 0
-            } catch {
-                do {
-                    let isConfirmedBool = try container.decode(Bool.self, forKey: .isConfirmed)
-                    isConfirmed = isConfirmedBool
-                } catch {
-                    isConfirmed = false
-                }
-            }
-            
-            // 处理 createdAt 日期格式
-            if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                createdAt = formatter.date(from: createdAtString) ?? Date()
-            }
-            
-            // 处理 deletedAt 日期格式
-            if let deletedAtString = try container.decodeIfPresent(String.self, forKey: .deletedAt) {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                deletedAt = formatter.date(from: deletedAtString)
-            }
-        }
-    }
 }
 
 // MARK: - 系统配置（后端可配置）
@@ -1109,9 +793,6 @@ struct SystemConfig: Codable {
     
     /// 超时推送间隔（小时）（默认 1 小时）
     var overduePushIntervalHours: Double = 1.0
-    
-    /// 紧急联系人：最少数量要求（默认 2 人）
-    var minimumEmergencyContacts: Int = 2
     
     /// 签到间隔时间（小时）（默认 48 小时）
     var checkinIntervalHours: Double = 48.0
@@ -1266,30 +947,6 @@ struct ContactInput {
     let phone: String
     let relationship: String
     let deletedAt: String?
-}
-
-
-
-// MARK: - WitnessInput Extension
-extension WitnessInput {
-    func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = [
-            "id": id,
-            "name": name,
-            "phone": phone,
-            "relationship": relationship
-        ]
-        if let deletedAt = deletedAt { dict["deletedAt"] = deletedAt }
-        return dict
-    }
-}
-struct WitnessInput {
-    let id: String
-    let name: String
-    let phone: String
-    let relationship: String
-    let isConfirmed: Bool?  // 是否已确认（对应数据库 is_confirmed）
-    let deletedAt: String?  // 删除时间戳（ISO 8601）
 }
 
 /// 资产 API 输入
@@ -1504,8 +1161,6 @@ extension GraphQLClient {
                 lastLoginIp
                 checkinCount
                 stats {
-                    emergencyContactsCount
-                    witnessesCount
                     capsulesCount
                     willModulesCount
                     familyCount
@@ -1569,8 +1224,6 @@ struct UserInfo: Decodable {
 }
 
 struct UserStats: Decodable {
-    let emergencyContactsCount: Int
-    let witnessesCount: Int
     let capsulesCount: Int
     let willModulesCount: Int
     let familyCount: Int

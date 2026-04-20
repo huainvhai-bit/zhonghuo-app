@@ -149,7 +149,6 @@ class ConfigManager: ObservableObject {
                 checkinReminderThresholdHours: Double(reminderHours),
                 checkinReminderIntervalHours: Double(pushInterval),
                 overduePushIntervalHours: Double(overduePushInterval),
-                minimumEmergencyContacts: 2,
                 offlineTimeoutHours: 24.0,
                 appVersionLatest: "2.0.0",
                 appVersionForceUpdate: "1.0.0",

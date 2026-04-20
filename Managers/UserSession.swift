@@ -81,14 +81,11 @@ class UserSession: ObservableObject {
                 self.currentUser = user
                 self.isLoggedIn = true
                 
-                // 自动更新统计信息
-                self.currentUser?.emergencyContactsCount = user.emergencyContacts.count
-                
                 // 保存到 Keychain
                 KeychainManager.shared.saveUserId(user.id)
             }
             
-            print("✅ 用户已保存：\(user.name), 紧急联系人：\(user.emergencyContacts.count) 个")
+            print("✅ 用户已保存：\(user.name)")
             return true
         } catch {
             print("❌ 保存用户失败：\(error)")
@@ -153,22 +150,6 @@ class UserSession: ObservableObject {
         Task { @MainActor in
             self.currentUser?.willModulesCount = count
             print("📊 遗嘱数量已更新：\(count)")
-        }
-    }
-    
-    /// 更新紧急联系人数量
-    func updateEmergencyContactsCount(_ count: Int) {
-        Task { @MainActor in
-            self.currentUser?.emergencyContactsCount = count
-            print("📊 紧急联系人数量已更新：\(count)")
-        }
-    }
-    
-    /// 更新见证人数量
-    func updateWitnessesCount(_ count: Int) {
-        Task { @MainActor in
-            self.currentUser?.witnessesCount = count
-            print("📊 见证人数量已更新：\(count)")
         }
     }
     

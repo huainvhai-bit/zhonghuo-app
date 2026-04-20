@@ -50,14 +50,6 @@ struct WillPreviewView: View {
                         )
                     }
                     
-                    // 见证人信息
-                    if !dataManager.witnesses.isEmpty {
-                        infoSection(
-                            title: "见证人信息",
-                            content: dataManager.witnesses.map { "\($0.name) - \($0.role) - \($0.phone)" }.joined(separator: "\n")
-                        )
-                    }
-                    
                     // 资产信息
                     if !dataManager.assets.isEmpty {
                         infoSection(
@@ -78,7 +70,7 @@ struct WillPreviewView: View {
                            - 立遗嘱人亲笔签名
                            - 注明年、月、日
                         
-                        2. 建议有 2 名以上无利害关系的见证人在场见证，或前往公证处办理公证。
+                        2. 建议前往公证处办理正式遗嘱公证以确保法律效力。
                         
                         3. 本预览仅供参考，正式遗嘱请以纸质手写版本为准。
                         """)
@@ -186,19 +178,10 @@ extension WillPreviewView {
             pdfContent += module.content.isEmpty ? "暂无内容\n" : module.content + "\n\n"
         }
         
-        // 见证人信息
-        if !dataManager.witnesses.isEmpty {
-            pdfContent += "### 见证人信息\n"
-            for witness in dataManager.witnesses {
-                pdfContent += "- \(witness.name)（身份证：\(witness.idNumber)）\n"
-            }
-            pdfContent += "\n"
-        }
-        
         // 附注
         pdfContent += "### 法律声明\n"
-        pdfContent += "本遗嘱文件需经合法见证人签署方可生效。\n"
-        pdfContent += "建议携带本人身份证件前往公证处办理正式遗嘱公证。\n\n"
+        pdfContent += "本遗嘱文件仅供参考，建议前往公证处办理正式遗嘱公证。\n"
+        pdfContent += "携带本人身份证件前往公证处办理正式遗嘱公证。\n\n"
         pdfContent += "生成时间：\(Date().formatted())\n"
         
         print("✅ 遗嘱内容收集完成")

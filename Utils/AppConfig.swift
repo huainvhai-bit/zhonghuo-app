@@ -36,11 +36,6 @@ struct AppConfig {
     /// 离线超时阈值（小时）- 超过这个时间未签到会变成红色警告
     static let offlineTimeoutHours: Double = 24
     
-    // MARK: - 紧急联系人配置
-    
-    /// 最少紧急联系人数量要求
-    static let minimumEmergencyContacts: Int = 2
-    
     // MARK: - 位置服务配置
     
     /// 位置更新距离过滤器（米）- 移动多少米才更新

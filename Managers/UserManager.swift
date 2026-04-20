@@ -34,7 +34,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @Published var currentUser: User?
     @Published var isLoggedIn: Bool = false
-    @Published var needsEmergencyContactCheck: Bool = false
     @Published var lastCheckInDate: Date?
     @Published var checkInInterval: CheckInInterval = .twoDays
     @Published var currentLocation: CLLocation?
@@ -42,6 +41,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // 🔴 防重复签到标志
     private var isAutoSigningIn = false
     private var lastAutoSignInTime: Date = .distantPast
+    
+    // 🔴 防重复签到：公共访问方法
+    var lastAutoSignInTimeValue: Date {
+        return lastAutoSignInTime
+    }
     
     private let fileManager = FileManager.default
     private var documentsPath: String {
@@ -484,7 +488,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             name: name,
             phone: phone,
             createdAt: Date(),
-            emergencyContacts: [],
             checkInInterval: .twoDays,
             notificationsEnabled: true,
             cloudSyncEnabled: true,
@@ -498,7 +501,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.currentUser = user
             self.isLoggedIn = true
             self.lastCheckInDate = user.lastCheckInDate
-            self.needsEmergencyContactCheck = true
             startUpdatingLocation()
             return .success(user)
         } else {
@@ -575,10 +577,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
     func performAutoSignIn() {
-        // 🔴 防重复：10 秒内不重复签到
+        // 🔴 防重复：5 分钟（300 秒）内不重复签到
         let now = Date()
-        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < 10 {
-            print("⏭️ 跳过重复签到（防重复机制）")
+        let autoSignInCooldown: TimeInterval = 300 // 5 分钟
+        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < autoSignInCooldown {
+            print("⏭️ 跳过重复签到（防重复机制，5分钟内不重复签到）")
             return
         }
         
@@ -640,10 +643,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func performAutoCheckIn() {
-        // 🔴 防重复：10 秒内不重复签到
+        // 🔴 防重复：5 分钟（300 秒）内不重复签到
         let now = Date()
-        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < 10 {
-            print("⏭️ performAutoCheckIn 跳过重复签到（防重复机制）")
+        let autoSignInCooldown: TimeInterval = 300 // 5 分钟
+        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < autoSignInCooldown {
+            print("⏭️ performAutoCheckIn 跳过重复签到（防重复机制，5分钟内不重复签到）")
             return
         }
         
@@ -710,6 +714,17 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
+        // 🔴 防重复签到：5 分钟（300 秒）内不重复签到
+        let now = Date()
+        let autoCheckInCooldown: TimeInterval = 300 // 5 分钟
+        if now.timeIntervalSince(lastAutoSignInTime) < autoCheckInCooldown {
+            print("⏭️ recordCheckIn 跳过重复签到（\(Int(autoCheckInCooldown - now.timeIntervalSince(lastAutoSignInTime))) 秒后可再次签到）")
+            return .success(())  // 返回成功但不执行签到
+        }
+        
+        // 更新最后签到时间
+        lastAutoSignInTime = now
+        
         print("🔵 ====== recordCheckIn 开始 ======")
         print("   - isAuto: \(isAuto)")
         print("   - currentUser: \(currentUser?.name ?? "nil")")
@@ -1187,7 +1202,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             name: name,
                             phone: phone,
                             createdAt: dateFormatter.date(from: createdAt) ?? Date(),
-                            emergencyContacts: [],
                             checkInInterval: .oneDay,  // 默认值
                             notificationsEnabled: true,
                             cloudSyncEnabled: true,
