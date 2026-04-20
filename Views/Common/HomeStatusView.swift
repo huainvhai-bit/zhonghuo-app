@@ -110,6 +110,13 @@ struct HomeStatusView: View {
                 // 然后更新倒计时显示
                 updateStatus()
                 
+                // ✅ 设置定期重新计算回调（每60秒重新计算倒计时）
+                timerManager.recalculateFromServer = {
+                    DispatchQueue.main.async {
+                        self.updateStatus()
+                    }
+                }
+                
                 // 🔔 监听签到完成通知（刷新倒计时）
                 NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
                     print("🔔 收到签到完成通知，刷新倒计时")
@@ -879,7 +886,15 @@ class CountdownTimerManager: ObservableObject {
                 onTick()
             }
         }
+        
+        // ✅ 添加定期重新计算功能（每60秒重新计算，确保与服务器同步）
+        Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
+            self.recalculateFromServer?()
+        }
     }
+    
+    // ✅ 定期重新计算的回调
+    var recalculateFromServer: (() -> Void)?
     
     func stop() {
         timer?.invalidate()

@@ -347,9 +347,9 @@ struct ContentView: View {
                     print("❌ validateToken: User not found (404 Not Found)")
                     return .unauthorized
                 case 500, 502, 503, 504:
-                    // 🔧 修复：明确 5xx 为服务器错误，保持登录
-                    print("⚠️ validateToken: Server error (\(httpResponse.statusCode)), keeping login")
-                    return .serverError
+                    // 🔧 修复：500 错误可能是用户不存在或其他严重问题，清除登录状态
+                    print("❌ validateToken: Server error (\(httpResponse.statusCode)), clearing login state")
+                    return .unauthorized
                 case 400, 403, 405, 408, 429:
                     // 🔧 修复：其他客户端错误，保持登录（可能是临时问题）
                     print("⚠️ validateToken: Client error (\(httpResponse.statusCode)), keeping login")
