@@ -160,6 +160,13 @@ struct SettingsView: View {
                         }
                     }
                     .tint(.orange)
+                    .onChange(of: silentModeEnabled) { isEnabled in
+                        // 当静默模式切换时，立即取消所有已安排的签到提醒
+                        if isEnabled {
+                            NotificationManager.shared.cancelAllCheckInReminders()
+                            print("🤫 静默模式已开启，已取消所有签到提醒")
+                        }
+                    }
                 }
                 
                 // 🔋 设备信息
