@@ -174,57 +174,76 @@ struct CapsuleList: View {
             }
         }
         .sheet(isPresented: $showingShareSheet) {
-            if let capsule = selectedCapsuleForShare {
-                ShareCapsuleSheet(
-                    capsule: capsule,
-                    familyMembers: dataManager.familyMembers,
-                    onShare: { [self] selectedMembers in
-                        let receiverIds = selectedMembers.map { $0.relatedUserId }
-                        Task {
-                            do {
-                                let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
-                                print("✅ 胶囊分享成功：\(result)")
-                                await MainActor.run {
-                                    self.showingShareSheet = false
-                                    self.selectedCapsuleForShare = nil
-                                }
-                            } catch {
-                                let errorMsg = error.localizedDescription
-                                print("❌ 胶囊分享失败：\(errorMsg)")
-                                // 检查是否是会员限制错误
-                                if errorMsg.contains("会员") || errorMsg.contains("premium") {
-                                    await MainActor.run {
-                                        self.showingShareSheet = false
-                                        self.showingUpgradeForShare = true
+            NavigationView {
+                Group {
+                    if let capsule = selectedCapsuleForShare {
+                        ShareCapsuleSheet(
+                            capsule: capsule,
+                            familyMembers: dataManager.familyMembers,
+                            onShare: { [self] selectedMembers in
+                                let receiverIds = selectedMembers.map { $0.relatedUserId }
+                                Task {
+                                    do {
+                                        let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
+                                        print("✅ 胶囊分享成功：\(result)")
+                                        await MainActor.run {
+                                            self.showingShareSheet = false
+                                            self.selectedCapsuleForShare = nil
+                                        }
+                                    } catch {
+                                        let errorMsg = error.localizedDescription
+                                        print("❌ 胶囊分享失败：\(errorMsg)")
+                                        // 检查是否是会员限制错误
+                                        if errorMsg.contains("会员") || errorMsg.contains("premium") {
+                                            await MainActor.run {
+                                                self.showingShareSheet = false
+                                                self.showingUpgradeForShare = true
+                                            }
+                                        }
                                     }
                                 }
+                            },
+                            onCancel: {
+                                showingShareSheet = false
+                                selectedCapsuleForShare = nil
                             }
-                        }
-                    },
-                    onCancel: {
-                        showingShareSheet = false
-                        selectedCapsuleForShare = nil
+                        )
+                    } else {
+                        Text("加载中...")
+                            .foregroundColor(.secondary)
                     }
-                )
+                }
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            if let capsule = selectedCapsuleForEdit {
-                CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
+            NavigationView {
+                Group {
+                    if let capsule = selectedCapsuleForEdit {
+                        CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
+                    } else {
+                        Text("加载中...")
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingCapsuleDetail) {
-            if let capsule = selectedCapsuleForDetail {
-                NavigationView {
-                    CapsuleDetailView(dataManager: dataManager, capsule: capsule)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button("关闭") {
-                                    showingCapsuleDetail = false
-                                    selectedCapsuleForDetail = nil
+            NavigationView {
+                Group {
+                    if let capsule = selectedCapsuleForDetail {
+                        CapsuleDetailView(dataManager: dataManager, capsule: capsule)
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarTrailing) {
+                                    Button("关闭") {
+                                        showingCapsuleDetail = false
+                                        selectedCapsuleForDetail = nil
+                                    }
                                 }
                             }
-                        }
+                    } else {
+                        Text("加载中...")
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
@@ -865,6 +884,7 @@ struct SwipeableCapsuleCard: View {
                         .frame(width: 60, height: 80)
                 }
                 .frame(width: 60)
+                .zIndex(isShowingActions ? 1 : 0)  // 滑动出来时提升层级
                 
                 Spacer()
                 
@@ -882,6 +902,7 @@ struct SwipeableCapsuleCard: View {
                         .frame(width: 60, height: 80)
                 }
                 .frame(width: 60)
+                .zIndex(isShowingActions ? 1 : 0)  // 滑动出来时提升层级
             }
             .background(Color.red)
             .cornerRadius(16)
@@ -1002,6 +1023,8 @@ struct SwipeableCapsuleCard: View {
                     onTap()
                 }
             }
+            // 当显示操作按钮时，禁用卡片的点击（让按钮可以接收点击）
+            .allowsHitTesting(!isShowingActions)
         }
     }
     
