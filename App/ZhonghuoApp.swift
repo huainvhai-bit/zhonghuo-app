@@ -14,6 +14,19 @@ struct ZhonghuoApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var themeManager = ThemeManager.shared  // 使用 @StateObject 监听主题变化
     
+    init() {
+        // 设置全局导航栏背景色
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color(hex: "6366F1"))
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().tintColor = .white
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
