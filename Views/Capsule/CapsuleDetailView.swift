@@ -56,12 +56,12 @@ struct CapsuleDetailView: View {
                 if let player = player {
                     VideoPlayer(player: player)
                         .ignoresSafeArea()
-                } else if isPlayerLoading {
+                } else {
                     VStack(spacing: 16) {
                         ProgressView()
                             .scaleEffect(1.5)
                         Text("加载中...")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -369,15 +369,18 @@ struct CapsuleDetailView: View {
         // ✅ 先显示加载状态
         isPlayerLoading = true
         
-        // 创建播放器并显示
-        let newPlayer = AVPlayer(url: fileURL)
-        newPlayer.automaticallyWaitsToMinimizeStalling = true
-        player = newPlayer
+        // 先显示sheet（带加载状态）
+        showingPlayer = true
         
-        // 短暂延迟后显示播放器，让UI先更新
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.isPlayerLoading = false
-            self.showingPlayer = true
+        // 在后台线程创建播放器
+        DispatchQueue.global(qos: .userInitiated).async {
+            let newPlayer = AVPlayer(url: fileURL)
+            newPlayer.automaticallyWaitsToMinimizeStalling = true
+            
+            DispatchQueue.main.async {
+                self.player = newPlayer
+                self.isPlayerLoading = false
+            }
         }
         print("🎬 播放器已准备好：\(fileURL)")
     }
