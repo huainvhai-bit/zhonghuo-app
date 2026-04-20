@@ -37,7 +37,7 @@ struct PDFExportSheet: View {
                 
                 // 标题
                 VStack(spacing: 8) {
-                    Text("导出遗嘱文档")
+                    Text("导出嘱托文档")
                         .font(.title)
                         .fontWeight(.bold)
                     
@@ -117,7 +117,7 @@ struct PDFExportSheet: View {
                 isPresented: $exportSuccess,
                 document: exportedFileURL.map { PDFDocument(url: $0) } ?? PDFDocument(),
                 contentType: .pdf,
-                defaultFilename: "终活 - 遗嘱文档_\(formatDate(Date())).pdf"
+                defaultFilename: "终活 - 嘱托文档_\(formatDate(Date())).pdf"
             ) { result in
                 isExporting = false
                 switch result {
@@ -145,7 +145,7 @@ struct PDFExportSheet: View {
         
         // 保存到临时文件
         let tempDir = FileManager.default.temporaryDirectory
-        let filename = "终活_遗嘱文档_\(Date().timeIntervalSince1970).pdf"
+        let filename = "终活_嘱托文档_\(Date().timeIntervalSince1970).pdf"
         let fileURL = tempDir.appendingPathComponent(filename)
         
         do {

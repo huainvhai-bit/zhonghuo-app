@@ -197,7 +197,7 @@ struct WillAssetsView: View {
             NavigationLink(destination: WillPreviewView()) {
                 HStack {
                     Text("👁️")
-                    Text("预览遗嘱")
+                    Text("预览嘱托")
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)

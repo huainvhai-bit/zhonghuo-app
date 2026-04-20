@@ -80,31 +80,11 @@ struct WillPreviewView: View {
                     .padding()
                     .background(Color.white)
                     .cornerRadius(12)
-                    
-                    // 导出按钮
-                    Button(action: {
-                        // 触发 PDF 导出
-                        Task {
-                            await exportWillToPDF()
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "doc.badge.gearshape.fill")
-                            Text("导出 PDF 版本")
-                        }
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(hex: "AF52DE"))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    .padding(.top, 20)
                 }
                 .padding()
             }
             .background(Color(hex: "F6F6F8"))
-            .navigationTitle("遗嘱预览")
+            .navigationTitle("嘱托预览")
             .navigationBarTitleDisplayMode(.inline)
         .alert("导出成功", isPresented: $exportSuccess) {
             Button("确定", role: .cancel) { }
