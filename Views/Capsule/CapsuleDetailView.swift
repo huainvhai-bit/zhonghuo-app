@@ -17,6 +17,8 @@ struct CapsuleDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var showingEditView = false
     @State private var isPlayerLoading = false  // ✅ 新增：播放器加载状态
+    @State private var showingMediaError = false  // 媒体播放错误提示
+    @State private var mediaErrorMessage = ""  // 错误信息
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -78,6 +80,11 @@ struct CapsuleDetailView: View {
             }
         } message: {
             Text("确定要删除胶囊「\(capsule.title)」吗？此操作不可恢复。")
+        }
+        .alert("播放失败", isPresented: $showingMediaError) {
+            Button("确定", role: .cancel) {}
+        } message: {
+            Text(mediaErrorMessage)
         }
     }
     
@@ -329,6 +336,8 @@ struct CapsuleDetailView: View {
         // 只允许使用本地文件播放
         guard !localPath.isEmpty else {
             print("❌ 没有本地媒体文件地址")
+            mediaErrorMessage = "没有本地媒体文件"
+            showingMediaError = true
             return
         }
         
@@ -352,6 +361,8 @@ struct CapsuleDetailView: View {
         guard FileManager.default.fileExists(atPath: localPath) else {
             print("⚠️ 本地媒体文件不存在：\(localPath)")
             // 服务器是同步本地数据的，如果本地文件不存在说明服务器也没有
+            mediaErrorMessage = "媒体文件不存在，请检查是否正确同步"
+            showingMediaError = true
             return
         }
         
