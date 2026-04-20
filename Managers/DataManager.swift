@@ -348,6 +348,9 @@ class DataManager: ObservableObject {
         willModules = loadWillModulesFromFile()
         assets = loadAssetsFromFile()
         checklistItems = loadChecklistItemsFromFile()
+        
+        // 🔥 加载已删除的 items（用于同步删除到服务器）
+        loadDeletedItemsFromFile()
     }
     
     // MARK: - 文件操作
@@ -481,6 +484,92 @@ class DataManager: ObservableObject {
             print("✅ 胶囊已保存到文件：\(path.path), 数量：\(capsules.count)")
         } catch {
             print("❌ 胶囊保存失败：\(error), 路径：\(path.path)")
+        }
+    }
+    
+    // MARK: - 已删除数据持久化（用于崩溃后恢复删除同步）
+    
+    /// 保存已删除的胶囊
+    func saveDeletedCapsulesToFile() {
+        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_capsules.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(deletedCapsules) {
+            try? data.write(to: path)
+            print("✅ 已删除胶囊已保存：\(deletedCapsules.count) 个")
+        }
+    }
+    
+    /// 保存已删除的遗嘱
+    func saveDeletedWillModulesToFile() {
+        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_wills.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(deletedWillModules) {
+            try? data.write(to: path)
+            print("✅ 已删除遗嘱已保存：\(deletedWillModules.count) 个")
+        }
+    }
+    
+    /// 保存已删除的资产
+    func saveDeletedAssetsToFile() {
+        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_assets.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(deletedAssets) {
+            try? data.write(to: path)
+            print("✅ 已删除资产已保存：\(deletedAssets.count) 个")
+        }
+    }
+    
+    /// 加载已删除的数据（App 启动时调用）
+    func loadDeletedItemsFromFile() {
+        // 加载已删除胶囊
+        let deletedCapsulesPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_capsules.json")
+        if let data = try? Data(contentsOf: deletedCapsulesPath),
+           let loaded: [TimeCapsule] = try? JSONDecoder().decode([TimeCapsule].self, from: data) {
+            deletedCapsules = loaded
+            print("✅ 已删除胶囊加载成功：\(deletedCapsules.count) 个待同步")
+        }
+        
+        // 加载已删除遗嘱
+        let deletedWillsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_wills.json")
+        if let data = try? Data(contentsOf: deletedWillsPath),
+           let loaded: [WillModule] = try? JSONDecoder().decode([WillModule].self, from: data) {
+            deletedWillModules = loaded
+            print("✅ 已删除遗嘱加载成功：\(deletedWillModules.count) 个待同步")
+        }
+        
+        // 加载已删除资产
+        let deletedAssetsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_assets.json")
+        if let data = try? Data(contentsOf: deletedAssetsPath),
+           let loaded: [Asset] = try? JSONDecoder().decode([Asset].self, from: data) {
+            deletedAssets = loaded
+            print("✅ 已删除资产加载成功：\(deletedAssets.count) 个待同步")
+        }
+        
+        // 🔥 如果有待删除的数据，启动同步
+        if !deletedCapsules.isEmpty || !deletedWillModules.isEmpty || !deletedAssets.isEmpty {
+            print("🚀 检测到待同步的已删除数据，开始同步...")
+            Task {
+                await syncAllDeletedItems()
+            }
+        }
+    }
+    
+    /// 同步所有已删除的数据到服务器
+    func syncAllDeletedItems() async {
+        // 先同步删除的胶囊
+        if !deletedCapsules.isEmpty {
+            await syncDeletedCapsules()
+        }
+        // 再同步删除的遗嘱
+        if !deletedWillModules.isEmpty {
+            await syncDeletedWillModules()
+        }
+        // 最后同步删除的资产
+        if !deletedAssets.isEmpty {
+            await syncDeletedAssets()
         }
     }
     
@@ -699,6 +788,7 @@ class DataManager: ObservableObject {
         
         // 添加到已删除列表
         deletedAssets.append(deletedAsset)
+        saveDeletedAssetsToFile()  // 🔥 持久化已删除列表
         
         // 从当前列表移除
         assets.removeAll { $0.id == asset.id }
@@ -720,6 +810,7 @@ class DataManager: ObservableObject {
             deletedAsset.deletedAt = Date()
             deletedAssets.append(deletedAsset)
         }
+        saveDeletedAssetsToFile()  // 🔥 持久化已删除列表
         
         // 从当前列表移除
         assets.remove(atOffsets: offsets)
@@ -844,6 +935,7 @@ class DataManager: ObservableObject {
         
         // 添加到已删除列表
         deletedWillModules.append(deletedModule)
+        saveDeletedWillModulesToFile()  // 🔥 持久化已删除列表
         
         // 从当前列表移除
         willModules.removeAll { $0.id == module.id }
@@ -923,6 +1015,7 @@ class DataManager: ObservableObject {
         
         // 将胶囊添加到已删除列表（用于同步删除到服务器）
         deletedCapsules.append(deletedCapsule)
+        saveDeletedCapsulesToFile()  // 🔥 持久化已删除列表
         
         // 从当前列表移除
         capsules.removeAll { $0.id == capsule.id }
