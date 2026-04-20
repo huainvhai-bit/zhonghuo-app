@@ -284,13 +284,13 @@ struct ContentView: View {
         let session = URLSession(configuration: config)
         
         do {
-            // 使用 GraphQL validateUser query
+            // 使用 GraphQL user query 验证 token
             let query = """
             query {
-                validateUser(userId: "") {
-                    success
-                    message
-                    data { id name phone }
+                user {
+                    id
+                    name
+                    phone
                 }
             }
             """
@@ -324,12 +324,12 @@ struct ContentView: View {
                         return .serverError
                     }
                     
-                    // GraphQL 响应格式：{"data": {"validateUser": {"success": true, ...}}}
+                    // GraphQL 响应格式：{"data": {"user": {...}}}
                     if let dataObj = json["data"] as? [String: Any],
-                       let validateUser = dataObj["validateUser"] as? [String: Any],
-                       let success = validateUser["success"] as? Bool {
-                        print("✅ validateToken: success=\(success)")
-                        return success ? .success : .unauthorized
+                       let user = dataObj["user"] as? [String: Any],
+                       let userId = user["id"] as? String {
+                        print("✅ validateToken: userId=\(userId)")
+                        return .success
                     } else if let errors = json["errors"] as? [[String: Any]] {
                         // GraphQL 返回错误，检查是否是认证错误
                         print("❌ validateToken: GraphQL errors: \(errors)")

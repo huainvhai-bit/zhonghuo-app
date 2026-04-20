@@ -846,6 +846,7 @@ struct SwipeableCapsuleCard: View {
     
     @State private var offset: CGFloat = 0
     @State private var isShowingActions = false
+    @State private var dragStartY: CGFloat = 0  // 记录拖拽开始的Y位置
     
     // 是否向左滑出显示了操作按钮
     private var isSwipedLeft: Bool {
@@ -856,25 +857,7 @@ struct SwipeableCapsuleCard: View {
         ZStack(alignment: .leading) {
             // 背景操作按钮
             HStack(spacing: 0) {
-                // 左侧：编辑按钮（滑出时显示）
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        offset = 0
-                        isShowingActions = false
-                    }
-                    onEdit()
-                }) {
-                    Image(systemName: "pencil.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 80)
-                }
-                .frame(width: 60)
-                .zIndex(isShowingActions ? 1 : 0)  // 滑动出来时提升层级
-                
-                Spacer()
-                
-                // 右侧：删除按钮
+                // 左侧：删除按钮（滑出时显示）
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         offset = 0
@@ -888,7 +871,25 @@ struct SwipeableCapsuleCard: View {
                         .frame(width: 60, height: 80)
                 }
                 .frame(width: 60)
-                .zIndex(isShowingActions ? 1 : 0)  // 滑动出来时提升层级
+                .opacity(isSwipedLeft ? 1 : 0.3)  // 滑动出来时完全不透明
+                
+                Spacer()
+                
+                // 右侧：编辑按钮
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        offset = 0
+                        isShowingActions = false
+                    }
+                    onEdit()
+                }) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
+                        .frame(width: 60, height: 80)
+                }
+                .frame(width: 60)
+                .opacity(isSwipedLeft ? 1 : 0.3)  // 滑动出来时完全不透明
             }
             .background(Color.red)
             .cornerRadius(16)
@@ -970,12 +971,29 @@ struct SwipeableCapsuleCard: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        // 限制滑动范围
-                        let translation = value.translation.width
-                        if translation < 0 {
-                            offset = max(translation, -120)
-                        } else if translation > 0 {
-                            offset = min(translation, 60)
+                        // 如果已经显示操作按钮，只处理关闭手势
+                        if isShowingActions {
+                            if value.translation.width > 40 {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    offset = 0
+                                    isShowingActions = false
+                                }
+                            }
+                            return
+                        }
+                        
+                        // 只处理纯水平拖拽（不干扰垂直滚动）
+                        let translation = value.translation
+                        
+                        // 如果水平移动距离大于垂直距离，才认为是水平滑动
+                        if abs(translation.width) > abs(translation.height) {
+                            if translation.width < 0 {
+                                // 向左滑：显示删除和编辑按钮
+                                offset = max(translation.width, -120)
+                            } else {
+                                // 向右滑：限制在60以内
+                                offset = min(translation.width, 60)
+                            }
                         }
                     }
                     .onEnded { value in
@@ -984,11 +1002,8 @@ struct SwipeableCapsuleCard: View {
                                 // 向左滑显示编辑和删除按钮
                                 offset = -100
                                 isShowingActions = true
-                            } else if value.translation.width > 40 {
-                                // 向右滑暂时不支持操作
-                                offset = 0
-                                isShowingActions = false
                             } else {
+                                // 其他情况恢复原位
                                 offset = 0
                                 isShowingActions = false
                             }
@@ -1009,8 +1024,6 @@ struct SwipeableCapsuleCard: View {
                     onTap()
                 }
             }
-            // 当显示操作按钮时，禁用卡片的点击（让按钮可以接收点击）
-            .allowsHitTesting(!isShowingActions)
         }
     }
     
