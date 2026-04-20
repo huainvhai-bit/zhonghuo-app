@@ -359,6 +359,7 @@ struct SettingsView: View {
     private var userInfoCard: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
+                // 头像 - 唯一可点击编辑的地方
                 Button(action: { showingEditProfile = true }) {
                     ZStack {
                         Circle()
@@ -381,6 +382,7 @@ struct SettingsView: View {
                             .offset(x: 25, y: 25)
                     }
                 }
+                .buttonStyle(PlainButtonStyle())  // 移除按钮默认样式
                 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
@@ -410,23 +412,20 @@ struct SettingsView: View {
             }
             
             if !membershipManager.isPremium {
+                // 开通会员按钮 - 放大并独占一行
                 Button(action: { showingMembershipView = true }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Image(systemName: "crown.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: 22, weight: .bold))
                         Text("开通会员")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                         Spacer()
-                        Text("限时特惠")
-                            .font(.system(size: 12))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.3))
-                            .cornerRadius(12)
+                        Text("限时特惠 >")
+                            .font(.system(size: 14, weight: .medium))
                     }
                     .foregroundColor(.black)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
                     .background(
                         LinearGradient(
                             colors: [Color(hex: "FFD700"), Color(hex: "FFA500")],
@@ -436,6 +435,7 @@ struct SettingsView: View {
                     )
                     .cornerRadius(25)
                 }
+                .buttonStyle(PlainButtonStyle())  // 移除按钮默认样式
             } else {
                 HStack {
                     Image(systemName: "checkmark.seal.fill")
