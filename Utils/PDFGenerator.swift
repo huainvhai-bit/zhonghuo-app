@@ -129,16 +129,32 @@ class PDFGenerator {
             }()
         ]
         
-        let contentSize = module.content.boundingRect(
+        let emptyContentAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.italicSystemFont(ofSize: 14),
+            .foregroundColor: UIColor.gray,
+            .paragraphStyle: {
+                let style = NSMutableParagraphStyle()
+                style.lineBreakMode = .byWordWrapping
+                style.lineHeightMultiple = 1.4
+                return style
+            }()
+        ]
+        
+        // 如果内容为空，显示占位提示
+        let displayContent = module.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty 
+            ? "（未填写内容）" 
+            : module.content
+        
+        let contentSize = displayContent.boundingRect(
             with: CGSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude),
             options: .usesLineFragmentOrigin,
-            attributes: contentAttributes,
+            attributes: displayContent == "（未填写内容）" ? emptyContentAttributes : contentAttributes,
             context: nil
         )
         
-        module.content.draw(
+        displayContent.draw(
             in: CGRect(x: pdfMargin, y: currentY, width: contentWidth, height: contentSize.height),
-            withAttributes: contentAttributes
+            withAttributes: displayContent == "（未填写内容）" ? emptyContentAttributes : contentAttributes
         )
         currentY += contentSize.height + 20
         
