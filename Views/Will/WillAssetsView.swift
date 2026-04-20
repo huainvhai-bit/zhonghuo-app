@@ -142,7 +142,7 @@ struct WillAssetsView: View {
             }
         }
         .padding(4)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
     }
     
@@ -304,7 +304,7 @@ struct WillAssetsView: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
     }
     
@@ -365,7 +365,7 @@ struct WillModuleCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
         .onTapGesture(perform: onTap)
     }
@@ -418,7 +418,7 @@ struct AssetCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
     }
     
@@ -496,7 +496,7 @@ struct AssetRow: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
         .alert("删除资产", isPresented: $showingDeleteAlert) {
             Button("取消", role: .cancel) {}
@@ -560,7 +560,7 @@ struct WillModuleRow: View {
             .padding(.leading, 8)
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
         .onTapGesture(perform: onTap)
         .alert("删除嘱托", isPresented: $showingDeleteAlert) {

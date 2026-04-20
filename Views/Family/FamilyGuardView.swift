@@ -229,7 +229,7 @@ struct FamilyGuardView: View {
             .padding(.vertical, 40)
         }
         .padding(20)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -327,7 +327,7 @@ struct FamilyGuardView: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -357,7 +357,7 @@ struct FamilyGuardView: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -845,7 +845,7 @@ struct FamilyMemberCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
         .confirmationDialog("解除关系", isPresented: $showingDeleteConfirm) {
             Button("解除", role: .destructive) {

@@ -98,69 +98,9 @@ struct MembershipView: View {
         .cornerRadius(12)
     }
     
-    // MARK: - 功能对比
-    private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("会员特权")
-                .font(.system(size: 20, weight: .bold))
-            
-            FeatureRow(
-                icon: "capsule.fill",
-                title: "时光胶囊",
-                free: "5 个",
-                premium: "20 个"
-            )
-            
-            FeatureRow(
-                icon: "mic.fill",
-                title: "语音/视频胶囊",
-                free: "2 个（各2分钟）",
-                premium: "10 个（各5分钟）"
-            )
-            
-            FeatureRow(
-                icon: "doc.text.fill",
-                title: "遗嘱嘱托",
-                free: "3 个模块",
-                premium: "无限"
-            )
-            
-            FeatureRow(
-                icon: "icloud.fill",
-                title: "云端备份",
-                free: "❌",
-                premium: "✅ 自动同步"
-            )
-            
-            FeatureRow(
-                icon: "person.2.fill",
-                title: "家庭守护",
-                free: "1 位家人",
-                premium: "5 位家人"
-            )
-            
-            FeatureRow(
-                icon: "square.and.arrow.up.fill",
-                title: "数据导出",
-                free: "❌",
-                premium: "PDF/视频/加密包"
-            )
-            
-            FeatureRow(
-                icon: "brain",
-                title: "AI 辅助",
-                free: "❌",
-                premium: "智能分类规划"
-            )
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
-    }
-    
     // MARK: - 会员方案
     private var plansSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("选择方案")
                 .font(.system(size: 20, weight: .bold))
             
@@ -186,6 +126,116 @@ struct MembershipView: View {
                 onTap: { selectedPlan = "monthly" }
             )
         }
+    }
+    
+    // MARK: - 功能对比
+    private var featuresSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("会员特权")
+                .font(.system(size: 20, weight: .bold))
+            
+            // 表格标题
+            HStack {
+                Text("功能")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 100, alignment: .leading)
+                
+                Text("免费版")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                
+                Text("会员版")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(hex: "6366F1"))
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(.systemGray6))
+            .cornerRadius(8)
+            
+            // 表格内容
+            VStack(spacing: 0) {
+                FeatureTableRow(
+                    icon: "capsule.fill",
+                    title: "时光胶囊",
+                    free: "5 个",
+                    premium: "20 个",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "mic.fill",
+                    title: "语音/视频胶囊",
+                    free: "2个/各2分钟",
+                    premium: "10个/各5分钟",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "doc.text.fill",
+                    title: "遗嘱嘱托",
+                    free: "3 个模块",
+                    premium: "无限",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "icloud.fill",
+                    title: "云端备份",
+                    free: "-",
+                    premium: "自动同步",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "person.2.fill",
+                    title: "家庭守护",
+                    free: "1 位家人",
+                    premium: "5 位家人",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "square.and.arrow.up.fill",
+                    title: "数据导出",
+                    free: "-",
+                    premium: "PDF/视频/加密包",
+                    isLast: false
+                )
+                
+                Divider()
+                
+                FeatureTableRow(
+                    icon: "brain",
+                    title: "AI 辅助",
+                    free: "-",
+                    premium: "智能分类规划",
+                    isLast: true
+                )
+            }
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color(.separator), lineWidth: 0.5)
+            )
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(16)
     }
     
     // MARK: - 购买按钮
@@ -312,33 +362,38 @@ struct MembershipView: View {
     }
 }
 
-// MARK: - 功能对比行
-struct FeatureRow: View {
+// MARK: - 表格形式的功能对比行
+struct FeatureTableRow: View {
     let icon: String
     let title: String
     let free: String
     let premium: String
+    let isLast: Bool
     
     var body: some View {
         HStack {
-            Image(systemName: icon)
-                .foregroundColor(Color(hex: "6366F1"))
-                .frame(width: 24)
-            
-            Text(title)
-                .font(.system(size: 15))
-            
-            Spacer()
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundColor(Color(hex: "6366F1"))
+                    .frame(width: 20)
+                Text(title)
+                    .font(.system(size: 14))
+            }
+            .frame(width: 100, alignment: .leading)
             
             Text(free)
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
-                .frame(width: 80)
+                .frame(maxWidth: .infinity)
             
             Text(premium)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.green)
+                .foregroundColor(Color(hex: "34C759"))
+                .frame(maxWidth: .infinity)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color(.systemBackground))
     }
 }
 
@@ -394,11 +449,11 @@ struct PlanCard: View {
                     .font(.system(size: 22))
             }
             .padding()
-            .background(isSelected ? Color(hex: "6366F1").opacity(0.1) : Color.white)
+            .background(isSelected ? Color(hex: "6366F1").opacity(0.1) : Color(.systemBackground))
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color(hex: "6366F1") : Color.gray.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? Color(hex: "6366F1") : Color(.separator), lineWidth: isSelected ? 2 : 0.5)
             )
         }
         .buttonStyle(PlainButtonStyle())

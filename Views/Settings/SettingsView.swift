@@ -974,7 +974,7 @@ extension SettingsView {
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(Color(.systemBackground))
             .cornerRadius(12)
             .padding(.horizontal)
             List {

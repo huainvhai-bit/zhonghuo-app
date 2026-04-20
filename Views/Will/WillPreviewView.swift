@@ -78,7 +78,7 @@ struct WillPreviewView: View {
                         .foregroundColor(.gray)
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(Color(.systemBackground))
                     .cornerRadius(12)
                 }
                 .padding()
@@ -119,7 +119,7 @@ struct WillPreviewView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
     }
     

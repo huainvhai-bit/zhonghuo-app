@@ -440,7 +440,7 @@ struct HomeStatusView: View {
             .frame(height: 6)
         }
         .padding(18)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
@@ -552,7 +552,7 @@ struct HomeStatusView: View {
             })
         }
         .padding(18)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
@@ -618,7 +618,7 @@ struct HomeStatusView: View {
             }
         }
         .padding(18)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }

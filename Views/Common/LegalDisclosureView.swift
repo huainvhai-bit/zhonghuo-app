@@ -159,7 +159,7 @@ struct LegalDisclosureView: View {
                 .foregroundColor(Color("374151"))
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
     }

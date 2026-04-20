@@ -83,7 +83,7 @@ struct UpgradePromptView: View {
             }
         }
         .padding(24)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.2), radius: 20)
         .padding(.horizontal, 40)

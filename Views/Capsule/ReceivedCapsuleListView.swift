@@ -126,7 +126,7 @@ struct ReceivedCapsuleRow: View {
                 .foregroundColor(.gray.opacity(0.5))
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
@@ -184,7 +184,7 @@ struct ReceivedCapsuleDetailView: View {
                         }
                         .padding(24)
                         .frame(maxWidth: .infinity)
-                        .background(Color.white)
+                        .background(Color(.systemBackground))
                         .cornerRadius(16)
                         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
                         
@@ -199,7 +199,7 @@ struct ReceivedCapsuleDetailView: View {
                                     .font(.body)
                                     .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.white)
+                                    .background(Color(.systemBackground))
                                     .cornerRadius(12)
                             } else if capsule.mediaUrl != nil || capsule.mediaServerUrl != nil {
                                 Button(action: {
@@ -223,7 +223,7 @@ struct ReceivedCapsuleDetailView: View {
                                     .foregroundColor(.secondary)
                                     .padding(16)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.white)
+                                    .background(Color(.systemBackground))
                                     .cornerRadius(12)
                             }
                         }
@@ -238,7 +238,7 @@ struct ReceivedCapsuleDetailView: View {
                                 .font(.body)
                                 .padding(16)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
+                                .background(Color(.systemBackground))
                                 .cornerRadius(12)
                         }
                         .padding(.horizontal, 16)
