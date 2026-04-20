@@ -110,10 +110,20 @@ struct HomeStatusView: View {
                 // 然后更新倒计时显示
                 updateStatus()
                 
-                // ✅ 设置定期重新计算回调（每60秒重新计算倒计时）
+                // ✅ 启动倒计时定时器（每秒递减）
+                // 注意：timerManager 是 @StateObject，当 secondsRemaining 变化时会自动触发视图更新
+                timerManager.start { }
+                
+                // ✅ 设置定期重新计算回调（每60秒从服务器获取倒计时）
                 timerManager.recalculateFromServer = {
-                    DispatchQueue.main.async {
-                        self.updateStatus()
+                    Task {
+                        // 调用服务器API获取实时倒计时
+                        if let result = await DataManager.shared.syncCheckInStatus() {
+                            await MainActor.run {
+                                self.timerManager.updateSeconds(result.hoursRemaining * 3600)
+                                self.isSafe = result.isSafe
+                            }
+                        }
                     }
                 }
                 
