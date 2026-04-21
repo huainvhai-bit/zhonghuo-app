@@ -855,23 +855,28 @@ struct SwipeableCapsuleCard: View {
     
     var body: some View {
         ZStack(alignment: .leading) {
-            // 背景操作按钮
+            // 背景操作按钮 - 始终在卡片下方
             HStack(spacing: 0) {
-                // 左侧：删除按钮（滑出时显示）
+                // 左侧：删除按钮
                 Button(action: {
+                    // 关闭滑动菜单
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         offset = 0
                         isShowingActions = false
                     }
-                    onDelete()
+                    // 延迟执行删除，让动画先完成
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        onDelete()
+                    }
                 }) {
                     Image(systemName: "trash.circle.fill")
                         .font(.system(size: 28))
                         .foregroundColor(.white)
                         .frame(width: 60, height: 80)
+                        .opacity(isShowingActions ? 1 : 0)  // 仅在显示操作按钮时可见
                 }
                 .frame(width: 60)
-                .opacity(isSwipedLeft ? 1 : 0.3)  // 滑动出来时完全不透明
+                .allowsHitTesting(isShowingActions)  // 仅在显示时响应点击
                 
                 Spacer()
                 
@@ -881,148 +886,155 @@ struct SwipeableCapsuleCard: View {
                         offset = 0
                         isShowingActions = false
                     }
-                    onEdit()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        onEdit()
+                    }
                 }) {
                     Image(systemName: "pencil.circle.fill")
                         .font(.system(size: 28))
                         .foregroundColor(.white)
                         .frame(width: 60, height: 80)
+                        .opacity(isShowingActions ? 1 : 0)
                 }
                 .frame(width: 60)
-                .opacity(isSwipedLeft ? 1 : 0.3)  // 滑动出来时完全不透明
+                .allowsHitTesting(isShowingActions)
             }
             .background(Color.red)
             .cornerRadius(16)
             
-            // 主卡片
-            HStack(spacing: 14) {
-                // 类型图标
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+            // 主卡片 - 使用独立offset避免被按钮遮挡
+            cardContent
+                .offset(x: offset)
+        }
+    }
+    
+    // 卡片内容（提取出来方便复用）
+    private var cardContent: some View {
+        HStack(spacing: 14) {
+            // 类型图标
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 52, height: 52)
-                    
-                    Image(systemName: iconForType(capsule.type))
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundColor(.white)
-                }
+                    )
+                    .frame(width: 52, height: 52)
                 
-                // 中间内容
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(capsule.title)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    HStack(spacing: 8) {
-                        Text(capsule.type.rawValue)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(Color(hex: "6366F1"))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color(hex: "6366F1").opacity(0.1))
-                            .cornerRadius(6)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
-                                .font(.system(size: 10))
-                            Text(capsule.isSent ? "已发送" : "待发送")
-                                .font(.system(size: 11))
-                        }
-                        .foregroundColor(capsule.isSent ? .green : .orange)
-                    }
+                Image(systemName: iconForType(capsule.type))
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            
+            // 中间内容
+            VStack(alignment: .leading, spacing: 6) {
+                Text(capsule.title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                HStack(spacing: 8) {
+                    Text(capsule.type.rawValue)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color(hex: "6366F1"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "6366F1").opacity(0.1))
+                        .cornerRadius(6)
                     
                     HStack(spacing: 4) {
-                        Image(systemName: "calendar")
+                        Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
+                            .font(.system(size: 10))
+                        Text(capsule.isSent ? "已发送" : "待发送")
                             .font(.system(size: 11))
-                        Text(formatSendDate(capsule.sendDate))
-                            .font(.system(size: 12))
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(capsule.isSent ? .green : .orange)
                 }
                 
-                Spacer()
-                
-                // 发送按钮
-                Button(action: onSend) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Color(hex: "6366F1"))
-                        .cornerRadius(10)
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11))
+                    Text(formatSendDate(capsule.sendDate))
+                        .font(.system(size: 12))
                 }
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary.opacity(0.6))
+                .foregroundColor(.secondary)
             }
-            .padding(16)
-            .background(Color(.systemBackground))
-            .cornerRadius(16)
-            .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
-            .offset(x: offset)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        // 如果已经显示操作按钮，只处理关闭手势
-                        if isShowingActions {
-                            if value.translation.width > 40 {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    offset = 0
-                                    isShowingActions = false
-                                }
-                            }
-                            return
-                        }
-                        
-                        // 只处理纯水平拖拽（不干扰垂直滚动）
-                        let translation = value.translation
-                        
-                        // 如果水平移动距离大于垂直距离，才认为是水平滑动
-                        if abs(translation.width) > abs(translation.height) {
-                            if translation.width < 0 {
-                                // 向左滑：显示删除和编辑按钮
-                                offset = max(translation.width, -120)
-                            } else {
-                                // 向右滑：限制在60以内
-                                offset = min(translation.width, 60)
-                            }
-                        }
-                    }
-                    .onEnded { value in
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            if value.translation.width < -80 {
-                                // 向左滑显示编辑和删除按钮
-                                offset = -100
-                                isShowingActions = true
-                            } else {
-                                // 其他情况恢复原位
+            
+            Spacer()
+            
+            // 发送按钮
+            Button(action: onSend) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+                    .frame(width: 36, height: 36)
+                    .background(Color(hex: "6366F1"))
+                    .cornerRadius(10)
+            }
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary.opacity(0.6))
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color(hex: "6366F1").opacity(0.06), radius: 10, x: 0, y: 3)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    // 如果已经显示操作按钮，只处理关闭手势
+                    if isShowingActions {
+                        if value.translation.width > 40 {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 offset = 0
                                 isShowingActions = false
                             }
                         }
+                        return
                     }
-            )
-            // 点击空白处关闭滑动菜单，点击卡片本身打开详情
-            .contentShape(Rectangle())
-            .onTapGesture {
-                if isShowingActions {
-                    // 关闭滑动菜单
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        offset = 0
-                        isShowingActions = false
+                    
+                    // 只处理纯水平拖拽（不干扰垂直滚动）
+                    let translation = value.translation
+                    
+                    // 如果水平移动距离大于垂直距离，才认为是水平滑动
+                    if abs(translation.width) > abs(translation.height) {
+                        if translation.width < 0 {
+                            // 向左滑：显示删除和编辑按钮
+                            offset = max(translation.width, -120)
+                        } else {
+                            // 向右滑：限制在60以内
+                            offset = min(translation.width, 60)
+                        }
                     }
-                } else {
-                    // 打开详情
-                    onTap()
                 }
+                .onEnded { value in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        if value.translation.width < -80 {
+                            // 向左滑显示编辑和删除按钮
+                            offset = -100
+                            isShowingActions = true
+                        } else {
+                            // 其他情况恢复原位
+                            offset = 0
+                            isShowingActions = false
+                        }
+                    }
+                }
+        )
+        .onTapGesture {
+            if isShowingActions {
+                // 关闭滑动菜单
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    offset = 0
+                    isShowingActions = false
+                }
+            } else {
+                // 打开详情
+                onTap()
             }
         }
     }
