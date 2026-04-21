@@ -155,11 +155,23 @@ struct LoginView: View {
     
     /// 处理登录成功
     private func handleAuthSuccess(_ response: [String: Any]) async {
+        // 先检查是否有错误
+        if let errors = response["errors"] as? [[String: Any]], !errors.isEmpty {
+            let message = errors[0]["message"] as? String ?? "登录失败"
+            print("❌ 登录失败：\(message)")
+            errorMessage = message
+            showingError = true
+            return
+        }
+        
+        // 检查响应数据
         guard let data = response["data"] as? [String: Any],
               let loginData = data["login"] as? [String: Any],
               let success = loginData["success"] as? Bool,
               success else {
             print("❌ 登录失败")
+            errorMessage = "登录失败，请稍后重试"
+            showingError = true
             return
         }
         
@@ -210,18 +222,20 @@ struct LoginView: View {
         // ✅ 优先使用错误码进行精确匹配
         if errorMsg.contains("ACCOUNT_NOT_FOUND:") {
             errorMessage = "账号不存在，请先注册"
-        } else if errorMsg.contains("PASSWORD_ERROR:") || errorMsg.contains("CODE_ERROR:") {
+        } else if errorMsg.contains("PASSWORD_ERROR:") {
+            errorMessage = "密码错误，请重试"
+        } else if errorMsg.contains("CODE_ERROR:") {
             errorMessage = "验证码错误或已过期"
         } else if errorMsg.contains("PHONE_EXISTS:") {
             errorMessage = "该手机号已注册，请直接登录"
         } else if errorMsg.contains("未注册") || errorMsg.contains("不存在") {
             errorMessage = "账号不存在，请先注册"
-        } else if errorMsg.contains("密码") || errorMsg.contains("错误") {
-            errorMessage = "验证码错误或已过期"
+        } else if errorMsg.contains("密码") || errorMsg.contains("PASSWORD") {
+            errorMessage = "密码错误，请重试"
         } else if errorMsg.contains("网络") || errorMsg.contains("网络连接") {
             errorMessage = "网络连接失败，请检查网络"
         } else {
-            errorMessage = "登录失败，请稍后重试"
+            errorMessage = errorMsg.isEmpty ? "登录失败，请稍后重试" : errorMsg
         }
         showingError = true
     }
