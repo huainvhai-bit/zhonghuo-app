@@ -57,15 +57,18 @@ struct CapsuleDetailView: View {
                     VideoPlayer(player: player)
                         .ignoresSafeArea()
                 } else {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         ProgressView()
-                            .scaleEffect(1.5)
-                        Text("加载中...")
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(2)
+                        Text("正在加载播放器...")
+                            .font(.headline)
                             .foregroundColor(.white)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black)
         }
         .sheet(isPresented: $showingEditView) {
@@ -372,12 +375,13 @@ struct CapsuleDetailView: View {
         // 先显示sheet（带加载状态）
         showingPlayer = true
         
-        // 在后台线程创建播放器
-        DispatchQueue.global(qos: .userInitiated).async {
+        // 在主线程创建播放器（AVPlayer需要主线程）
+        DispatchQueue.main.async {
             let newPlayer = AVPlayer(url: fileURL)
             newPlayer.automaticallyWaitsToMinimizeStalling = true
             
-            DispatchQueue.main.async {
+            // 延迟一小段时间让sheet先出现
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.player = newPlayer
                 self.isPlayerLoading = false
             }
