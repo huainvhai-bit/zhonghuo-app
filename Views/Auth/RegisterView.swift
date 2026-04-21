@@ -223,11 +223,23 @@ struct RegisterView: View {
     
     /// 处理注册成功
     private func handleRegisterSuccess(_ response: [String: Any]) async {
+        // 先检查是否有错误
+        if let errors = response["errors"] as? [[String: Any]], !errors.isEmpty {
+            let message = errors[0]["message"] as? String ?? "注册失败"
+            print("❌ 注册失败：\(message)")
+            errorMessage = message
+            showingError = true
+            return
+        }
+        
+        // 检查响应数据
         guard let data = response["data"] as? [String: Any],
               let registerData = data["register"] as? [String: Any],
               let success = registerData["success"] as? Bool,
               success else {
             print("❌ 注册失败")
+            errorMessage = "注册失败，请稍后重试"
+            showingError = true
             return
         }
         
