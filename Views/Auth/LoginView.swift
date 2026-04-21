@@ -48,6 +48,7 @@ struct LoginView: View {
     
     /// 发送登录请求（Password）
     private func loginWithPassword() async {
+        print("🔵 loginWithPassword 开始")
         isLoading = true
         
         do {
@@ -70,13 +71,20 @@ struct LoginView: View {
                 "password": password
             ]
             
+            print("🔵 发送登录请求到: \(DataManager.apiURL)/api/graphql.php")
+            print("🔵 请求体: query=\(mutation), variables=\(variables)")
+            
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
+            print("🔵 收到响应: \(response)")
+            
             await handleAuthSuccess(response)
         } catch {
+            print("❌ loginWithPassword 捕获到错误: \(error)")
             handleAuthError(error, context: "登录（密码）")
         }
         
         await MainActor.run { isLoading = false }
+        print("🔵 loginWithPassword 结束")
     }
     
     /// 发送登录请求（验证码）
@@ -314,13 +322,19 @@ struct LoginView: View {
                     }
                     
                     Button(action: {
+                        print("🔵🔵🔵 登录按钮被点击")
+                        print("🔵 phone=\(phone), password.count=\(password.count), loginType=\(loginType)")
                         Task { @MainActor in
                             try? await Task.checkCancellation()
+                            print("🔵🔵🔵 Task 开始执行")
                             if loginType == "password" {
+                                print("🔵🔵🔵 调用 loginWithPassword")
                                 await loginWithPassword()
                             } else {
+                                print("🔵🔵🔵 调用 loginWithCode")
                                 await loginWithCode()
                             }
+                            print("🔵🔵🔵 Task 执行完成")
                         }
                     }) {
                         Text("登录")
