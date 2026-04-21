@@ -212,19 +212,23 @@ struct CapsuleList: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            if let capsule = selectedCapsuleForEdit {
-                CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
-            } else {
-                Text("加载中...")
-                    .foregroundColor(.secondary)
+            NavigationView {
+                if let capsule = selectedCapsuleForEdit {
+                    CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
+                } else {
+                    Text("加载中...")
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .sheet(isPresented: $showingCapsuleDetail) {
-            if let capsule = selectedCapsuleForDetail {
-                CapsuleDetailView(dataManager: dataManager, capsule: capsule)
-            } else {
-                Text("加载中...")
-                    .foregroundColor(.secondary)
+            NavigationView {
+                if let capsule = selectedCapsuleForDetail {
+                    CapsuleDetailView(dataManager: dataManager, capsule: capsule)
+                } else {
+                    Text("加载中...")
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .alert("删除胶囊", isPresented: $showingDeleteAlert) {
