@@ -7,7 +7,7 @@
 //
 
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 import AVKit
 
 struct CapsuleEditView: View {
@@ -588,14 +588,44 @@ struct CapsuleMediaRecorderView: View {
                         .foregroundColor(.orange)
                 }
             } else {
-                // 待机状态
-                Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.white.opacity(0.8))
-                
-                Text("点击下方按钮开始录制")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.8))
+                if selectedType == .audio {
+                    VStack(spacing: 18) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.12))
+                                .frame(width: 150, height: 150)
+                            Circle()
+                                .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                                .frame(width: 190, height: 190)
+                            Image(systemName: "mic.circle.fill")
+                                .font(.system(size: 92))
+                                .foregroundColor(.white)
+                        }
+
+                        VStack(spacing: 8) {
+                            Text("语音录制")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("点击底部麦克风按钮开始录音")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.75))
+                        }
+                    }
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "video.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.white.opacity(0.85))
+
+                        Text("视频预览加载中")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text("请允许相机权限并稍候片刻")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
             }
         }
     }
@@ -620,13 +650,13 @@ struct CapsuleMediaRecorderView: View {
                     // 内圈
                     Circle()
                         .fill(recorder.isRecording ? Color.red : Color.white)
-                    .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
+                        .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
                         .animation(.easeInOut(duration: 0.2), value: recorder.isRecording)
                 }
             }
             .disabled(selectedType == .video && !recorder.isCameraReady)
-            
-            Text(recorder.isRecording ? "点击停止" : "长按录制")
+
+            Text(recorder.isRecording ? "点击停止" : (selectedType == .audio ? "点击开始录音" : "点击开始录像"))
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.7))
         }
@@ -779,7 +809,7 @@ class MediaRecorder: NSObject, ObservableObject {
                 isCameraReady = true
                 return
             }
-            cleanupCameraSession(stopRunning: false)
+            clearCameraState()
         }
 
         let captureSession = AVCaptureSession()
@@ -788,9 +818,6 @@ class MediaRecorder: NSObject, ObservableObject {
 
         isConfiguringCamera = true
         isCameraReady = false
-        self.captureSession = captureSession
-        self.videoOutput = videoOutput
-        self.previewLayer = nil
 
         // ✅ 在后台队列里完成配置和启动，避免 beginConfiguration / startRunning 打架
         sessionQueue.async { [weak self] in
@@ -805,9 +832,7 @@ class MediaRecorder: NSObject, ObservableObject {
                     print("❌ 无法找到摄像头设备（前置=\(useFrontCamera)）")
                     captureSession.commitConfiguration()
                     DispatchQueue.main.async {
-                        self.captureSession = nil
-                        self.videoOutput = nil
-                        self.previewLayer = nil
+                        self.clearCameraState()
                         self.isConfiguringCamera = false
                         self.isCameraReady = false
                     }
@@ -822,9 +847,7 @@ class MediaRecorder: NSObject, ObservableObject {
                     print("❌ 无法初始化摄像头输入（前置=\(useFrontCamera)）")
                     captureSession.commitConfiguration()
                     DispatchQueue.main.async {
-                        self.captureSession = nil
-                        self.videoOutput = nil
-                        self.previewLayer = nil
+                        self.clearCameraState()
                         self.isConfiguringCamera = false
                         self.isCameraReady = false
                     }
@@ -840,9 +863,7 @@ class MediaRecorder: NSObject, ObservableObject {
             } catch {
                 captureSession.commitConfiguration()
                 DispatchQueue.main.async {
-                    self.captureSession = nil
-                    self.videoOutput = nil
-                    self.previewLayer = nil
+                    self.clearCameraState()
                     self.isConfiguringCamera = false
                     self.isCameraReady = false
                 }
@@ -850,12 +871,16 @@ class MediaRecorder: NSObject, ObservableObject {
                 return
             }
 
-            captureSession.commitConfiguration()
+                captureSession.commitConfiguration()
+
             if !captureSession.isRunning {
                 captureSession.startRunning()
             }
 
             DispatchQueue.main.async {
+                self.captureSession = captureSession
+                self.videoOutput = videoOutput
+                self.previewLayer = nil
                 self.isCameraReady = true
                 self.isConfiguringCamera = false
             }
@@ -1021,14 +1046,18 @@ class MediaRecorder: NSObject, ObservableObject {
                 session.stopRunning()
             }
             DispatchQueue.main.async {
-                self?.captureSession = nil
-                self?.videoOutput = nil
-                self?.previewLayer = nil
-                self?.isCameraReady = false
-                self?.isConfiguringCamera = false
+                self?.clearCameraState()
                 print("🧹 摄像头会话已清理")
             }
         }
+    }
+
+    private func clearCameraState() {
+        captureSession = nil
+        videoOutput = nil
+        previewLayer = nil
+        isCameraReady = false
+        isConfiguringCamera = false
     }
 
 }
@@ -1064,30 +1093,35 @@ struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession?
     
     func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: UIScreen.main.bounds)
+        let view = PreviewContainerView()
         view.backgroundColor = .black
-        
+
         print("🎥 CameraPreviewView.makeUIView: session=\(session != nil ? "已设置" : "nil")")
-        // ✅ 预览层在 updateUIView 中统一创建/更新，避免首屏拿到 nil session
-        
         return view
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        guard let session = session else { return }
-        
-        // ✅ 修复：确保 previewLayer 正确更新
-        if let previewLayer = uiView.layer.sublayers?.first(where: { $0 is AVCaptureVideoPreviewLayer }) as? AVCaptureVideoPreviewLayer {
-            previewLayer.session = session
-            previewLayer.frame = uiView.bounds
-            print("🎥 CameraPreviewView.updateUIView: PreviewLayer 已更新")
-        } else {
-            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-            previewLayer.videoGravity = .resizeAspectFill
-            previewLayer.frame = uiView.bounds
-            uiView.layer.addSublayer(previewLayer)
-            print("🎥 CameraPreviewView.updateUIView: 创建新的 PreviewLayer")
-        }
+        guard let previewView = uiView as? PreviewContainerView else { return }
+        previewView.previewLayer.session = session
+        previewView.previewLayer.videoGravity = .resizeAspectFill
+        previewView.setNeedsLayout()
+        previewView.layoutIfNeeded()
+        print("🎥 CameraPreviewView.updateUIView: PreviewLayer 已更新")
+    }
+}
+
+final class PreviewContainerView: UIView {
+    override class var layerClass: AnyClass {
+        AVCaptureVideoPreviewLayer.self
+    }
+
+    var previewLayer: AVCaptureVideoPreviewLayer {
+        layer as! AVCaptureVideoPreviewLayer
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        previewLayer.frame = bounds
     }
 }
 
