@@ -238,17 +238,23 @@ final class LoginViewModel: ObservableObject {
             return false
         }
 
-        if let token = loginData["token"] as? String, !token.isEmpty {
-            KeychainManager.shared.saveToken(token)
+        guard let token = loginData["token"] as? String, !token.isEmpty else {
+            presentAuthError("登录失败：服务器未返回有效凭证")
+            return false
+        }
+        KeychainManager.shared.saveToken(token)
+
+        guard let user = loginData["user"] as? [String: Any],
+              let userId = user["id"] as? String,
+              !userId.isEmpty else {
+            KeychainManager.shared.clearAll()
+            presentAuthError("账号不存在或已被删除，请重新注册")
+            return false
         }
 
-        if let user = loginData["user"] as? [String: Any] {
-            if let userId = user["id"] as? String, !userId.isEmpty {
-                KeychainManager.shared.saveUserId(userId)
-            }
-            if let phone = user["phone"] as? String, !phone.isEmpty {
-                KeychainManager.shared.saveUserPhone(phone)
-            }
+        KeychainManager.shared.saveUserId(userId)
+        if let phone = user["phone"] as? String, !phone.isEmpty {
+            KeychainManager.shared.saveUserPhone(phone)
         }
 
         userManager.loadUser()
