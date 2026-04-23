@@ -97,9 +97,14 @@ class PushNotificationManager: ObservableObject {
             content.userInfo = userInfo
         }
         
-        // 5 分钟前触发
-        let triggerDate = Date().addingTimeInterval(-300)
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 300, repeats: false)
+        // 使用传入的触发时间，避免“传了日期但实际永远按 5 分钟后”的误差
+        let trigger: UNNotificationTrigger
+        if triggerDate.timeIntervalSinceNow <= 0 {
+            trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        } else {
+            let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: triggerDate)
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        }
         
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
         

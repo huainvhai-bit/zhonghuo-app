@@ -1313,16 +1313,15 @@ extension GraphQLClient {
     /// 更新签到间隔
     func updateCheckInInterval(userId: String, interval: Int) async throws -> [String: Any] {
         let mutation = """
-        mutation($userId: String!, $interval: Int!) {
-            updateCheckInInterval(userId: $userId, interval: $interval) {
+        mutation($checkInIntervalHours: Int!) {
+            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
                 success
                 message
             }
         }
         """
         let variables: [String: Any] = [
-            "userId": userId,
-            "interval": interval
+            "checkInIntervalHours": interval
         ]
         return try await self.query(mutation, variables: variables)
     }
