@@ -13,6 +13,7 @@ import Foundation
 struct CapsuleList: View {
     @ObservedObject var dataManager: DataManager
     @Environment(\.dismiss) var dismiss
+    @StateObject private var viewModel = CapsuleListViewModel()
     @State private var selectedFilter: TimeCapsule.CapsuleType? = nil
     @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
@@ -246,28 +247,11 @@ struct CapsuleList: View {
             Text("确定要删除这个胶囊吗？此操作不可撤销。")
         }
         .refreshable {
-            // ✅ 下拉刷新
-            print("🔄 胶囊列表刷新...")
-            await dataManager.batchSyncCapsules()
+            await viewModel.refresh()
         }
         .onAppear {
             setupNavigationBar()
-            
-            // ⚠️ 重要：本地数据优先！只在本地数据为空时从文件加载
-            // 避免服务器数据覆盖本地数据
-            if dataManager.capsules.isEmpty {
-                print("📂 本地胶囊为空，从文件加载...")
-                let loadedCapsules = dataManager.loadCapsulesFromFile()
-                dataManager.capsules = loadedCapsules
-                print("📂 已加载胶囊：\(loadedCapsules.count) 个")
-            } else {
-                print("📂 本地已有胶囊：\(dataManager.capsules.count) 个，优先使用本地数据")
-            }
-            
-            // 📤 同步胶囊到云端（仅上传，不覆盖本地）
-            Task { @MainActor in
-                try? await dataManager.batchSyncCapsules()
-            }
+            viewModel.onAppear()
         }
     }
     
@@ -434,18 +418,6 @@ struct CapsuleList: View {
         .padding(.vertical, 40)
     }
     
-    private func deleteCapsules(at offsets: IndexSet) {
-        for index in offsets {
-            let capsule = filteredCapsules[index]
-            dataManager.capsules.removeAll { $0.id == capsule.id }
-            dataManager.saveCapsulesToFile()
-        }
-        
-        // 同步删除到云端
-        Task {
-            await dataManager.batchSyncCapsules()
-        }
-    }
 }
 
 // MARK: - 筛选按钮

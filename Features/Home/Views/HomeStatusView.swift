@@ -17,10 +17,7 @@ enum CheckInStatus {
 
 struct HomeStatusView: View {
     @ObservedObject var dataManager = DataManager.shared
-    @Environment(\.scenePhase) var scenePhase
-    @ObservedObject private var statusManager = LifeCheckStatusManager.shared
-    @State private var showCheckInAnimation = false
-    @State private var isSafe: Bool = true
+    @StateObject private var viewModel = HomeStatusViewModel()
     @StateObject private var timerManager = CountdownTimerManager.shared
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
@@ -98,17 +95,16 @@ struct HomeStatusView: View {
             .onAppear {
                 // 📥 加载系统配置（后端可配置）
                 Task {
-                    await DataManager.shared.loadSystemConfig()
-                    await DataManager.shared.loadReceivedCapsules()  // ✅ 加载我收到的胶囊
+                    await viewModel.loadInitialData()
                 }
                 
                 // 🎯 打开 App 自动签到（延迟执行，确保用户数据已加载）
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    handleAutoCheckIn()
+                    viewModel.handleAutoCheckIn()
                 }
                 
                 // 然后更新倒计时显示
-                updateStatus()
+                viewModel.updateStatus(timerManager: timerManager)
                 
                 // ✅ 启动倒计时定时器（每秒递减）
                 // 注意：timerManager 是 @StateObject，当 secondsRemaining 变化时会自动触发视图更新
@@ -117,20 +113,14 @@ struct HomeStatusView: View {
                 // ✅ 设置定期重新计算回调（每60秒从服务器获取倒计时）
                 timerManager.recalculateFromServer = {
                     Task {
-                        // 调用服务器API获取实时倒计时
-                        if let result = await DataManager.shared.syncCheckInStatus() {
-                            await MainActor.run {
-                                self.timerManager.updateSeconds(result.hoursRemaining * 3600)
-                                self.isSafe = result.isSafe
-                            }
-                        }
+                        await viewModel.syncStatusFromServer(timerManager: timerManager)
                     }
                 }
                 
                 // 🔔 监听签到完成通知（刷新倒计时）
                 NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
                     print("🔔 收到签到完成通知，刷新倒计时")
-                    updateStatus()
+                    viewModel.updateStatus(timerManager: timerManager)
                 }
             }
             .onDisappear {
@@ -139,181 +129,13 @@ struct HomeStatusView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoCheckIn"))) { _ in
                 print("🔔 收到自动签到通知（从后台进入前台）")
-                handleAutoCheckIn()
-                updateStatus()
+                viewModel.handleAutoCheckIn()
+                viewModel.updateStatus(timerManager: timerManager)
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SceneDidBecomeActive"))) { _ in
                 print("🔔 收到场景激活通知，刷新倒计时")
-                updateStatus()
+                viewModel.updateStatus(timerManager: timerManager)
             }
-        }
-    }
-    
-    // ✅ 修复：标记为 @MainActor，确保所有状态更新在主线程
-    @MainActor
-    private func handleAutoCheckIn() {
-        let userManager = UserManager.shared
-        
-        // 👨‍👩‍👧 如果是家人模式，跳过自动签到
-        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
-        if isFamilyMode {
-            print("👨‍👩‍👧 家人模式：跳过自动签到")
-            return
-        }
-        
-        guard userManager.isLoggedIn else {
-            print("⚠️ 自动签到：用户未登录")
-            return
-        }
-        
-        // 🔴 防重复签到：5 分钟内不重复签到
-        let now = Date()
-        let autoCheckInCooldown: TimeInterval = 300 // 5 分钟
-        if now.timeIntervalSince(userManager.lastAutoSignInTimeValue) < autoCheckInCooldown {
-            print("⏭️ handleAutoCheckIn 跳过：\(Int(autoCheckInCooldown - now.timeIntervalSince(userManager.lastAutoSignInTimeValue))) 秒后可再次签到")
-            return
-        }
-        
-        let lastCheckIn = userManager.lastCheckInDate
-        let intervalSeconds = userManager.checkInInterval.hours * 3600
-        
-        // 🎯 核心逻辑：每次打开 App 都自动签到（重置倒计时，证明用户安全）
-        // 不管是否过期，只要打开 App 就签到
-        print("🔄 打开 App 自动签到（重置倒计时，证明用户安全）")
-        print("   - 当前时间：\(now)")
-        print("   - lastCheckIn: \(lastCheckIn ?? Date.distantPast)")
-        print("   - interval: \(intervalSeconds)s (\(userManager.checkInInterval.rawValue) 小时)")
-        
-        if lastCheckIn == nil {
-            print("⏰ 首次签到：没有签到记录")
-        } else {
-            let elapsed = now.timeIntervalSince(lastCheckIn!)
-            let hoursElapsed = elapsed / 3600
-            print("   - 距离上次签到：\(String(format: "%.1f", hoursElapsed)) 小时")
-        }
-        
-        // ✅ 执行自动签到（isAuto: true 会自动上传位置和数据）
-        print("✅ 执行自动签到")
-        let result = userManager.recordCheckIn(isAuto: true)
-        print("   - recordCheckIn 结果：\(result)")
-        
-        // 更新 DataManager 的 lastCheckInDate
-        dataManager.lastCheckInDate = userManager.lastCheckInDate
-        
-        print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
-        print("📍 位置和数据已自动上传到服务器")
-    }
-    
-    /// 🆕 打开 App 时智能同步数据（双向同步：本地↔云端）
-    private func forceUploadDataOnAppOpen() {
-        print("🔄 ====== 打开 App 智能同步数据 ======")
-        print("🎯 同步策略：比对本地和云端，保持数据一致")
-        
-        guard let token = KeychainManager.shared.getToken(), !token.isEmpty else {
-            print("⚠️ 同步失败：认证失败")
-            return
-        }
-        
-        Task {
-            // 🎯 第一步：从云端下载数据（新设备或获取其他设备的数据）
-            print("📥 1. 从云端下载数据...")
-            await DataManager.shared.downloadAllData()
-            
-            // 🎯 第二步：上传本地新数据到云端
-            print("📤 2. 上传本地新数据到云端...")
-            
-            // 上传位置信息
-            print("📍 上传位置信息...")
-            await uploadLocation()
-            
-            // 同步胶囊数据（本地→云端）
-            print("📦 同步胶囊数据...")
-            if let result = await DataManager.shared.batchSyncCapsules() {
-                print("✅ 胶囊同步完成：\(result)")
-            }
-            
-            // 同步遗嘱数据（本地→云端）
-            print("📝 同步遗嘱数据...")
-            if let result = await DataManager.shared.batchSyncWills() {
-                print("✅ 遗嘱同步完成：\(result)")
-            }
-            
-            print("🎉 所有数据同步完成！")
-            print("📊 本地和云端数据已保持一致")
-            print("🔄 ====== 同步完成 ======")
-        }
-    }
-    
-    /// 上传位置信息
-    private func uploadLocation() async {
-        guard let user = UserManager.shared.currentUser else {
-            print("⚠️ 位置上传失败：无用户数据")
-            return
-        }
-        
-        UserManager.shared.uploadLocation()
-    }
-    
-    // 🚫 已移除手动签到功能 - 只保留自动签到
-    
-        /// 发送超时通知给紧急联系人（已禁用）
-    private func sendOverdueAlertToEmergencyContacts() {
-        // 见证人和紧急联系人功能已移除
-        print("🚨 紧急联系人通知功能已禁用")
-    }
-    
-    // ✅ 修复：确保所有状态更新在主线程执行
-    @MainActor
-    private func updateStatus() {
-        // 确保使用最新的签到间隔
-        dataManager.settings.checkInInterval = UserManager.shared.checkInInterval
-        dataManager.settings.lastCheckInDate = UserManager.shared.lastCheckInDate
-        dataManager.lastCheckInDate = UserManager.shared.lastCheckInDate
-        let status = getCheckInStatus()
-        isSafe = status.isSafe
-        let seconds = status.hoursRemaining * 3600
-        timerManager.updateSeconds(seconds)
-        print("🔄 updateStatus: secondsRemaining=\(seconds), isSafe=\(isSafe)")
-        
-        // 📱 安排签到提醒（使用后端配置的阈值和间隔）
-        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
-        
-        // ✅ 上传签到倒计时到服务器（用于管理员观测用户签到情况）
-        Task {
-            await DataManager.shared.recordLastActive(hoursRemaining: status.hoursRemaining)
-        }
-    }
-    
-    private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        // 👨‍👩‍👧 家人模式永远返回安全
-        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
-        if isFamilyMode {
-            return (true, 999)  // 大的数字表示安全
-        }
-        
-        let hours = dataManager.settings.checkInInterval.hours
-        
-        // 📱 使用后端配置的离线阈值（默认 24 小时）
-        let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
-        
-        // 如果没有签到记录，返回完整的签到间隔时间
-        guard let lastCheckIn = dataManager.lastCheckInDate else {
-            return (true, Double(hours))
-        }
-        
-        let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
-        let remaining = Double(hours) - elapsed
-        
-        // 🔴 安全状态判断：
-        // - 剩余时间 > 0：绿色（安全）
-        // - 剩余时间 <= 0 但 < 离线阈值：橙色（警告）
-        // - 剩余时间 <= -离线阈值：红色（危险）
-        if remaining > 0 {
-            return (true, max(0, remaining))  // 绿色
-        } else if remaining > -offlineThreshold {
-            return (true, max(0, remaining))  // 橙色（警告但还安全）
-        } else {
-            return (false, 0)  // 红色（危险）
         }
     }
     
