@@ -48,28 +48,10 @@ struct LoginView: View {
                         .onChange(of: viewModel.phone) { _ in viewModel.clearError() }
                         .onTapGesture { viewModel.clearError() }
                     
-                    if viewModel.loginType == "password" {
-                        SecureField("密码", text: $viewModel.password)
-                            .textFieldStyle(CustomTextFieldStyle())
-                            .font(.system(size: 18, weight: .medium))
-                            .onChange(of: viewModel.password) { _ in viewModel.clearError() }
-                    } else {
-                        HStack {
-                            TextField("验证码", text: $viewModel.verifyCode)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .font(.system(size: 18, weight: .medium))
-                            
-                            Button(action: {
-                                Task { await viewModel.requestVerifyCode() }
-                            }) {
-                                Text(viewModel.countdown > 0 ? "\(viewModel.countdown)s" : "获取验证码")
-                                    .foregroundColor(viewModel.countdown > 0 ? .gray : Color(hex: "AF52DE"))
-                                    .font(.system(size: 16))
-                            }
-                            .disabled(viewModel.countdown > 0 || viewModel.phone.isEmpty)
-                        }
-                    }
+                    SecureField("密码", text: $viewModel.password)
+                        .textFieldStyle(CustomTextFieldStyle())
+                        .font(.system(size: 18, weight: .medium))
+                        .onChange(of: viewModel.password) { _ in viewModel.clearError() }
                     
                     Button(action: {
                         Task {
@@ -98,17 +80,9 @@ struct LoginView: View {
                         dismissButton: .default(Text("确定"))
                     )
                 }
-                
-                // 切换登录方式
+
                 HStack {
-                    Button(action: viewModel.toggleLoginType) {
-                        Text(viewModel.loginType == "password" ? "使用验证码登录" : "使用密码登录")
-                            .foregroundColor(Color(hex: "AF52DE"))
-                            .font(.system(size: 16))
-                    }
-                    
                     Spacer()
-                    
                     Button(action: { showingResetPassword = true }) {
                         Text("忘记密码？")
                             .foregroundColor(Color(hex: "AF52DE"))

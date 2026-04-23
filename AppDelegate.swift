@@ -20,11 +20,6 @@ class PushNotificationManager: ObservableObject {
         ) { granted, error in
             if granted {
                 Logger.shared.i("PushNotificationManager: 推送权限已授予")
-                
-                // 注册远程通知
-                DispatchQueue.main.async {
-                    UIApplication.shared.registerForRemoteNotifications()
-                }
             } else {
                 Logger.shared.w("PushNotificationManager: 推送权限被拒绝：\(error?.localizedDescription ?? "未知错误")")
             }
@@ -32,51 +27,6 @@ class PushNotificationManager: ObservableObject {
     }
     
     // MARK: - 用户设备 Token
-    
-    /// 保存设备 Token 到 Keychain
-    func saveDeviceToken(_ token: Data) {
-        let tokenString = token.reduce("") { $0 + String(format: "%02x", $1) }
-        Logger.shared.i("PushNotificationManager: 设备 Token 已保存：\(tokenString)")
-        
-        // 上传到服务器
-        Task {
-            await uploadDeviceToken(tokenString)
-        }
-    }
-    
-    /// 上传设备 Token 到服务器
-    private func uploadDeviceToken(_ tokenString: String) async {
-        guard !DataManager.apiURL.isEmpty else {
-            Logger.shared.w("API URL 未设置，跳过上传设备 Token")
-            return
-        }
-        
-        do {
-            let query = """
-            mutation {
-                updateDeviceToken(token: "\(tokenString)") {
-                    success
-                    message
-                }
-            }
-            """
-            
-            let _ = try await APIClient.shared.query(query)
-            Logger.shared.i("设备 Token 上传成功")
-        } catch {
-            Logger.shared.e("设备 Token 上传失败：\(error)")
-        }
-    }
-    
-    /// 处理设备 Token
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        saveDeviceToken(deviceToken)
-    }
-    
-    /// 处理注册失败
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        Logger.shared.e("PushNotificationManager: 注册推送失败：\(error.localizedDescription)")
-    }
     
     // MARK: - 通知内容
     

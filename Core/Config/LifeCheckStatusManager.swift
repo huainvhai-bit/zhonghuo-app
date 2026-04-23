@@ -7,7 +7,6 @@
 
 import Foundation
 import UserNotifications
-import BackgroundTasks
 
 // MARK: - 通知配置
 
@@ -25,8 +24,6 @@ struct NotificationConfig: Codable {
     /// 超时后推送间隔（小时）- 超时后每 1 小时推送一次
     var overduePushInterval: Int = 1
     
-    /// 是否启用短信通知（App 在后台运行时）
-    var enableSmsNotification: Bool = true
 }
 
 // ✅ 修复 #5: 标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
@@ -207,38 +204,6 @@ class LifeCheckStatusManager: ObservableObject {
         }
     }
     
-    // MARK: - 后台任务处理
-    
-    /// 处理后台短信通知任务
-    func handleBackgroundSmsTask(task: BGAppRefreshTask) {
-        print("📱 执行后台短信通知任务...")
-        
-        // 设置任务过期处理
-        task.expirationHandler = {
-            print("⏰ 后台任务时间到")
-            task.setTaskCompleted(success: false)
-        }
-        
-        // 检查是否需要发送短信
-        updateStatus()
-        
-        if !isSafe && config.enableSmsNotification {
-            let hoursOverdue = -hoursRemaining
-            
-            // 超时即发送短信（不再等待 24 小时）
-            if hoursOverdue > 0 {
-                print("⚠️ 用户已超时\(Int(hoursOverdue))小时，发送短信通知监护人")
-                
-                Task {
-                    await notifyGuardians()
-                }
-            }
-        }
-        
-        task.setTaskCompleted(success: true)
-        print("✅ 后台短信通知任务完成")
-    }
-    
     // MARK: - 通知配置
     
     /// 通知配置（从后端获取）
@@ -384,23 +349,6 @@ class LifeCheckStatusManager: ObservableObject {
             notificationCount += 1
         }
         
-        // ✅ 启用后台任务（在超时后安排短信通知）
-        scheduleBackgroundSmsTask(after: deadline)
-    }
-    
-    /// 后台短信通知任务（用户超时未签到时触发）
-    private func scheduleBackgroundSmsTask(after deadline: Date) {
-        if #available(iOS 13.0, *) {
-            let request = BGAppRefreshTaskRequest(identifier: "com.zhonghuo.app.sms_notify")
-            request.earliestBeginDate = deadline.addingTimeInterval(60)
-            
-            do {
-                try BGTaskScheduler.shared.submit(request)
-                print("📱 后台短信通知任务已安排")
-            } catch {
-                print("❌ 安排后台短信任务失败：\(error)")
-            }
-        }
     }
     
     /// 通用通知调度方法
@@ -441,7 +389,7 @@ class LifeCheckStatusManager: ObservableObject {
     }
     
     /// 通知所有监护人
-        func notifyGuardians() async {
+    func notifyGuardians() async {
         // 见证人和紧急联系人功能已移除
         print("📞 监护人通知功能已禁用")
     }

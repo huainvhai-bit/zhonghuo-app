@@ -25,9 +25,9 @@ struct RegisterView: View {
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var verifyCode = ""
-    @State private var countdown = 0
-    @State private var timer: Timer?
+    @State private var captchaQuestion = ""
+    @State private var captchaAnswer = ""
+    @State private var captchaInput = ""
     @State private var isLoading = false
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -56,74 +56,16 @@ struct RegisterView: View {
         return result
     }
     
-    /// 启动倒计时
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if countdown > 0 {
-                countdown -= 1
-            } else {
-                timer?.invalidate()
-            }
-        }
+    private func generateCaptcha() {
+        let left = Int.random(in: 1...9)
+        let right = Int.random(in: 1...9)
+        captchaQuestion = "\(left) + \(right) = ?"
+        captchaAnswer = "\(left + right)"
+        captchaInput = ""
     }
-    
-    /// 发送验证码
-    private func sendVerifyCode() async {
-        do {
-            let mutation = """
-            mutation($phone: String!) {
-                sendSms(phone: $phone, scene: "register") {
-                    success
-                    code
-                    message
-                }
-            }
-            """
-            
-            let variables: [String: Any] = ["phone": phone]
-            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
-            
-            if let data = response["data"] as? [String: Any],
-               let result = data["sendSms"] as? [String: Any],
-               let success = result["success"] as? Bool, success {
-                let devCode = result["code"] as? String ?? ""
-                print("✅ 验证码发送成功：\(devCode.isEmpty ? "已发送" : "开发者模式验证码：\(devCode)")")
-                
-                // 开发者模式自动填充验证码
-                await MainActor.run {
-                    if !devCode.isEmpty {
-                        verifyCode = devCode
-                    }
-                    countdown = 60
-                    startTimer()
-                }
-            } else {
-                await MainActor.run {
-                    countdown = 0
-                    timer?.invalidate()
-                    errorMessage = "发送验证码失败，请稍后重试"
-                    showingError = true
-                }
-            }
-        } catch {
-            print("❌ 发送验证码失败：\(error.localizedDescription)")
-            let errorMsg = error.localizedDescription
-            await MainActor.run {
-                countdown = 0
-                timer?.invalidate()
-                if errorMsg.contains("手机号") {
-                    errorMessage = "手机号格式错误"
-                } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
-                    errorMessage = "网络连接失败，请检查网络"
-                } else if errorMsg.contains("验证码") {
-                    errorMessage = "验证码发送失败，请稍后重试"
-                } else {
-                    errorMessage = "发送验证码失败，请稍后重试"
-                }
-                showingError = true
-            }
-        }
+
+    private func validateCaptcha() -> Bool {
+        captchaInput.trimmingCharacters(in: .whitespacesAndNewlines) == captchaAnswer
     }
     
     // MARK: - 注册逻辑
@@ -154,18 +96,18 @@ struct RegisterView: View {
                 print("❌ 两次密码不一致")
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
-            
-            guard !verifyCode.isEmpty else {
-                print("❌ 验证码为空")
-                throw NSError(domain: "请输入验证码", code: -1)
+
+            guard validateCaptcha() else {
+                print("❌ 本地验证码错误")
+                throw NSError(domain: "验证码错误", code: -1)
             }
             
             print("✅ 所有验证通过，开始注册请求...")
             
             // 调用注册 API
             let mutation = """
-            mutation($name: String!, $phone: String!, $password: String!, $code: String!) {
-                register(name: $name, phone: $phone, password: $password, code: $code) {
+            mutation($name: String!, $phone: String!, $password: String!) {
+                register(name: $name, phone: $phone, password: $password) {
                     success
                     token
                     user {
@@ -180,8 +122,7 @@ struct RegisterView: View {
             let variables: [String: Any] = [
                 "name": name,
                 "phone": phone,
-                "password": password,
-                "code": verifyCode
+                "password": password
             ]
             
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -381,33 +322,28 @@ struct RegisterView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
                     .font(.system(size: 18, weight: .medium))
-                
-                HStack {
-                    TextField("验证码", text: $verifyCode)
+
+                HStack(spacing: 12) {
+                    TextField("验证码", text: $captchaInput)
                         .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.numberPad)
+                        .keyboardType(.default)
                         .font(.system(size: 18, weight: .medium))
                     
                     Button(action: {
-                        print("🔴 获取验证码按钮被点击")
-                        // 验证手机号格式
-                        guard isValidPhone(phone) else {
-                            errorMessage = "手机号格式错误"
-                            showingError = true
-                            return
-                        }
-
-                        // 调用发送验证码 API，成功后再启动倒计时
-                        Task {
-                            await sendVerifyCode()
-                        }
+                        generateCaptcha()
                     }) {
-                        Text(countdown > 0 ? "\(countdown)s" : "获取验证码")
-                            .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                        Text("换一题")
+                            .foregroundColor(Color(hex: "AF52DE"))
                             .font(.system(size: 16, weight: .medium))
                     }
-                    .disabled(countdown > 0)
                     .contentShape(Rectangle())
+                }
+
+                HStack {
+                    Text("验证码题目：\(captchaQuestion)")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    Spacer()
                 }
                 
                 SecureField("设置密码（8 位以上）", text: $password)
@@ -466,9 +402,11 @@ struct RegisterView: View {
         }
         .background(Color("BackgroundColor"))
         .navigationBarTitleDisplayMode(.inline)
-            .onDisappear {
-                timer?.invalidate()
+        .onAppear {
+            if captchaQuestion.isEmpty {
+                generateCaptcha()
             }
+        }
         // 🔴 移除 onTapGesture 避免拦截按钮点击
     }
     

@@ -626,43 +626,19 @@ class DataManager: ObservableObject {
     
     /// 发送重置密码验证码（GraphQL）
     func sendResetPasswordCode(phone: String) async throws -> Bool {
-        guard !Self.apiURL.isEmpty else {
-            print("❌ API URL 未设置")
-            return false
-        }
-        
-        let mutation = """
-        mutation($phone: String!) {
-            sendResetCode(phone: $phone) {
-                success
-                message
-            }
-        }
-        """
-        
-        let variables: [String: Any] = ["phone": phone]
-        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
-        
-        if let data = result["data"] as? [String: Any],
-           let resetData = data["sendResetCode"] as? [String: Any],
-           let success = resetData["success"] as? Bool {
-            print("📱 发送验证码结果：\(success ? "成功" : "失败")")
-            return success
-        }
-        
-        return false
+        throw NSError(domain: "短信验证码功能已关闭", code: -1, userInfo: [NSLocalizedDescriptionKey: "短信验证码功能已关闭"])
     }
     
-    /// 重置密码（带验证码验证）
-    func resetPasswordWithCode(phone: String, verifyCode: String, newPassword: String) async throws -> Bool {
+    /// 重置密码
+    func resetPassword(phone: String, newPassword: String) async throws -> Bool {
         guard !Self.apiURL.isEmpty else {
             print("❌ API URL 未设置")
             return false
         }
         
         let mutation = """
-        mutation($phone: String!, $verifyCode: String!, $newPassword: String!) {
-            resetPassword(phone: $phone, verifyCode: $verifyCode, newPassword: $newPassword) {
+        mutation($phone: String!, $newPassword: String!) {
+            resetPassword(phone: $phone, newPassword: $newPassword) {
                 success
                 message
             }
@@ -671,7 +647,6 @@ class DataManager: ObservableObject {
         
         let variables: [String: Any] = [
             "phone": phone,
-            "verifyCode": verifyCode,
             "newPassword": newPassword
         ]
         
@@ -691,47 +666,12 @@ class DataManager: ObservableObject {
     
     /// 发送短信通知（阿里云/腾讯云）
     func sendSmsNotification(phone: String, message: String) async throws -> Bool {
-        guard !Self.apiURL.isEmpty else {
-            print("❌ API URL 未设置")
-            return false
-        }
-        
-        do {
-            // 使用 GraphQL 发送短信
-            let mutation = """
-            mutation($phone: String!, $message: String!) {
-                sendSms(phone: $phone, message: $message) {
-                    success
-                    message
-                }
-            }
-            """
-            
-            let variables: [String: Any] = [
-                "phone": phone,
-                "message": message
-            ]
-            
-            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
-            print("📱 GraphQL 发送短信请求")
-            
-            if let data = result["data"] as? [String: Any],
-               let smsData = data["sendSms"] as? [String: Any],
-               let success = smsData["success"] as? Bool {
-                print("📱 发送短信结果：\(success ? "成功" : "失败")")
-                return success
-            }
-        } catch {
-            print("❌ GraphQL 发送短信失败：\(error)")
-        }
-        
-        return false
+        throw NSError(domain: "短信功能已关闭", code: -1, userInfo: [NSLocalizedDescriptionKey: "短信功能已关闭"])
     }
     
     /// 通知监护人（用户超时未签到）
     func notifyGuardian(guardianPhone: String, userName: String, hoursOverdue: Double) async throws -> Bool {
-        let message = "【终活】您的家人\(userName)已超时\(Int(hoursOverdue))小时未签到，可能存在安全风险，请及时联系确认。"
-        return try await sendSmsNotification(phone: guardianPhone, message: message)
+        throw NSError(domain: "短信功能已关闭", code: -1, userInfo: [NSLocalizedDescriptionKey: "短信功能已关闭"])
     }
     
     /// 获取通知配置（GraphQL）
@@ -764,8 +704,7 @@ class DataManager: ObservableObject {
                 let config = NotificationConfig(
                     firstReminderHours: firstReminder,
                     reminderInterval: reminderInterval,
-                    overduePushInterval: overduePushInterval,
-                    enableSmsNotification: true
+                    overduePushInterval: overduePushInterval
                 )
                 
                 print("✅ 获取通知配置成功：间隔=\(config.checkInInterval)h, 首次=\(config.firstReminderHours)h, 重复=\(config.reminderInterval)h")

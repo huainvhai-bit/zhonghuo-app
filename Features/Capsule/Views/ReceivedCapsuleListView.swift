@@ -155,8 +155,7 @@ struct ReceivedCapsuleRow: View {
 struct ReceivedCapsuleDetailView: View {
     let capsule: ReceivedCapsule
     @Environment(\.dismiss) var dismiss
-    @State private var showingMediaPlayer = false
-    @State private var mediaPlayer: AVPlayer?
+    @State private var playbackItem: ReceivedCapsulePlaybackItem?
     
     var body: some View {
         NavigationView {
@@ -207,7 +206,6 @@ struct ReceivedCapsuleDetailView: View {
                             } else if capsule.mediaUrl != nil || capsule.mediaServerUrl != nil {
                                 Button(action: {
                                     prepareMediaPlayer()
-                                    showingMediaPlayer = true
                                 }) {
                                     HStack {
                                         Image(systemName: capsule.typeEnum.icon)
@@ -265,26 +263,17 @@ struct ReceivedCapsuleDetailView: View {
                     .foregroundColor(Color(hex: "6366F1"))
                 }
             }
-            .sheet(isPresented: $showingMediaPlayer) {
-                ZStack {
-                    if let mediaPlayer {
-                        VideoPlayer(player: mediaPlayer)
-                            .ignoresSafeArea()
-                            .onAppear {
-                                mediaPlayer.play()
-                            }
-                    } else {
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .tint(.white)
-                            Text("正在加载播放器...")
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black)
+            .sheet(item: $playbackItem) { item in
+                let mediaPlayer = AVPlayer(url: item.url)
+                VideoPlayer(player: mediaPlayer)
+                    .ignoresSafeArea()
+                    .background(Color.black)
+                    .onAppear {
+                        mediaPlayer.play()
                     }
-                }
-                .background(Color.black)
+                    .onDisappear {
+                        mediaPlayer.pause()
+                    }
             }
         }
     }
@@ -324,6 +313,11 @@ struct ReceivedCapsuleDetailView: View {
             url = documentsPath.appendingPathComponent(rawString)
         }
 
-        mediaPlayer = AVPlayer(url: url)
+        playbackItem = ReceivedCapsulePlaybackItem(url: url)
     }
+}
+
+private struct ReceivedCapsulePlaybackItem: Identifiable {
+    let id = UUID()
+    let url: URL
 }

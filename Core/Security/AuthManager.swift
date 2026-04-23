@@ -23,16 +23,16 @@ class AuthManager: ObservableObject {
     /// 用户登录（GraphQL）
     /// - Parameters:
     ///   - phone: 手机号
-    ///   - code: 验证码（或密码）
+    ///   - password: 密码
     /// - Returns: 是否成功
-    func login(phone: String, code: String) async -> Bool {
+    func login(phone: String, password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
             let query = """
             mutation {
-                verifyCodeLogin(phone: "\(phone)", code: "\(code)") {
+                login(phone: "\(phone)", password: "\(password)") {
                     token
                     user {
                         id
@@ -47,7 +47,7 @@ class AuthManager: ObservableObject {
             let response = try await client.query(query)
             
             guard let data = response["data"] as? [String: Any],
-                  let loginData = data["verifyCodeLogin"] as? [String: Any],
+                  let loginData = data["login"] as? [String: Any],
                   let token = loginData["token"] as? String,
                   let userData = loginData["user"] as? [String: Any],
                   let userId = userData["id"] as? String,
@@ -84,17 +84,17 @@ class AuthManager: ObservableObject {
     /// 用户注册（GraphQL）
     /// - Parameters:
     ///   - phone: 手机号
-    ///   - code: 验证码
+    ///   - password: 密码
     ///   - name: 用户名
     /// - Returns: 是否成功
-    func register(phone: String, code: String, name: String) async -> Bool {
+    func register(phone: String, password: String, name: String) async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
             let query = """
             mutation {
-                register(phone: "\(phone)", code: "\(code)", name: "\(name)") {
+                register(phone: "\(phone)", password: "\(password)", name: "\(name)") {
                     token
                     user {
                         id
@@ -116,6 +116,13 @@ class AuthManager: ObservableObject {
             
             // 保存 Token
             KeychainManager.shared.saveToken(token)
+            if let userData = registerData["user"] as? [String: Any],
+               let userId = userData["id"] as? String {
+                KeychainManager.shared.saveUserId(userId)
+                if let phone = userData["phone"] as? String {
+                    KeychainManager.shared.saveUserPhone(phone)
+                }
+            }
             
             Logger.shared.i("注册成功：\(name)")
             isLoading = false

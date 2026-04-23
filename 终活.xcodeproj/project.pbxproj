@@ -23,7 +23,6 @@
 		2B81B3F6F003B14260D75CB6 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAE7365AB62AA2C675749F1 /* FamilyMember.swift */; };
 		2E871C78603CA6CF73249A81 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020DFC00792D2106EBD36AFC /* HomeStatusView.swift */; };
 		306640380352B03ACE3EE82E /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A519C7E8CE252F57F9CA7C /* APIManager.swift */; };
-		34211D97B11B2D3D9824F338 /* jcore-ios-5.3.0.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EACE8EE52ECCC95FFBC632EC /* jcore-ios-5.3.0.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		3597B3D9CB1CB5FCD9719C83 /* InviteCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07579CF4B3E70A217992B90F /* InviteCodeView.swift */; };
 		3D4ADE2C1C0F6FBE663F6A81 /* VersionCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CF9D97A822B0E9C4682DD1 /* VersionCheckManager.swift */; };
 		3DF26789364F9F88C47E60EB /* FamilyGuardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1630FC5FFF88D97B8840410 /* FamilyGuardView.swift */; };
@@ -35,8 +34,6 @@
 		497BBABE9DF0C8362E2309B0 /* PDFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B904D3FFB330F31C891E8ECF /* PDFGenerator.swift */; };
 		50DCBAECEB49FC1A418BDFD7 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045761D3B73D998072BF9E1F /* IAPManager.swift */; };
 		50ED3EE1C5EB37B54E68C7C4 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1F2299FCB5ED5D00BA7E2 /* CacheManager.swift */; };
-		5470D2B27882244074EEF18F /* jpush-extension-ios-2.0.6.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CC2AF11B769EFF5789ACD60F /* jpush-extension-ios-2.0.6.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		57778D3BE01D8BD1EF4BAE55 /* jpush-extension-ios-2.0.6.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC2AF11B769EFF5789ACD60F /* jpush-extension-ios-2.0.6.xcframework */; };
 		579AC2CE08BDE794D357A276 /* ElectronicSignatureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314413A6788032D19A22F630 /* ElectronicSignatureManager.swift */; };
 		588B23A6C674CAD83174C5C2 /* FamilyArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6462556E1984D4A645562 /* FamilyArchiveView.swift */; };
 		60E24C8E170C37C39ADDED32 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9ABB54EC69F5E1E493947B2 /* HapticFeedback.swift */; };
@@ -54,11 +51,8 @@
 		82C395288FD67BFB0A83DE04 /* CapsuleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFC0BE5359C25A5B647E7C2 /* CapsuleList.swift */; };
 		83A2BED9D3A609ED4B0DFBA4 /* MembershipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585D4487EE3FB1C7623DC3CB /* MembershipView.swift */; };
 		893F55EF5019336CA53EFDDE /* PDFExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89332CF6FBC2874BDE8CFF7 /* PDFExportSheet.swift */; };
-		89F07078C8E6C978FACB3AD2 /* jcore-ios-5.3.0.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = EACE8EE52ECCC95FFBC632EC /* jcore-ios-5.3.0.xcframework */; };
 		8BE54187F4BFDCF7EFF03F84 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0801AA0D893A3DFD3FF9145F /* RegisterView.swift */; };
-		8E574733B6FF89275602987E /* jpush-ios-6.0.0.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6C4D5EB7867B6C896C0FBCC8 /* jpush-ios-6.0.0.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8F442CE0E58E95308EC0DA78 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9883DCCC47E20D15C70618 /* ConfigManager.swift */; };
-		9692075A82D4E1CB3C1343DD /* jpush-ios-6.0.0.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C4D5EB7867B6C896C0FBCC8 /* jpush-ios-6.0.0.xcframework */; };
 		97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC4F388F156F28F282BCEED /* AppDelegate.swift */; };
 		99A231DBA64F0A248FA87EF6 /* MemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855235E3C9B374023251536 /* MemoryManager.swift */; };
 		9AC21E948DB60E4B03E1F991 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38A16566FA6A3CFC2001EA6D /* Assets.xcassets */; };
@@ -73,7 +67,6 @@
 		B6A4E71CF2423C9A35A63E91 /* SyncConflictResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92B91E5D65D3D5E21D0844A3 /* SyncConflictResolver.swift */; };
 		C13358898531240FDD25B65D /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FFAC585801DE6DEF610462 /* NotificationManager.swift */; };
 		C69B13FE23C94A9D3B866751 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F99C3D00C3558F0C0722C1 /* DataManager.swift */; };
-		CFC3682E99956534193EE806 /* JPushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F72B5035981356E477812B /* JPushManager.swift */; };
 		D5CC89D0F6F25ACFD0A84BAC /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF397698C571E4B26E604CAB /* Colors.swift */; };
 		D708212BF8031921655237D1 /* AccessibilityEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA1947CF85953D2E716DBEC /* AccessibilityEnhancer.swift */; };
 		D71F2926A2DC5BDF07A61E7C /* DeviceMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60DBFECF917CA7E69D15B3EF /* DeviceMonitor.swift */; };
@@ -84,7 +77,6 @@
 		E239C5C0714A24F07D9D95AA /* Benchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9B02F8A62AD0C3411EBC57 /* Benchmark.swift */; };
 		E2E087D54592566B58E88C6B /* UpgradePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDD22C14B2D1E97217FF29F /* UpgradePromptView.swift */; };
 		E48CF9DB3E36A413E7A27748 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB0D8F29C893DAA2B72BD9C /* LoginView.swift */; };
-		E56DE00018404FA70DAED378 /* MessageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE5238FEE97DF3E4D50757E9 /* MessageManager.swift */; };
 		E8CC398016860BD0CCFE1677 /* WillPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DA5E86D9E045EE3DE582CE /* WillPreviewView.swift */; };
 		EA61EE224B460FE8D4E2909C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C278C5E6A6CB43AD576B3ACF /* Models.swift */; };
 		F01AFFDF5B8D7019672BF17C /* CapsuleEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58406021AF7F26476F1725CC /* CapsuleEditView.swift */; };
@@ -95,22 +87,6 @@
 		FF93C91EAA9269F53DCEC239 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF18D784C7A52FB673BD8877 /* UserSession.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		11D3948FA0B9725750F5ECC3 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				8E574733B6FF89275602987E /* jpush-ios-6.0.0.xcframework in Embed Frameworks */,
-				34211D97B11B2D3D9824F338 /* jcore-ios-5.3.0.xcframework in Embed Frameworks */,
-				5470D2B27882244074EEF18F /* jpush-extension-ios-2.0.6.xcframework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		00A519C7E8CE252F57F9CA7C /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		020DFC00792D2106EBD36AFC /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatusView.swift; sourceTree = "<group>"; };
@@ -120,7 +96,7 @@
 		07579CF4B3E70A217992B90F /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		0801AA0D893A3DFD3FF9145F /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		08BBF5D6016E155A26E01340 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		13C6462556E1984D4A645562 /* FamilyArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyArchiveView.swift; sourceTree = "<group>"; };
 		14215F0679497741F049B173 /* CapsuleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleListViewModel.swift; sourceTree = "<group>"; };
@@ -148,7 +124,6 @@
 		6B4362804BCCFF90C6A5D529 /* ZhonghuoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuoApp.swift; sourceTree = "<group>"; };
 		6B968F374BED4E8830659690 /* AVPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayerView.swift; sourceTree = "<group>"; };
 		6BB0D8F29C893DAA2B72BD9C /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		6C4D5EB7867B6C896C0FBCC8 /* jpush-ios-6.0.0.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jpush-ios-6.0.0.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework"; sourceTree = "<group>"; };
 		6C8FEB7A240DC0DE6FCC6D23 /* ChunkedUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkedUploadManager.swift; sourceTree = "<group>"; };
 		70F99C3D00C3558F0C0722C1 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		7127E42F85BC847780542599 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -179,7 +154,6 @@
 		C38A090D3C6321670E49BBA9 /* CapsuleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleDetailView.swift; sourceTree = "<group>"; };
 		C9ABB54EC69F5E1E493947B2 /* HapticFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedback.swift; sourceTree = "<group>"; };
 		CBFC0BE5359C25A5B647E7C2 /* CapsuleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleList.swift; sourceTree = "<group>"; };
-		CC2AF11B769EFF5789ACD60F /* jpush-extension-ios-2.0.6.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jpush-extension-ios-2.0.6.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-extension-ios-2.0.6.xcframework"; sourceTree = "<group>"; };
 		CF18D784C7A52FB673BD8877 /* UserSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSession.swift; sourceTree = "<group>"; };
 		D3CF9D97A822B0E9C4682DD1 /* VersionCheckManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionCheckManager.swift; sourceTree = "<group>"; };
 		DD1EFABFCF3FE6305F1EB2C3 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -189,28 +163,12 @@
 		E89332CF6FBC2874BDE8CFF7 /* PDFExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportSheet.swift; sourceTree = "<group>"; };
 		E8DA5E86D9E045EE3DE582CE /* WillPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillPreviewView.swift; sourceTree = "<group>"; };
 		EAC4F388F156F28F282BCEED /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		EACE8EE52ECCC95FFBC632EC /* jcore-ios-5.3.0.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jcore-ios-5.3.0.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jcore-ios-5.3.0.xcframework"; sourceTree = "<group>"; };
 		ED4CEDEDC3F54D084AEEE246 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		EE5238FEE97DF3E4D50757E9 /* MessageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageManager.swift; sourceTree = "<group>"; };
 		F0E55D7A67C97B81F1EDDD11 /* UserFriendlyError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFriendlyError.swift; sourceTree = "<group>"; };
-		F4F72B5035981356E477812B /* JPushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JPushManager.swift; sourceTree = "<group>"; };
 		F7C925AB2B823FC81FDA1698 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
 		F855235E3C9B374023251536 /* MemoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryManager.swift; sourceTree = "<group>"; };
 		FA5C49ABCA0366F276279596 /* AppStabilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStabilityManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		A4B41201A50380FB6078B13B /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				9692075A82D4E1CB3C1343DD /* jpush-ios-6.0.0.xcframework in Frameworks */,
-				89F07078C8E6C978FACB3AD2 /* jcore-ios-5.3.0.xcframework in Frameworks */,
-				57778D3BE01D8BD1EF4BAE55 /* jpush-extension-ios-2.0.6.xcframework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0244D71101DD29E5B40BB9A0 /* Network */ = {
@@ -263,8 +221,6 @@
 		279798701328BFCB7AEEF7C7 /* Push */ = {
 			isa = PBXGroup;
 			children = (
-				F4F72B5035981356E477812B /* JPushManager.swift */,
-				EE5238FEE97DF3E4D50757E9 /* MessageManager.swift */,
 				60FFAC585801DE6DEF610462 /* NotificationManager.swift */,
 			);
 			path = Push;
@@ -317,16 +273,6 @@
 				70279B0229DC81C6E628E906 /* Views */,
 			);
 			path = Family;
-			sourceTree = "<group>";
-		};
-		325D7FB1C92C74F08C38E861 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				EACE8EE52ECCC95FFBC632EC /* jcore-ios-5.3.0.xcframework */,
-				CC2AF11B769EFF5789ACD60F /* jpush-extension-ios-2.0.6.xcframework */,
-				6C4D5EB7867B6C896C0FBCC8 /* jpush-ios-6.0.0.xcframework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		38E447871133645753F2E70A /* User */ = {
@@ -484,7 +430,6 @@
 				EAC4F388F156F28F282BCEED /* AppDelegate.swift */,
 				38A16566FA6A3CFC2001EA6D /* Assets.xcassets */,
 				ED4CEDEDC3F54D084AEEE246 /* Info.plist */,
-				325D7FB1C92C74F08C38E861 /* Frameworks */,
 				F104D99C2A8C99F917D8D723 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -625,8 +570,6 @@
 			buildPhases = (
 				3CDCF850A7D71CEEB8177FF2 /* Sources */,
 				4BE68008ECE7A750163D5937 /* Resources */,
-				A4B41201A50380FB6078B13B /* Frameworks */,
-				11D3948FA0B9725750F5ECC3 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -649,6 +592,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3AC11871DCF9E44D4B53BDC9 = {
+						DevelopmentTeam = YOUR_TEAM_ID;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -727,7 +671,6 @@
 				50DCBAECEB49FC1A418BDFD7 /* IAPManager.swift in Sources */,
 				DD0444B9AED7D2FE9830872B /* InputValidator.swift in Sources */,
 				3597B3D9CB1CB5FCD9719C83 /* InviteCodeView.swift in Sources */,
-				CFC3682E99956534193EE806 /* JPushManager.swift in Sources */,
 				3F7531F6D59F3AB51A88D494 /* KeychainManager.swift in Sources */,
 				814E8E87BFCC10CA6961BC3E /* LegalDisclosureView.swift in Sources */,
 				723EA16436FD6B3130B8B96C /* LifeCheckStatusManager.swift in Sources */,
@@ -737,7 +680,6 @@
 				7DDC2EC8DF9500930CD03EF9 /* MembershipManager.swift in Sources */,
 				83A2BED9D3A609ED4B0DFBA4 /* MembershipView.swift in Sources */,
 				99A231DBA64F0A248FA87EF6 /* MemoryManager.swift in Sources */,
-				E56DE00018404FA70DAED378 /* MessageManager.swift in Sources */,
 				EA61EE224B460FE8D4E2909C /* Models.swift in Sources */,
 				A6D483DACEA7C842822CD386 /* NetworkUtils.swift in Sources */,
 				C13358898531240FDD25B65D /* NotificationManager.swift in Sources */,
@@ -830,12 +772,6 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_STRING_CATALOGS = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers",
-				);
 				INFOPLIST_FILE = Info.plist;
 				IOS_DEPLOYMENT_TARGET = 15.0;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -852,7 +788,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "终活-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_TREAT_AS_ERROR_CONCURRENCY_VIOLATIONS = NO;
@@ -917,12 +852,6 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_STRING_CATALOGS = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64/Headers",
-					"$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers",
-				);
 				INFOPLIST_FILE = Info.plist;
 				IOS_DEPLOYMENT_TARGET = 15.0;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -940,7 +869,6 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "终活-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_TREAT_AS_ERROR_CONCURRENCY_VIOLATIONS = NO;
@@ -954,11 +882,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 8YCQA59YN7;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"jpush-ios-6.0.0-release/Lib/JPushSDKLib\"",
-				);
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -974,11 +897,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 8YCQA59YN7;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"jpush-ios-6.0.0-release/Lib/JPushSDKLib\"",
-				);
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

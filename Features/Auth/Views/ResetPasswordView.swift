@@ -13,16 +13,15 @@ struct ResetPasswordView: View {
     @Binding var isPresented: Bool
     
     @State private var phone = ""
-    @State private var verifyCode = ""
     @State private var newPassword = ""
     @State private var confirmPassword = ""
     @State private var isLoading = false
     @State private var showingError = false
     @State private var errorMessage = ""
-    @State private var countdown = 0
-    @State private var timer: Timer?
     @State private var isSuccess = false
-    @State private var codeSent = false
+    @State private var captchaQuestion = ""
+    @State private var captchaAnswer = ""
+    @State private var captchaInput = ""
     
     // MARK: - 辅助方法
     
@@ -33,16 +32,16 @@ struct ResetPasswordView: View {
         return predicate.evaluate(with: phone)
     }
     
-    /// 启动倒计时
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            if countdown > 0 {
-                countdown -= 1
-            } else {
-                timer?.invalidate()
-            }
-        }
+    private func generateCaptcha() {
+        let left = Int.random(in: 1...9)
+        let right = Int.random(in: 1...9)
+        captchaQuestion = "\(left) + \(right) = ?"
+        captchaAnswer = "\(left + right)"
+        captchaInput = ""
+    }
+
+    private func validateCaptcha() -> Bool {
+        captchaInput.trimmingCharacters(in: .whitespacesAndNewlines) == captchaAnswer
     }
     
     // MARK: - 重置密码逻辑
@@ -64,14 +63,14 @@ struct ResetPasswordView: View {
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
             
-            guard verifyCode.count == 6 else {
-                throw NSError(domain: "请输入 6 位验证码", code: -1)
+            guard validateCaptcha() else {
+                throw NSError(domain: "验证码错误", code: -1)
             }
             
             // 调用重置密码 API
             let mutation = """
-            mutation($phone: String!, $verifyCode: String!, $newPassword: String!) {
-                resetPassword(phone: $phone, verifyCode: $verifyCode, newPassword: $newPassword) {
+            mutation($phone: String!, $newPassword: String!) {
+                resetPassword(phone: $phone, newPassword: $newPassword) {
                     success
                     message
                 }
@@ -80,7 +79,6 @@ struct ResetPasswordView: View {
             
             let variables: [String: Any] = [
                 "phone": phone,
-                "verifyCode": verifyCode,
                 "newPassword": newPassword
             ]
             
@@ -246,19 +244,25 @@ struct ResetPasswordView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                         .font(.system(size: 18, weight: .medium))
-                    
-                    HStack {
-                        TextField("验证码", text: $verifyCode)
+
+                    HStack(spacing: 12) {
+                        TextField("验证码", text: $captchaInput)
                             .textFieldStyle(CustomTextFieldStyle())
-                            .keyboardType(.numberPad)
+                            .keyboardType(.default)
                             .font(.system(size: 18, weight: .medium))
                         
-                        Button(action: requestVerifyCode) {
-                            Text(countdown > 0 ? "\(countdown)s" : "获取验证码")
-                                .foregroundColor(countdown > 0 ? .gray : Color(hex: "AF52DE"))
+                        Button(action: generateCaptcha) {
+                            Text("换一题")
+                                .foregroundColor(Color(hex: "AF52DE"))
                                 .font(.system(size: 16))
                         }
-                        .disabled(countdown > 0 || phone.isEmpty)
+                    }
+
+                    HStack {
+                        Text("验证码题目：\(captchaQuestion)")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                        Spacer()
                     }
                     
                     SecureField("新密码（6 位以上）", text: $newPassword)
@@ -306,10 +310,15 @@ struct ResetPasswordView: View {
             .background(Color("BackgroundColor"))
             .navigationBarTitleDisplayMode(.inline)
             .onDisappear {
-                timer?.invalidate()
+                isLoading = false
             }
             .onTapGesture {
                 hideKeyboard()
+            }
+            .onAppear {
+                if captchaQuestion.isEmpty {
+                    generateCaptcha()
+                }
             }
         }
     }
@@ -320,67 +329,6 @@ struct ResetPasswordView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
-    private func requestVerifyCode() {
-        guard isValidPhone(phone) else {
-            errorMessage = "手机号格式错误"
-            showingError = true
-            return
-        }
-
-        // 调用发送验证码 API
-        Task {
-            await sendVerifyCode()
-        }
-    }
-    
-    private func sendVerifyCode() async {
-        isLoading = true
-        errorMessage = ""
-        
-        do {
-            let mutation = """
-            mutation($phone: String!) {
-                sendResetPasswordCode(phone: $phone) {
-                    success
-                    message
-                }
-            }
-            """
-            
-            let variables: [String: Any] = ["phone": phone]
-            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
-
-            if let data = response["data"] as? [String: Any],
-               let result = data["sendResetPasswordCode"] as? [String: Any],
-               let success = result["success"] as? Bool, success {
-                await MainActor.run {
-                    codeSent = true
-                    countdown = 60
-                    startTimer()
-                }
-            } else {
-                let message = authMessage(from: response, fallback: "发送验证码失败，请稍后重试")
-                await MainActor.run {
-                    countdown = 0
-                    timer?.invalidate()
-                    errorMessage = message
-                    showingError = true
-                }
-            }
-            
-            print("✅ 验证码已发送到 \(phone)")
-        } catch {
-            await MainActor.run {
-                countdown = 0
-                timer?.invalidate()
-                errorMessage = "发送验证码失败：\(error.localizedDescription)"
-                showingError = true
-            }
-            print("❌ 发送验证码失败：\(error)")
-        }
-        
-        await MainActor.run { isLoading = false }
-    }
 }
 
 #Preview {

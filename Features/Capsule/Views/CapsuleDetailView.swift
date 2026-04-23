@@ -12,13 +12,11 @@ import AVKit
 struct CapsuleDetailView: View {
     @ObservedObject var dataManager: DataManager
     let capsule: TimeCapsule
-    @State private var showingPlayer = false
-    @State private var player: AVPlayer?
     @State private var showingDeleteAlert = false
     @State private var showingEditView = false
-    @State private var isPlayerLoading = false  // ✅ 新增：播放器加载状态
     @State private var showingMediaError = false  // 媒体播放错误提示
     @State private var mediaErrorMessage = ""  // 错误信息
+    @State private var playbackItem: PlaybackItem?
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -51,25 +49,17 @@ struct CapsuleDetailView: View {
         }
         .navigationTitle("胶囊详情")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingPlayer) {
-            ZStack {
-                if let player = player {
-                    VideoPlayer(player: player)
-                        .ignoresSafeArea()
-                } else {
-                    VStack(spacing: 20) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(2)
-                        Text("正在加载播放器...")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black)
+        .sheet(item: $playbackItem) { item in
+            let player = AVPlayer(url: item.url)
+            VideoPlayer(player: player)
+                .ignoresSafeArea()
+                .background(Color.black)
+                .onAppear {
+                    player.play()
                 }
-            }
-            .background(Color.black)
+                .onDisappear {
+                    player.pause()
+                }
         }
         .sheet(isPresented: $showingEditView) {
             NavigationView {
@@ -368,14 +358,8 @@ struct CapsuleDetailView: View {
             showingMediaError = true
             return
         }
-        
-        // ✅ 先创建播放器，再展示 sheet，避免首次白屏/黑屏
-        let newPlayer = AVPlayer(url: fileURL)
-        newPlayer.automaticallyWaitsToMinimizeStalling = true
-        newPlayer.play()
-        player = newPlayer
-        isPlayerLoading = false
-        showingPlayer = true
+
+        playbackItem = PlaybackItem(url: fileURL)
         print("🎬 播放器已准备好：\(fileURL)")
     }
     
@@ -410,6 +394,11 @@ struct CapsuleDetailView: View {
         formatter.dateFormat = "yyyy 年 MM 月 dd 日"
         return formatter.string(from: date)
     }
+}
+
+private struct PlaybackItem: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 #Preview {

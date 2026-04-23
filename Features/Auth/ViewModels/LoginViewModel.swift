@@ -12,72 +12,15 @@ import SwiftUI
 final class LoginViewModel: ObservableObject {
     @Published var phone = ""
     @Published var password = ""
-    @Published var verifyCode = ""
-    @Published var loginType: String = "password"
     @Published var isLoading = false
     @Published var showingError = false
     @Published var errorMessage = ""
-    @Published var countdown = 0
-    @Published var showPassword = false
-
-    private var timer: Timer?
     private let userManager = UserManager.shared
-
-    deinit {
-        timer?.invalidate()
-    }
 
     func clearError() {
         if showingError {
             showingError = false
             errorMessage = ""
-        }
-    }
-
-    func toggleLoginType() {
-        loginType = loginType == "password" ? "verify_code" : "password"
-        password = ""
-        verifyCode = ""
-    }
-
-    func requestVerifyCode() async {
-        guard isValidPhone(phone) else {
-            presentAuthError("手机号格式错误")
-            return
-        }
-
-        do {
-            let mutation = """
-            mutation($phone: String!) {
-                sendLoginCode(phone: $phone) {
-                    success
-                    code
-                    message
-                }
-            }
-            """
-            let variables: [String: Any] = ["phone": phone]
-            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
-
-            if let data = response["data"] as? [String: Any],
-               let result = data["sendLoginCode"] as? [String: Any],
-               let success = result["success"] as? Bool, success {
-                let devCode = result["code"] as? String ?? ""
-                if !devCode.isEmpty {
-                    verifyCode = devCode
-                }
-                countdown = 60
-                startTimer()
-            } else {
-                let message = authMessage(from: response, fallback: "发送验证码失败，请稍后重试")
-                countdown = 0
-                timer?.invalidate()
-                presentAuthError(message)
-            }
-        } catch {
-            countdown = 0
-            timer?.invalidate()
-            handleAuthError(error, context: "发送验证码")
         }
     }
 
@@ -87,27 +30,16 @@ final class LoginViewModel: ObservableObject {
             return false
         }
 
-        if loginType == "password" {
-            guard !password.isEmpty else {
-                presentAuthError("请输入密码")
-                return false
-            }
-        } else {
-            guard !verifyCode.isEmpty else {
-                presentAuthError("请输入验证码")
-                return false
-            }
+        guard !password.isEmpty else {
+            presentAuthError("请输入密码")
+            return false
         }
 
         isLoading = true
         defer { isLoading = false }
 
         do {
-            if loginType == "password" {
-                return try await loginWithPassword()
-            } else {
-                return try await loginWithCode()
-            }
+            return try await loginWithPassword()
         } catch {
             handleAuthError(error, context: "登录")
             return false
@@ -132,30 +64,6 @@ final class LoginViewModel: ObservableObject {
         let variables: [String: Any] = [
             "phone": phone,
             "password": password
-        ]
-
-        let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
-        return await handleAuthSuccess(response)
-    }
-
-    private func loginWithCode() async throws -> Bool {
-        let mutation = """
-        mutation($phone: String!, $code: String!) {
-            verifyCodeLogin(phone: $phone, code: $code) {
-                success
-                token
-                user {
-                    id
-                    name
-                    phone
-                }
-            }
-        }
-        """
-
-        let variables: [String: Any] = [
-            "phone": phone,
-            "code": verifyCode
         ]
 
         let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -222,8 +130,7 @@ final class LoginViewModel: ObservableObject {
             return false
         }
 
-        let resultKey = loginType == "password" ? "login" : "verifyCodeLogin"
-        guard let loginData = data[resultKey] as? [String: Any] else {
+        guard let loginData = data["login"] as? [String: Any] else {
             presentAuthError(message)
             return false
         }
@@ -276,8 +183,7 @@ final class LoginViewModel: ObservableObject {
         }
 
         if let data = response["data"] as? [String: Any] {
-            let key = loginType == "password" ? "login" : "verifyCodeLogin"
-            if let result = data[key] as? [String: Any] {
+            if let result = data["login"] as? [String: Any] {
                 if let message = result["message"] as? String, !message.isEmpty {
                     return message
                 }
@@ -322,19 +228,5 @@ final class LoginViewModel: ObservableObject {
         let pattern = "^1[3-9]\\d{9}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
         return predicate.evaluate(with: phone)
-    }
-
-    private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self else { return }
-                if self.countdown > 0 {
-                    self.countdown -= 1
-                } else {
-                    self.timer?.invalidate()
-                }
-            }
-        }
     }
 }

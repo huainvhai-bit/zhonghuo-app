@@ -792,8 +792,10 @@ class MediaRecorder: NSObject, ObservableObject {
         self.videoOutput = videoOutput
         self.previewLayer = nil
 
-        // ✅ 在后台队列里配置 session，避免阻塞主线程
-        sessionQueue.async {
+        // ✅ 在后台队列里完成配置和启动，避免 beginConfiguration / startRunning 打架
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+
             captureSession.beginConfiguration()
             let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
 
@@ -802,7 +804,13 @@ class MediaRecorder: NSObject, ObservableObject {
                       let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
                     print("❌ 无法找到摄像头设备（前置=\(useFrontCamera)）")
                     captureSession.commitConfiguration()
-                    DispatchQueue.main.async { self.isConfiguringCamera = false }
+                    DispatchQueue.main.async {
+                        self.captureSession = nil
+                        self.videoOutput = nil
+                        self.previewLayer = nil
+                        self.isConfiguringCamera = false
+                        self.isCameraReady = false
+                    }
                     return
                 }
 
@@ -813,7 +821,13 @@ class MediaRecorder: NSObject, ObservableObject {
                       captureSession.canAddInput(audioInput) else {
                     print("❌ 无法初始化摄像头输入（前置=\(useFrontCamera)）")
                     captureSession.commitConfiguration()
-                    DispatchQueue.main.async { self.isConfiguringCamera = false }
+                    DispatchQueue.main.async {
+                        self.captureSession = nil
+                        self.videoOutput = nil
+                        self.previewLayer = nil
+                        self.isConfiguringCamera = false
+                        self.isCameraReady = false
+                    }
                     return
                 }
 
@@ -825,23 +839,27 @@ class MediaRecorder: NSObject, ObservableObject {
                 }
             } catch {
                 captureSession.commitConfiguration()
-                DispatchQueue.main.async { self.isConfiguringCamera = false }
+                DispatchQueue.main.async {
+                    self.captureSession = nil
+                    self.videoOutput = nil
+                    self.previewLayer = nil
+                    self.isConfiguringCamera = false
+                    self.isCameraReady = false
+                }
                 print("❌ 摄像头输入创建失败：\(error)")
                 return
             }
 
             captureSession.commitConfiguration()
-            self.sessionQueue.async { [weak self] in
-                guard let self = self else { return }
-                if !captureSession.isRunning {
-                    captureSession.startRunning()
-                }
-                DispatchQueue.main.async {
-                    self.isCameraReady = true
-                    self.isConfiguringCamera = false
-                }
-                print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
+            if !captureSession.isRunning {
+                captureSession.startRunning()
             }
+
+            DispatchQueue.main.async {
+                self.isCameraReady = true
+                self.isConfiguringCamera = false
+            }
+            print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
         }
     }
     
@@ -903,18 +921,16 @@ class MediaRecorder: NSObject, ObservableObject {
             }
             
             captureSession.commitConfiguration()
-            
-            self.sessionQueue.async { [weak self] in
-                guard let self = self else { return }
-                if !captureSession.isRunning {
-                    captureSession.startRunning()
-                }
-                DispatchQueue.main.async {
-                    self.isCameraReady = true
-                }
+            if !captureSession.isRunning {
+                captureSession.startRunning()
+            }
+
+            DispatchQueue.main.async {
+                self.isCameraReady = true
+                self.isConfiguringCamera = false
+            }
             print("📷 摄像头已切换（前置=\(useFront)）")
         }
-    }
     }
     
     func startRecording(type: RecordingType) {
@@ -999,22 +1015,22 @@ class MediaRecorder: NSObject, ObservableObject {
 
     /// 统一清理摄像头会话，避免下次进入时带着旧状态继续配置
     func cleanupCameraSession(stopRunning: Bool = true) {
-        if stopRunning, let session = captureSession, session.isRunning {
-            sessionQueue.sync {
-                if session.isRunning {
-                    session.stopRunning()
-                }
+        let session = captureSession
+        sessionQueue.async { [weak self] in
+            if stopRunning, let session = session, session.isRunning {
+                session.stopRunning()
+            }
+            DispatchQueue.main.async {
+                self?.captureSession = nil
+                self?.videoOutput = nil
+                self?.previewLayer = nil
+                self?.isCameraReady = false
+                self?.isConfiguringCamera = false
+                print("🧹 摄像头会话已清理")
             }
         }
-
-        captureSession = nil
-        videoOutput = nil
-        previewLayer = nil
-        isCameraReady = false
-        isConfiguringCamera = false
-
-        print("🧹 摄像头会话已清理")
     }
+
 }
 
 // MARK: - AVCaptureFileOutputRecordingDelegate

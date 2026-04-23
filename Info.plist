@@ -4,7 +4,6 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.zhonghuo.app.sms_notify</string>
 		<string>com.zhonghuo.app.refresh_notifications</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
@@ -89,7 +88,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
-		<string>remote-notification</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>

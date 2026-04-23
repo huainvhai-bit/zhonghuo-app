@@ -1261,23 +1261,14 @@ struct FamilyInfo: Decodable, Identifiable {
 extension GraphQLClient {
     /// 发送重置密码验证码
     func sendResetPasswordCode(phone: String) async throws -> [String: Any] {
-        let mutation = """
-        mutation($phone: String!) {
-            sendResetPasswordCode(phone: $phone) {
-                success
-                message
-            }
-        }
-        """
-        let variables: [String: Any] = ["phone": phone]
-        return try await self.query(mutation, variables: variables)
+        throw NSError(domain: "短信验证码功能已关闭", code: -1, userInfo: [NSLocalizedDescriptionKey: "短信验证码功能已关闭"])
     }
     
     /// 重置密码
-    func resetPassword(phone: String, verifyCode: String, newPassword: String) async throws -> [String: Any] {
+    func resetPassword(phone: String, newPassword: String) async throws -> [String: Any] {
         let mutation = """
-        mutation($phone: String!, $verifyCode: String!, $newPassword: String!) {
-            resetPassword(phone: $phone, verifyCode: $verifyCode, newPassword: $newPassword) {
+        mutation($phone: String!, $newPassword: String!) {
+            resetPassword(phone: $phone, newPassword: $newPassword) {
                 success
                 message
             }
@@ -1285,7 +1276,6 @@ extension GraphQLClient {
         """
         let variables: [String: Any] = [
             "phone": phone,
-            "verifyCode": verifyCode,
             "newPassword": newPassword
         ]
         return try await self.query(mutation, variables: variables)

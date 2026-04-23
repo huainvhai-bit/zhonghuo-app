@@ -309,9 +309,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await initializeAPIConfig()
         }
         
-        // ========== JPush 极光推送初始化 ==========
-        setupJPush()
-        
         // 请求通知权限
         NotificationManager.shared.requestPermission()
         
@@ -333,29 +330,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         Logger.shared.i("终活 App 启动完成")
         return true
-    }
-    
-    // MARK: - JPush 极光推送
-    private func setupJPush() {
-        // 初始化 JPush
-        JPushManager.shared.setup()
-        
-        // 设置别名（用户 ID）- 在 setup 中已设置代理，无需单独调用
-        // 如果需要重新设置别名，调用以下方法：
-        // JPushManager.shared.setAlias(userId: userId)
-        
-        // 监听登录状态变化，登录后设置别名
-        NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("UserDidLogin"),
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            if let userId = notification.userInfo?["userId"] as? String {
-                JPushManager.shared.setAlias(userId: userId)
-            }
-        }
-        
-        Logger.shared.i("JPush 极光推送初始化完成")
     }
     
     // MARK: - 定位权限检测
@@ -418,13 +392,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     // 后台任务注册（在 didFinishLaunchingWithOptions 之后立即注册）
     private func startBackgroundTasks() {
         if #available(iOS 13.0, *) {
-            BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.sms_notify", using: nil) { task in
-                guard let bgTask = task as? BGAppRefreshTask else {
-                    task.setTaskCompleted(success: false)
-                    return
-                }
-                self.handleBackgroundSmsTask(task: bgTask)
-            }
             BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.zhonghuo.app.refresh_notifications", using: nil) { task in
                 guard let bgTask = task as? BGAppRefreshTask else {
                     task.setTaskCompleted(success: false)
@@ -434,10 +401,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
             Logger.shared.i("后台任务已注册")
         }
-    }
-    
-    private func handleBackgroundSmsTask(task: BGAppRefreshTask) {
-        LifeCheckStatusManager.shared.handleBackgroundSmsTask(task: task)
     }
     
     private func handleNotificationRefresh(task: BGAppRefreshTask) {
@@ -454,15 +417,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     /// 收到通知时的处理（App 在后台）
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         Logger.shared.d("收到通知：\(notification.request.identifier)")
-        
-        // 如果是超时通知，且 App 在后台运行，尝试发送短信
-        if notification.request.identifier.contains("checkin_overdue") {
-            // App 在后台，可以尝试发送短信
-            Logger.shared.d("超时通知触发，准备发送短信...")
-            Task {
-                await LifeCheckStatusManager.shared.notifyGuardians()
-            }
-        }
         
         // 显示通知（横幅 + 声音）
         completionHandler([.banner, .sound])
@@ -527,40 +481,4 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
     }
     
-    // MARK: - APNs Token 处理
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        // JPush 处理 Token
-        JPushManager.shared.handleRemoteNotification(deviceToken: deviceToken)
-        
-        // 保存 Token 到服务器
-        let tokenString = deviceToken.reduce("") { $0 + String(format: "%02x", $1) }
-        Logger.shared.i("APNs Token: \(tokenString)")
-        
-        Task {
-            await uploadDeviceToken(tokenString)
-        }
-    }
-    
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        Logger.shared.e("注册推送失败：\(error.localizedDescription)")
-    }
-    
-    private func uploadDeviceToken(_ token: String) async {
-        guard !DataManager.apiURL.isEmpty else { return }
-        
-        do {
-            let mutation = """
-            mutation {
-                updateDeviceToken(token: "\(token)") {
-                    success
-                    message
-                }
-            }
-            """
-            let _ = try await APIClient.shared.query(mutation)
-            Logger.shared.i("设备 Token 上传成功")
-        } catch {
-            Logger.shared.e("设备 Token 上传失败：\(error)")
-        }
-    }
 }
