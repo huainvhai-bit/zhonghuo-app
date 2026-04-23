@@ -577,6 +577,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
     func performAutoSignIn() {
+        if currentUser == nil {
+            loadUser()
+        }
+
         // 🔴 防重复：5 分钟（300 秒）内不重复签到
         let now = Date()
         let autoSignInCooldown: TimeInterval = 300 // 5 分钟
@@ -628,12 +632,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let result = recordCheckIn(isAuto: true)
         if case .success = result {
             writeLog("✅ 自动签到成功！倒计时已重置为 \(intervalHours) 小时")
-            
-            // 📱 安排推送提醒（倒计时剩余 12 小时时开始提醒）
-            let newHoursRemaining = Double(intervalHours)
-            scheduleCheckInReminder(hoursRemaining: newHoursRemaining)
-            writeLog("🔔 已安排推送提醒：剩余 \(Int(newHoursRemaining)) 小时开始提醒")
-            
+
             // 🔄 通知 HomeStatusView 刷新倒计时
             NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
         } else {
@@ -643,6 +642,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func performAutoCheckIn() {
+        if currentUser == nil {
+            loadUser()
+        }
+
         // 🔴 防重复：5 分钟（300 秒）内不重复签到
         let now = Date()
         let autoSignInCooldown: TimeInterval = 300 // 5 分钟
@@ -714,6 +717,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
+        if currentUser == nil {
+            loadUser()
+        }
+
         // 🔴 防重复签到：5 分钟（300 秒）内不重复签到
         let now = Date()
         let autoCheckInCooldown: TimeInterval = 300 // 5 分钟

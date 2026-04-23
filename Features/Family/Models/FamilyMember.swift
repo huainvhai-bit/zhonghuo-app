@@ -18,6 +18,7 @@ struct FamilyMember: Identifiable, Codable {
     var relationship: String // 关系（配偶、父母等）
     var status: Status       // 关系状态
     var statusText: String   // 状态文本
+    var lastCheckInDate: Date? = nil  // 被守护端最后签到时间
     var createdAt: Date      // 创建时间
     var deviceInfo: DeviceInfo?  // 设备信息
     
@@ -40,6 +41,32 @@ struct FamilyMember: Identifiable, Codable {
     /// 是否已确认
     var isConfirmed: Bool {
         return status == .accepted
+    }
+
+    init(
+        id: String,
+        relationId: String,
+        name: String,
+        phone: String,
+        avatar: String,
+        relationship: String,
+        status: Status,
+        statusText: String,
+        lastCheckInDate: Date? = nil,
+        createdAt: Date,
+        deviceInfo: DeviceInfo? = nil
+    ) {
+        self.id = id
+        self.relationId = relationId
+        self.name = name
+        self.phone = phone
+        self.avatar = avatar
+        self.relationship = relationship
+        self.status = status
+        self.statusText = statusText
+        self.lastCheckInDate = lastCheckInDate
+        self.createdAt = createdAt
+        self.deviceInfo = deviceInfo
     }
 }
 

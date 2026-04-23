@@ -100,6 +100,8 @@ final class SettingsViewModel: ObservableObject {
             userManager.currentUser = currentUser
             _ = userManager.saveUser(currentUser)
         }
+
+        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
     }
 
     private func scheduleDeviceInfoUpload() {

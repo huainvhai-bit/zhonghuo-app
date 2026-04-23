@@ -43,7 +43,7 @@ class NotificationManager: ObservableObject {
             return
         }
         
-        // 取消所有现有提醒
+        // 取消所有现有签到提醒，避免误删其他业务通知
         cancelAllCheckInReminders()
         
         // 📱 优先使用后端配置，其次使用参数，最后使用默认值
@@ -153,7 +153,10 @@ class NotificationManager: ObservableObject {
     
     // MARK: - 取消提醒
     func cancelAllCheckInReminders() {
-        let identifiers = (0..<10).map { "checkin_reminder_\($0)" } + ["checkin_immediate"]
+        let identifiers = [
+            "checkin_first_reminder",
+            "checkin_immediate"
+        ] + (0..<10).map { "checkin_reminder_\($0)" } + (0..<10).map { "checkin_repeat_reminder_\($0)" } + (0..<5).map { "checkin_overdue_\($0 + 1)" }
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
         print("🗑️ 已取消所有签到提醒")
     }

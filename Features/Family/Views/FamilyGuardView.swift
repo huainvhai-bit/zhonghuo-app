@@ -447,6 +447,7 @@ struct FamilyGuardView: View {
                             relation
                             status
                             createdAt
+                            relatedUserLastCheckInDate
                         }
                         invited {
                             id
@@ -481,7 +482,8 @@ struct FamilyGuardView: View {
                                 relationship: member["relation"] as? String ?? "",
                                 status: .accepted,
                                 statusText: "已绑定",
-                                createdAt: Date(),
+                                lastCheckInDate: parseBackendDate(member["relatedUserLastCheckInDate"] as? String),
+                                createdAt: parseBackendDate(member["createdAt"] as? String) ?? Date(),
                                 deviceInfo: nil
                             )
                         }
@@ -586,6 +588,21 @@ struct FamilyGuardView: View {
         return ""
     }
 
+    private func parseBackendDate(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let date = formatter.date(from: value) {
+            return date
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        return isoFormatter.date(from: value)
+    }
+
     private func handleFamilyBindEntry(_ action: () -> Void) {
         if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
             showingUpgradeForFamily = true
@@ -650,6 +667,42 @@ struct FamilyGuardView: View {
         }
         
         showingError = true
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private func checkInStateText(for date: Date) -> String {
+        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
+        let elapsedHours = Date().timeIntervalSince(date) / 3600
+
+        if elapsedHours <= intervalHours {
+            return "签到正常"
+        } else if elapsedHours <= intervalHours + offlineHours {
+            return "已超时，等待用户打开 App"
+        } else {
+            return "严重超时"
+        }
+    }
+
+    private func checkInStateColor(for date: Date) -> Color {
+        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
+        let elapsedHours = Date().timeIntervalSince(date) / 3600
+
+        if elapsedHours <= intervalHours {
+            return .green
+        } else if elapsedHours <= intervalHours + offlineHours {
+            return .orange
+        } else {
+            return .red
+        }
     }
 }
 
@@ -846,6 +899,16 @@ struct FamilyMemberCard: View {
                     Text(member.phone)
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
+
+                    if let lastCheckInDate = member.lastCheckInDate {
+                        Text("最后签到：\(formatDate(lastCheckInDate))")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("最后签到：暂无记录")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 Spacer()
@@ -896,6 +959,20 @@ struct FamilyMemberCard: View {
                     }
                 }
             }
+
+            if let lastCheckInDate = member.lastCheckInDate {
+                Divider()
+
+                HStack {
+                    Text(checkInStateText(for: lastCheckInDate))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(checkInStateColor(for: lastCheckInDate))
+                    Spacer()
+                    Text(formatDate(lastCheckInDate))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .padding(16)
         .background(Color(.systemBackground))
@@ -907,6 +984,42 @@ struct FamilyMemberCard: View {
             Button("取消", role: .cancel) {}
         } message: {
             Text("确定要与 \(member.name) 解除家人关系吗？此操作不可恢复。")
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private func checkInStateText(for date: Date) -> String {
+        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
+        let elapsedHours = Date().timeIntervalSince(date) / 3600
+
+        if elapsedHours <= intervalHours {
+            return "签到正常"
+        } else if elapsedHours <= intervalHours + offlineHours {
+            return "已超时，等待用户打开 App"
+        } else {
+            return "严重超时"
+        }
+    }
+
+    private func checkInStateColor(for date: Date) -> Color {
+        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
+        let elapsedHours = Date().timeIntervalSince(date) / 3600
+
+        if elapsedHours <= intervalHours {
+            return .green
+        } else if elapsedHours <= intervalHours + offlineHours {
+            return .orange
+        } else {
+            return .red
         }
     }
     

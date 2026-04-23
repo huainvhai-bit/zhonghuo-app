@@ -19,6 +19,9 @@ final class HomeStatusViewModel: ObservableObject {
     func loadInitialData() async {
         guard !didLoadInitialData else { return }
         didLoadInitialData = true
+        if userManager.currentUser == nil {
+            userManager.loadUser()
+        }
         await dataManager.loadSystemConfig()
         await dataManager.loadReceivedCapsules()
     }
@@ -28,6 +31,10 @@ final class HomeStatusViewModel: ObservableObject {
         if isFamilyMode {
             print("👨‍👩‍👧 家人模式：跳过自动签到")
             return
+        }
+
+        if userManager.currentUser == nil {
+            userManager.loadUser()
         }
 
         guard userManager.isLoggedIn else {
@@ -63,6 +70,7 @@ final class HomeStatusViewModel: ObservableObject {
         print("   - recordCheckIn 结果：\(result)")
 
         dataManager.lastCheckInDate = userManager.lastCheckInDate
+        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
 
         print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
         print("📍 位置和数据已自动上传到服务器")
@@ -78,8 +86,6 @@ final class HomeStatusViewModel: ObservableObject {
         let seconds = status.hoursRemaining * 3600
         timerManager.updateSeconds(seconds)
         print("🔄 updateStatus: secondsRemaining=\(seconds), isSafe=\(isSafe)")
-
-        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: status.hoursRemaining)
 
         Task {
             await dataManager.recordLastActive(hoursRemaining: status.hoursRemaining)
@@ -132,10 +138,11 @@ final class HomeStatusViewModel: ObservableObject {
             return (true, 999)
         }
 
-        let hours = dataManager.settings.checkInInterval.hours
+        let hours = userManager.currentUser?.checkInInterval.hours ?? dataManager.settings.checkInInterval.hours
         let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
 
-        guard let lastCheckIn = dataManager.lastCheckInDate else {
+        let lastCheckIn = dataManager.lastCheckInDate ?? userManager.lastCheckInDate ?? userManager.currentUser?.lastCheckInDate
+        guard let lastCheckIn else {
             return (true, Double(hours))
         }
 

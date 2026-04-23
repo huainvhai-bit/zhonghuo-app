@@ -77,7 +77,7 @@ struct HomeStatusView: View {
                     viewModel.updateStatus(timerManager: timerManager)
                 }
                 
-                // ✅ 启动倒计时定时器（每秒递减）
+                // ✅ 启动倒计时定时器（基于绝对截止时间刷新）
                 // 注意：timerManager 是 @StateObject，当 secondsRemaining 变化时会自动触发视图更新
                 timerManager.start { }
                 
@@ -88,13 +88,6 @@ struct HomeStatusView: View {
                     }
                 }
                 
-                // 🔔 监听签到完成通知（刷新倒计时）
-                NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
-                    print("🔔 收到签到完成通知，刷新倒计时")
-                    Task { @MainActor in
-                        viewModel.updateStatus(timerManager: timerManager)
-                    }
-                }
             }
             .onDisappear {
                 // ✅ 修复：视图消失时停止 timer，但管理器保持单例状态
@@ -117,6 +110,13 @@ struct HomeStatusView: View {
                 print("🔔 收到家人模式切换通知，刷新首页状态")
                 Task { @MainActor in
                     viewModel.updateStatus(timerManager: timerManager)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CheckInDidComplete"))) { _ in
+                print("🔔 收到签到完成通知，刷新倒计时")
+                Task { @MainActor in
+                    viewModel.updateStatus(timerManager: timerManager)
+                    LifeCheckStatusManager.shared.scheduleCheckInNotifications()
                 }
             }
             // 隐藏的全局导航链接
@@ -708,8 +708,10 @@ class CountdownTimerManager: ObservableObject {
     
     @Published var secondsRemaining: Double = 0
     @Published var isRunning: Bool = false
+    @Published var deadline: Date?
     
     private var timer: Timer?
+    private var recalculateTimer: Timer?
     
     private init() {}
     
@@ -718,16 +720,17 @@ class CountdownTimerManager: ObservableObject {
         stop()
         
         isRunning = true
+        refreshRemaining()
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            self.refreshRemaining()
             if self.secondsRemaining > 0 {
-                self.secondsRemaining -= 1
                 onTick()
             }
         }
         
         // ✅ 添加定期重新计算功能（每60秒重新计算，确保与服务器同步）
-        Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
+        recalculateTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
             self.recalculateFromServer?()
         }
     }
@@ -738,11 +741,19 @@ class CountdownTimerManager: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        recalculateTimer?.invalidate()
+        recalculateTimer = nil
         isRunning = false
     }
     
     func updateSeconds(_ seconds: Double) {
-        secondsRemaining = seconds
+        secondsRemaining = max(0, seconds)
+        deadline = Date().addingTimeInterval(secondsRemaining)
+    }
+
+    func refreshRemaining() {
+        guard let deadline else { return }
+        secondsRemaining = max(0, deadline.timeIntervalSince(Date()))
     }
 }
 

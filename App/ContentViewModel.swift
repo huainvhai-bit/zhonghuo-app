@@ -66,10 +66,7 @@ final class ContentViewModel: ObservableObject {
 
             Task {
                 await checkLoginStatus()
-            }
-
-            if userManager.isLoggedIn {
-                Task {
+                if userManager.isLoggedIn {
                     userManager.performAutoSignIn()
                 }
             }

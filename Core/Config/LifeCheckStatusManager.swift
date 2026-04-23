@@ -39,10 +39,17 @@ class LifeCheckStatusManager: ObservableObject {
     @Published var lastCheckInDate: Date?
     @Published var checkInHistory: [CheckInRecord] = []
     
-    // ✅ 修复：从 DataManager 获取用户设置的签到间隔（而不是硬编码 48 小时）
+    // ✅ 修复：签到间隔以用户本地设置为准
     private var checkInInterval: TimeInterval {
-        let hours = DataManager.shared.systemConfig.checkinIntervalHours
+        let hours = currentCheckInIntervalHours()
         return hours * 3600
+    }
+
+    private func currentCheckInIntervalHours() -> Double {
+        if let currentUser = UserManager.shared.currentUser {
+            return currentUser.checkInInterval.hours
+        }
+        return DataManager.shared.settings.checkInInterval.hours
     }
     
     private init() {
@@ -60,6 +67,11 @@ class LifeCheckStatusManager: ObservableObject {
         // 1. 本地签到
         lastCheckInDate = Date()
         saveLastCheckInDate()
+        if var currentUser = UserManager.shared.currentUser {
+            currentUser.lastCheckInDate = lastCheckInDate
+            UserManager.shared.currentUser = currentUser
+            UserManager.shared.lastCheckInDate = lastCheckInDate
+        }
         
         // 记录签到历史
         let record = CheckInRecord(date: Date(), status: .manual)
@@ -78,8 +90,8 @@ class LifeCheckStatusManager: ObservableObject {
         }
         
         do {
-            // ✅ 修复：使用 DataManager 统一函数
-            let checkInInterval = DataManager.shared.systemConfig.checkinIntervalHours
+            // ✅ 修复：使用用户本地设置的签到间隔
+            let checkInIntervalHours = currentCheckInIntervalHours()
             
             // ✅ 获取当前位置
             var locationDict: [String: Any]?
@@ -92,10 +104,10 @@ class LifeCheckStatusManager: ObservableObject {
             }
             
             _ = try await DataManager.shared.checkIn(
-                checkInIntervalHours: Int(checkInInterval),
+                checkInIntervalHours: Int(checkInIntervalHours),
                 location: locationDict
             )
-            print("✅ 后端签到成功，签到间隔：\(checkInInterval) 小时")
+            print("✅ 后端签到成功，签到间隔：\(checkInIntervalHours) 小时")
         } catch {
             print("❌ 后端签到失败：\(error)")
         }
@@ -108,12 +120,15 @@ class LifeCheckStatusManager: ObservableObject {
     
     // MARK: - 状态更新
     func updateStatus() {
-        guard let lastCheckIn = lastCheckInDate else {
+        let effectiveLastCheckIn = lastCheckInDate ?? UserManager.shared.currentUser?.lastCheckInDate ?? UserManager.shared.lastCheckInDate
+        guard let lastCheckIn = effectiveLastCheckIn else {
             isSafe = false
             hoursRemaining = 0
             return
         }
-        
+
+        lastCheckInDate = lastCheckIn
+
         let elapsed = Date().timeIntervalSince(lastCheckIn)
         let remaining = checkInInterval - elapsed
         
@@ -152,6 +167,10 @@ class LifeCheckStatusManager: ObservableObject {
         if let timestamp = UserDefaults.standard.object(forKey: "lastCheckInDate") as? Date {
             lastCheckInDate = timestamp
         }
+
+        if lastCheckInDate == nil {
+            lastCheckInDate = UserManager.shared.currentUser?.lastCheckInDate ?? UserManager.shared.lastCheckInDate
+        }
         
         if let historyData = UserDefaults.standard.data(forKey: "checkInHistory") {
             if let history = try? JSONDecoder().decode([CheckInRecord].self, from: historyData) {
@@ -176,8 +195,8 @@ class LifeCheckStatusManager: ObservableObject {
             // 计算超时时长
             let hoursOverdue = -hoursRemaining
             
-            // 只在超时超过 24 小时后才通知（避免误报）
-            if hoursOverdue >= 24 {
+            // 超时后立即通知监护人
+            if hoursOverdue > 0 {
                 print("⚠️ 用户已超时\(Int(hoursOverdue))小时未签到，需要通知监护人")
                 
                 // 异步通知监护人
@@ -253,18 +272,25 @@ class LifeCheckStatusManager: ObservableObject {
     func scheduleCheckInNotifications() {
         print("📅 设置签到提醒通知流程...")
         
-        // 取消之前的通知
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-        
-        guard let lastCheckIn = UserManager.shared.currentUser?.lastCheckInDate else {
+        // 取消之前的签到通知，避免误删胶囊/遗嘱等其他功能通知
+        cancelAllCheckInNotifications()
+
+        if UserManager.shared.currentUser == nil {
+            UserManager.shared.loadUser()
+        }
+
+        guard let lastCheckIn = lastCheckInDate ?? UserManager.shared.currentUser?.lastCheckInDate ?? UserManager.shared.lastCheckInDate else {
             print("⚠️ 无上次签到时间，无法设置通知")
             return
         }
+
+        lastCheckInDate = lastCheckIn
+        saveLastCheckInDate()
         
         let now = Date()
         
-        // ✅ 修复：使用用户设置的签到间隔（从 DataManager 获取）
-        let checkInIntervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+        // ✅ 修复：使用用户设置的签到间隔（本地优先）
+        let checkInIntervalHours = currentCheckInIntervalHours()
         let checkInIntervalSeconds = checkInIntervalHours * 3600
         let nextCheckInTime = lastCheckIn.addingTimeInterval(TimeInterval(checkInIntervalSeconds))
         
@@ -337,7 +363,7 @@ class LifeCheckStatusManager: ObservableObject {
     
     /// 设置超时通知（倒计时结束后）
     private func scheduleOverdueNotifications(after deadline: Date) {
-        let overduePushIntervalHours = DataManager.shared.systemConfig.checkinReminderIntervalHours
+        let overduePushIntervalHours = DataManager.shared.systemConfig.overduePushIntervalHours
         let intervalSeconds = overduePushIntervalHours * 3600
         var currentTime = deadline.addingTimeInterval(TimeInterval(intervalSeconds))
         var notificationCount = 1
@@ -403,6 +429,15 @@ class LifeCheckStatusManager: ObservableObject {
                 print("✅ 通知已设置 [\(identifier)]：\(fireDate)")
             }
         }
+    }
+
+    private func cancelAllCheckInNotifications() {
+        let identifiers = [
+            "checkin_first_reminder",
+            "checkin_immediate"
+        ] + (0..<10).map { "checkin_repeat_reminder_\($0)" } + (0..<5).map { "checkin_overdue_\($0 + 1)" } + (0..<10).map { "checkin_reminder_\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)
+        print("🗑️ 已取消所有签到提醒")
     }
     
     /// 通知所有监护人
