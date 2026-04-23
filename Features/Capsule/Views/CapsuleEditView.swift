@@ -509,6 +509,9 @@ struct CapsuleMediaRecorderView: View {
         }
         .onDisappear {
             timer?.invalidate()
+            if recorder.isRecording {
+                recorder.stopRecording()
+            }
         }
     }
     
@@ -616,10 +619,11 @@ struct CapsuleMediaRecorderView: View {
                     // 内圈
                     Circle()
                         .fill(recorder.isRecording ? Color.red : Color.white)
-                        .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
+                    .frame(width: recorder.isRecording ? 32 : 64, height: recorder.isRecording ? 32 : 64)
                         .animation(.easeInOut(duration: 0.2), value: recorder.isRecording)
                 }
             }
+            .disabled(selectedType == .video && !recorder.isCameraReady)
             
             Text(recorder.isRecording ? "点击停止" : "长按录制")
                 .font(.system(size: 14))
@@ -630,12 +634,18 @@ struct CapsuleMediaRecorderView: View {
     // MARK: - 切换摄像头
     private func switchCamera() {
         useFrontCamera.toggle()
+        recorder.isCameraReady = false
         recorder.switchCamera(useFront: useFrontCamera)
         print("📷 切换到\(useFrontCamera ? "前置" : "后置")摄像头")
     }
     
     private func startRecording() {
         print("🎥 开始录制，类型：\(selectedType)")
+
+        if selectedType == .video && !recorder.isCameraReady {
+            print("🎥 摄像头尚未准备完成，忽略录制请求")
+            return
+        }
         
         // ✅ 检查权限
         if selectedType == .video {
@@ -725,11 +735,13 @@ class MediaRecorder: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var recordingURL: URL?
     @Published var captureSession: AVCaptureSession?  // ✅ 公开 captureSession 用于预览
+    @Published var isCameraReady = false
     private var audioRecorder: AVAudioRecorder?
     private var videoOutput: AVCaptureMovieFileOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private let sessionQueue = DispatchQueue(label: "com.zhonghuo.capsule.camera")
     private var isViewDismissed = false  // ✅ 标记视图是否已 dismiss
+    private var isConfiguringCamera = false
     
     // ✅ 新增：视频录制完成回调（解决异步时序问题）
     var onVideoRecordingComplete: ((URL) -> Void)?
@@ -755,49 +767,78 @@ class MediaRecorder: NSObject, ObservableObject {
     
     // ✅ Bug 1 修复：初始化摄像头（在视图出现时调用，支持前后切换）
     func setupCameraForVideo(useFrontCamera: Bool = true) {
-        if let captureSession = captureSession {
-            if !captureSession.isRunning {
-                sessionQueue.async {
-                    captureSession.startRunning()
-                    print("🎥 摄像头会话已重新启动")
-                }
-            }
+        if isConfiguringCamera {
+            print("🎥 摄像头正在配置中，跳过重复初始化")
             return
+        }
+
+        if let captureSession = captureSession {
+            if captureSession.isRunning {
+                isCameraReady = true
+                return
+            }
         }
 
         let captureSession = AVCaptureSession()
         captureSession.sessionPreset = .high
         let videoOutput = AVCaptureMovieFileOutput()
 
+        isConfiguringCamera = true
+        isCameraReady = false
         self.captureSession = captureSession
         self.videoOutput = videoOutput
         self.previewLayer = nil
 
-        // ✅ 在后台队列里配置并启动 session，避免阻塞主线程
+        // ✅ 在后台队列里配置 session，避免阻塞主线程
         sessionQueue.async {
             captureSession.beginConfiguration()
-            defer { captureSession.commitConfiguration() }
-
             let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
-                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
-                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-                  captureSession.canAddInput(videoInput),
-                  captureSession.canAddInput(audioInput) else {
-                print("❌ 无法初始化摄像头（前置=\(useFrontCamera)）")
+
+            do {
+                guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
+                      let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
+                    print("❌ 无法找到摄像头设备（前置=\(useFrontCamera)）")
+                    captureSession.commitConfiguration()
+                    DispatchQueue.main.async { self.isConfiguringCamera = false }
+                    return
+                }
+
+                let videoInput = try AVCaptureDeviceInput(device: videoDevice)
+                let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+
+                guard captureSession.canAddInput(videoInput),
+                      captureSession.canAddInput(audioInput) else {
+                    print("❌ 无法初始化摄像头输入（前置=\(useFrontCamera)）")
+                    captureSession.commitConfiguration()
+                    DispatchQueue.main.async { self.isConfiguringCamera = false }
+                    return
+                }
+
+                captureSession.addInput(videoInput)
+                captureSession.addInput(audioInput)
+
+                if captureSession.canAddOutput(videoOutput) {
+                    captureSession.addOutput(videoOutput)
+                }
+            } catch {
+                captureSession.commitConfiguration()
+                DispatchQueue.main.async { self.isConfiguringCamera = false }
+                print("❌ 摄像头输入创建失败：\(error)")
                 return
             }
 
-            captureSession.addInput(videoInput)
-            captureSession.addInput(audioInput)
-
-            if captureSession.canAddOutput(videoOutput) {
-                captureSession.addOutput(videoOutput)
+            captureSession.commitConfiguration()
+            self.sessionQueue.async { [weak self] in
+                guard let self = self else { return }
+                if !captureSession.isRunning {
+                    captureSession.startRunning()
+                }
+                DispatchQueue.main.async {
+                    self.isCameraReady = true
+                    self.isConfiguringCamera = false
+                }
+                print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
             }
-
-            captureSession.startRunning()
-            print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
         }
     }
     
@@ -823,31 +864,48 @@ class MediaRecorder: NSObject, ObservableObject {
                 captureSession.stopRunning()
             }
             
+            captureSession.beginConfiguration()
+
             // 移除所有输入
             captureSession.inputs.forEach { captureSession.removeInput($0) }
             
             // 获取新摄像头
             let cameraPosition: AVCaptureDevice.Position = useFront ? .front : .back
             guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
-                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
-                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice) else {
-                print("❌ 无法获取摄像头（前置=\(useFront)）")
+                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
+                captureSession.commitConfiguration()
+                print("❌ 无法获取摄像头设备（前置=\(useFront)）")
+                return
+            }
+
+            do {
+                let videoInput = try AVCaptureDeviceInput(device: videoDevice)
+                let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+
+                if captureSession.canAddInput(videoInput) {
+                    captureSession.addInput(videoInput)
+                }
+                if captureSession.canAddInput(audioInput) {
+                    captureSession.addInput(audioInput)
+                }
+            } catch {
+                captureSession.commitConfiguration()
+                print("❌ 切换摄像头输入失败：\(error)")
                 return
             }
             
-            // 添加新输入
-            if captureSession.canAddInput(videoInput) {
-                captureSession.addInput(videoInput)
-            }
-            if captureSession.canAddInput(audioInput) {
-                captureSession.addInput(audioInput)
-            }
+            captureSession.commitConfiguration()
             
-            // 重新启动 session
-            captureSession.startRunning()
-            
-            print("📷 摄像头已切换（前置=\(useFront)）")
+            self.sessionQueue.async { [weak self] in
+                guard let self = self else { return }
+                if !captureSession.isRunning {
+                    captureSession.startRunning()
+                }
+                DispatchQueue.main.async {
+                    self.isCameraReady = true
+                }
+                print("📷 摄像头已切换（前置=\(useFront)）")
+            }
         }
     }
     
