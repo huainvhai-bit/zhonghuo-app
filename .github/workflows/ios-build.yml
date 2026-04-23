@@ -54,7 +54,7 @@ jobs:
         echo "✅ 已启动 App（如果模拟器可用）"
     
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ZhonghuoApp
         path: ~/Library/Developer/Xcode/DerivedData/终活-*/Build/Products/Debug-iphonesimulator/终活.app
