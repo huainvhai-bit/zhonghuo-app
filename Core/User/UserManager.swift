@@ -880,7 +880,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 🗑️ 清除 Keychain 中的 Token（永久登录数据）
         KeychainManager.shared.clearAll()
         print("   ✅ 已清除所有登录数据")
-        
+
+        NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)
+
         print("   currentUser: nil")
         print("   isLoggedIn: \(self.isLoggedIn)")
         print("   lastCheckInDate: nil")

@@ -24,7 +24,7 @@ struct ContentView: View {
                 if viewModel.isCheckingAuth {
                     // 显示加载界面
                     LoadingView()
-                } else if viewModel.forceLogout || !UserManager.shared.isLoggedIn {
+                } else if viewModel.forceLogout || !viewModel.hasPersistentSession {
                     LoginView()
                 } else {
                     mainTabView

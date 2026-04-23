@@ -30,6 +30,7 @@ final class ContentViewModel: ObservableObject {
     @Published var isForceUpdate = false
     @Published var isMaintenanceMode = false
     @Published var maintenanceMessage = "系统维护中，请稍后再试"
+    @Published var hasPersistentSession = false
 
     private let dataManager = DataManager.shared
     private let userManager = UserManager.shared
@@ -47,6 +48,7 @@ final class ContentViewModel: ObservableObject {
         didStart = true
 
         registerObservers()
+        syncPersistentSessionState()
 
         Task {
             await checkMaintenanceMode()
@@ -60,6 +62,7 @@ final class ContentViewModel: ObservableObject {
     func handleScenePhaseChange(_ newPhase: ScenePhase) {
         if newPhase == .active {
             NotificationCenter.default.post(name: NSNotification.Name("SceneDidBecomeActive"), object: nil)
+            syncPersistentSessionState()
 
             Task {
                 await checkLoginStatus()
@@ -93,6 +96,7 @@ final class ContentViewModel: ObservableObject {
     }
 
     func handleUserDidLogin() {
+        syncPersistentSessionState()
         Task {
             await checkLoginStatus()
         }
@@ -100,6 +104,13 @@ final class ContentViewModel: ObservableObject {
 
     func handleForceLogout() {
         forceLogout = true
+        hasPersistentSession = false
+        isCheckingAuth = false
+    }
+
+    func handleUserDidLogout() {
+        forceLogout = true
+        hasPersistentSession = false
         isCheckingAuth = false
     }
 
@@ -124,21 +135,18 @@ final class ContentViewModel: ObservableObject {
         forceLogout = false
         userManager.loadUser()
         let hasToken = KeychainManager.shared.getToken() != nil
-        let isLoggedIn = userManager.isLoggedIn || hasToken
+        hasPersistentSession = hasToken
 
-        if isLoggedIn {
+        if hasToken {
             let validationResult = await validateToken()
             if validationResult == .unauthorized {
                 userManager.logout()
+                hasPersistentSession = false
                 isCheckingAuth = false
                 return
             }
 
-            if validationResult == .networkError || validationResult == .serverError {
-                forceLogout = false
-            } else {
-                forceLogout = false
-            }
+            forceLogout = false
         }
 
         isCheckingAuth = false
@@ -185,7 +193,7 @@ final class ContentViewModel: ObservableObject {
                     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                         if let responseString = String(data: data, encoding: .utf8),
                            (responseString.contains("Parse error") || responseString.contains("Fatal error") || responseString.contains("Warning")) {
-                            return .unauthorized
+                            return .serverError
                         }
                         return .serverError
                     }
@@ -195,15 +203,26 @@ final class ContentViewModel: ObservableObject {
                        let userId = user["id"] as? String {
                         print("✅ validateToken: userId=\(userId)")
                         return .success
+                    } else if let responseString = String(data: data, encoding: .utf8),
+                              responseString.contains("未授权") || responseString.contains("账号不存在") || responseString.contains("登录已过期") {
+                        return .unauthorized
                     } else if let errors = json["errors"] as? [[String: Any]] {
                         print("❌ validateToken: GraphQL errors: \(errors)")
-                        return .unauthorized
+                        let errorText = errors.compactMap { $0["message"] as? String }.joined(separator: " | ")
+                        if errorText.contains("未授权") || errorText.contains("账号不存在") || errorText.contains("登录已过期") {
+                            return .unauthorized
+                        }
+                        return .serverError
                     } else {
                         return .serverError
                     }
-                case 401, 404, 500, 502, 503, 504:
+                case 401, 403:
                     return .unauthorized
-                case 400, 403, 405, 408, 429:
+                case 404:
+                    return .serverError
+                case 500, 502, 503, 504:
+                    return .serverError
+                case 400, 405, 408, 429:
                     return .networkError
                 default:
                     return .serverError
@@ -227,6 +246,14 @@ final class ContentViewModel: ObservableObject {
             NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
                     self?.handleForceLogout()
+                }
+            }
+        )
+
+        observers.append(
+            NotificationCenter.default.addObserver(forName: NSNotification.Name("UserDidLogout"), object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.handleUserDidLogout()
                 }
             }
         )
@@ -263,6 +290,10 @@ final class ContentViewModel: ObservableObject {
                 self?.openPendingUpdateIfNeeded()
             }
         }
+    }
+
+    private func syncPersistentSessionState() {
+        hasPersistentSession = KeychainManager.shared.getToken() != nil
     }
 
     private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
