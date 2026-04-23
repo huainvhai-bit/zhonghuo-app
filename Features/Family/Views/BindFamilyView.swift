@@ -64,7 +64,7 @@ struct BindFamilyView: View {
                                 }
                             
                             // 扫码按钮
-                            Button(action: { showingScanner = true }) {
+                            Button(action: { handleScannerEntry() }) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 20))
                                     .foregroundColor(.indigo)
@@ -220,6 +220,15 @@ struct BindFamilyView: View {
         Task {
             await bindFamilyAsync()
         }
+    }
+
+    private func handleScannerEntry() {
+        let currentCount = DataManager.shared.familyMembers.count
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
+            showingUpgradeForFamily = true
+            return
+        }
+        showingScanner = true
     }
     
     @MainActor
