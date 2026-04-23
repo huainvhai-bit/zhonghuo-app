@@ -50,9 +50,8 @@ targets:
     sources:
       - path: App
       - path: Features
-      - path: Managers
+      - path: Core
       - path: Models
-      - path: Utils
       - path: Assets.xcassets
       - path: Info.plist
       - path: AppDelegate.swift
