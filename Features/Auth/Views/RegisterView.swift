@@ -23,6 +23,7 @@ struct RegisterView: View {
     @StateObject private var captchaService = AppCaptchaService(purpose: "register")
     
     @State private var name = ""
+    @State private var account = ""
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -44,8 +45,18 @@ struct RegisterView: View {
     
     // MARK: - 辅助方法
     
+    /// 验证账号格式
+    private func isValidAccount(_ account: String) -> Bool {
+        let pattern = "^[^\\s]{4,30}$"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+        let result = predicate.evaluate(with: account)
+        print("🔍 账号验证：\(account) -> \(result)")
+        return result
+    }
+
     /// 验证手机号格式
     private func isValidPhone(_ phone: String) -> Bool {
+        guard !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
         let pattern = "^1[3-9]\\d{9}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
         let result = predicate.evaluate(with: phone)
@@ -65,6 +76,13 @@ struct RegisterView: View {
         print("🔍 密码验证：长度已检查")
         return result
     }
+
+    private func clearError() {
+        if showingError {
+            showingError = false
+            errorMessage = ""
+        }
+    }
     
     // MARK: - 注册逻辑
     
@@ -80,7 +98,15 @@ struct RegisterView: View {
         
         do {
             // 验证输入
-            guard isValidPhone(phone) else {
+            let trimmedAccount = account.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard isValidAccount(trimmedAccount) else {
+                print("❌ 账号验证失败")
+                throw NSError(domain: "账号格式错误", code: -1)
+            }
+
+            guard isValidPhone(trimmedPhone) else {
                 print("❌ 手机号验证失败")
                 throw NSError(domain: "手机号格式错误", code: -1)
             }
@@ -109,12 +135,13 @@ struct RegisterView: View {
             
             // 调用注册 API
             let mutation = """
-            mutation($name: String!, $phone: String!, $password: String!, $captcha: String!, $captchaPurpose: String!, $securityQuestion: String!, $securityAnswer: String!) {
-                register(name: $name, phone: $phone, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
+            mutation($account: String!, $name: String!, $phone: String, $password: String!, $captcha: String!, $captchaPurpose: String!, $securityQuestion: String!, $securityAnswer: String!) {
+                register(account: $account, name: $name, phone: $phone, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                     success
                     token
                     user {
                         id
+                        account
                         name
                         phone
                     }
@@ -123,8 +150,9 @@ struct RegisterView: View {
             """
             
             let variables: [String: Any] = [
+                "account": trimmedAccount,
                 "name": name,
-                "phone": phone,
+                "phone": trimmedPhone.isEmpty ? NSNull() : trimmedPhone,
                 "password": password,
                 "captcha": captchaInput.trimmingCharacters(in: .whitespacesAndNewlines),
                 "captchaPurpose": "register",
@@ -146,7 +174,7 @@ struct RegisterView: View {
         let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
         print("🌐 注册请求 URL: \(baseURL)/api/graphql.php")
-        print("📦 请求数据：name=\(name), phone=\(phone)")
+        print("📦 请求数据：account=\(account), name=\(name), phone=\(phone)")
         
         guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
             print("❌ URL 无效：\(baseURL)/api/graphql.php")
@@ -239,6 +267,9 @@ struct RegisterView: View {
             if let userId = user["id"] as? String {
                 KeychainManager.shared.saveUserId(userId)
             }
+            if let account = user["account"] as? String, !account.isEmpty {
+                KeychainManager.shared.saveUserAccount(account)
+            }
             if let phone = user["phone"] as? String {
                 KeychainManager.shared.saveUserPhone(phone)
             }
@@ -270,6 +301,10 @@ struct RegisterView: View {
             // ✅ 优先使用错误码进行精确匹配
             if errorMsg.contains("PHONE_EXISTS:") {
                 self.errorMessage = "该手机号已注册，请直接登录"
+            } else if errorMsg.contains("ACCOUNT_EXISTS:") {
+                self.errorMessage = "该账号已注册，请直接登录"
+            } else if errorMsg.contains("账号格式") {
+                self.errorMessage = "账号格式错误，请输入 4-30 位非空白字符"
             } else if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
                 self.errorMessage = "账号已注册，请登录"
             } else if errorMsg.contains("手机号") || errorMsg.contains("手机号格式") {
@@ -311,157 +346,338 @@ struct RegisterView: View {
     // MARK: - 视图
     
     var body: some View {
-        VStack(spacing: 30) {
-            // Logo
-            VStack(spacing: 12) {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(Color(hex: "AF52DE"))
-                
-                Text("终活")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(Color(hex: "AF52DE"))
-                
-                Text("注册账号")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-            }
-            .padding(.top, 40)
-            
-            Spacer()
-            
-            // 注册表单
-            VStack(spacing: 20) {
-                TextField("姓名", text: $name)
-                    .textFieldStyle(CustomTextFieldStyle())
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .font(.system(size: 18, weight: .medium))
-                
-                TextField("手机号码", text: $phone)
-                    .textFieldStyle(CustomTextFieldStyle())
-                    .keyboardType(.phonePad)
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .font(.system(size: 18, weight: .medium))
-
-                HStack(spacing: 12) {
-                    TextField("验证码", text: $captchaInput)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 18, weight: .medium))
+        NavigationView {
+            if #available(iOS 16.0, *) {
+                ScrollView {
+                    VStack(spacing: 30) {
+                    // Logo
+                    VStack(spacing: 12) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                        
+                        Text("终活")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                        
+                        Text("注册账号")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.top, 40)
                     
-                    Button(action: {
-                        Task {
-                            await captchaService.loadCaptcha()
-                            captchaInput = ""
+                    // 注册表单
+                    VStack(spacing: 20) {
+                        TextField("姓名", text: $name)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))
+                        
+                        TextField("账号（4-30 位）", text: $account)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))
+                            .onChange(of: account) { _ in self.clearError() }
+                        
+                        TextField("手机号（选填）", text: $phone)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .keyboardType(.phonePad)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))
+                            .onChange(of: phone) { _ in self.clearError() }
+                        Text("如果你不想使用手机号，可以只填写账号。")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        HStack(spacing: 12) {
+                            TextField("验证码", text: $captchaInput)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            Button(action: {
+                                Task {
+                                    await captchaService.loadCaptcha()
+                                    captchaInput = ""
+                                }
+                            }) {
+                                Group {
+                                    if let image = captchaService.image {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 120, height: 44)
+                                            .cornerRadius(8)
+                                    } else if captchaService.isLoading {
+                                        ProgressView()
+                                            .frame(width: 120, height: 44)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color(.systemGray5))
+                                            .frame(width: 120, height: 44)
+                                            .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
                         }
-                    }) {
-                        Group {
-                            if let image = captchaService.image {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 120, height: 44)
-                                    .cornerRadius(8)
-                            } else if captchaService.isLoading {
-                                ProgressView()
-                                    .frame(width: 120, height: 44)
-                            } else {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(.systemGray5))
-                                    .frame(width: 120, height: 44)
-                                    .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+
+                        SecureField("设置密码（8 位以上）", text: $password)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+                        
+                        SecureField("确认密码", text: $confirmPassword)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("找回密码唯一方式")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.secondary)
+
+                            Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+
+                            Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                ForEach(securityQuestions, id: \.self) { question in
+                                    Text(question).tag(question)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            TextField("密保答案", text: $securityAnswer)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                        }
+                        .padding(.top, 4)
+                        
+                        Button(action: {
+                            print("🔴🔴🔴 立即注册按钮被点击！！！")
+                            Task { @MainActor in
+                                print("🔴 Task 开始执行")
+                                await register()
+                                print("🔴 Task 执行完成")
+                            }
+                        }, label: {
+                            Text("立即注册")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color(hex: "AF52DE"))
+                                .cornerRadius(12)
+                        })
+                        .contentShape(Rectangle())
+                        .disabled(false)
+                        .opacity(isLoading ? 0.5 : 1)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    // 切换到登录
+                    HStack {
+                        Text("已经有账号？")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                        
+                        Button(action: { isPresented = false }) {
+                            Text("立即登录")
+                                .foregroundColor(Color(hex: "AF52DE"))
+                                .font(.system(size: 16, weight: .bold))
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
+                }
+                    .frame(maxWidth: .infinity)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .alert(isPresented: $showingError) {
+                    Alert(
+                        title: Text("错误"),
+                        message: Text(errorMessage),
+                        dismissButton: .default(Text("确定"))
+                    )
+                }
+                .background(Color("BackgroundColor"))
+                .navigationBarTitleDisplayMode(.inline)
+                .task {
+                    if captchaService.image == nil {
+                        await captchaService.loadCaptcha()
+                    }
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 30) {
+                        // Logo
+                        VStack(spacing: 12) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text("终活")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text("注册账号")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.top, 40)
+                        
+                        // 注册表单
+                        VStack(spacing: 20) {
+                            TextField("姓名", text: $name)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            TextField("账号（4-30 位）", text: $account)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                                .onChange(of: account) { _ in self.clearError() }
+                            
+                            TextField("手机号（选填）", text: $phone)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .keyboardType(.phonePad)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                                .onChange(of: phone) { _ in self.clearError() }
+                            Text("如果你不想使用手机号，可以只填写账号。")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            HStack(spacing: 12) {
+                                TextField("验证码", text: $captchaInput)
+                                    .textFieldStyle(CustomTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .font(.system(size: 18, weight: .medium))
+                                
+                                Button(action: {
+                                    Task {
+                                        await captchaService.loadCaptcha()
+                                        captchaInput = ""
+                                    }
+                                }) {
+                                    Group {
+                                        if let image = captchaService.image {
+                                            Image(uiImage: image)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 120, height: 44)
+                                                .cornerRadius(8)
+                                        } else if captchaService.isLoading {
+                                            ProgressView()
+                                                .frame(width: 120, height: 44)
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color(.systemGray5))
+                                                .frame(width: 120, height: 44)
+                                                .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            SecureField("设置密码（8 位以上）", text: $password)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            SecureField("确认密码", text: $confirmPassword)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .font(.system(size: 18, weight: .medium))
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("找回密码唯一方式")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
+
+                                Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+
+                                Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                    ForEach(securityQuestions, id: \.self) { question in
+                                        Text(question).tag(question)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                TextField("密保答案", text: $securityAnswer)
+                                    .textFieldStyle(CustomTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .font(.system(size: 18, weight: .medium))
+                            }
+                            .padding(.top, 4)
+                            
+                            Button(action: {
+                                print("🔴🔴🔴 立即注册按钮被点击！！！")
+                                Task { @MainActor in
+                                    print("🔴 Task 开始执行")
+                                    await register()
+                                    print("🔴 Task 执行完成")
+                                }
+                            }, label: {
+                                Text("立即注册")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(Color(hex: "AF52DE"))
+                                    .cornerRadius(12)
+                            })
+                            .contentShape(Rectangle())
+                            .disabled(false)
+                            .opacity(isLoading ? 0.5 : 1)
+                        }
+                        .padding(.horizontal, 24)
+                        
+                        // 切换到登录
+                        HStack {
+                            Text("已经有账号？")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
+                            
+                            Button(action: { isPresented = false }) {
+                                Text("立即登录")
+                                    .foregroundColor(Color(hex: "AF52DE"))
+                                    .font(.system(size: 16, weight: .bold))
                             }
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 40)
                     }
-                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
                 }
-
-                SecureField("设置密码（8 位以上）", text: $password)
-                    .textFieldStyle(CustomTextFieldStyle())
-                    .font(.system(size: 18, weight: .medium))
-                
-                SecureField("确认密码", text: $confirmPassword)
-                    .textFieldStyle(CustomTextFieldStyle())
-                    .font(.system(size: 18, weight: .medium))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("找回密码唯一方式")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.secondary)
-
-                    Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-
-                    Picker("密保问题", selection: $selectedSecurityQuestion) {
-                        ForEach(securityQuestions, id: \.self) { question in
-                            Text(question).tag(question)
-                        }
+                .alert(isPresented: $showingError) {
+                    Alert(
+                        title: Text("错误"),
+                        message: Text(errorMessage),
+                        dismissButton: .default(Text("确定"))
+                    )
+                }
+                .background(Color("BackgroundColor"))
+                .navigationBarTitleDisplayMode(.inline)
+                .task {
+                    if captchaService.image == nil {
+                        await captchaService.loadCaptcha()
                     }
-                    .pickerStyle(.menu)
-
-                    TextField("密保答案", text: $securityAnswer)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 18, weight: .medium))
                 }
-                .padding(.top, 4)
-                
-                Button(action: {
-                    print("🔴🔴🔴 立即注册按钮被点击！！！")
-                    Task { @MainActor in
-                        print("🔴 Task 开始执行")
-                        await register()
-                        print("🔴 Task 执行完成")
-                    }
-                }, label: {
-                    Text("立即注册")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color(hex: "AF52DE"))
-                        .cornerRadius(12)
-                })
-                .contentShape(Rectangle())
-                .disabled(false)
-                .opacity(isLoading ? 0.5 : 1)
-            }
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            // 切换到登录
-            HStack {
-                Text("已经有账号？")
-                    .foregroundColor(.gray)
-                    .font(.system(size: 16))
-                
-                Button(action: { isPresented = false }) {
-                    Text("立即登录")
-                        .foregroundColor(Color(hex: "AF52DE"))
-                        .font(.system(size: 16, weight: .bold))
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 60)
-        }
-        .alert(isPresented: $showingError) {
-            Alert(
-                title: Text("错误"),
-                message: Text(errorMessage),
-                dismissButton: .default(Text("确定"))
-            )
-        }
-        .background(Color("BackgroundColor"))
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            if captchaService.image == nil {
-                await captchaService.loadCaptcha()
             }
         }
     }

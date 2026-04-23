@@ -626,15 +626,15 @@ class DataManager: ObservableObject {
     }
     
     /// 重置密码
-    func resetPassword(phone: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> Bool {
+    func resetPassword(identifier: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> Bool {
         guard !Self.apiURL.isEmpty else {
             print("❌ API URL 未设置")
             return false
         }
         
         let mutation = """
-        mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
-            resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
+        mutation($identifier: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+            resetPassword(identifier: $identifier, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                 success
                 message
             }
@@ -642,7 +642,7 @@ class DataManager: ObservableObject {
         """
         
         let variables: [String: Any] = [
-            "phone": phone,
+            "identifier": identifier,
             "newPassword": newPassword,
             "securityQuestion": securityQuestion,
             "securityAnswer": securityAnswer

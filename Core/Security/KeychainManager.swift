@@ -30,6 +30,7 @@ class KeychainManager {
     private let tokenExpirationKey = "zhonghuo_user_token_expiration" // Token 过期时间（Unix 时间戳）
     private let refreshTokenKey = "zhonghuo_user_refresh_token" // Refresh Token
     private let userIdKey = "zhonghuo_user_id"
+    private let userAccountKey = "zhonghuo_user_account"
     private let userPhoneKey = "zhonghuo_user_phone"
     
     // MARK: - 短信 API 密钥管理
@@ -147,7 +148,24 @@ class KeychainManager {
     func deleteUserId() {
         deleteItem(key: userIdKey)
     }
-    
+
+    // MARK: - 用户账号管理
+
+    /// 保存用户账号
+    func saveUserAccount(_ account: String) {
+        saveItem(key: userAccountKey, value: account)
+    }
+
+    /// 读取用户账号
+    func getUserAccount() -> String? {
+        return getItem(key: userAccountKey)
+    }
+
+    /// 删除用户账号
+    func deleteUserAccount() {
+        deleteItem(key: userAccountKey)
+    }
+
     // MARK: - 用户手机号管理
     
     /// 保存用户手机号
@@ -272,6 +290,7 @@ class KeychainManager {
         deleteToken()
         deleteRefreshToken()
         deleteUserId()
+        deleteUserAccount()
         deleteUserPhone()
         // 不清空短信 API 密钥（它们是配置，不是登录凭证）
         print("✅ Keychain: 所有数据已清空")
@@ -301,6 +320,7 @@ class KeychainManager {
         deleteToken()
         deleteRefreshToken()
         deleteUserId()
+        deleteUserAccount()
         deleteUserPhone()
         
         // 清空过期时间

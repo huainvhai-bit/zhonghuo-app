@@ -486,6 +486,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let user = User(
             id: UUID().uuidString,
             name: name,
+            loginAccount: nil,
             phone: phone,
             createdAt: Date(),
             checkInInterval: .twoDays,
@@ -558,6 +559,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 从 Keychain 读取 Token 并保存用户信息
         if let token = KeychainManager.shared.getToken() {
             KeychainManager.shared.saveUserId(user.id)
+            if let account = user.loginAccount, !account.isEmpty {
+                KeychainManager.shared.saveUserAccount(account)
+            }
             KeychainManager.shared.saveUserPhone(user.phone)
             print("🔐 Token 已保存到 Keychain（永久登录）")
         }
@@ -1170,7 +1174,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 // 🔍 强制打印 stats 原始数据
                 let statsRaw = userDict["stats"]
-                print("🔍 stats 原始数据：\(statsRaw ?? "nil")")
+                print("🔍 stats 原始数据：\(statsRaw.map { String(describing: $0) } ?? "nil")")
                 print("🔍 stats 类型：\(type(of: statsRaw))")
                 
                 if let stats = userDict["stats"] as? [String: Any] {
@@ -1204,6 +1208,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     // 🔧 修复：如果 currentUser 是 nil，创建新用户对象
                     if var currentUser = self.currentUser {
                         // 更新已存在的用户
+                        currentUser.loginAccount = userDict["account"] as? String ?? currentUser.loginAccount
                         currentUser.capsulesCount = localCapsulesCount
                         currentUser.willModulesCount = localWillModulesCount
                         currentUser.familyCount = localFamilyCount
@@ -1218,6 +1223,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         let user = User(
                             id: userId,
                             name: name,
+                            loginAccount: userDict["account"] as? String,
                             phone: phone,
                             createdAt: dateFormatter.date(from: createdAt) ?? Date(),
                             checkInInterval: .oneDay,  // 默认值
@@ -1305,6 +1311,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 // ✅ P0 修复 #3: 仅使用 Keychain 存储用户 ID（安全存储）
                 KeychainManager.shared.saveUserId(user.id)
+                if let account = user.loginAccount, !account.isEmpty {
+                    KeychainManager.shared.saveUserAccount(account)
+                }
+                if !user.phone.isEmpty {
+                    KeychainManager.shared.saveUserPhone(user.phone)
+                }
                 
                 print("✅ 用户已保存：\(user.name)")
                 print("   isLoggedIn: \(self.isLoggedIn)")

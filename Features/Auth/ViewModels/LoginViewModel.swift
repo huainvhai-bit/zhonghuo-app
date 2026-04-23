@@ -10,7 +10,7 @@ import SwiftUI
 
 @MainActor
 final class LoginViewModel: ObservableObject {
-    @Published var phone = ""
+    @Published var identifier = ""
     @Published var password = ""
     @Published var captchaInput = ""
     @Published var isLoading = false
@@ -26,8 +26,10 @@ final class LoginViewModel: ObservableObject {
     }
 
     func submitLogin() async -> Bool {
-        guard isValidPhone(phone) else {
-            presentAuthError("手机号格式错误")
+        let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        identifier = trimmedIdentifier
+        guard isValidIdentifier(trimmedIdentifier) else {
+            presentAuthError("请输入 4-30 位账号或有效手机号")
             return false
         }
 
@@ -53,22 +55,25 @@ final class LoginViewModel: ObservableObject {
     }
 
     private func loginWithPassword() async throws -> Bool {
+        let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let mutation = """
-        mutation($phone: String!, $password: String!, $captcha: String!, $captchaPurpose: String!) {
-            login(phone: $phone, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose) {
-                success
-                token
-                user {
-                    id
-                    name
-                    phone
+            mutation($identifier: String!, $password: String!, $captcha: String!, $captchaPurpose: String!) {
+                login(identifier: $identifier, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose) {
+                    success
+                    token
+                    user {
+                        id
+                        account
+                        name
+                        phone
+                    }
                 }
             }
         }
         """
 
         let variables: [String: Any] = [
-            "phone": phone,
+            "identifier": trimmedIdentifier,
             "password": password,
             "captcha": captchaInput.trimmingCharacters(in: .whitespacesAndNewlines),
             "captchaPurpose": "login"
@@ -168,6 +173,9 @@ final class LoginViewModel: ObservableObject {
         }
 
         KeychainManager.shared.saveUserId(userId)
+        if let account = user["account"] as? String, !account.isEmpty {
+            KeychainManager.shared.saveUserAccount(account)
+        }
         if let phone = user["phone"] as? String, !phone.isEmpty {
             KeychainManager.shared.saveUserPhone(phone)
         }
@@ -237,9 +245,16 @@ final class LoginViewModel: ObservableObject {
         showingError = true
     }
 
-    private func isValidPhone(_ phone: String) -> Bool {
-        let pattern = "^1[3-9]\\d{9}$"
-        let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
-        return predicate.evaluate(with: phone)
+    private func isValidIdentifier(_ identifier: String) -> Bool {
+        guard !identifier.isEmpty, identifier.count <= 30 else { return false }
+        if identifier.rangeOfCharacter(from: .whitespacesAndNewlines) != nil {
+            return false
+        }
+        let phonePattern = "^1[3-9]\\d{9}$"
+        let accountPattern = "^[^\\s]{4,30}$"
+        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phonePattern)
+        let accountPredicate = NSPredicate(format: "SELF MATCHES %@", accountPattern)
+        let result = phonePredicate.evaluate(with: identifier) || accountPredicate.evaluate(with: identifier)
+        return result
     }
 }

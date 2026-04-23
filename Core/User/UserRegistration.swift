@@ -40,6 +40,7 @@ class UserRegistration {
         let user = User(
             id: UUID().uuidString,
             name: name,
+            loginAccount: nil,
             phone: phone,
             createdAt: Date(),
             checkInInterval: .twoDays,

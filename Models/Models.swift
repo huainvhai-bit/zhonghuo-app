@@ -651,6 +651,7 @@ enum CheckInInterval: String, Codable, CaseIterable {
 struct User: Codable, Identifiable {
     var id: String
     var name: String
+    var loginAccount: String?
     var phone: String
     var createdAt: Date
     var checkInInterval: CheckInInterval
@@ -687,7 +688,7 @@ struct User: Codable, Identifiable {
     // 财产信息
     var propertyId: String?
     var bank: String?
-    var account: String?
+    var bankAccount: String?
     var stock: String?
     var fund: String?
     var carPlate: String?

@@ -22,20 +22,21 @@ class AuthManager: ObservableObject {
     
     /// 用户登录（GraphQL）
     /// - Parameters:
-    ///   - phone: 手机号
+    ///   - identifier: 账号或手机号
     ///   - password: 密码
     /// - Returns: 是否成功
-    func login(phone: String, password: String, captcha: String, captchaPurpose: String = "login") async -> Bool {
+    func login(identifier: String, password: String, captcha: String, captchaPurpose: String = "login") async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
             let query = """
             mutation {
-                login(phone: "\(phone)", password: "\(password)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)") {
+                login(identifier: "\(identifier)", password: "\(password)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)") {
                     token
                     user {
                         id
+                        account
                         name
                         phone
                     }
@@ -58,14 +59,19 @@ class AuthManager: ObservableObject {
             // 保存 Token 到 Keychain
             KeychainManager.shared.saveToken(token)
             KeychainManager.shared.saveUserId(userId)
-            KeychainManager.shared.saveUserPhone(phone)
+            if let account = userData["account"] as? String {
+                KeychainManager.shared.saveUserAccount(account)
+            }
+            if let phone = userData["phone"] as? String {
+                KeychainManager.shared.saveUserPhone(phone)
+            }
             
             // 更新状态
             isLoggedIn = true
             currentUser = name
             authToken = token
             
-            Logger.shared.i("登录成功：\(name) (\(phone))")
+            Logger.shared.i("登录成功：\(name) (\(identifier))")
             
             // 触发数据同步
             DataManager.shared.initializeAPIConfig()
@@ -83,21 +89,29 @@ class AuthManager: ObservableObject {
     
     /// 用户注册（GraphQL）
     /// - Parameters:
-    ///   - phone: 手机号
+    ///   - account: 账号
+    ///   - phone: 手机号（可选）
     ///   - password: 密码
     ///   - name: 用户名
     /// - Returns: 是否成功
-    func register(phone: String, password: String, name: String, captcha: String, securityQuestion: String, securityAnswer: String, captchaPurpose: String = "register") async -> Bool {
+    func register(account: String, phone: String?, password: String, name: String, captcha: String, securityQuestion: String, securityAnswer: String, captchaPurpose: String = "register") async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
+            let phoneField: String
+            if let phone, !phone.isEmpty {
+                phoneField = "\"\(phone)\""
+            } else {
+                phoneField = "null"
+            }
             let query = """
             mutation {
-                register(phone: "\(phone)", password: "\(password)", name: "\(name)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)", securityQuestion: "\(securityQuestion)", securityAnswer: "\(securityAnswer)") {
+                register(account: "\(account)", phone: \(phoneField), password: "\(password)", name: "\(name)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)", securityQuestion: "\(securityQuestion)", securityAnswer: "\(securityAnswer)") {
                     token
                     user {
                         id
+                        account
                         name
                         phone
                     }
@@ -119,6 +133,9 @@ class AuthManager: ObservableObject {
             if let userData = registerData["user"] as? [String: Any],
                let userId = userData["id"] as? String {
                 KeychainManager.shared.saveUserId(userId)
+                if let account = userData["account"] as? String {
+                    KeychainManager.shared.saveUserAccount(account)
+                }
                 if let phone = userData["phone"] as? String {
                     KeychainManager.shared.saveUserPhone(phone)
                 }
@@ -141,6 +158,7 @@ class AuthManager: ObservableObject {
         // 清除 Token
         KeychainManager.shared.deleteToken()
         KeychainManager.shared.deleteUserId()
+        KeychainManager.shared.deleteUserAccount()
         KeychainManager.shared.deleteUserPhone()
         
         // 清除本地用户文件
@@ -160,7 +178,7 @@ class AuthManager: ObservableObject {
         if let token = KeychainManager.shared.getToken(),
            let _ = KeychainManager.shared.getUserId() {
             isLoggedIn = true
-            currentUser = KeychainManager.shared.getUserPhone() // 临时使用手机号
+            currentUser = KeychainManager.shared.getUserAccount() ?? KeychainManager.shared.getUserPhone()
             authToken = token
             return true
         }

@@ -474,6 +474,12 @@ struct SettingsView: View {
     }
 
     private var displayUserPhone: String {
+        if let account = userManager.currentUser?.loginAccount, !account.isEmpty {
+            return account
+        }
+        if let account = KeychainManager.shared.getUserAccount(), !account.isEmpty {
+            return account
+        }
         if let phone = userManager.currentUser?.phone, !phone.isEmpty {
             return phone
         }

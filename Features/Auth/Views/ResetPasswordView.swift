@@ -12,7 +12,7 @@ struct ResetPasswordView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
     
-    @State private var phone = ""
+    @State private var identifier = ""
     @State private var selectedSecurityQuestion = Self.securityQuestions.first ?? ""
     @State private var securityAnswer = ""
     @State private var newPassword = ""
@@ -33,11 +33,13 @@ struct ResetPasswordView: View {
     
     // MARK: - 辅助方法
     
-    /// 验证手机号格式
-    private func isValidPhone(_ phone: String) -> Bool {
-        let pattern = "^1[3-9]\\d{9}$"
+    /// 验证账号或手机号
+    private func isValidIdentifier(_ identifier: String) -> Bool {
+        let trimmed = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let pattern = "^[^\\s]{4,30}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
-        return predicate.evaluate(with: phone)
+        return predicate.evaluate(with: trimmed)
     }
     
     // MARK: - 重置密码逻辑
@@ -47,8 +49,9 @@ struct ResetPasswordView: View {
         
         do {
             // 验证输入
-            guard isValidPhone(phone) else {
-                throw NSError(domain: "手机号格式错误", code: -1)
+            let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard isValidIdentifier(trimmedIdentifier) else {
+                throw NSError(domain: "账号或手机号格式错误", code: -1)
             }
             
             guard newPassword.count >= 6 else {
@@ -65,8 +68,8 @@ struct ResetPasswordView: View {
             
             // 调用重置密码 API
             let mutation = """
-            mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
-                resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
+            mutation($identifier: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+                resetPassword(identifier: $identifier, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                     success
                     message
                 }
@@ -74,7 +77,7 @@ struct ResetPasswordView: View {
             """
             
             let variables: [String: Any] = [
-                "phone": phone,
+                "identifier": trimmedIdentifier,
                 "newPassword": newPassword,
                 "securityQuestion": selectedSecurityQuestion,
                 "securityAnswer": securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -179,10 +182,12 @@ struct ResetPasswordView: View {
         
         let errorMsg = error.localizedDescription
         DispatchQueue.main.async {
-            if errorMsg.contains("密保") || errorMsg.contains("答案") {
+            if errorMsg.contains("ACCOUNT_NOT_FOUND:") || errorMsg.contains("不存在") {
+                self.errorMessage = "账号不存在，请先注册"
+            } else if errorMsg.contains("密保") || errorMsg.contains("答案") {
                 self.errorMessage = "密保问题或答案错误"
-            } else if errorMsg.contains("手机号") {
-                self.errorMessage = "手机号格式错误"
+            } else if errorMsg.contains("账号") || errorMsg.contains("手机号") {
+                self.errorMessage = "账号或手机号格式错误"
             } else if errorMsg.contains("密码") {
                 self.errorMessage = "密码至少 6 位"
             } else if errorMsg.contains("不一致") {
@@ -215,103 +220,203 @@ struct ResetPasswordView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
-                // Logo
-                VStack(spacing: 12) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(Color(hex: "AF52DE"))
+            if #available(iOS 16.0, *) {
+                ScrollView {
+                    VStack(spacing: 30) {
+                    // Logo
+                    VStack(spacing: 12) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                        
+                        Text("终活")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(Color(hex: "AF52DE"))
+                        
+                        Text("重置密码")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.top, 40)
                     
-                    Text("终活")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(Color(hex: "AF52DE"))
-                    
-                    Text("重置密码")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                }
-                .padding(.top, 40)
-                
-                Spacer()
-                
-                // 重置密码表单
-                VStack(spacing: 20) {
-                    TextField("手机号码", text: $phone)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.phonePad)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .font(.system(size: 18, weight: .medium))
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("忘记密码时的唯一找回方式")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
-
-                        Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-
-                        Picker("密保问题", selection: $selectedSecurityQuestion) {
-                            ForEach(securityQuestions, id: \.self) { question in
-                                Text(question).tag(question)
-                            }
-                        }
-                        .pickerStyle(.menu)
-
-                        TextField("密保答案", text: $securityAnswer)
+                    // 重置密码表单
+                    VStack(spacing: 20) {
+                        TextField("账号或手机号", text: $identifier)
                             .textFieldStyle(CustomTextFieldStyle())
+                            .keyboardType(.default)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                             .font(.system(size: 18, weight: .medium))
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("忘记密码时的唯一找回方式")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.secondary)
+
+                            Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+
+                            Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                ForEach(securityQuestions, id: \.self) { question in
+                                    Text(question).tag(question)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            TextField("密保答案", text: $securityAnswer)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                        }
+                        
+                        SecureField("新密码（6 位以上）", text: $newPassword)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+                        
+                        SecureField("确认新密码", text: $confirmPassword)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+                        
+                        Button(action: { Task { await resetPassword() } }) {
+                            Text("重置密码")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color(hex: "AF52DE"))
+                                .cornerRadius(12)
+                        }
+                        .disabled(isLoading)
+                        .opacity(isLoading ? 0.5 : 1)
+                    }
+                    .padding(.horizontal, 24)
+                    .alert(isPresented: $showingError) {
+                        Alert(
+                            title: Text("错误"),
+                            message: Text(errorMessage),
+                            dismissButton: .default(Text("确定"))
+                        )
                     }
                     
-                    SecureField("新密码（6 位以上）", text: $newPassword)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    SecureField("确认新密码", text: $confirmPassword)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .font(.system(size: 18, weight: .medium))
-                    
-                    Button(action: { Task { await resetPassword() } }) {
-                        Text("重置密码")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color(hex: "AF52DE"))
-                            .cornerRadius(12)
+                    // 返回登录
+                    HStack {
+                        Button(action: { isPresented = false }) {
+                            Text("返回登录")
+                                .foregroundColor(Color(hex: "AF52DE"))
+                                .font(.system(size: 16, weight: .bold))
+                        }
                     }
-                    .disabled(false)  // 🔓 临时解除限制
-                    .opacity(isLoading ? 0.5 : 1)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 24)
-                .alert(isPresented: $showingError) {
-                    Alert(
-                        title: Text("错误"),
-                        message: Text(errorMessage),
-                        dismissButton: .default(Text("确定"))
-                    )
+                    .frame(maxWidth: .infinity)
                 }
-                
-                Spacer()
-                
-                // 返回登录
-                HStack {
-                    Button(action: { isPresented = false }) {
-                        Text("返回登录")
-                            .foregroundColor(Color(hex: "AF52DE"))
-                            .font(.system(size: 16, weight: .bold))
+                .scrollDismissesKeyboard(.interactively)
+                .background(Color("BackgroundColor"))
+                .navigationBarTitleDisplayMode(.inline)
+                .onDisappear {
+                    isLoading = false
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 30) {
+                        // Logo
+                        VStack(spacing: 12) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text("终活")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text("重置密码")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.top, 40)
+                        
+                        // 重置密码表单
+                        VStack(spacing: 20) {
+                            TextField("账号或手机号", text: $identifier)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .keyboardType(.default)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("忘记密码时的唯一找回方式")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.secondary)
+
+                                Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+
+                                Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                    ForEach(securityQuestions, id: \.self) { question in
+                                        Text(question).tag(question)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+
+                                TextField("密保答案", text: $securityAnswer)
+                                    .textFieldStyle(CustomTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .font(.system(size: 18, weight: .medium))
+                            }
+                            
+                            SecureField("新密码（6 位以上）", text: $newPassword)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            SecureField("确认新密码", text: $confirmPassword)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            Button(action: { Task { await resetPassword() } }) {
+                                Text("重置密码")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(Color(hex: "AF52DE"))
+                                    .cornerRadius(12)
+                            }
+                            .disabled(isLoading)
+                            .opacity(isLoading ? 0.5 : 1)
+                        }
+                        .padding(.horizontal, 24)
+                        .alert(isPresented: $showingError) {
+                            Alert(
+                                title: Text("错误"),
+                                message: Text(errorMessage),
+                                dismissButton: .default(Text("确定"))
+                            )
+                        }
+                        
+                        // 返回登录
+                        HStack {
+                            Button(action: { isPresented = false }) {
+                                Text("返回登录")
+                                    .foregroundColor(Color(hex: "AF52DE"))
+                                    .font(.system(size: 16, weight: .bold))
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 40)
                     }
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 60)
-            }
-            .background(Color("BackgroundColor"))
-            .navigationBarTitleDisplayMode(.inline)
-            .onDisappear {
-                isLoading = false
+                .background(Color("BackgroundColor"))
+                .navigationBarTitleDisplayMode(.inline)
+                .onDisappear {
+                    isLoading = false
+                }
             }
         }
     }

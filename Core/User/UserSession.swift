@@ -77,12 +77,18 @@ class UserSession: ObservableObject {
             try data.write(to: userFileURL)
             
             // 在主线程修改 @Published 属性
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 self.currentUser = user
                 self.isLoggedIn = true
                 
                 // 保存到 Keychain
                 KeychainManager.shared.saveUserId(user.id)
+                if let account = user.loginAccount, !account.isEmpty {
+                    KeychainManager.shared.saveUserAccount(account)
+                }
+                if !user.phone.isEmpty {
+                    KeychainManager.shared.saveUserPhone(user.phone)
+                }
             }
             
             print("✅ 用户已保存：\(user.name)")
@@ -113,8 +119,11 @@ class UserSession: ObservableObject {
         print("✅ 用户登录成功：\(user.name), 手机号：\(user.phone)")
         
         // 从 Keychain 读取 Token 并保存用户信息
-        if let token = KeychainManager.shared.getToken() {
+        if KeychainManager.shared.getToken() != nil {
             KeychainManager.shared.saveUserId(user.id)
+            if let account = user.loginAccount, !account.isEmpty {
+                KeychainManager.shared.saveUserAccount(account)
+            }
             KeychainManager.shared.saveUserPhone(user.phone)
             print("🔐 Token 已保存到 Keychain（永久登录）")
         }
