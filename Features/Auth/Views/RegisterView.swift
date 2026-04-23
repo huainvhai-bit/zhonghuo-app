@@ -200,23 +200,17 @@ struct RegisterView: View {
             throw NSError(domain: "Invalid Response", code: -1)
         }
         
-        guard (200...299).contains(httpResponse.statusCode) else {
-            let message: String
-            switch httpResponse.statusCode {
-            case 401:
-                message = "当前账号无权限操作"
-            case 403:
-                message = "当前账号无权限操作"
-            case 500:
-                message = "服务器内部错误，请稍后重试"
-            case 503:
-                message = "服务器暂不可用，请稍后重试"
-            default:
-                message = "服务器返回 \(httpResponse.statusCode)"
-            }
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
+            let message = errors[0]["message"] as? String ?? "GraphQL Error"
             throw NSError(domain: message, code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
         }
-        
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = bodyErrorMessage(from: data, statusCode: httpResponse.statusCode, context: "注册")
+            throw NSError(domain: message, code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw NSError(domain: "JSON Parse Error", code: -1)
         }
@@ -341,6 +335,30 @@ struct RegisterView: View {
         }
 
         return fallback
+    }
+
+    private func bodyErrorMessage(from data: Data, statusCode: Int, context: String) -> String {
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let errors = json["errors"] as? [[String: Any]], let first = errors.first {
+                return first["message"] as? String ?? "\(context)失败，请稍后重试"
+            }
+            if let message = json["message"] as? String, !message.isEmpty {
+                return message
+            }
+        }
+
+        if let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !text.isEmpty {
+            return text
+        }
+
+        switch statusCode {
+        case 401: return "当前账号无权限操作"
+        case 403: return "当前账号无权限操作"
+        case 500: return "\(context)失败，请稍后重试"
+        case 503: return "服务器暂不可用，请稍后重试"
+        default: return "服务器返回 \(statusCode)"
+        }
     }
     
     // MARK: - 视图
