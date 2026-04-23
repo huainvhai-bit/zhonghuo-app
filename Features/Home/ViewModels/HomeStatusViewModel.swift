@@ -12,6 +12,7 @@ import SwiftUI
 final class HomeStatusViewModel: ObservableObject {
     @Published var isSafe: Bool = true
     private var didLoadInitialData = false
+    private var didRetryAutoCheckIn = false
 
     private let dataManager = DataManager.shared
     private let userManager = UserManager.shared
@@ -36,6 +37,20 @@ final class HomeStatusViewModel: ObservableObject {
         if userManager.currentUser == nil {
             userManager.loadUser()
         }
+
+        if userManager.currentUser == nil {
+            if !didRetryAutoCheckIn {
+                didRetryAutoCheckIn = true
+                print("⚠️ 自动签到：用户资料尚未就绪，稍后重试")
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    self.handleAutoCheckIn()
+                }
+            }
+            return
+        }
+
+        didRetryAutoCheckIn = false
 
         guard userManager.isLoggedIn else {
             print("⚠️ 自动签到：用户未登录")

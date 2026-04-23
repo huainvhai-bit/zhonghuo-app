@@ -512,6 +512,7 @@ struct CapsuleMediaRecorderView: View {
             if recorder.isRecording {
                 recorder.stopRecording()
             }
+            recorder.cleanupCameraSession()
         }
     }
     
@@ -713,6 +714,7 @@ struct CapsuleMediaRecorderView: View {
                 onRecordComplete(url)
             }
         }
+        recorder.cleanupCameraSession()
     }
     
     private func startTimer() {
@@ -777,6 +779,7 @@ class MediaRecorder: NSObject, ObservableObject {
                 isCameraReady = true
                 return
             }
+            cleanupCameraSession(stopRunning: false)
         }
 
         let captureSession = AVCaptureSession()
@@ -844,6 +847,11 @@ class MediaRecorder: NSObject, ObservableObject {
     
     // ✅ 新增：切换前后摄像头
     func switchCamera(useFront: Bool) {
+        if isConfiguringCamera {
+            print("🎥 摄像头正在配置中，跳过切换请求")
+            return
+        }
+
         guard let captureSession = captureSession else {
             print("⚠️ captureSession 未初始化")
             return
@@ -904,9 +912,9 @@ class MediaRecorder: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.isCameraReady = true
                 }
-                print("📷 摄像头已切换（前置=\(useFront)）")
-            }
+            print("📷 摄像头已切换（前置=\(useFront)）")
         }
+    }
     }
     
     func startRecording(type: RecordingType) {
@@ -949,7 +957,12 @@ class MediaRecorder: NSObject, ObservableObject {
     
     private func startVideoRecording() {
         // ✅ 使用已初始化的 captureSession（由 setupCameraForVideo 创建）
-        guard let videoOutput = videoOutput else {
+        guard !isConfiguringCamera else {
+            print("🎥 摄像头仍在配置中，无法开始录制")
+            return
+        }
+
+        guard let videoOutput = videoOutput, isCameraReady else {
             print("❌ 摄像头未初始化，无法录制")
             return
         }
@@ -982,6 +995,25 @@ class MediaRecorder: NSObject, ObservableObject {
             print("⚠️ 没有在录制的媒体")
         }
         isRecording = false
+    }
+
+    /// 统一清理摄像头会话，避免下次进入时带着旧状态继续配置
+    func cleanupCameraSession(stopRunning: Bool = true) {
+        if stopRunning, let session = captureSession, session.isRunning {
+            sessionQueue.sync {
+                if session.isRunning {
+                    session.stopRunning()
+                }
+            }
+        }
+
+        captureSession = nil
+        videoOutput = nil
+        previewLayer = nil
+        isCameraReady = false
+        isConfiguringCamera = false
+
+        print("🧹 摄像头会话已清理")
     }
 }
 

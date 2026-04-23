@@ -673,9 +673,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         writeLog("🔵 ====== 自动签到（打开 App） ======")
-        
+
         guard let user = currentUser else {
-            writeLog("❌ 自动签到失败：currentUser 为 nil")
+            writeLog("⚠️ 自动签到暂缓：用户资料尚未就绪")
             return
         }
         
@@ -738,9 +738,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("   - isLoggedIn: \(isLoggedIn)")
         print("   - API URL: \(DataManager.apiURL)")
         // 🔒 安全修复：不再打印 Token
-        
+
         guard var user = currentUser else {
-            print("❌ recordCheckIn 失败：currentUser 为 nil")
+            print("⚠️ recordCheckIn 暂缓：用户资料尚未就绪")
             return .failure(Error.userNotLoggedIn)
         }
         

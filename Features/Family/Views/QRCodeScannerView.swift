@@ -38,6 +38,13 @@ class ScannerViewController: UIViewController {
         requestCameraAccess()
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if captureSession.isRunning {
+            captureSession.stopRunning()
+        }
+    }
+    
     private func setupUI() {
         // 视频预览层（全屏）
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
@@ -164,6 +171,7 @@ class ScannerViewController: UIViewController {
         
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
             print("❌ 无法获取摄像头设备")
+            captureSession.commitConfiguration()
             return
         }
         
@@ -172,6 +180,7 @@ class ScannerViewController: UIViewController {
             videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
         } catch {
             print("❌ 创建视频输入失败：\(error)")
+            captureSession.commitConfiguration()
             failed()
             return
         }
@@ -180,6 +189,7 @@ class ScannerViewController: UIViewController {
             captureSession.addInput(videoInput)
         } else {
             print("❌ 无法添加视频输入")
+            captureSession.commitConfiguration()
             failed()
             return
         }
@@ -195,6 +205,7 @@ class ScannerViewController: UIViewController {
             metadataOutput.rectOfInterest = CGRect(x: 0.15, y: 0.15, width: 0.7, height: 0.7)
         } else {
             print("❌ 无法添加元数据输出")
+            captureSession.commitConfiguration()
             failed()
             return
         }
