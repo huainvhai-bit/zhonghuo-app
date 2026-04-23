@@ -28,4 +28,9 @@ final class PlayerUIView: UIView {
     var playerLayer: AVPlayerLayer {
         layer as! AVPlayerLayer
     }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
 }

@@ -720,6 +720,7 @@ struct CapsuleMediaRecorderView: View {
 }
 
 // MARK: - MediaRecorder 类（✅ 修复：支持视频和语音录制）
+@MainActor
 class MediaRecorder: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var recordingURL: URL?
@@ -727,6 +728,7 @@ class MediaRecorder: NSObject, ObservableObject {
     private var audioRecorder: AVAudioRecorder?
     private var videoOutput: AVCaptureMovieFileOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    private let sessionQueue = DispatchQueue(label: "com.zhonghuo.capsule.camera")
     
     // ✅ 新增：视频录制完成回调（解决异步时序问题）
     var onVideoRecordingComplete: ((URL) -> Void)?
@@ -738,37 +740,47 @@ class MediaRecorder: NSObject, ObservableObject {
     
     // ✅ Bug 1 修复：初始化摄像头（在视图出现时调用，支持前后切换）
     func setupCameraForVideo(useFrontCamera: Bool = true) {
-        guard captureSession == nil else { return }  // 已初始化
-        
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            self.captureSession = AVCaptureSession()
-            self.captureSession?.sessionPreset = .high
-            
-            // ✅ Bug 1: 根据参数选择前置或后置摄像头
+        if let captureSession = captureSession {
+            if !captureSession.isRunning {
+                sessionQueue.async {
+                    captureSession.startRunning()
+                    print("🎥 摄像头会话已重新启动")
+                }
+            }
+            return
+        }
+
+        let captureSession = AVCaptureSession()
+        captureSession.sessionPreset = .high
+        let videoOutput = AVCaptureMovieFileOutput()
+
+        self.captureSession = captureSession
+        self.videoOutput = videoOutput
+        self.previewLayer = nil
+
+        // ✅ 在后台队列里配置并启动 session，避免阻塞主线程
+        sessionQueue.async {
+            captureSession.beginConfiguration()
+            defer { captureSession.commitConfiguration() }
+
             let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
-            
             guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
                   let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
                   let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
                   let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-                  let captureSession = self.captureSession,
                   captureSession.canAddInput(videoInput),
                   captureSession.canAddInput(audioInput) else {
                 print("❌ 无法初始化摄像头（前置=\(useFrontCamera)）")
                 return
             }
-            
+
             captureSession.addInput(videoInput)
             captureSession.addInput(audioInput)
-            
-            self.videoOutput = AVCaptureMovieFileOutput()
-            if captureSession.canAddOutput(self.videoOutput!) {
-                captureSession.addOutput(self.videoOutput!)
+
+            if captureSession.canAddOutput(videoOutput) {
+                captureSession.addOutput(videoOutput)
             }
-            
-            // ✅ 启动 session（但不开始录制）
+
             captureSession.startRunning()
             print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
         }
@@ -806,7 +818,7 @@ class MediaRecorder: NSObject, ObservableObject {
         if captureSession.canAddInput(audioInput) {
             captureSession.addInput(audioInput)
         }
-        
+
         print("📷 摄像头已切换（前置=\(useFront)）")
     }
     
@@ -913,17 +925,7 @@ struct CameraPreviewView: UIViewRepresentable {
         view.backgroundColor = .black
         
         print("🎥 CameraPreviewView.makeUIView: session=\(session != nil ? "已设置" : "nil")")
-        
-        // ✅ 修复：立即设置 previewLayer
-        if let session = session {
-            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-            previewLayer.videoGravity = .resizeAspectFill
-            previewLayer.frame = view.bounds
-            view.layer.addSublayer(previewLayer)
-            print("🎥 CameraPreviewView: PreviewLayer 已创建，frame=\(view.bounds)")
-        } else {
-            print("⚠️ CameraPreviewView: session 为 nil，无法创建预览层")
-        }
+        // ✅ 预览层在 updateUIView 中统一创建/更新，避免首屏拿到 nil session
         
         return view
     }
@@ -932,7 +934,7 @@ struct CameraPreviewView: UIViewRepresentable {
         guard let session = session else { return }
         
         // ✅ 修复：确保 previewLayer 正确更新
-        if let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
+        if let previewLayer = uiView.layer.sublayers?.first(where: { $0 is AVCaptureVideoPreviewLayer }) as? AVCaptureVideoPreviewLayer {
             previewLayer.session = session
             previewLayer.frame = uiView.bounds
             print("🎥 CameraPreviewView.updateUIView: PreviewLayer 已更新")
