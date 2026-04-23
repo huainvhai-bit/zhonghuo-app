@@ -1231,7 +1231,7 @@ class DataManager: ObservableObject {
         
         do {
             let mutation = """
-            mutation RecordLastActive($hoursRemaining: Float!) {
+            mutation($hoursRemaining: Float!) {
                 recordLastActive(hoursRemaining: $hoursRemaining) {
                     success
                     recordedAt
@@ -1242,8 +1242,9 @@ class DataManager: ObservableObject {
             let variables: [String: Any] = ["hoursRemaining": hoursRemaining]
             let result = try await GraphQLClient.shared.query(mutation, variables: variables)
             
-            if let data = result["recordLastActive"] as? [String: Any],
-               let success = data["success"] as? Bool, success {
+            if let data = result["data"] as? [String: Any],
+               let recordData = data["recordLastActive"] as? [String: Any],
+               let success = recordData["success"] as? Bool, success {
                 print("✅ 上传签到倒计时成功：\(hoursRemaining) 小时")
                 return true
             }
@@ -1717,8 +1718,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["uploadDeviceInfo"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let uploadData = data["uploadDeviceInfo"] as? [String: Any] {
+            return uploadData
         }
         throw APIError.networkError
     }
