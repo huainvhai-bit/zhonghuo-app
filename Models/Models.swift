@@ -19,7 +19,6 @@ struct ServerConfig: Codable {
         let endpoints: Endpoints
         let features: Features
         let limits: Limits
-        let sms: SMSConfig?  // 短信配置
         let serverInfo: ServerInfo?  // 服务器信息（用于调试）
         
         struct Endpoints: Codable {
@@ -40,13 +39,6 @@ struct ServerConfig: Codable {
             let maxCapsules: Int
             let maxWillModules: Int
         }
-        
-        struct SMSConfig: Codable {
-            let enabled: Bool
-            let provider: String
-            let isDevelopment: Bool
-        }
-        
         struct ServerInfo: Codable {
             let configuredUrl: String
             let detectedUrl: String

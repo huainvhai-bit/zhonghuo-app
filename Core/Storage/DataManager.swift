@@ -44,7 +44,6 @@ class DataManager: ObservableObject {
     
     // MARK: - 配置
     @Published var serverConfig: ServerConfig?
-    @Published var smsConfig: ServerConfig.ServerConfigData.SMSConfig?
     @Published var isBackendOnline: Bool = false
     
     // MARK: - 用户数据
@@ -77,7 +76,6 @@ class DataManager: ObservableObject {
                 checkinReminderThresholdHours
                 checkinReminderIntervalHours
                 overduePushIntervalHours
-                smsIsDevelopment
                 memberPriceMonthly
                 memberPriceYearly
                 freeMaxCapsules
@@ -104,7 +102,6 @@ class DataManager: ObservableObject {
             let reminderThreshold = configData["checkinReminderThresholdHours"] as? Int ?? 12
             let reminderInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
             let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
-            let smsDev = configData["smsIsDevelopment"] as? Int ?? 1
             
             self.systemConfig = SystemConfig(
                 checkinReminderThresholdHours: Double(reminderThreshold),
@@ -128,7 +125,6 @@ class DataManager: ObservableObject {
                 print("   提醒阈值：\(reminderThreshold) 小时")
                 print("   推送间隔：\(reminderInterval) 小时")
                 print("   超时推送间隔：\(overduePushInterval) 小时")
-                print("   短信模式：\(smsDev == 1 ? "测试" : "生产")")
             }
         }
     }

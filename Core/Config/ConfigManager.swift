@@ -19,7 +19,6 @@ class ConfigManager: ObservableObject {
     
     // MARK: - 配置状态
     @Published var serverConfig: ServerConfig?
-    @Published var smsConfig: ServerConfig.ServerConfigData.SMSConfig?
     @Published var isBackendOnline: Bool = false
     @Published var systemConfig: SystemConfig = SystemConfig()
     
@@ -78,7 +77,6 @@ class ConfigManager: ObservableObject {
                 overduePushIntervalHours
                 maintenanceMode
                 maintenanceMessage
-                smsIsDevelopment
                 memberPriceMonthly
                 memberPriceYearly
                 freeMaxCapsules
@@ -115,7 +113,6 @@ class ConfigManager: ObservableObject {
             let reminderHours = configData["checkinReminderThresholdHours"] as? Int ?? 12
             let pushInterval = configData["checkinReminderIntervalHours"] as? Int ?? 2
             let overduePushInterval = configData["overduePushIntervalHours"] as? Int ?? 1
-            _ = configData["smsIsDevelopment"] as? Int ?? 1
             
             // 会员价格配置
             let priceMonthly = configData["memberPriceMonthly"] as? Double ?? 8.0

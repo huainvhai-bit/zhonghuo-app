@@ -155,7 +155,6 @@ class APIClient {
                 checkinIntervalHours
                 notificationReminderThresholdHours
                 notificationPushIntervalHours
-                smsIsDevelopment
             }
         }
         """

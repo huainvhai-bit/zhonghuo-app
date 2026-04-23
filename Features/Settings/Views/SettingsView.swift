@@ -833,7 +833,6 @@ struct ServerConfigModal: View {
                         checkinIntervalHours
                         notificationReminderThresholdHours
                         notificationPushIntervalHours
-                        smsIsDevelopment
                     }
                 }
                 """
