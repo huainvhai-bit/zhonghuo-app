@@ -52,7 +52,6 @@ targets:
       - path: Features
       - path: Core
       - path: Models
-      - path: Utils
       - path: Assets.xcassets
       - path: Info.plist
       - path: AppDelegate.swift
