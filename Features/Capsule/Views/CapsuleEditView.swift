@@ -683,15 +683,16 @@ struct CapsuleMediaRecorderView: View {
     private func stopRecording() {
         timer?.invalidate()
         
+        // ✅ 标记视图即将 dismiss，防止录制完成回调触发
+        recorder.markViewDismissed()
+        
         // ✅ 根据类型停止录制
         if selectedType == .video {
-            // 视频录制：使用回调机制（解决异步时序问题）
-            // 注意：CapsuleMediaRecorderView 是 struct，不需要 weak self
+            // 视频录制：使用 onRecordingFinished 回调（不持有 dismiss，避免循环引用）
             let onComplete = onRecordComplete
-            recorder.onVideoRecordingComplete = { [dismiss] url in
+            recorder.onRecordingFinished = { url in
                 DispatchQueue.main.async {
                     onComplete(url)
-                    dismiss()
                 }
             }
             recorder.stopRecording()
@@ -700,7 +701,6 @@ struct CapsuleMediaRecorderView: View {
             recorder.stopRecording()
             if let url = recorder.recordingURL {
                 onRecordComplete(url)
-                dismiss()
             }
         }
     }
@@ -729,13 +729,28 @@ class MediaRecorder: NSObject, ObservableObject {
     private var videoOutput: AVCaptureMovieFileOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private let sessionQueue = DispatchQueue(label: "com.zhonghuo.capsule.camera")
+    private var isViewDismissed = false  // ✅ 标记视图是否已 dismiss
     
     // ✅ 新增：视频录制完成回调（解决异步时序问题）
     var onVideoRecordingComplete: ((URL) -> Void)?
     
+    // ✅ 新增：录制完成回调（不带 dismiss，避免循环引用）
+    var onRecordingFinished: ((URL) -> Void)?
+    
     enum RecordingType {
         case audio
         case video
+    }
+    
+    // ✅ 添加 deinit 清理资源
+    deinit {
+        print("🔓 MediaRecorder deinit - 清理资源")
+        // ✅ 注意：不能直接访问 @MainActor 属性，captureSession 会在主线程被清理
+    }
+    
+    // ✅ 标记视图已 dismiss，防止 dismiss 后回调
+    func markViewDismissed() {
+        isViewDismissed = true
     }
     
     // ✅ Bug 1 修复：初始化摄像头（在视图出现时调用，支持前后切换）
@@ -793,33 +808,47 @@ class MediaRecorder: NSObject, ObservableObject {
             return
         }
         
-        // 停止当前录制
+        // ✅ 如果正在录制，不允许切换（录制过程中不能切换摄像头）
         if videoOutput?.isRecording == true {
-            videoOutput?.stopRecording()
-        }
-        
-        // 移除所有输入
-        captureSession.inputs.forEach { captureSession.removeInput($0) }
-        
-        // 获取新摄像头
-        let cameraPosition: AVCaptureDevice.Position = useFront ? .front : .back
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
-              let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
-              let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-              let audioInput = try? AVCaptureDeviceInput(device: audioDevice) else {
-            print("❌ 无法获取摄像头（前置=\(useFront)）")
+            print("⚠️ 正在录制中，不允许切换摄像头，请先停止录制")
             return
         }
         
-        // 添加新输入
-        if captureSession.canAddInput(videoInput) {
-            captureSession.addInput(videoInput)
+        // ✅ 在后台队列中切换摄像头，避免阻塞主线程
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 停止当前 session
+            if captureSession.isRunning {
+                captureSession.stopRunning()
+            }
+            
+            // 移除所有输入
+            captureSession.inputs.forEach { captureSession.removeInput($0) }
+            
+            // 获取新摄像头
+            let cameraPosition: AVCaptureDevice.Position = useFront ? .front : .back
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
+                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified),
+                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+                  let audioInput = try? AVCaptureDeviceInput(device: audioDevice) else {
+                print("❌ 无法获取摄像头（前置=\(useFront)）")
+                return
+            }
+            
+            // 添加新输入
+            if captureSession.canAddInput(videoInput) {
+                captureSession.addInput(videoInput)
+            }
+            if captureSession.canAddInput(audioInput) {
+                captureSession.addInput(audioInput)
+            }
+            
+            // 重新启动 session
+            captureSession.startRunning()
+            
+            print("📷 摄像头已切换（前置=\(useFront)）")
         }
-        if captureSession.canAddInput(audioInput) {
-            captureSession.addInput(audioInput)
-        }
-
-        print("📷 摄像头已切换（前置=\(useFront)）")
     }
     
     func startRecording(type: RecordingType) {
@@ -885,7 +914,7 @@ class MediaRecorder: NSObject, ObservableObject {
     func stopRecording() {
         if let videoOutput = videoOutput, videoOutput.isRecording {
             videoOutput.stopRecording()
-            captureSession?.stopRunning()
+            // ✅ 不要在这里调用 captureSession?.stopRunning()，让它在 deinit 中清理
             print("🎥 停止视频录制")
         } else if let audioRecorder = audioRecorder, audioRecorder.isRecording {
             audioRecorder.stop()
@@ -900,16 +929,24 @@ class MediaRecorder: NSObject, ObservableObject {
 
 // MARK: - AVCaptureFileOutputRecordingDelegate
 extension MediaRecorder: AVCaptureFileOutputRecordingDelegate {
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-        DispatchQueue.main.async { [weak self] in
+    nonisolated func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        // ✅ 使用 Task 切换到主线程处理
+        Task { @MainActor in
+            // ✅ 检查视图是否已 dismiss，防止回调
+            if isViewDismissed {
+                print("⚠️ 视图已 dismiss，忽略录制完成回调")
+                return
+            }
+            
             if let error = error {
                 print("❌ 视频录制失败：\(error)")
             } else {
                 print("✅ 视频录制成功：\(outputFileURL)")
-                self?.recordingURL = outputFileURL
+                recordingURL = outputFileURL
                 // ✅ 触发回调通知录制完成
-                if let url = self?.recordingURL {
-                    self?.onVideoRecordingComplete?(url)
+                if let url = recordingURL {
+                    onRecordingFinished?(url)
+                    onVideoRecordingComplete?(url)
                 }
             }
         }
