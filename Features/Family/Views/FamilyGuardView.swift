@@ -188,11 +188,9 @@ struct FamilyGuardView: View {
                         buttonTitle: "开始扫码",
                         buttonColor: Color(hex: "6366F1")
                     ) {
-                        if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
-                            showingUpgradeForFamily = true
-                            return
+                        handleFamilyBindEntry {
+                            showingScanner = true
                         }
-                        showingScanner = true
                     }
                     
                     // 2. 分享我的二维码
@@ -216,11 +214,9 @@ struct FamilyGuardView: View {
                         buttonTitle: "立即输入",
                         buttonColor: Color(hex: "F59E0B")
                     ) {
-                        if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
-                            showingUpgradeForFamily = true
-                            return
+                        handleFamilyBindEntry {
+                            showingManualInput = true
                         }
-                        showingManualInput = true
                     }
                 }
                 
@@ -284,7 +280,9 @@ struct FamilyGuardView: View {
                         buttonTitle: "开始扫码",
                         buttonColor: Color(hex: "6366F1")
                     ) {
-                        showingScanner = true
+                        handleFamilyBindEntry {
+                            showingScanner = true
+                        }
                     }
                     
                     // 2. 分享我的二维码
@@ -308,7 +306,9 @@ struct FamilyGuardView: View {
                         buttonTitle: "立即输入",
                         buttonColor: Color(hex: "F59E0B")
                     ) {
-                        showingManualInput = true
+                        handleFamilyBindEntry {
+                            showingManualInput = true
+                        }
                     }
                 }
                 
@@ -581,6 +581,14 @@ struct FamilyGuardView: View {
         }
         
         return ""
+    }
+
+    private func handleFamilyBindEntry(_ action: () -> Void) {
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
+            showingUpgradeForFamily = true
+            return
+        }
+        action()
     }
     
     // ✅ 扫码绑定邀请码
