@@ -10,6 +10,7 @@ import SwiftUI
 struct WillAssetsView: View {
     @ObservedObject var dataManager = DataManager.shared
     @State private var selectedTab = 0 // 0=遗嘱，1=资产
+    @State private var didInitialLoad = false
     @State private var showingAddAssetModal = false
     @State private var showingTemplateModal = false
     @State private var editingModule: WillModule? = nil
@@ -44,19 +45,18 @@ struct WillAssetsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
-                
+
+                guard !didInitialLoad else { return }
+                didInitialLoad = true
+
+                dataManager.loadAllData()
+
                 // 初始化默认模板（如果为空）
                 if dataManager.willModules.isEmpty {
                     dataManager.initializeDefaultWillModules()
                 }
                 if dataManager.assets.isEmpty {
                     dataManager.initializeDefaultAssets()
-                }
-                
-                // ✅ 从服务器加载最新数据
-                Task {
-                    _ = await dataManager.batchSyncWills()
-                    _ = await dataManager.batchSyncAssets()
                 }
             }
             .toolbar {

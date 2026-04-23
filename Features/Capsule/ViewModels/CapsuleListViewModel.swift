@@ -11,8 +11,12 @@ import SwiftUI
 @MainActor
 final class CapsuleListViewModel: ObservableObject {
     private let dataManager = DataManager.shared
+    private var didLoadLocalCapsules = false
 
     func onAppear() {
+        guard !didLoadLocalCapsules else { return }
+        didLoadLocalCapsules = true
+
         if dataManager.capsules.isEmpty {
             print("📂 本地胶囊为空，从文件加载...")
             let loadedCapsules = dataManager.loadCapsulesFromFile()
@@ -20,10 +24,6 @@ final class CapsuleListViewModel: ObservableObject {
             print("📂 已加载胶囊：\(loadedCapsules.count) 个")
         } else {
             print("📂 本地已有胶囊：\(dataManager.capsules.count) 个，优先使用本地数据")
-        }
-
-        Task {
-            _ = await dataManager.batchSyncCapsules()
         }
     }
 

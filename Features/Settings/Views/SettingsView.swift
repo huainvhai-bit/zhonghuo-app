@@ -361,7 +361,7 @@ struct SettingsView: View {
                 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text(userManager.currentUser?.name ?? "用户")
+                        Text(displayUserName)
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.white)
                         
@@ -373,11 +373,11 @@ struct SettingsView: View {
                     }
                     
                     HStack(spacing: 12) {
-                        Label(userManager.currentUser?.phone ?? "未设置", systemImage: "phone.fill")
+                        Label(displayUserPhone, systemImage: "phone.fill")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.9))
                         
-                        Text("ID: \(userManager.currentUser?.id.prefix(8) ?? "未知")")
+                        Text("ID: \(displayUserId)")
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.7))
                     }
@@ -461,6 +461,36 @@ struct SettingsView: View {
             }
         }
         return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    private var displayUserName: String {
+        if let name = userManager.currentUser?.name, !name.isEmpty {
+            return name
+        }
+        if !dataManager.settings.name.isEmpty {
+            return dataManager.settings.name
+        }
+        return "用户"
+    }
+
+    private var displayUserPhone: String {
+        if let phone = userManager.currentUser?.phone, !phone.isEmpty {
+            return phone
+        }
+        if let phone = KeychainManager.shared.getUserPhone(), !phone.isEmpty {
+            return phone
+        }
+        return "未设置"
+    }
+
+    private var displayUserId: String {
+        if let userId = userManager.currentUser?.id, !userId.isEmpty {
+            return String(userId.prefix(8))
+        }
+        if let userId = KeychainManager.shared.getUserId(), !userId.isEmpty {
+            return String(userId.prefix(8))
+        }
+        return "未知"
     }
     
     private var locationStatusText: String {
@@ -647,6 +677,10 @@ struct EditProfileModal: View {
                 }
             }
             .onAppear {
+                if userManager.currentUser == nil {
+                    userManager.loadUser()
+                }
+
                 if let user = userManager.currentUser {
                     name = user.name
                     phone = user.phone

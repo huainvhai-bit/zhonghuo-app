@@ -27,6 +27,8 @@ final class SettingsViewModel: ObservableObject {
     private let deviceMonitor = DeviceMonitor.shared
 
     func onAppear() {
+        userManager.loadUser()
+        dataManager.loadAllData()
         setupNavigationBar()
         startDeviceMonitoring()
         checkLocationPermission()
@@ -88,24 +90,15 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func updateCheckInInterval(_ interval: CheckInInterval) async {
-        guard KeychainManager.shared.getUserId() != nil,
-              userManager.currentUser != nil else {
-            errorMessage = "请先登录"
-            showingError = true
-            return
-        }
-
         selectedCheckInInterval = interval
         userManager.checkInInterval = interval
-        userManager.currentUser?.checkInInterval = interval
         dataManager.settings.checkInInterval = interval
-        _ = userManager.updateCheckInInterval(interval)
+        dataManager.saveSettingsToFile()
 
-        do {
-            try await syncCheckInIntervalToServer(interval: interval)
-        } catch {
-            errorMessage = "更新失败：\(error.localizedDescription)"
-            showingError = true
+        if var currentUser = userManager.currentUser {
+            currentUser.checkInInterval = interval
+            userManager.currentUser = currentUser
+            _ = userManager.saveUser(currentUser)
         }
     }
 
@@ -117,32 +110,12 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private func refreshCheckInInterval() {
-        selectedCheckInInterval = userManager.currentUser?.checkInInterval ?? userManager.checkInInterval
-    }
-
-    private func syncCheckInIntervalToServer(interval: CheckInInterval) async throws {
-        let mutation = """
-        mutation($checkInIntervalHours: Int!) {
-            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
-                success
-                message
-            }
+        if let userInterval = userManager.currentUser?.checkInInterval {
+            selectedCheckInInterval = userInterval
+        } else {
+            selectedCheckInInterval = dataManager.settings.checkInInterval
         }
-        """
-
-        let variables: [String: Any] = [
-            "checkInIntervalHours": interval.hours
-        ]
-
-        let response = try await dataManager.sendGraphQLQuery(query: mutation, variables: variables, baseURL: DataManager.apiURL)
-
-        if let data = response["data"] as? [String: Any],
-           let updateData = data["updateCheckInInterval"] as? [String: Any],
-           let success = updateData["success"] as? Bool, success {
-            return
-        }
-
-        throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "更新失败"])
+        userManager.checkInInterval = selectedCheckInInterval
     }
 
     private func setupNavigationBar() {

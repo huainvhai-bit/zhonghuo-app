@@ -19,6 +19,7 @@ struct SettingsDetailView: View {
     @State private var showingRestoreConfirmAlert = false
     @State private var showingUpgradeForCloudBackup = false
     @State private var showingMembershipView = false
+    @State private var showingAbout = false
     @State private var restoreMessage = ""
     
     var body: some View {
@@ -78,7 +79,9 @@ struct SettingsDetailView: View {
                 
                 // ℹ️ 关于
                 Section(header: Text("关于")) {
-                    NavigationLink(destination: AboutSettingsView()) {
+                    Button(action: {
+                        showingAbout = true
+                    }) {
                         SettingsRow(icon: "info.circle.fill", iconColor: .gray, title: "关于", subtitle: "版本 \(appVersion)")
                     }
                 }
@@ -110,11 +113,11 @@ struct SettingsDetailView: View {
                 }
             }
         }
-        .confirmationDialog("确认退出", isPresented: $showingLogoutConfirm) {
+        .alert("确认退出", isPresented: $showingLogoutConfirm) {
+            Button("取消", role: .cancel) {}
             Button("退出登录", role: .destructive) {
                 logout()
             }
-            Button("取消", role: .cancel) {}
         } message: {
             Text("确定要退出登录吗？退出后需要重新登录才能使用 App。")
         }
@@ -154,6 +157,11 @@ struct SettingsDetailView: View {
         .sheet(isPresented: $showingMembershipView) {
             NavigationView {
                 MembershipView()
+            }
+        }
+        .sheet(isPresented: $showingAbout) {
+            NavigationView {
+                AboutSettingsView()
             }
         }
     }

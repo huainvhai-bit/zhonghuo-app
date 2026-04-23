@@ -11,11 +11,14 @@ import SwiftUI
 @MainActor
 final class HomeStatusViewModel: ObservableObject {
     @Published var isSafe: Bool = true
+    private var didLoadInitialData = false
 
     private let dataManager = DataManager.shared
     private let userManager = UserManager.shared
 
     func loadInitialData() async {
+        guard !didLoadInitialData else { return }
+        didLoadInitialData = true
         await dataManager.loadSystemConfig()
         await dataManager.loadReceivedCapsules()
     }

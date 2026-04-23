@@ -891,48 +891,38 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func updateCheckInInterval(_ interval: CheckInInterval) -> Result<Void, Error> {
-        guard var user = currentUser else {
-            print("❌ 用户未登录，无法更新签到间隔")
-            return .failure(Error.userNotLoggedIn)
-        }
-        
-        let oldInterval = user.checkInInterval
-        user.checkInInterval = interval
-        self.currentUser = user
-        self.checkInInterval = interval
-        
-        print("🔵 更新签到间隔：\(oldInterval.rawValue) → \(interval.rawValue)")
-        print("📁 用户文件路径：\(userFileURL.path)")
-        
-        // Bug 3: 如果不是测试模式，检查后台定位
-        if interval != .oneMinute {
-            requestAlwaysAuthorizationIfNeeded()
-        }
-        
-        do {
-            let data = try JSONEncoder().encode(user)
-            try data.write(to: userFileURL)
-            print("✅ 签到间隔已保存到用户文件")
+        if var user = currentUser {
+            let oldInterval = user.checkInInterval
+            user.checkInInterval = interval
+            self.currentUser = user
+            print("🔵 更新签到间隔：\(oldInterval.rawValue) → \(interval.rawValue)")
+            print("📁 用户文件路径：\(userFileURL.path)")
             
-            // 验证保存
-            if let savedUser = loadUserFromFile() {
-                print("✅ 验证保存：\(savedUser.checkInInterval.rawValue)")
+            if interval != .oneMinute {
+                requestAlwaysAuthorizationIfNeeded()
             }
             
-            // 🔄 同步签到间隔到服务器（异步，不阻塞主线程）
-            Task {
-                do {
-                    try await APIManager.shared.updateCheckInInterval(hours: Int(interval.hours))
-                } catch {
-                    print("⚠️ 同步签到间隔到服务器失败：\(error)")
+            do {
+                let data = try JSONEncoder().encode(user)
+                try data.write(to: userFileURL)
+                print("✅ 签到间隔已保存到用户文件")
+                
+                if let savedUser = loadUserFromFile() {
+                    print("✅ 验证保存：\(savedUser.checkInInterval.rawValue)")
                 }
+                
+                return .success(())
+            } catch {
+                print("❌ 保存用户文件失败：\(error)")
+                return .failure(Error.saveFailed)
             }
-            
-            return .success(())
-        } catch {
-            print("❌ 保存用户文件失败：\(error)")
-            return .failure(Error.saveFailed)
         }
+
+        self.checkInInterval = interval
+        DataManager.shared.settings.checkInInterval = interval
+        DataManager.shared.saveSettingsToFile()
+        print("✅ 未登录状态下已保存本地签到间隔：\(interval.rawValue)")
+        return .success(())
     }
     
     // ✅ P2 修复 #3: 添加加载锁，防止重复请求

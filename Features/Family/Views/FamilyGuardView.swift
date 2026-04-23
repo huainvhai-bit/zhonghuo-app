@@ -15,6 +15,7 @@ struct FamilyGuardView: View {
     @ObservedObject var userManager = UserManager.shared
     @State private var familyList: [FamilyMember] = []
     @State private var isLoading = true  // ✅ 修复 #2: 初始状态为加载中
+    @State private var didInitialLoad = false
     @State private var showingBindFamily = false
     @State private var showingShareQR = false
     @State private var showingScanner = false
@@ -53,6 +54,8 @@ struct FamilyGuardView: View {
                 
                 // ✅ 修复 #8: 只加载家人列表，不自动获取邀请码（避免卡顿）
                 // 邀请码只在点击"查看二维码"时才获取
+                guard !didInitialLoad else { return }
+                didInitialLoad = true
                 Task {
                     await loadFamilyListAsync()
                 }
