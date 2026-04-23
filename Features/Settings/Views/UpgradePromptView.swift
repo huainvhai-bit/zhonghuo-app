@@ -9,6 +9,7 @@ import SwiftUI
 
 struct UpgradePromptView: View {
     let feature: String
+    let statusText: String
     let currentLimit: String
     let targetLimit: String
     let onUpgrade: () -> Void
@@ -26,7 +27,7 @@ struct UpgradePromptView: View {
                 .font(.system(size: 22, weight: .bold))
             
             // 描述
-            Text("\(feature)已达上限")
+            Text(statusText)
                 .font(.system(size: 15))
                 .foregroundColor(.secondary)
             
@@ -100,6 +101,7 @@ struct CapsuleLimitPromptView: View {
     var body: some View {
         UpgradePromptView(
             feature: "时光胶囊",
+            statusText: "当前时光胶囊数量已达上限",
             currentLimit: "\(currentCount)/\(maxCount)",
             targetLimit: "20个",
             onUpgrade: onUpgrade,
@@ -117,6 +119,7 @@ struct MediaCapsuleLimitPromptView: View {
     var body: some View {
         UpgradePromptView(
             feature: "语音/视频胶囊",
+            statusText: "当前媒体胶囊数量已达上限",
             currentLimit: "\(currentCount)/2",
             targetLimit: "10个（各5分钟）",
             onUpgrade: onUpgrade,

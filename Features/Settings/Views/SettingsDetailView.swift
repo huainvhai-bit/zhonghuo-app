@@ -138,6 +138,7 @@ struct SettingsDetailView: View {
                 
                 UpgradePromptView(
                     feature: "云端恢复数据",
+                    statusText: "当前功能仅会员可用",
                     currentLimit: "免费版不可使用",
                     targetLimit: "会员版可从云端恢复数据",
                     onUpgrade: {

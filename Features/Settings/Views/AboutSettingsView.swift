@@ -138,12 +138,14 @@ struct AboutSettingsView: View {
         .alert("检查更新", isPresented: $showingUpdateAlert) {
             Button("稍后更新", role: .cancel) { }
             Button("立即更新") {
-                if let url = URL(string: dataManager.systemConfig.updateUrl.isEmpty ? "https://apps.apple.com/app/终活/id123456789" : dataManager.systemConfig.updateUrl) {
+                if let url = URL(string: dataManager.systemConfig.updateUrl), !dataManager.systemConfig.updateUrl.isEmpty {
                     UIApplication.shared.open(url)
                 }
             }
         } message: {
-            Text("发现新版本 v\(dataManager.systemConfig.latestVersion)\n\nBug 修复和性能优化")
+            Text(dataManager.systemConfig.updateUrl.isEmpty
+                 ? "发现新版本 v\(dataManager.systemConfig.latestVersion)\n\n当前未配置更新地址，请稍后再试"
+                 : "发现新版本 v\(dataManager.systemConfig.latestVersion)\n\nBug 修复和性能优化")
         }
     }
     

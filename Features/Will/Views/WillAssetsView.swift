@@ -105,6 +105,7 @@ struct WillAssetsView: View {
             .sheet(isPresented: $showingUpgradeForExport) {
                 UpgradePromptView(
                     feature: "导出 PDF",
+                    statusText: "当前功能仅会员可用",
                     currentLimit: "免费版无法导出",
                     targetLimit: "会员版可导出",
                     onUpgrade: {
@@ -119,6 +120,7 @@ struct WillAssetsView: View {
             .sheet(isPresented: $showingUpgradeForWill) {
                 UpgradePromptView(
                     feature: "新增嘱托",
+                    statusText: "当前嘱托模块数量已达上限",
                     currentLimit: "当前最多 \(MembershipManager.shared.currentWillLimit()) 个模块",
                     targetLimit: "会员版可创建更多嘱托模块",
                     onUpgrade: {

@@ -41,9 +41,7 @@ final class SettingsViewModel: ObservableObject {
     func checkUpdate() async {
         await dataManager.loadSystemConfig()
         latestVersion = dataManager.systemConfig.latestVersion
-        updateUrl = dataManager.systemConfig.updateUrl.isEmpty
-            ? "https://apps.apple.com/app/终活/id123456789"
-            : dataManager.systemConfig.updateUrl
+        updateUrl = dataManager.systemConfig.updateUrl
         showingUpdateAlert = true
     }
 

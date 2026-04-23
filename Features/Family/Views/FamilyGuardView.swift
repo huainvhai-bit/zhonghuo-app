@@ -137,6 +137,7 @@ struct FamilyGuardView: View {
                     
                     UpgradePromptView(
                         feature: "绑定家人",
+                        statusText: "当前家人数量已达上限",
                         currentLimit: "当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人",
                         targetLimit: "会员版可绑定更多家人",
                         onUpgrade: {

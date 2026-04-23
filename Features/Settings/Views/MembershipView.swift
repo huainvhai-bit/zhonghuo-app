@@ -212,7 +212,7 @@ struct MembershipView: View {
                     icon: "square.and.arrow.up.fill",
                     title: "数据导出",
                     free: "-",
-                    premium: "PDF/视频/加密包",
+                    premium: "PDF/视频/加密包（含媒体下载地址）",
                     isLast: false
                 )
                 
