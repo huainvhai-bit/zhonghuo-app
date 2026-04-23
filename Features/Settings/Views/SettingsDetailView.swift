@@ -66,7 +66,7 @@ struct SettingsDetailView: View {
                 // ☁️ 云端恢复
                 Section(header: Text("数据")) {
                     Button(action: {
-                        if MembershipManager.shared.hasCloudBackup() {
+                        if MembershipManager.shared.canRestoreFromCloud() {
                             showingRestoreConfirmAlert = true
                         } else {
                             showingUpgradeForCloudBackup = true

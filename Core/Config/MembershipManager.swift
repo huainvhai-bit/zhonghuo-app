@@ -202,9 +202,14 @@ class MembershipManager: ObservableObject {
         return currentCount < currentWillLimit()
     }
 
-    /// 检查是否有云端备份功能
+    /// 检查是否可以一键从云端恢复到本地（会员功能）
     func hasCloudBackup() -> Bool {
-        return currentCloudBackupEnabled()
+        return canRestoreFromCloud()
+    }
+
+    /// 检查是否可以一键从云端恢复到本地（会员功能）
+    func canRestoreFromCloud() -> Bool {
+        return currentCloudRestoreEnabled()
     }
 
     /// 检查是否有数据导出功能
@@ -243,8 +248,8 @@ class MembershipManager: ObservableObject {
         return isPremium ? serverLimits.premiumMaxFamily : serverLimits.freeMaxFamily
     }
 
-    /// 当前云端备份是否可用
-    func currentCloudBackupEnabled() -> Bool {
+    /// 当前是否允许一键云端恢复
+    func currentCloudRestoreEnabled() -> Bool {
         return isPremium ? serverLimits.premiumCloudBackup : serverLimits.freeCloudBackup
     }
 

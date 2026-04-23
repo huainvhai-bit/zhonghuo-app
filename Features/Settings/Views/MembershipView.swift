@@ -190,9 +190,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "icloud.fill",
-                    title: "云端备份",
-                    free: "-",
-                    premium: "自动同步",
+                    title: "云端同步",
+                    free: "自动同步",
+                    premium: "自动同步 + 一键恢复",
                     isLast: false
                 )
                 
