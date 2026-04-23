@@ -69,8 +69,6 @@ struct SettingsView: View {
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
     @ObservedObject var themeManager = ThemeManager.shared  // 🎨 主题管理
-    @State private var errorMessage = ""
-    @State private var showingError = false
     
     // ✅ 修复 #7: 版本号
     private var appVersion: String {
@@ -113,20 +111,12 @@ struct SettingsView: View {
                         Menu {
                             ForEach(CheckInInterval.allCases, id: \.self) { interval in
                                 Button(interval.rawValue) {
-                                    print("🔵 点击签到间隔：\(interval.rawValue)")
-                                    print("   - 当前 userId: \(KeychainManager.shared.getUserId() ?? "nil")")
-                                    print("   - 当前 currentUser: \(userManager.currentUser?.name ?? "nil")")
-                                    print("   - 当前 checkInInterval: \(userManager.checkInInterval.rawValue)")
-                                    print("   - 当前 user.checkInInterval: \(userManager.currentUser?.checkInInterval.rawValue ?? "nil")")
-                                    Task { @MainActor in
-                                        try? await Task.checkCancellation()
-                                        await updateCheckInInterval(interval)
-                                    }
+                                    Task { await viewModel.updateCheckInInterval(interval) }
                                 }
                             }
                         } label: {
                             HStack(spacing: 6) {
-                                Text(userManager.checkInInterval.rawValue)
+                                Text(viewModel.selectedCheckInInterval.rawValue)
                                     .foregroundColor(.indigo)
                                 
                                 Image(systemName: "chevron.up.chevron.down")
@@ -273,6 +263,11 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
+            }
+            .alert("提示", isPresented: $viewModel.showingError) {
+                Button("确定", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage)
             }
             }
         }
@@ -478,77 +473,6 @@ struct SettingsView: View {
             return "已拒绝"
         default:
             return "未设置"
-        }
-    }
-    
-    // MARK: - 更新签到间隔
-    private func updateCheckInInterval(_ interval: CheckInInterval) async {
-        print("🔵 开始更新签到间隔：\(interval.rawValue)")
-        print("   - Keychain userId: \(KeychainManager.shared.getUserId() ?? "nil")")
-        print("   - userManager.currentUser: \(userManager.currentUser?.name ?? "nil")")
-        print("   - userManager.isLoggedIn: \(userManager.isLoggedIn)")
-        
-        // 检查用户是否登录
-        guard let userId = KeychainManager.shared.getUserId(),
-              let _ = userManager.currentUser else {
-            print("❌ 用户未登录")
-            await MainActor.run {
-                errorMessage = "请先登录"
-                showingError = true
-            }
-            return
-        }
-        
-        do {
-            // 1. 本地更新
-            userManager.checkInInterval = interval
-            userManager.currentUser?.checkInInterval = interval
-            DataManager.shared.settings.checkInInterval = interval
-            
-            // 2. 保存到本地文件
-            let saveResult = userManager.updateCheckInInterval(interval)
-            if case .failure(let error) = saveResult {
-                print("❌ 本地保存失败：\(error)")
-            }
-            
-            // 3. 同步到服务器
-            try await syncCheckInIntervalToServer(userId: userId, interval: interval)
-            
-            print("✅ 签到间隔更新成功：\(interval.rawValue)")
-            
-        } catch {
-            print("❌ 签到间隔更新失败：\(error)")
-            await MainActor.run {
-                errorMessage = "更新失败：\(error.localizedDescription)"
-                showingError = true
-            }
-        }
-    }
-    
-    private func syncCheckInIntervalToServer(userId: String, interval: CheckInInterval) async throws {
-        // ✅ 使用 GraphQL API 更新签到间隔
-        let mutation = """
-        mutation($checkInIntervalHours: Int!) {
-            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
-                success
-                message
-            }
-        }
-        """
-        
-        let variables: [String: Any] = [
-            "checkInIntervalHours": interval.hours
-        ]
-        
-        let response = try await DataManager.shared.sendGraphQLQuery(query: mutation, variables: variables, baseURL: DataManager.apiURL)
-        
-        if let data = response["data"] as? [String: Any],
-           let updateData = data["updateCheckInInterval"] as? [String: Any],
-           let success = updateData["success"] as? Bool, success {
-            print("✅ GraphQL 签到间隔更新成功")
-        } else {
-            print("⚠️ GraphQL 签到间隔更新失败")
-            throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "更新失败"])
         }
     }
     

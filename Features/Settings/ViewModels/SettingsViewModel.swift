@@ -15,9 +15,12 @@ final class SettingsViewModel: ObservableObject {
     @Published var showingRestoreAlert = false
     @Published var showingRestoreConfirmAlert = false
     @Published var showingUpdateAlert = false
+    @Published var showingError = false
     @Published var restoreMessage = ""
     @Published var latestVersion = ""
     @Published var updateUrl = ""
+    @Published var selectedCheckInInterval: CheckInInterval = .oneDay
+    @Published var errorMessage = ""
 
     private let dataManager = DataManager.shared
     private let userManager = UserManager.shared
@@ -27,6 +30,7 @@ final class SettingsViewModel: ObservableObject {
         setupNavigationBar()
         startDeviceMonitoring()
         checkLocationPermission()
+        refreshCheckInInterval()
         scheduleDeviceInfoUpload()
     }
 
@@ -85,11 +89,62 @@ final class SettingsViewModel: ObservableObject {
         userManager.requestLocationPermission()
     }
 
+    func updateCheckInInterval(_ interval: CheckInInterval) async {
+        guard KeychainManager.shared.getUserId() != nil,
+              userManager.currentUser != nil else {
+            errorMessage = "请先登录"
+            showingError = true
+            return
+        }
+
+        selectedCheckInInterval = interval
+        userManager.checkInInterval = interval
+        userManager.currentUser?.checkInInterval = interval
+        dataManager.settings.checkInInterval = interval
+        _ = userManager.updateCheckInInterval(interval)
+
+        do {
+            try await syncCheckInIntervalToServer(interval: interval)
+        } catch {
+            errorMessage = "更新失败：\(error.localizedDescription)"
+            showingError = true
+        }
+    }
+
     private func scheduleDeviceInfoUpload() {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             await deviceMonitor.uploadDeviceInfo()
         }
+    }
+
+    private func refreshCheckInInterval() {
+        selectedCheckInInterval = userManager.currentUser?.checkInInterval ?? userManager.checkInInterval
+    }
+
+    private func syncCheckInIntervalToServer(interval: CheckInInterval) async throws {
+        let mutation = """
+        mutation($checkInIntervalHours: Int!) {
+            updateCheckInInterval(checkInIntervalHours: $checkInIntervalHours) {
+                success
+                message
+            }
+        }
+        """
+
+        let variables: [String: Any] = [
+            "checkInIntervalHours": interval.hours
+        ]
+
+        let response = try await dataManager.sendGraphQLQuery(query: mutation, variables: variables, baseURL: DataManager.apiURL)
+
+        if let data = response["data"] as? [String: Any],
+           let updateData = data["updateCheckInInterval"] as? [String: Any],
+           let success = updateData["success"] as? Bool, success {
+            return
+        }
+
+        throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "更新失败"])
     }
 
     private func setupNavigationBar() {
