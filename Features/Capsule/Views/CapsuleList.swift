@@ -379,6 +379,10 @@ struct CapsuleList: View {
                         capsuleToDelete = capsule
                     },
                     onSend: {
+                        if !MembershipManager.shared.canShareCapsule() {
+                            showingUpgradeForShare = true
+                            return
+                        }
                         selectedCapsuleForShare = capsule
                         showingShareSheet = true
                     },

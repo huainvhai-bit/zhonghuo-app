@@ -16,6 +16,8 @@ struct WillAssetsView: View {
     @State private var editingAsset: Asset? = nil
     @State private var showingPDFExport = false
     @State private var showingUpgradeForExport = false  // 导出功能需要会员
+    @State private var showingUpgradeForWill = false  // 新增嘱托数量需要会员限制
+    @State private var showingMembershipView = false
     @State private var pdfExportSuccess = false
     @State private var templateContent = ""
     @State private var templateIsCompleted = false
@@ -107,12 +109,31 @@ struct WillAssetsView: View {
                     targetLimit: "会员版可导出",
                     onUpgrade: {
                         showingUpgradeForExport = false
-                        // 跳转到会员页面
+                        showingMembershipView = true
                     },
                     onCancel: {
                         showingUpgradeForExport = false
                     }
                 )
+            }
+            .sheet(isPresented: $showingUpgradeForWill) {
+                UpgradePromptView(
+                    feature: "新增嘱托",
+                    currentLimit: "当前最多 \(MembershipManager.shared.currentWillLimit()) 个模块",
+                    targetLimit: "会员版可创建更多嘱托模块",
+                    onUpgrade: {
+                        showingUpgradeForWill = false
+                        showingMembershipView = true
+                    },
+                    onCancel: {
+                        showingUpgradeForWill = false
+                    }
+                )
+            }
+            .sheet(isPresented: $showingMembershipView) {
+                NavigationView {
+                    MembershipView()
+                }
             }
         }
     }
@@ -164,6 +185,11 @@ struct WillAssetsView: View {
             // 新增嘱托按钮
             Button(action: {
                 // 创建新的空白模块（使用 otherInstructions 类型）
+                let currentCount = dataManager.willModules.count
+                if !MembershipManager.shared.canCreateWill(currentCount: currentCount) {
+                    showingUpgradeForWill = true
+                    return
+                }
                 let newModule = WillModule(
                     id: UUID().uuidString,
                     type: .otherInstructions,

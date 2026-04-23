@@ -199,41 +199,63 @@ class MembershipManager: ObservableObject {
     
     /// 检查是否可以创建遗嘱模块
     func canCreateWill(currentCount: Int) -> Bool {
-        return isPremium || currentCount < Limits.freeMaxWills
+        return currentCount < currentWillLimit()
     }
-    
+
     /// 检查是否有云端备份功能
     func hasCloudBackup() -> Bool {
-        return isPremium
+        return currentCloudBackupEnabled()
     }
-    
+
     /// 检查是否有数据导出功能
     func hasDataExport() -> Bool {
-        return isPremium
+        return currentDataExportEnabled()
     }
-    
+
     /// 检查是否有家庭守护功能
     func canAddFamilyMember(currentCount: Int) -> Bool {
-        if isPremium {
-            return currentCount < Limits.premiumFamilyMembers
-        }
-        return currentCount < Limits.freeFamilyMembers
+        return currentCount < currentFamilyLimit()
     }
-    
+
     /// 检查是否有AI辅助功能
     func hasAIAssistance() -> Bool {
+        return currentAIAssistanceEnabled()
+    }
+
+    /// 检查是否可以分享时光胶囊给家人
+    func canShareCapsule() -> Bool {
         return isPremium
     }
-    
+
     /// 检查是否允许导出数据（会员功能）
     @MainActor
     func canExportData() -> Bool {
-        let config = DataManager.shared.systemConfig
-        if isPremium {
-            return config.premiumDataExport
-        } else {
-            return config.freeDataExport
-        }
+        return currentDataExportEnabled()
+    }
+
+    /// 当前可创建的遗嘱模块数量
+    func currentWillLimit() -> Int {
+        return isPremium ? serverLimits.premiumMaxWillModules : serverLimits.freeMaxWillModules
+    }
+
+    /// 当前可绑定的家人数量
+    func currentFamilyLimit() -> Int {
+        return isPremium ? serverLimits.premiumMaxFamily : serverLimits.freeMaxFamily
+    }
+
+    /// 当前云端备份是否可用
+    func currentCloudBackupEnabled() -> Bool {
+        return isPremium ? serverLimits.premiumCloudBackup : serverLimits.freeCloudBackup
+    }
+
+    /// 当前数据导出是否可用
+    func currentDataExportEnabled() -> Bool {
+        return isPremium ? serverLimits.premiumDataExport : serverLimits.freeDataExport
+    }
+
+    /// 当前 AI 辅助是否可用
+    func currentAIAssistanceEnabled() -> Bool {
+        return isPremium ? serverLimits.premiumAiAssist : serverLimits.freeAiAssist
     }
     
     /// ✅ 从服务器应用会员限制配置

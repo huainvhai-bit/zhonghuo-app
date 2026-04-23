@@ -21,6 +21,8 @@ struct FamilyGuardView: View {
     @State private var showingManualInput = false
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var showingUpgradeForFamily = false
+    @State private var showingMembershipView = false
     @State private var inviteCode = ""
     @State private var qrImage: UIImage?
     @State private var showingFamilyArchive = false  // 📚 家族档案
@@ -128,6 +130,30 @@ struct FamilyGuardView: View {
                     showingManualInput = false
                 })
             }
+            .sheet(isPresented: $showingUpgradeForFamily) {
+                ZStack {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                    
+                    UpgradePromptView(
+                        feature: "绑定家人",
+                        currentLimit: "当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人",
+                        targetLimit: "会员版可绑定更多家人",
+                        onUpgrade: {
+                            showingUpgradeForFamily = false
+                            showingMembershipView = true
+                        },
+                        onCancel: {
+                            showingUpgradeForFamily = false
+                        }
+                    )
+                }
+            }
+            .sheet(isPresented: $showingMembershipView) {
+                NavigationView {
+                    MembershipView()
+                }
+            }
             .refreshable {
                 await loadFamilyListAsync()
             }
@@ -161,6 +187,10 @@ struct FamilyGuardView: View {
                         buttonTitle: "开始扫码",
                         buttonColor: Color(hex: "6366F1")
                     ) {
+                        if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
+                            showingUpgradeForFamily = true
+                            return
+                        }
                         showingScanner = true
                     }
                     
@@ -185,6 +215,10 @@ struct FamilyGuardView: View {
                         buttonTitle: "立即输入",
                         buttonColor: Color(hex: "F59E0B")
                     ) {
+                        if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
+                            showingUpgradeForFamily = true
+                            return
+                        }
                         showingManualInput = true
                     }
                 }
@@ -498,7 +532,7 @@ struct FamilyGuardView: View {
                 if success {
                     if let resultData = inviteResult["data"] as? [String: Any] {
                         let inviteCode = resultData["inviteCode"] as? String ?? ""
-                        let qrURL = resultData["qrUrl"] as? String ?? ""
+                        _ = resultData["qrUrl"] as? String ?? ""
                         print("✅ 邀请码：\(inviteCode)")
                         self.inviteCode = inviteCode
                         self.qrImage = generateQRCode(from: inviteCode)
@@ -551,6 +585,13 @@ struct FamilyGuardView: View {
     // ✅ 扫码绑定邀请码
     @MainActor
     private func bindInviteCode(_ inviteCode: String) async {
+        let currentCount = familyList.count
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
+            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            showingError = true
+            return
+        }
+        
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"
@@ -978,6 +1019,13 @@ struct ManualInputInviteCodeView: View {
     }
     
     private func bindInviteCode() {
+        let currentCount = DataManager.shared.familyMembers.count
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
+            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            showError = true
+            return
+        }
+        
         guard inviteCode.count == 6 else { return }
         isBinding = true
         Task {

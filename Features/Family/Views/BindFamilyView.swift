@@ -18,6 +18,8 @@ struct BindFamilyView: View {
     @State private var showingError = false
     @State private var showingSuccess = false
     @State private var showingScanner = false
+    @State private var showingUpgradeForFamily = false
+    @State private var showingMembershipView = false
     
     var body: some View {
         NavigationView {
@@ -166,6 +168,30 @@ struct BindFamilyView: View {
                     }
                 )
             }
+            .sheet(isPresented: $showingUpgradeForFamily) {
+                ZStack {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                    
+                    UpgradePromptView(
+                        feature: "绑定家人",
+                        currentLimit: "当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人",
+                        targetLimit: "会员版可绑定更多家人",
+                        onUpgrade: {
+                            showingUpgradeForFamily = false
+                            showingMembershipView = true
+                        },
+                        onCancel: {
+                            showingUpgradeForFamily = false
+                        }
+                    )
+                }
+            }
+            .sheet(isPresented: $showingMembershipView) {
+                NavigationView {
+                    MembershipView()
+                }
+            }
         }
     }
     
@@ -173,7 +199,13 @@ struct BindFamilyView: View {
     
     private func bindFamily() {
         print("🔵 手动输入邀请码：\(inviteCode)")
-        
+
+        let currentCount = DataManager.shared.familyMembers.count
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
+            showingUpgradeForFamily = true
+            return
+        }
+
         guard inviteCode.count == 6 else {
             print("❌ 邀请码长度不正确：\(inviteCode.count) 位")
             errorMessage = "邀请码必须是 6 位"
@@ -191,6 +223,14 @@ struct BindFamilyView: View {
     
     @MainActor
     private func bindFamilyAsync() async {
+        let currentCount = DataManager.shared.familyMembers.count
+        if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
+            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            showingUpgradeForFamily = true
+            isBinding = false
+            return
+        }
+        
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = "请先登录"

@@ -17,6 +17,8 @@ struct SettingsDetailView: View {
     @State private var showingLogoutConfirm = false
     @State private var showingRestoreAlert = false
     @State private var showingRestoreConfirmAlert = false
+    @State private var showingUpgradeForCloudBackup = false
+    @State private var showingMembershipView = false
     @State private var restoreMessage = ""
     
     var body: some View {
@@ -64,7 +66,11 @@ struct SettingsDetailView: View {
                 // ☁️ 云端恢复
                 Section(header: Text("数据")) {
                     Button(action: {
-                        showingRestoreConfirmAlert = true
+                        if MembershipManager.shared.hasCloudBackup() {
+                            showingRestoreConfirmAlert = true
+                        } else {
+                            showingUpgradeForCloudBackup = true
+                        }
                     }) {
                         SettingsRow(icon: "icloud.and.arrow.down.fill", iconColor: .cyan, title: "云端恢复数据", subtitle: "从服务器恢复本地数据")
                     }
@@ -124,6 +130,30 @@ struct SettingsDetailView: View {
             }
         } message: {
             Text("确定要从云端恢复数据吗？这将覆盖本地数据。")
+        }
+        .sheet(isPresented: $showingUpgradeForCloudBackup) {
+            ZStack {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                
+                UpgradePromptView(
+                    feature: "云端恢复数据",
+                    currentLimit: "免费版不可使用",
+                    targetLimit: "会员版可从云端恢复数据",
+                    onUpgrade: {
+                        showingUpgradeForCloudBackup = false
+                        showingMembershipView = true
+                    },
+                    onCancel: {
+                        showingUpgradeForCloudBackup = false
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showingMembershipView) {
+            NavigationView {
+                MembershipView()
+            }
         }
     }
     
