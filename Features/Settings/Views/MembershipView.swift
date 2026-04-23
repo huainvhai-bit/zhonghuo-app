@@ -213,16 +213,6 @@ struct MembershipView: View {
                     title: "数据导出",
                     free: "-",
                     premium: "PDF/视频/加密包（含媒体下载地址）",
-                    isLast: false
-                )
-                
-                Divider()
-                
-                FeatureTableRow(
-                    icon: "brain",
-                    title: "AI 辅助",
-                    free: "-",
-                    premium: "智能分类规划",
                     isLast: true
                 )
             }
