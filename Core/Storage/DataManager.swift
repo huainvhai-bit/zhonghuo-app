@@ -643,8 +643,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["phone": phone]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["sendResetCode"] as? [String: Any],
-           let success = data["success"] as? Bool {
+        if let data = result["data"] as? [String: Any],
+           let resetData = data["sendResetCode"] as? [String: Any],
+           let success = resetData["success"] as? Bool {
             print("📱 发送验证码结果：\(success ? "成功" : "失败")")
             return success
         }
@@ -676,8 +677,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["resetPassword"] as? [String: Any],
-           let success = data["success"] as? Bool {
+        if let data = result["data"] as? [String: Any],
+           let resetData = data["resetPassword"] as? [String: Any],
+           let success = resetData["success"] as? Bool {
             print("🔐 重置密码结果：\(success ? "成功" : "失败")")
             return success
         }
@@ -713,8 +715,9 @@ class DataManager: ObservableObject {
             let result = try await GraphQLClient.shared.query(mutation, variables: variables)
             print("📱 GraphQL 发送短信请求")
             
-            if let data = result["sendSms"] as? [String: Any],
-               let success = data["success"] as? Bool {
+            if let data = result["data"] as? [String: Any],
+               let smsData = data["sendSms"] as? [String: Any],
+               let success = smsData["success"] as? Bool {
                 print("📱 发送短信结果：\(success ? "成功" : "失败")")
                 return success
             }
@@ -1211,10 +1214,11 @@ class DataManager: ObservableObject {
             let result = try await GraphQLClient.shared.query(query)
             print("✅ GraphQL 签到同步成功")
             
-            if let data = result["syncCheckInStatus"] as? [String: Any],
-               let isSafe = data["isSafe"] as? Bool,
-               let hoursRemaining = data["hoursRemaining"] as? Double,
-               let autoCheckInPerformed = data["autoCheckInPerformed"] as? Bool {
+            if let data = result["data"] as? [String: Any],
+               let statusData = data["syncCheckInStatus"] as? [String: Any],
+               let isSafe = statusData["isSafe"] as? Bool,
+               let hoursRemaining = statusData["hoursRemaining"] as? Double,
+               let autoCheckInPerformed = statusData["autoCheckInPerformed"] as? Bool {
                 print("✅ 签到同步成功：剩余 \(hoursRemaining) 小时，自动签到=\(autoCheckInPerformed)")
                 return (isSafe, hoursRemaining, autoCheckInPerformed)
             }
@@ -1424,8 +1428,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["phone": phone]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["inviteFamily"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let familyData = data["inviteFamily"] as? [String: Any] {
+            return familyData
         }
         throw APIError.networkError
     }
@@ -1444,8 +1449,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["relationId": relationId]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["acceptFamilyInvite"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let familyData = data["acceptFamilyInvite"] as? [String: Any] {
+            return familyData
         }
         throw APIError.networkError
     }
@@ -1464,8 +1470,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["relationId": relationId]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["rejectFamilyInvite"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let familyData = data["rejectFamilyInvite"] as? [String: Any] {
+            return familyData
         }
         throw APIError.networkError
     }
@@ -1484,8 +1491,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["relationId": relationId]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["removeFamily"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let familyData = data["removeFamily"] as? [String: Any] {
+            return familyData
         }
         throw APIError.networkError
     }
@@ -1508,8 +1516,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["inviteCode": inviteCode]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["bindFamilyByInviteCode"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let familyData = data["bindFamilyByInviteCode"] as? [String: Any] {
+            return familyData
         }
         throw APIError.networkError
     }
@@ -1532,8 +1541,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(query)
         
-        if let data = result["getInviteCode"] as? [String: Any],
-           let resultData = data["data"] as? [String: Any],
+        if let data = result["data"] as? [String: Any],
+           let inviteData = data["getInviteCode"] as? [String: Any],
+           let resultData = inviteData["data"] as? [String: Any],
            let inviteCode = resultData["inviteCode"] as? String,
            let qrUrl = resultData["qrUrl"] as? String {
             return (inviteCode, qrUrl)
@@ -1545,22 +1555,38 @@ class DataManager: ObservableObject {
     func fetchFamilyMembers() async throws -> [[String: Any]] {
         let query = """
         query {
-            families {
-                id
-                relationId
-                name
-                phone
-                role
-                status
-                createdAt
+            family {
+                success
+                message
+                data {
+                    members {
+                        id
+                        name
+                        phone
+                        role
+                        status
+                        createdAt
+                    }
+                    invited {
+                        id
+                        name
+                        phone
+                        status
+                        createdAt
+                    }
+                }
             }
         }
         """
         
         let result = try await GraphQLClient.shared.query(query)
         
-        if let data = result["families"] as? [[String: Any]] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let family = data["family"] as? [String: Any],
+           let familyData = family["data"] as? [String: Any] {
+            let members = (familyData["members"] as? [[String: Any]]) ?? []
+            let invited = (familyData["invited"] as? [[String: Any]]) ?? []
+            return members + invited
         }
         return []
     }
@@ -1583,8 +1609,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(query)
         
-        if let data = result["getFamilyArchives"] as? [[String: Any]] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let archives = data["getFamilyArchives"] as? [[String: Any]] {
+            return archives
         }
         return []
     }
@@ -1609,8 +1636,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["createFamilyArchive"] as? [String: Any],
-           data["success"] as? Bool == true {
+        if let data = result["data"] as? [String: Any],
+           let archiveData = data["createFamilyArchive"] as? [String: Any],
+           archiveData["success"] as? Bool == true {
             return true
         }
         return false
@@ -1637,8 +1665,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["updateFamilyArchive"] as? [String: Any],
-           data["success"] as? Bool == true {
+        if let data = result["data"] as? [String: Any],
+           let archiveData = data["updateFamilyArchive"] as? [String: Any],
+           archiveData["success"] as? Bool == true {
             return true
         }
         return false
@@ -1659,8 +1688,9 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["id": id]
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["deleteFamilyArchive"] as? [String: Any],
-           data["success"] as? Bool == true {
+        if let data = result["data"] as? [String: Any],
+           let archiveData = data["deleteFamilyArchive"] as? [String: Any],
+           archiveData["success"] as? Bool == true {
             return true
         }
         return false
@@ -1749,8 +1779,9 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         
-        if let data = result["updateAsset"] as? [String: Any] {
-            return data
+        if let data = result["data"] as? [String: Any],
+           let assetData = data["updateAsset"] as? [String: Any] {
+            return assetData
         }
         throw APIError.networkError
     }
@@ -1772,9 +1803,10 @@ class DataManager: ObservableObject {
         let variables: [String: Any] = ["type": type]
         let result = try await GraphQLClient.shared.query(query, variables: variables)
         
-        if let data = result["downloadUserData"] as? [String: Any] {
-            print("✅ 数据导出成功：胶囊\(data["capsules"] ?? []) 遗嘱\(data["wills"] ?? [])")
-            return data
+        if let data = result["data"] as? [String: Any],
+           let exportData = data["downloadUserData"] as? [String: Any] {
+            print("✅ 数据导出成功：胶囊\(exportData["capsules"] ?? []) 遗嘱\(exportData["wills"] ?? [])")
+            return exportData
         }
         throw APIError.networkError
     }

@@ -89,7 +89,7 @@ class APIManager {
             let result = try await apiClient.query(mutation, variables: variables)
             if let data = result["data"] as? [String: Any],
                let intervalData = data["updateCheckInInterval"] as? [String: Any],
-               let success = data["success"] as? Bool {
+               let success = intervalData["success"] as? Bool {
                 print("📤 签到间隔已同步到服务器：\(hours) 小时")
                 return success
             }
