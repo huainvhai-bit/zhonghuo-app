@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVKit
 
 struct ReceivedCapsuleListView: View {
     @ObservedObject var dataManager = DataManager.shared
@@ -148,12 +149,14 @@ struct ReceivedCapsuleRow: View {
         }
         return dateString
     }
+
 }
 
 struct ReceivedCapsuleDetailView: View {
     let capsule: ReceivedCapsule
     @Environment(\.dismiss) var dismiss
     @State private var showingMediaPlayer = false
+    @State private var mediaPlayer: AVPlayer?
     
     var body: some View {
         NavigationView {
@@ -203,6 +206,7 @@ struct ReceivedCapsuleDetailView: View {
                                     .cornerRadius(12)
                             } else if capsule.mediaUrl != nil || capsule.mediaServerUrl != nil {
                                 Button(action: {
+                                    prepareMediaPlayer()
                                     showingMediaPlayer = true
                                 }) {
                                     HStack {
@@ -261,6 +265,27 @@ struct ReceivedCapsuleDetailView: View {
                     .foregroundColor(Color(hex: "6366F1"))
                 }
             }
+            .sheet(isPresented: $showingMediaPlayer) {
+                ZStack {
+                    if let mediaPlayer {
+                        VideoPlayer(player: mediaPlayer)
+                            .ignoresSafeArea()
+                            .onAppear {
+                                mediaPlayer.play()
+                            }
+                    } else {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("正在加载播放器...")
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black)
+                    }
+                }
+                .background(Color.black)
+            }
         }
     }
     
@@ -279,5 +304,26 @@ struct ReceivedCapsuleDetailView: View {
             return displayFormatter.string(from: date)
         }
         return dateString
+    }
+
+    private func prepareMediaPlayer() {
+        let mediaString = (capsule.mediaServerUrl?.isEmpty == false) ? capsule.mediaServerUrl : capsule.mediaUrl
+        guard let rawString = mediaString, !rawString.isEmpty else { return }
+
+        let url: URL
+        if rawString.hasPrefix("http://") || rawString.hasPrefix("https://") {
+            guard let remoteURL = URL(string: rawString) else { return }
+            url = remoteURL
+        } else if rawString.hasPrefix("/"), rawString.contains("Documents") {
+            url = URL(fileURLWithPath: rawString)
+        } else if rawString.hasPrefix("/") {
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            url = documentsPath.appendingPathComponent(String(rawString.dropFirst()))
+        } else {
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            url = documentsPath.appendingPathComponent(rawString)
+        }
+
+        mediaPlayer = AVPlayer(url: url)
     }
 }

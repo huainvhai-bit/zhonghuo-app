@@ -179,6 +179,15 @@ struct CapsuleList: View {
                 ShareCapsuleSheet(
                     capsule: capsule,
                     familyMembers: dataManager.familyMembers,
+                    onAddFamily: {
+                        showingShareSheet = false
+                        selectedCapsuleForShare = nil
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("SwitchToTab"),
+                            object: nil,
+                            userInfo: ["tab": 3]
+                        )
+                    },
                     onShare: { [self] selectedMembers in
                         let receiverIds = selectedMembers.map { $0.relatedUserId }
                         Task {
@@ -357,36 +366,27 @@ struct CapsuleList: View {
     }
     
     private var capsuleList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 12) {
-                ForEach(filteredCapsules) { capsule in
-                    SwipeableCapsuleCard(
-                        capsule: capsule,
-                        onEdit: {
-                            selectedCapsuleForEdit = capsule
-                            DispatchQueue.main.async {
-                                showingEditSheet = true
-                            }
-                        },
-                        onDelete: {
-                            showingDeleteAlert = true
-                            capsuleToDelete = capsule
-                        },
-                        onSend: {
-                            selectedCapsuleForShare = capsule
-                            DispatchQueue.main.async {
-                                showingShareSheet = true
-                            }
-                        },
-                        onTap: {
-                            // 点击打开胶囊详情
-                            selectedCapsuleForDetail = capsule
-                            DispatchQueue.main.async {
-                                showingCapsuleDetail = true
-                            }
-                        }
-                    )
-                }
+        VStack(spacing: 12) {
+            ForEach(filteredCapsules) { capsule in
+                SwipeableCapsuleCard(
+                    capsule: capsule,
+                    onEdit: {
+                        selectedCapsuleForEdit = capsule
+                        showingEditSheet = true
+                    },
+                    onDelete: {
+                        showingDeleteAlert = true
+                        capsuleToDelete = capsule
+                    },
+                    onSend: {
+                        selectedCapsuleForShare = capsule
+                        showingShareSheet = true
+                    },
+                    onTap: {
+                        selectedCapsuleForDetail = capsule
+                        showingCapsuleDetail = true
+                    }
+                )
             }
         }
     }
@@ -587,6 +587,7 @@ struct StatBox: View {
 struct ShareCapsuleSheet: View {
     let capsule: TimeCapsule
     let familyMembers: [FamilyInfo]
+    let onAddFamily: () -> Void
     let onShare: ([FamilyInfo]) -> Void
     let onCancel: () -> Void
     
@@ -652,6 +653,15 @@ struct ShareCapsuleSheet: View {
                         Text("请先在「家人守护」中添加家人")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Button(action: onAddFamily) {
+                            Text("去添加家人")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "6366F1"))
+                                .cornerRadius(10)
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {

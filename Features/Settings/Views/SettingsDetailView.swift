@@ -34,11 +34,19 @@ struct SettingsDetailView: View {
                 
                 // 👨‍👩‍👧 家人守护模式
                 Section(header: Text("家人守护")) {
-                    Toggle(isOn: $isFamilyMode) {
-                        SettingsRow(icon: "person.2.fill", iconColor: .green, title: "我是家人", subtitle: "停止签到倒计时")
-                    }
-                    .tint(Color(hex: "6366F1"))
+                Toggle(isOn: $isFamilyMode) {
+                    SettingsRow(icon: "person.2.fill", iconColor: .green, title: "我是家人", subtitle: "停止签到倒计时")
                 }
+                .tint(Color(hex: "6366F1"))
+                .onChange(of: isFamilyMode) { newValue in
+                    if newValue {
+                        CountdownTimerManager.shared.stop()
+                    } else {
+                        CountdownTimerManager.shared.start { }
+                    }
+                    NotificationCenter.default.post(name: NSNotification.Name("FamilyModeChanged"), object: nil)
+                }
+            }
                 
                 Section(header: Text("说明")) {
                     Text("开启「我是家人」后，您将不需要进行安全签到。此设备作为守护者使用，负责查看家人的安全状态，不再进行自我签到倒计时。")

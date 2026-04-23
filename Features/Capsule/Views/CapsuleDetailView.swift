@@ -369,23 +369,13 @@ struct CapsuleDetailView: View {
             return
         }
         
-        // ✅ 先显示加载状态
-        isPlayerLoading = true
-        
-        // 先显示sheet（带加载状态）
+        // ✅ 先创建播放器，再展示 sheet，避免首次白屏/黑屏
+        let newPlayer = AVPlayer(url: fileURL)
+        newPlayer.automaticallyWaitsToMinimizeStalling = true
+        newPlayer.play()
+        player = newPlayer
+        isPlayerLoading = false
         showingPlayer = true
-        
-        // 在主线程创建播放器（AVPlayer需要主线程）
-        DispatchQueue.main.async {
-            let newPlayer = AVPlayer(url: fileURL)
-            newPlayer.automaticallyWaitsToMinimizeStalling = true
-            
-            // 延迟一小段时间让sheet先出现
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.player = newPlayer
-                self.isPlayerLoading = false
-            }
-        }
         print("🎬 播放器已准备好：\(fileURL)")
     }
     

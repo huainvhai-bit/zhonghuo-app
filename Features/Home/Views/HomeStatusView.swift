@@ -29,12 +29,11 @@ struct HomeStatusView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView(.vertical, showsIndicators: false) {
-                ZStack(alignment: .top) {
-                    // ✅ 修复: 背景色全屏覆盖
-                    Color(.systemBackground)
-                        .ignoresSafeArea()
-                    
+            ZStack {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
                         checkInCard
                         statusCard
@@ -44,36 +43,6 @@ struct HomeStatusView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
-                
-                // 隐藏的全局导航链接
-                NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                NavigationLink(destination: FamilyGuardView(), isActive: $navigateToFamilyTab) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                NavigationLink(destination: ReceivedCapsuleListView(), isActive: $navigateToReceivedCapsules) {
-                    EmptyView()
-                }
-                .opacity(0)
-                
-                NavigationLink(destination: Group {
-                    if let capsule = selectedReceivedCapsule {
-                        ReceivedCapsuleDetailView(capsule: capsule)
-                    }
-                }, isActive: $navigateToCapsuleDetail) {
-                    EmptyView()
-                }
-                .opacity(0)
             }
             .navigationTitle("终活与您相伴")
             .navigationBarTitleDisplayMode(.inline)
@@ -104,7 +73,9 @@ struct HomeStatusView: View {
                 }
                 
                 // 然后更新倒计时显示
-                viewModel.updateStatus(timerManager: timerManager)
+                Task { @MainActor in
+                    viewModel.updateStatus(timerManager: timerManager)
+                }
                 
                 // ✅ 启动倒计时定时器（每秒递减）
                 // 注意：timerManager 是 @StateObject，当 secondsRemaining 变化时会自动触发视图更新
@@ -120,7 +91,9 @@ struct HomeStatusView: View {
                 // 🔔 监听签到完成通知（刷新倒计时）
                 NotificationCenter.default.addObserver(forName: NSNotification.Name("CheckInDidComplete"), object: nil, queue: .main) { _ in
                     print("🔔 收到签到完成通知，刷新倒计时")
-                    viewModel.updateStatus(timerManager: timerManager)
+                    Task { @MainActor in
+                        viewModel.updateStatus(timerManager: timerManager)
+                    }
                 }
             }
             .onDisappear {
@@ -130,12 +103,41 @@ struct HomeStatusView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoCheckIn"))) { _ in
                 print("🔔 收到自动签到通知（从后台进入前台）")
                 viewModel.handleAutoCheckIn()
-                viewModel.updateStatus(timerManager: timerManager)
+                Task { @MainActor in
+                    viewModel.updateStatus(timerManager: timerManager)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SceneDidBecomeActive"))) { _ in
                 print("🔔 收到场景激活通知，刷新倒计时")
-                viewModel.updateStatus(timerManager: timerManager)
+                Task { @MainActor in
+                    viewModel.updateStatus(timerManager: timerManager)
+                }
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FamilyModeChanged"))) { _ in
+                print("🔔 收到家人模式切换通知，刷新首页状态")
+                Task { @MainActor in
+                    viewModel.updateStatus(timerManager: timerManager)
+                }
+            }
+            // 隐藏的全局导航链接
+            .background(
+                Group {
+                    NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) { EmptyView() }
+                        .opacity(0)
+                    NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) { EmptyView() }
+                        .opacity(0)
+                    NavigationLink(destination: FamilyGuardView(), isActive: $navigateToFamilyTab) { EmptyView() }
+                        .opacity(0)
+                    NavigationLink(destination: ReceivedCapsuleListView(), isActive: $navigateToReceivedCapsules) { EmptyView() }
+                        .opacity(0)
+                    NavigationLink(destination: Group {
+                        if let capsule = selectedReceivedCapsule {
+                            ReceivedCapsuleDetailView(capsule: capsule)
+                        }
+                    }, isActive: $navigateToCapsuleDetail) { EmptyView() }
+                    .opacity(0)
+                }
+            )
         }
     }
     

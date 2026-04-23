@@ -6,19 +6,26 @@ struct AVPlayerView: UIViewRepresentable {
     let player: AVPlayer
     
     func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.videoGravity = .resizeAspect
-        view.layer.addSublayer(playerLayer)
-        playerLayer.frame = view.bounds
-        view.layoutSubviews()
+        let view = PlayerUIView()
+        view.playerLayer.player = player
+        view.playerLayer.videoGravity = .resizeAspect
         return view
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        // Update player layer frame if needed
-        if let playerLayer = uiView.layer.sublayers?.first as? AVPlayerLayer {
-            playerLayer.frame = uiView.bounds
-        }
+        guard let view = uiView as? PlayerUIView else { return }
+        view.playerLayer.player = player
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+    }
+}
+
+final class PlayerUIView: UIView {
+    override class var layerClass: AnyClass {
+        AVPlayerLayer.self
+    }
+    
+    var playerLayer: AVPlayerLayer {
+        layer as! AVPlayerLayer
     }
 }
