@@ -91,19 +91,38 @@ struct RegisterView: View {
                 print("✅ 验证码发送成功：\(devCode.isEmpty ? "已发送" : "开发者模式验证码：\(devCode)")")
                 
                 // 开发者模式自动填充验证码
-                if !devCode.isEmpty {
-                    verifyCode = devCode
+                await MainActor.run {
+                    if !devCode.isEmpty {
+                        verifyCode = devCode
+                    }
+                    countdown = 60
+                    startTimer()
+                }
+            } else {
+                await MainActor.run {
+                    countdown = 0
+                    timer?.invalidate()
+                    errorMessage = "发送验证码失败，请稍后重试"
+                    showingError = true
                 }
             }
         } catch {
             print("❌ 发送验证码失败：\(error.localizedDescription)")
             let errorMsg = error.localizedDescription
-            if errorMsg.contains("手机号") {
-                errorMessage = "手机号格式错误"
-            } else {
-                errorMessage = "发送验证码失败，请稍后重试"
+            await MainActor.run {
+                countdown = 0
+                timer?.invalidate()
+                if errorMsg.contains("手机号") {
+                    errorMessage = "手机号格式错误"
+                } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
+                    errorMessage = "网络连接失败，请检查网络"
+                } else if errorMsg.contains("验证码") {
+                    errorMessage = "验证码发送失败，请稍后重试"
+                } else {
+                    errorMessage = "发送验证码失败，请稍后重试"
+                }
+                showingError = true
             }
-            showingError = true
         }
     }
     
@@ -206,7 +225,20 @@ struct RegisterView: View {
         }
         
         guard (200...299).contains(httpResponse.statusCode) else {
-            throw NSError(domain: "HTTP Error", code: httpResponse.statusCode)
+            let message: String
+            switch httpResponse.statusCode {
+            case 401:
+                message = "当前账号无权限操作"
+            case 403:
+                message = "当前账号无权限操作"
+            case 500:
+                message = "服务器内部错误，请稍后重试"
+            case 503:
+                message = "服务器暂不可用，请稍后重试"
+            default:
+                message = "服务器返回 \(httpResponse.statusCode)"
+            }
+            throw NSError(domain: message, code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
         }
         
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -227,8 +259,10 @@ struct RegisterView: View {
         if let errors = response["errors"] as? [[String: Any]], !errors.isEmpty {
             let message = errors[0]["message"] as? String ?? "注册失败"
             print("❌ 注册失败：\(message)")
-            errorMessage = message
-            showingError = true
+            await MainActor.run {
+                errorMessage = message
+                showingError = true
+            }
             return
         }
         
@@ -237,9 +271,12 @@ struct RegisterView: View {
               let registerData = data["register"] as? [String: Any],
               let success = registerData["success"] as? Bool,
               success else {
+            let message = authMessage(from: response, fallback: "注册失败，请稍后重试")
             print("❌ 注册失败")
-            errorMessage = "注册失败，请稍后重试"
-            showingError = true
+            await MainActor.run {
+                errorMessage = message
+                showingError = true
+            }
             return
         }
         
@@ -270,24 +307,42 @@ struct RegisterView: View {
         print("❌ 注册失败：\(error.localizedDescription)")
         
         let errorMsg = error.localizedDescription
-        
-        // ✅ 优先使用错误码进行精确匹配
-        if errorMsg.contains("PHONE_EXISTS:") {
-            errorMessage = "该手机号已注册，请直接登录"
-        } else if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
-            errorMessage = "账号已注册，请登录"
-        } else if errorMsg.contains("手机号") || errorMsg.contains("手机号格式") {
-            errorMessage = "手机号格式错误"
-        } else if errorMsg.contains("密码") && errorMsg.contains("不一致") {
-            errorMessage = "两次输入的密码不一致"
-        } else if errorMsg.contains("密码") {
-            errorMessage = "密码至少 8 位，包含字母和数字"
-        } else if errorMsg.contains("验证码") {
-            errorMessage = "验证码错误"
-        } else {
-            errorMessage = "注册失败，请稍后重试"
+        DispatchQueue.main.async {
+            // ✅ 优先使用错误码进行精确匹配
+            if errorMsg.contains("PHONE_EXISTS:") {
+                self.errorMessage = "该手机号已注册，请直接登录"
+            } else if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
+                self.errorMessage = "账号已注册，请登录"
+            } else if errorMsg.contains("手机号") || errorMsg.contains("手机号格式") {
+                self.errorMessage = "手机号格式错误"
+            } else if errorMsg.contains("密码") && errorMsg.contains("不一致") {
+                self.errorMessage = "两次输入的密码不一致"
+            } else if errorMsg.contains("密码") {
+                self.errorMessage = "密码至少 8 位，包含字母和数字"
+            } else if errorMsg.contains("验证码") {
+                self.errorMessage = "验证码错误"
+            } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
+                self.errorMessage = "网络连接失败，请检查网络"
+            } else {
+                self.errorMessage = "注册失败，请稍后重试"
+            }
+            self.showingError = true
         }
-        showingError = true
+    }
+
+    private func authMessage(from response: [String: Any], fallback: String) -> String {
+        if let errors = response["errors"] as? [[String: Any]], let first = errors.first {
+            return first["message"] as? String ?? fallback
+        }
+
+        if let data = response["data"] as? [String: Any],
+           let registerData = data["register"] as? [String: Any],
+           let message = registerData["message"] as? String,
+           !message.isEmpty {
+            return message
+        }
+
+        return fallback
     }
     
     // MARK: - 视图
@@ -341,12 +396,8 @@ struct RegisterView: View {
                             showingError = true
                             return
                         }
-                        
-                        // 启动倒计时
-                        countdown = 60
-                        startTimer()
-                        
-                        // 调用发送验证码 API
+
+                        // 调用发送验证码 API，成功后再启动倒计时
                         Task {
                             await sendVerifyCode()
                         }

@@ -42,13 +42,9 @@ final class LoginViewModel: ObservableObject {
 
     func requestVerifyCode() async {
         guard isValidPhone(phone) else {
-            errorMessage = "手机号格式错误"
-            showingError = true
+            presentAuthError("手机号格式错误")
             return
         }
-
-        countdown = 60
-        startTimer()
 
         do {
             let mutation = """
@@ -70,13 +66,39 @@ final class LoginViewModel: ObservableObject {
                 if !devCode.isEmpty {
                     verifyCode = devCode
                 }
+                countdown = 60
+                startTimer()
+            } else {
+                let message = authMessage(from: response, fallback: "发送验证码失败，请稍后重试")
+                countdown = 0
+                timer?.invalidate()
+                presentAuthError(message)
             }
         } catch {
+            countdown = 0
+            timer?.invalidate()
             handleAuthError(error, context: "发送验证码")
         }
     }
 
     func submitLogin() async -> Bool {
+        guard isValidPhone(phone) else {
+            presentAuthError("手机号格式错误")
+            return false
+        }
+
+        if loginType == "password" {
+            guard !password.isEmpty else {
+                presentAuthError("请输入密码")
+                return false
+            }
+        } else {
+            guard !verifyCode.isEmpty else {
+                presentAuthError("请输入验证码")
+                return false
+            }
+        }
+
         isLoading = true
         defer { isLoading = false }
 
@@ -165,7 +187,20 @@ final class LoginViewModel: ObservableObject {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
-            throw NSError(domain: "HTTP Error", code: httpResponse.statusCode)
+            let message: String
+            switch httpResponse.statusCode {
+            case 401:
+                message = "登录已失效，请重新登录"
+            case 403:
+                message = "当前账号无权限操作"
+            case 500:
+                message = "服务器内部错误，请稍后重试"
+            case 503:
+                message = "服务器暂不可用，请稍后重试"
+            default:
+                message = "服务器返回 \(httpResponse.statusCode)"
+            }
+            throw NSError(domain: message, code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -181,29 +216,39 @@ final class LoginViewModel: ObservableObject {
     }
 
     private func handleAuthSuccess(_ response: [String: Any]) async -> Bool {
-        if let errors = response["errors"] as? [[String: Any]], !errors.isEmpty {
-            let message = errors[0]["message"] as? String ?? "登录失败"
-            errorMessage = message
-            showingError = true
+        let message = authMessage(from: response, fallback: "登录失败，请稍后重试")
+        guard let data = response["data"] as? [String: Any] else {
+            presentAuthError(message)
             return false
         }
 
-        guard let data = response["data"] as? [String: Any],
-              let loginData = data.values.first as? [String: Any],
-              let success = loginData["success"] as? Bool,
-              success else {
-            errorMessage = "登录失败，请稍后重试"
-            showingError = true
+        let resultKey = loginType == "password" ? "login" : "verifyCodeLogin"
+        guard let loginData = data[resultKey] as? [String: Any] else {
+            presentAuthError(message)
             return false
         }
 
-        if let token = loginData["token"] as? String {
+        if let success = loginData["success"] as? Bool, !success {
+            presentAuthError(message)
+            return false
+        }
+
+        guard let success = loginData["success"] as? Bool, success else {
+            presentAuthError(message)
+            return false
+        }
+
+        if let token = loginData["token"] as? String, !token.isEmpty {
             KeychainManager.shared.saveToken(token)
         }
 
-        if let user = loginData["user"] as? [String: Any],
-           let userId = user["id"] as? String {
-            KeychainManager.shared.saveUserId(userId)
+        if let user = loginData["user"] as? [String: Any] {
+            if let userId = user["id"] as? String, !userId.isEmpty {
+                KeychainManager.shared.saveUserId(userId)
+            }
+            if let phone = user["phone"] as? String, !phone.isEmpty {
+                KeychainManager.shared.saveUserPhone(phone)
+            }
         }
 
         userManager.loadUser()
@@ -216,24 +261,54 @@ final class LoginViewModel: ObservableObject {
 
     private func handleAuthError(_ error: Error, context: String) {
         let errorMsg = error.localizedDescription
+        presentAuthError(mappedAuthMessage(from: errorMsg, context: context))
+    }
 
-        if errorMsg.contains("ACCOUNT_NOT_FOUND:") {
-            errorMessage = "账号不存在，请先注册"
-        } else if errorMsg.contains("PASSWORD_ERROR:") {
-            errorMessage = "密码错误，请重试"
-        } else if errorMsg.contains("CODE_ERROR:") {
-            errorMessage = "验证码错误或已过期"
-        } else if errorMsg.contains("PHONE_EXISTS:") {
-            errorMessage = "该手机号已注册，请直接登录"
-        } else if errorMsg.contains("未注册") || errorMsg.contains("不存在") {
-            errorMessage = "账号不存在，请先注册"
-        } else if errorMsg.contains("密码") || errorMsg.contains("PASSWORD") {
-            errorMessage = "密码错误，请重试"
-        } else if errorMsg.contains("网络") || errorMsg.contains("网络连接") {
-            errorMessage = "网络连接失败，请检查网络"
-        } else {
-            errorMessage = errorMsg.isEmpty ? "\(context)失败，请稍后重试" : errorMsg
+    private func authMessage(from response: [String: Any], fallback: String) -> String {
+        if let errors = response["errors"] as? [[String: Any]], let first = errors.first {
+            return first["message"] as? String ?? fallback
         }
+
+        if let data = response["data"] as? [String: Any] {
+            let key = loginType == "password" ? "login" : "verifyCodeLogin"
+            if let result = data[key] as? [String: Any] {
+                if let message = result["message"] as? String, !message.isEmpty {
+                    return message
+                }
+            }
+        }
+
+        return fallback
+    }
+
+    private func mappedAuthMessage(from rawMessage: String, context: String) -> String {
+        if rawMessage.contains("ACCOUNT_NOT_FOUND:") {
+            return "账号不存在，请先注册"
+        } else if rawMessage.contains("PASSWORD_ERROR:") {
+            return "密码错误，请重试"
+        } else if rawMessage.contains("CODE_ERROR:") {
+            return "验证码错误或已过期"
+        } else if rawMessage.contains("PHONE_EXISTS:") {
+            return "该手机号已注册，请直接登录"
+        } else if rawMessage.contains("未注册") || rawMessage.contains("不存在") {
+            return "账号不存在，请先注册"
+        } else if rawMessage.contains("密码") || rawMessage.contains("PASSWORD") {
+            return "密码错误，请重试"
+        } else if rawMessage.contains("验证码") && rawMessage.contains("过期") {
+            return "验证码错误或已过期"
+        } else if rawMessage.contains("验证码") {
+            return "验证码错误或已过期"
+        } else if rawMessage.contains("网络") || rawMessage.contains("network") || rawMessage.contains("timed out") {
+            return "网络连接失败，请检查网络"
+        } else if rawMessage.contains("HTTP Error") {
+            return "\(context)失败，请稍后重试"
+        } else {
+            return rawMessage.isEmpty ? "\(context)失败，请稍后重试" : rawMessage
+        }
+    }
+
+    private func presentAuthError(_ message: String) {
+        errorMessage = message
         showingError = true
     }
 

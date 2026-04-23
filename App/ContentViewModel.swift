@@ -58,12 +58,18 @@ final class ContentViewModel: ObservableObject {
     }
 
     func handleScenePhaseChange(_ newPhase: ScenePhase) {
-        if newPhase == .active && userManager.isLoggedIn && userManager.currentUser != nil {
+        if newPhase == .active {
             NotificationCenter.default.post(name: NSNotification.Name("SceneDidBecomeActive"), object: nil)
+
             Task {
-                userManager.performAutoSignIn()
+                await checkLoginStatus()
             }
-            _ = UserManager.shared.currentUser
+
+            if userManager.isLoggedIn {
+                Task {
+                    userManager.performAutoSignIn()
+                }
+            }
         }
     }
 
@@ -117,14 +123,8 @@ final class ContentViewModel: ObservableObject {
     func checkLoginStatus() async {
         forceLogout = false
         userManager.loadUser()
-
-        var waitCount = 0
-        while userManager.currentUser == nil && waitCount < 30 {
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            waitCount += 1
-        }
-
-        let isLoggedIn = userManager.isLoggedIn && userManager.currentUser != nil
+        let hasToken = KeychainManager.shared.getToken() != nil
+        let isLoggedIn = userManager.isLoggedIn || hasToken
 
         if isLoggedIn {
             let validationResult = await validateToken()

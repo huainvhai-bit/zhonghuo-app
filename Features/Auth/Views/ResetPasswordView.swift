@@ -119,7 +119,20 @@ struct ResetPasswordView: View {
         }
         
         guard (200...299).contains(httpResponse.statusCode) else {
-            throw NSError(domain: "HTTP Error", code: httpResponse.statusCode)
+            let message: String
+            switch httpResponse.statusCode {
+            case 401:
+                message = "当前账号无权限操作"
+            case 403:
+                message = "当前账号无权限操作"
+            case 500:
+                message = "服务器内部错误，请稍后重试"
+            case 503:
+                message = "服务器暂不可用，请稍后重试"
+            default:
+                message = "服务器返回 \(httpResponse.statusCode)"
+            }
+            throw NSError(domain: message, code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
         }
         
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -140,7 +153,12 @@ struct ResetPasswordView: View {
               let resetData = data["resetPassword"] as? [String: Any],
               let success = resetData["success"] as? Bool,
               success else {
+            let message = authMessage(from: response, fallback: "重置密码失败，请稍后重试")
             print("❌ 重置密码失败")
+            await MainActor.run {
+                errorMessage = message
+                showingError = true
+            }
             return
         }
         
@@ -164,18 +182,37 @@ struct ResetPasswordView: View {
         print("❌ 重置密码失败：\(error.localizedDescription)")
         
         let errorMsg = error.localizedDescription
-        if errorMsg.contains("验证码") || errorMsg.contains("错误") {
-            errorMessage = "验证码错误或已过期，请重新获取"
-        } else if errorMsg.contains("手机号") {
-            errorMessage = "手机号格式错误"
-        } else if errorMsg.contains("密码") {
-            errorMessage = "密码至少 6 位"
-        } else if errorMsg.contains("不一致") {
-            errorMessage = "两次输入的密码不一致"
-        } else {
-            errorMessage = "重置密码失败，请稍后重试"
+        DispatchQueue.main.async {
+            if errorMsg.contains("验证码") || errorMsg.contains("错误") {
+                self.errorMessage = "验证码错误或已过期，请重新获取"
+            } else if errorMsg.contains("手机号") {
+                self.errorMessage = "手机号格式错误"
+            } else if errorMsg.contains("密码") {
+                self.errorMessage = "密码至少 6 位"
+            } else if errorMsg.contains("不一致") {
+                self.errorMessage = "两次输入的密码不一致"
+            } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
+                self.errorMessage = "网络连接失败，请检查网络"
+            } else {
+                self.errorMessage = "重置密码失败，请稍后重试"
+            }
+            self.showingError = true
         }
-        showingError = true
+    }
+
+    private func authMessage(from response: [String: Any], fallback: String) -> String {
+        if let errors = response["errors"] as? [[String: Any]], let first = errors.first {
+            return first["message"] as? String ?? fallback
+        }
+
+        if let data = response["data"] as? [String: Any],
+           let resetData = data["resetPassword"] as? [String: Any],
+           let message = resetData["message"] as? String,
+           !message.isEmpty {
+            return message
+        }
+
+        return fallback
     }
     
     // MARK: - 视图
@@ -289,10 +326,7 @@ struct ResetPasswordView: View {
             showingError = true
             return
         }
-        
-        countdown = 60
-        startTimer()
-        
+
         // 调用发送验证码 API
         Task {
             await sendVerifyCode()
@@ -314,16 +348,31 @@ struct ResetPasswordView: View {
             """
             
             let variables: [String: Any] = ["phone": phone]
-            _ = try await graphqlAuthRequest(mutation: mutation, variables: variables)
-            
-            await MainActor.run {
-                codeSent = true
-                startTimer()
+            let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
+
+            if let data = response["data"] as? [String: Any],
+               let result = data["sendResetPasswordCode"] as? [String: Any],
+               let success = result["success"] as? Bool, success {
+                await MainActor.run {
+                    codeSent = true
+                    countdown = 60
+                    startTimer()
+                }
+            } else {
+                let message = authMessage(from: response, fallback: "发送验证码失败，请稍后重试")
+                await MainActor.run {
+                    countdown = 0
+                    timer?.invalidate()
+                    errorMessage = message
+                    showingError = true
+                }
             }
             
             print("✅ 验证码已发送到 \(phone)")
         } catch {
             await MainActor.run {
+                countdown = 0
+                timer?.invalidate()
                 errorMessage = "发送验证码失败：\(error.localizedDescription)"
                 showingError = true
             }
