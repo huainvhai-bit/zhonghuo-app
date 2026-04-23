@@ -20,6 +20,7 @@ settings:
     TARGETED_DEVICE_FAMILY: 1,2
     IOS_DEPLOYMENT_TARGET: 15.0
     SWIFT_VERSION: "5.9"
+    SWIFT_OBJC_BRIDGING_HEADER: "终活-Bridging-Header.h"
     ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: "YES"
     SWIFT_EMIT_LOC_STRINGS: "YES"
     ENABLE_PREVIEWS: "YES"
@@ -31,6 +32,14 @@ settings:
     MTL_ENABLE_DEBUG_INFO: "INCLUDE_SOURCE"
     ONLY_ACTIVE_ARCH: "YES"
     SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+    HEADER_SEARCH_PATHS:
+      - "$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64/Headers"
+      - "$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers"
+      - "$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64/Headers"
+      - "$(PROJECT_DIR)/jpush-ios-6.0.0-release/Lib/JPushSDKLib-noidfa/jpush-ios-6.0.0.xcframework/ios-arm64_x86_64-simulator/Headers"
+    OTHER_LDFLAGS:
+      - $(inherited)
+      - -lresolv
     GCC_PREPROCESSOR_DEFINITIONS:
       - DEBUG=1
       - $(inherited)
@@ -40,10 +49,10 @@ targets:
     platform: iOS
     sources:
       - path: App
+      - path: Features
       - path: Managers
       - path: Models
       - path: Utils
-      - path: Views
       - path: Assets.xcassets
       - path: Info.plist
       - path: AppDelegate.swift
@@ -106,5 +115,8 @@ targets:
             CFBundleIconName: AppIcon
             CFBundleIconFiles:
               - AppIcon
-    dependencies: []
+    dependencies:
+      - framework: jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework
+      - framework: jpush-ios-6.0.0-release/Lib/JPushSDKLib/jcore-ios-5.3.0.xcframework
+      - framework: jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-extension-ios-2.0.6.xcframework
     preBuildScripts: []
