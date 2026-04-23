@@ -626,15 +626,15 @@ class DataManager: ObservableObject {
     }
     
     /// 重置密码
-    func resetPassword(phone: String, newPassword: String) async throws -> Bool {
+    func resetPassword(phone: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> Bool {
         guard !Self.apiURL.isEmpty else {
             print("❌ API URL 未设置")
             return false
         }
         
         let mutation = """
-        mutation($phone: String!, $newPassword: String!) {
-            resetPassword(phone: $phone, newPassword: $newPassword) {
+        mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+            resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                 success
                 message
             }
@@ -643,7 +643,9 @@ class DataManager: ObservableObject {
         
         let variables: [String: Any] = [
             "phone": phone,
-            "newPassword": newPassword
+            "newPassword": newPassword,
+            "securityQuestion": securityQuestion,
+            "securityAnswer": securityAnswer
         ]
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)

@@ -12,6 +12,7 @@ import SwiftUI
 final class LoginViewModel: ObservableObject {
     @Published var phone = ""
     @Published var password = ""
+    @Published var captchaInput = ""
     @Published var isLoading = false
     @Published var showingError = false
     @Published var errorMessage = ""
@@ -35,6 +36,11 @@ final class LoginViewModel: ObservableObject {
             return false
         }
 
+        guard !captchaInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            presentAuthError("请输入图形验证码")
+            return false
+        }
+
         isLoading = true
         defer { isLoading = false }
 
@@ -48,8 +54,8 @@ final class LoginViewModel: ObservableObject {
 
     private func loginWithPassword() async throws -> Bool {
         let mutation = """
-        mutation($phone: String!, $password: String!) {
-            login(phone: $phone, password: $password) {
+        mutation($phone: String!, $password: String!, $captcha: String!, $captchaPurpose: String!) {
+            login(phone: $phone, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose) {
                 success
                 token
                 user {
@@ -63,7 +69,9 @@ final class LoginViewModel: ObservableObject {
 
         let variables: [String: Any] = [
             "phone": phone,
-            "password": password
+            "password": password,
+            "captcha": captchaInput.trimmingCharacters(in: .whitespacesAndNewlines),
+            "captchaPurpose": "login"
         ]
 
         let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -175,6 +183,9 @@ final class LoginViewModel: ObservableObject {
     private func handleAuthError(_ error: Error, context: String) {
         let errorMsg = error.localizedDescription
         presentAuthError(mappedAuthMessage(from: errorMsg, context: context))
+        if errorMsg.contains("CAPTCHA_ERROR:") {
+            captchaInput = ""
+        }
     }
 
     private func authMessage(from response: [String: Any], fallback: String) -> String {
@@ -198,6 +209,8 @@ final class LoginViewModel: ObservableObject {
             return "账号不存在，请先注册"
         } else if rawMessage.contains("PASSWORD_ERROR:") {
             return "密码错误，请重试"
+        } else if rawMessage.contains("CAPTCHA_ERROR:") {
+            return "图形验证码错误或已过期，请刷新后重试"
         } else if rawMessage.contains("CODE_ERROR:") {
             return "验证码错误或已过期"
         } else if rawMessage.contains("PHONE_EXISTS:") {

@@ -11,6 +11,7 @@ import SwiftUI
 struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = LoginViewModel()
+    @StateObject private var captchaService = AppCaptchaService(purpose: "login")
     @State private var isRegistering = false
     @State private var showingResetPassword = false
     
@@ -52,7 +53,42 @@ struct LoginView: View {
                         .textFieldStyle(CustomTextFieldStyle())
                         .font(.system(size: 18, weight: .medium))
                         .onChange(of: viewModel.password) { _ in viewModel.clearError() }
-                    
+
+                    HStack(spacing: 12) {
+                        TextField("图形验证码", text: $viewModel.captchaInput)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))
+                            .onChange(of: viewModel.captchaInput) { _ in viewModel.clearError() }
+
+                        Button {
+                            Task {
+                                await captchaService.loadCaptcha()
+                                viewModel.captchaInput = ""
+                            }
+                        } label: {
+                            Group {
+                                if let image = captchaService.image {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 120, height: 44)
+                                        .cornerRadius(8)
+                                } else if captchaService.isLoading {
+                                    ProgressView()
+                                        .frame(width: 120, height: 44)
+                                } else {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(.systemGray5))
+                                        .frame(width: 120, height: 44)
+                                        .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Button(action: {
                         Task {
                             let success = await viewModel.submitLogin()
@@ -80,10 +116,20 @@ struct LoginView: View {
                         dismissButton: .default(Text("确定"))
                     )
                 }
+                .onChange(of: viewModel.errorMessage, perform: { newValue in
+                    if newValue.contains("图形验证码") {
+                        Task {
+                            await captchaService.loadCaptcha()
+                            viewModel.captchaInput = ""
+                        }
+                    }
+                })
 
                 HStack {
                     Spacer()
-                    Button(action: { showingResetPassword = true }) {
+                    Button {
+                        showingResetPassword = true
+                    } label: {
                         Text("忘记密码？")
                             .foregroundColor(Color(hex: "AF52DE"))
                             .font(.system(size: 16))
@@ -99,11 +145,11 @@ struct LoginView: View {
                         .foregroundColor(.gray)
                         .font(.system(size: 16))
                     
-                    Button(action: { 
+                    Button {
                         print("🔵🔵🔵 LoginView: 点击立即注册")
                         isRegistering = true 
                         print("🔵 isRegistering = \(isRegistering)")
-                    }) {
+                    } label: {
                         Text("立即注册")
                             .foregroundColor(Color(hex: "AF52DE"))
                             .font(.system(size: 16, weight: .bold))
@@ -124,6 +170,11 @@ struct LoginView: View {
         }
         .sheet(isPresented: $showingResetPassword) {
             ResetPasswordView(isPresented: $showingResetPassword)
+        }
+        .task {
+            if captchaService.image == nil {
+                await captchaService.loadCaptcha()
+            }
         }
     }
     

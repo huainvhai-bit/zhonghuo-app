@@ -20,17 +20,27 @@ struct CustomTextFieldStyle: TextFieldStyle {
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
+    @StateObject private var captchaService = AppCaptchaService(purpose: "register")
     
     @State private var name = ""
     @State private var phone = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @State private var captchaQuestion = ""
-    @State private var captchaAnswer = ""
     @State private var captchaInput = ""
+    @State private var selectedSecurityQuestion = Self.securityQuestions.first ?? ""
+    @State private var securityAnswer = ""
     @State private var isLoading = false
     @State private var showingError = false
     @State private var errorMessage = ""
+
+    private static let securityQuestions = [
+        "我的第一所学校名称是？",
+        "我最喜欢的城市是？",
+        "我母亲的姓氏是？",
+        "我最喜欢的电影是？",
+        "我童年最好的朋友名字是？"
+    ]
+    private var securityQuestions: [String] { Self.securityQuestions }
     
     // MARK: - 辅助方法
     
@@ -54,18 +64,6 @@ struct RegisterView: View {
         let result = hasLetter && hasNumber
         print("🔍 密码验证：长度已检查")
         return result
-    }
-    
-    private func generateCaptcha() {
-        let left = Int.random(in: 1...9)
-        let right = Int.random(in: 1...9)
-        captchaQuestion = "\(left) + \(right) = ?"
-        captchaAnswer = "\(left + right)"
-        captchaInput = ""
-    }
-
-    private func validateCaptcha() -> Bool {
-        captchaInput.trimmingCharacters(in: .whitespacesAndNewlines) == captchaAnswer
     }
     
     // MARK: - 注册逻辑
@@ -97,17 +95,22 @@ struct RegisterView: View {
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
 
-            guard validateCaptcha() else {
-                print("❌ 本地验证码错误")
-                throw NSError(domain: "验证码错误", code: -1)
+            guard !captchaInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                print("❌ 图形验证码为空")
+                throw NSError(domain: "请输入图形验证码", code: -1)
+            }
+
+            guard !securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                print("❌ 密保答案为空")
+                throw NSError(domain: "请输入密保答案", code: -1)
             }
             
             print("✅ 所有验证通过，开始注册请求...")
             
             // 调用注册 API
             let mutation = """
-            mutation($name: String!, $phone: String!, $password: String!) {
-                register(name: $name, phone: $phone, password: $password) {
+            mutation($name: String!, $phone: String!, $password: String!, $captcha: String!, $captchaPurpose: String!, $securityQuestion: String!, $securityAnswer: String!) {
+                register(name: $name, phone: $phone, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                     success
                     token
                     user {
@@ -122,7 +125,11 @@ struct RegisterView: View {
             let variables: [String: Any] = [
                 "name": name,
                 "phone": phone,
-                "password": password
+                "password": password,
+                "captcha": captchaInput.trimmingCharacters(in: .whitespacesAndNewlines),
+                "captchaPurpose": "register",
+                "securityQuestion": selectedSecurityQuestion,
+                "securityAnswer": securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
             ]
             
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -227,10 +234,21 @@ struct RegisterView: View {
         if let token = registerData["token"] as? String {
             KeychainManager.shared.saveToken(token)
         }
+
+        if let user = registerData["user"] as? [String: Any] {
+            if let userId = user["id"] as? String {
+                KeychainManager.shared.saveUserId(userId)
+            }
+            if let phone = user["phone"] as? String {
+                KeychainManager.shared.saveUserPhone(phone)
+            }
+        }
         
         // 加载用户数据
         let userManager = UserManager.shared
         userManager.loadUser()
+
+        NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
         
         // 通知 HomeStatusView 刷新
         NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
@@ -261,7 +279,11 @@ struct RegisterView: View {
             } else if errorMsg.contains("密码") {
                 self.errorMessage = "密码至少 8 位，包含字母和数字"
             } else if errorMsg.contains("验证码") {
-                self.errorMessage = "验证码错误"
+                self.errorMessage = "图形验证码错误或已过期，请刷新后重试"
+                self.captchaInput = ""
+                Task { await self.captchaService.loadCaptcha() }
+            } else if errorMsg.contains("密保") {
+                self.errorMessage = "密保问题或答案错误"
             } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
                 self.errorMessage = "网络连接失败，请检查网络"
             } else {
@@ -326,26 +348,37 @@ struct RegisterView: View {
                 HStack(spacing: 12) {
                     TextField("验证码", text: $captchaInput)
                         .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.default)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                         .font(.system(size: 18, weight: .medium))
                     
                     Button(action: {
-                        generateCaptcha()
+                        Task {
+                            await captchaService.loadCaptcha()
+                            captchaInput = ""
+                        }
                     }) {
-                        Text("换一题")
-                            .foregroundColor(Color(hex: "AF52DE"))
-                            .font(.system(size: 16, weight: .medium))
+                        Group {
+                            if let image = captchaService.image {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 120, height: 44)
+                                    .cornerRadius(8)
+                            } else if captchaService.isLoading {
+                                ProgressView()
+                                    .frame(width: 120, height: 44)
+                            } else {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemGray5))
+                                    .frame(width: 120, height: 44)
+                                    .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                            }
+                        }
                     }
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
                 }
 
-                HStack {
-                    Text("验证码题目：\(captchaQuestion)")
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
-                
                 SecureField("设置密码（8 位以上）", text: $password)
                     .textFieldStyle(CustomTextFieldStyle())
                     .font(.system(size: 18, weight: .medium))
@@ -353,6 +386,30 @@ struct RegisterView: View {
                 SecureField("确认密码", text: $confirmPassword)
                     .textFieldStyle(CustomTextFieldStyle())
                     .font(.system(size: 18, weight: .medium))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("找回密码唯一方式")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.secondary)
+
+                    Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+
+                    Picker("密保问题", selection: $selectedSecurityQuestion) {
+                        ForEach(securityQuestions, id: \.self) { question in
+                            Text(question).tag(question)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    TextField("密保答案", text: $securityAnswer)
+                        .textFieldStyle(CustomTextFieldStyle())
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .font(.system(size: 18, weight: .medium))
+                }
+                .padding(.top, 4)
                 
                 Button(action: {
                     print("🔴🔴🔴 立即注册按钮被点击！！！")
@@ -402,18 +459,11 @@ struct RegisterView: View {
         }
         .background(Color("BackgroundColor"))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            if captchaQuestion.isEmpty {
-                generateCaptcha()
+        .task {
+            if captchaService.image == nil {
+                await captchaService.loadCaptcha()
             }
         }
-        // 🔴 移除 onTapGesture 避免拦截按钮点击
-    }
-    
-    // MARK: --actions
-    
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

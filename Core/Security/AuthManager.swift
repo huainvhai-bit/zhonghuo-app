@@ -25,14 +25,14 @@ class AuthManager: ObservableObject {
     ///   - phone: 手机号
     ///   - password: 密码
     /// - Returns: 是否成功
-    func login(phone: String, password: String) async -> Bool {
+    func login(phone: String, password: String, captcha: String, captchaPurpose: String = "login") async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
             let query = """
             mutation {
-                login(phone: "\(phone)", password: "\(password)") {
+                login(phone: "\(phone)", password: "\(password)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)") {
                     token
                     user {
                         id
@@ -87,14 +87,14 @@ class AuthManager: ObservableObject {
     ///   - password: 密码
     ///   - name: 用户名
     /// - Returns: 是否成功
-    func register(phone: String, password: String, name: String) async -> Bool {
+    func register(phone: String, password: String, name: String, captcha: String, securityQuestion: String, securityAnswer: String, captchaPurpose: String = "register") async -> Bool {
         isLoading = true
         errorMessage = nil
         
         do {
             let query = """
             mutation {
-                register(phone: "\(phone)", password: "\(password)", name: "\(name)") {
+                register(phone: "\(phone)", password: "\(password)", name: "\(name)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)", securityQuestion: "\(securityQuestion)", securityAnswer: "\(securityAnswer)") {
                     token
                     user {
                         id

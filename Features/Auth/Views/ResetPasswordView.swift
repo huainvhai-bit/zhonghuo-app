@@ -13,15 +13,23 @@ struct ResetPasswordView: View {
     @Binding var isPresented: Bool
     
     @State private var phone = ""
+    @State private var selectedSecurityQuestion = Self.securityQuestions.first ?? ""
+    @State private var securityAnswer = ""
     @State private var newPassword = ""
     @State private var confirmPassword = ""
     @State private var isLoading = false
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var isSuccess = false
-    @State private var captchaQuestion = ""
-    @State private var captchaAnswer = ""
-    @State private var captchaInput = ""
+    
+    private static let securityQuestions = [
+        "我的第一所学校名称是？",
+        "我最喜欢的城市是？",
+        "我母亲的姓氏是？",
+        "我最喜欢的电影是？",
+        "我童年最好的朋友名字是？"
+    ]
+    private var securityQuestions: [String] { Self.securityQuestions }
     
     // MARK: - 辅助方法
     
@@ -30,18 +38,6 @@ struct ResetPasswordView: View {
         let pattern = "^1[3-9]\\d{9}$"
         let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
         return predicate.evaluate(with: phone)
-    }
-    
-    private func generateCaptcha() {
-        let left = Int.random(in: 1...9)
-        let right = Int.random(in: 1...9)
-        captchaQuestion = "\(left) + \(right) = ?"
-        captchaAnswer = "\(left + right)"
-        captchaInput = ""
-    }
-
-    private func validateCaptcha() -> Bool {
-        captchaInput.trimmingCharacters(in: .whitespacesAndNewlines) == captchaAnswer
     }
     
     // MARK: - 重置密码逻辑
@@ -63,14 +59,14 @@ struct ResetPasswordView: View {
                 throw NSError(domain: "两次输入的密码不一致", code: -1)
             }
             
-            guard validateCaptcha() else {
-                throw NSError(domain: "验证码错误", code: -1)
+            guard !securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw NSError(domain: "请输入密保答案", code: -1)
             }
             
             // 调用重置密码 API
             let mutation = """
-            mutation($phone: String!, $newPassword: String!) {
-                resetPassword(phone: $phone, newPassword: $newPassword) {
+            mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+                resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                     success
                     message
                 }
@@ -79,7 +75,9 @@ struct ResetPasswordView: View {
             
             let variables: [String: Any] = [
                 "phone": phone,
-                "newPassword": newPassword
+                "newPassword": newPassword,
+                "securityQuestion": selectedSecurityQuestion,
+                "securityAnswer": securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
             ]
             
             let response = try await graphqlAuthRequest(mutation: mutation, variables: variables)
@@ -181,8 +179,8 @@ struct ResetPasswordView: View {
         
         let errorMsg = error.localizedDescription
         DispatchQueue.main.async {
-            if errorMsg.contains("验证码") || errorMsg.contains("错误") {
-                self.errorMessage = "验证码错误或已过期，请重新获取"
+            if errorMsg.contains("密保") || errorMsg.contains("答案") {
+                self.errorMessage = "密保问题或答案错误"
             } else if errorMsg.contains("手机号") {
                 self.errorMessage = "手机号格式错误"
             } else if errorMsg.contains("密码") {
@@ -245,24 +243,27 @@ struct ResetPasswordView: View {
                         .disableAutocorrection(true)
                         .font(.system(size: 18, weight: .medium))
 
-                    HStack(spacing: 12) {
-                        TextField("验证码", text: $captchaInput)
-                            .textFieldStyle(CustomTextFieldStyle())
-                            .keyboardType(.default)
-                            .font(.system(size: 18, weight: .medium))
-                        
-                        Button(action: generateCaptcha) {
-                            Text("换一题")
-                                .foregroundColor(Color(hex: "AF52DE"))
-                                .font(.system(size: 16))
-                        }
-                    }
-
-                    HStack {
-                        Text("验证码题目：\(captchaQuestion)")
-                            .font(.system(size: 14))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("忘记密码时的唯一找回方式")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.secondary)
-                        Spacer()
+
+                        Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+
+                        Picker("密保问题", selection: $selectedSecurityQuestion) {
+                            ForEach(securityQuestions, id: \.self) { question in
+                                Text(question).tag(question)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        TextField("密保答案", text: $securityAnswer)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .font(.system(size: 18, weight: .medium))
                     }
                     
                     SecureField("新密码（6 位以上）", text: $newPassword)
@@ -312,21 +313,7 @@ struct ResetPasswordView: View {
             .onDisappear {
                 isLoading = false
             }
-            .onTapGesture {
-                hideKeyboard()
-            }
-            .onAppear {
-                if captchaQuestion.isEmpty {
-                    generateCaptcha()
-                }
-            }
         }
-    }
-    
-    // MARK: --actions
-    
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
 }

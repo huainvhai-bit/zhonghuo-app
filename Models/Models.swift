@@ -1257,10 +1257,10 @@ extension GraphQLClient {
     }
     
     /// 重置密码
-    func resetPassword(phone: String, newPassword: String) async throws -> [String: Any] {
+    func resetPassword(phone: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> [String: Any] {
         let mutation = """
-        mutation($phone: String!, $newPassword: String!) {
-            resetPassword(phone: $phone, newPassword: $newPassword) {
+        mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+            resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                 success
                 message
             }
@@ -1268,7 +1268,9 @@ extension GraphQLClient {
         """
         let variables: [String: Any] = [
             "phone": phone,
-            "newPassword": newPassword
+            "newPassword": newPassword,
+            "securityQuestion": securityQuestion,
+            "securityAnswer": securityAnswer
         ]
         return try await self.query(mutation, variables: variables)
     }

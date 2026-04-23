@@ -22,6 +22,7 @@
 		26EF7A4CB6DB0AC519B025A4 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95607C2B85EA656CD5E9E77A /* AppConfig.swift */; };
 		2B81B3F6F003B14260D75CB6 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAE7365AB62AA2C675749F1 /* FamilyMember.swift */; };
 		2E871C78603CA6CF73249A81 /* HomeStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020DFC00792D2106EBD36AFC /* HomeStatusView.swift */; };
+		30B8C3EF1C7E4F5FA4A7A0D1 /* AppCaptchaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F6C3B7B4D1E42A7B9B38A11 /* AppCaptchaService.swift */; };
 		306640380352B03ACE3EE82E /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A519C7E8CE252F57F9CA7C /* APIManager.swift */; };
 		3597B3D9CB1CB5FCD9719C83 /* InviteCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07579CF4B3E70A217992B90F /* InviteCodeView.swift */; };
 		3D4ADE2C1C0F6FBE663F6A81 /* VersionCheckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CF9D97A822B0E9C4682DD1 /* VersionCheckManager.swift */; };
@@ -96,8 +97,9 @@
 		07579CF4B3E70A217992B90F /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		0801AA0D893A3DFD3FF9145F /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		08BBF5D6016E155A26E01340 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		7F6C3B7B4D1E42A7B9B38A11 /* AppCaptchaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCaptchaService.swift; sourceTree = "<group>"; };
 		13C6462556E1984D4A645562 /* FamilyArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyArchiveView.swift; sourceTree = "<group>"; };
 		14215F0679497741F049B173 /* CapsuleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleListViewModel.swift; sourceTree = "<group>"; };
 		277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
@@ -401,6 +403,7 @@
 			isa = PBXGroup;
 			children = (
 				27CA4936695B433690FA0934 /* AccountValidator.swift */,
+				7F6C3B7B4D1E42A7B9B38A11 /* AppCaptchaService.swift */,
 				9C9E85D94B85937FA29E4E35 /* AuthManager.swift */,
 				5CEAAD22296028C798FD8858 /* KeychainManager.swift */,
 				9840B1D7C3440E5E8B050F1F /* TokenManager.swift */,
@@ -592,7 +595,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3AC11871DCF9E44D4B53BDC9 = {
-						DevelopmentTeam = YOUR_TEAM_ID;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -642,6 +644,7 @@
 				97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */,
 				72EEB6DE4A659021D60DFCA1 /* AppError.swift in Sources */,
 				11E8EE7E2FEDB055A60ABC35 /* AppStabilityManager.swift in Sources */,
+				30B8C3EF1C7E4F5FA4A7A0D1 /* AppCaptchaService.swift in Sources */,
 				9FD350E7B8CE1595665DE5BB /* AuthManager.swift in Sources */,
 				E239C5C0714A24F07D9D95AA /* Benchmark.swift in Sources */,
 				07519F3E3E04D1ED331B7AED /* BindFamilyView.swift in Sources */,
@@ -882,6 +885,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 8YCQA59YN7;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -897,6 +901,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 8YCQA59YN7;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
