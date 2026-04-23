@@ -12,7 +12,6 @@ struct ReceivedCapsuleListView: View {
     @ObservedObject var dataManager = DataManager.shared
     @Environment(\.dismiss) var dismiss
     @State private var selectedCapsule: ReceivedCapsule? = nil
-    @State private var showingCapsuleDetail = false
     
     var body: some View {
         NavigationView {
@@ -29,7 +28,6 @@ struct ReceivedCapsuleListView: View {
                                 ReceivedCapsuleRow(capsule: capsule)
                                     .onTapGesture {
                                         selectedCapsule = capsule
-                                        showingCapsuleDetail = true
                                     }
                             }
                         }
@@ -58,10 +56,10 @@ struct ReceivedCapsuleListView: View {
                     .foregroundColor(Color(hex: "6366F1"))
                 }
             }
-            .sheet(isPresented: $showingCapsuleDetail) {
-                if let capsule = selectedCapsule {
-                    ReceivedCapsuleDetailView(capsule: capsule)
-                }
+            .sheet(item: $selectedCapsule, onDismiss: {
+                selectedCapsule = nil
+            }) { capsule in
+                ReceivedCapsuleDetailView(capsule: capsule)
             }
         }
     }
@@ -264,16 +262,7 @@ struct ReceivedCapsuleDetailView: View {
                 }
             }
             .sheet(item: $playbackItem) { item in
-                let mediaPlayer = AVPlayer(url: item.url)
-                VideoPlayer(player: mediaPlayer)
-                    .ignoresSafeArea()
-                    .background(Color.black)
-                    .onAppear {
-                        mediaPlayer.play()
-                    }
-                    .onDisappear {
-                        mediaPlayer.pause()
-                    }
+                CapsuleMediaPlayerSheet(url: item.url)
             }
         }
     }
@@ -296,23 +285,9 @@ struct ReceivedCapsuleDetailView: View {
     }
 
     private func prepareMediaPlayer() {
-        let mediaString = (capsule.mediaServerUrl?.isEmpty == false) ? capsule.mediaServerUrl : capsule.mediaUrl
-        guard let rawString = mediaString, !rawString.isEmpty else { return }
-
-        let url: URL
-        if rawString.hasPrefix("http://") || rawString.hasPrefix("https://") {
-            guard let remoteURL = URL(string: rawString) else { return }
-            url = remoteURL
-        } else if rawString.hasPrefix("/"), rawString.contains("Documents") {
-            url = URL(fileURLWithPath: rawString)
-        } else if rawString.hasPrefix("/") {
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            url = documentsPath.appendingPathComponent(String(rawString.dropFirst()))
-        } else {
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            url = documentsPath.appendingPathComponent(rawString)
+        guard let url = resolveCapsulePlaybackURL(primary: capsule.mediaUrl, fallback: capsule.mediaServerUrl) else {
+            return
         }
-
         playbackItem = ReceivedCapsulePlaybackItem(url: url)
     }
 }
@@ -320,4 +295,102 @@ struct ReceivedCapsuleDetailView: View {
 private struct ReceivedCapsulePlaybackItem: Identifiable {
     let id = UUID()
     let url: URL
+}
+
+struct CapsuleMediaPlayerSheet: View {
+    let url: URL
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if let player {
+                CapsuleVideoPlayerContainer(player: player)
+                    .ignoresSafeArea()
+            } else {
+                ProgressView("正在加载播放器")
+                    .foregroundColor(.white)
+                    .tint(.white)
+            }
+        }
+        .onAppear {
+            if player == nil {
+                let loadedPlayer = AVPlayer(url: url)
+                player = loadedPlayer
+                loadedPlayer.play()
+            }
+        }
+        .onDisappear {
+            player?.pause()
+        }
+    }
+}
+
+struct CapsuleVideoPlayerContainer: UIViewControllerRepresentable {
+    let player: AVPlayer
+
+    func makeUIViewController(context: Context) -> AVKit.AVPlayerViewController {
+        let controller = AVKit.AVPlayerViewController()
+        controller.player = player
+        controller.videoGravity = .resizeAspect
+        controller.allowsPictureInPicturePlayback = false
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: AVKit.AVPlayerViewController, context: Context) {
+        uiViewController.player = player
+    }
+}
+
+func resolveCapsulePlaybackURL(primary: String?, fallback: String? = nil) -> URL? {
+    let candidates = [primary, fallback]
+        .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty }
+
+    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+
+    for rawString in candidates {
+        if rawString.hasPrefix("http://") || rawString.hasPrefix("https://") {
+            if let remoteURL = URL(string: rawString) {
+                return remoteURL
+            }
+            continue
+        }
+
+        if rawString.hasPrefix("/uploads/") || rawString.hasPrefix("uploads/") {
+            let cleaned = rawString.hasPrefix("/") ? String(rawString.dropFirst()) : rawString
+            let base = DataManager.apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !base.isEmpty {
+                return URL(string: "\(base)/\(cleaned)")
+            }
+        }
+
+        if rawString.contains("Documents/TimeCapsules") {
+            let localURL = URL(fileURLWithPath: rawString)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                return localURL
+            }
+            continue
+        }
+
+        if rawString.hasPrefix("/") {
+            let localURL = documentsPath.appendingPathComponent(String(rawString.dropFirst()))
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                return localURL
+            }
+            continue
+        }
+
+        let localURL = documentsPath.appendingPathComponent(rawString)
+        if FileManager.default.fileExists(atPath: localURL.path) {
+            return localURL
+        }
+
+        if let remoteURL = URL(string: rawString) {
+            return remoteURL
+        }
+    }
+
+    return nil
 }

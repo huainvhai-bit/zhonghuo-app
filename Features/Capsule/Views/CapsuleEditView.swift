@@ -434,7 +434,6 @@ struct CapsuleMediaRecorderView: View {
     @State private var recordingTime: TimeInterval = 0
     @State private var timer: Timer?
     @State private var showingPermissionAlert = false
-    @State private var showCameraPreview = false
     @State private var useFrontCamera = true  // ✅ 新增：跟踪摄像头方向
     
     // 会员时长限制
@@ -450,8 +449,7 @@ struct CapsuleMediaRecorderView: View {
     
     var body: some View {
         ZStack {
-            // 背景色
-            Color.black
+            recorderBackground
                 .ignoresSafeArea(edges: .all)
             
             // ✅ 视频模式下显示摄像头预览
@@ -479,7 +477,6 @@ struct CapsuleMediaRecorderView: View {
         .onAppear {
             // ✅ Bug 1 修复：视频模式下立即初始化摄像头
             if selectedType == .video {
-                showCameraPreview = true
                 // ✅ 调用 setupCameraForVideo 初始化摄像头（默认前置）
                 recorder.setupCameraForVideo(useFrontCamera: useFrontCamera)
             }
@@ -513,6 +510,24 @@ struct CapsuleMediaRecorderView: View {
                 recorder.stopRecording()
             }
             recorder.cleanupCameraSession()
+        }
+    }
+
+    private var recorderBackground: some View {
+        Group {
+            if selectedType == .audio {
+                LinearGradient(
+                    colors: [
+                        Color(hex: "111827"),
+                        Color(hex: "312E81"),
+                        Color(hex: "1F2937")
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            } else {
+                Color.black
+            }
         }
     }
     
@@ -587,44 +602,42 @@ struct CapsuleMediaRecorderView: View {
                         .font(.system(size: 12))
                         .foregroundColor(.orange)
                 }
-            } else {
-                if selectedType == .audio {
-                    VStack(spacing: 18) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.12))
-                                .frame(width: 150, height: 150)
-                            Circle()
-                                .stroke(Color.white.opacity(0.18), lineWidth: 2)
-                                .frame(width: 190, height: 190)
-                            Image(systemName: "mic.circle.fill")
-                                .font(.system(size: 92))
-                                .foregroundColor(.white)
-                        }
-
-                        VStack(spacing: 8) {
-                            Text("语音录制")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("点击底部麦克风按钮开始录音")
-                                .font(.system(size: 15))
-                                .foregroundColor(.white.opacity(0.75))
-                        }
-                    }
-                } else {
-                    VStack(spacing: 16) {
-                        Image(systemName: "video.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.white.opacity(0.85))
-
-                        Text("视频预览加载中")
-                            .font(.system(size: 18, weight: .semibold))
+            } else if selectedType == .audio {
+                VStack(spacing: 18) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 150, height: 150)
+                        Circle()
+                            .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                            .frame(width: 190, height: 190)
+                        Image(systemName: "mic.circle.fill")
+                            .font(.system(size: 92))
                             .foregroundColor(.white)
+                    }
 
-                        Text("请允许相机权限并稍候片刻")
+                    VStack(spacing: 8) {
+                        Text("语音录制")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("点击底部圆形按钮开始录音")
                             .font(.system(size: 15))
                             .foregroundColor(.white.opacity(0.75))
                     }
+                }
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "video.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.white.opacity(0.85))
+
+                    Text("视频预览加载中")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("请允许相机权限并稍候片刻")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.75))
                 }
             }
         }
@@ -822,46 +835,9 @@ class MediaRecorder: NSObject, ObservableObject {
         // ✅ 在后台队列里完成配置和启动，避免 beginConfiguration / startRunning 打架
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
-
-            captureSession.beginConfiguration()
-            let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
-
             do {
-                guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
-                      let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
-                    print("❌ 无法找到摄像头设备（前置=\(useFrontCamera)）")
-                    captureSession.commitConfiguration()
-                    DispatchQueue.main.async {
-                        self.clearCameraState()
-                        self.isConfiguringCamera = false
-                        self.isCameraReady = false
-                    }
-                    return
-                }
-
-                let videoInput = try AVCaptureDeviceInput(device: videoDevice)
-                let audioInput = try AVCaptureDeviceInput(device: audioDevice)
-
-                guard captureSession.canAddInput(videoInput),
-                      captureSession.canAddInput(audioInput) else {
-                    print("❌ 无法初始化摄像头输入（前置=\(useFrontCamera)）")
-                    captureSession.commitConfiguration()
-                    DispatchQueue.main.async {
-                        self.clearCameraState()
-                        self.isConfiguringCamera = false
-                        self.isCameraReady = false
-                    }
-                    return
-                }
-
-                captureSession.addInput(videoInput)
-                captureSession.addInput(audioInput)
-
-                if captureSession.canAddOutput(videoOutput) {
-                    captureSession.addOutput(videoOutput)
-                }
+                try self.configureCameraSession(captureSession, videoOutput: videoOutput, useFrontCamera: useFrontCamera)
             } catch {
-                captureSession.commitConfiguration()
                 DispatchQueue.main.async {
                     self.clearCameraState()
                     self.isConfiguringCamera = false
@@ -870,8 +846,6 @@ class MediaRecorder: NSObject, ObservableObject {
                 print("❌ 摄像头输入创建失败：\(error)")
                 return
             }
-
-                captureSession.commitConfiguration()
 
             if !captureSession.isRunning {
                 captureSession.startRunning()
@@ -885,6 +859,38 @@ class MediaRecorder: NSObject, ObservableObject {
                 self.isConfiguringCamera = false
             }
             print("🎥 摄像头已初始化并启动（前置=\(useFrontCamera)）")
+        }
+    }
+
+    private enum CameraSetupError: Error {
+        case unavailableDevices
+        case unableToAddInputs
+    }
+
+    private func configureCameraSession(_ session: AVCaptureSession, videoOutput: AVCaptureMovieFileOutput, useFrontCamera: Bool) throws {
+        session.beginConfiguration()
+        defer {
+            session.commitConfiguration()
+        }
+
+        let cameraPosition: AVCaptureDevice.Position = useFrontCamera ? .front : .back
+        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
+              let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
+            throw CameraSetupError.unavailableDevices
+        }
+
+        let videoInput = try AVCaptureDeviceInput(device: videoDevice)
+        let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+
+        guard session.canAddInput(videoInput), session.canAddInput(audioInput) else {
+            throw CameraSetupError.unableToAddInputs
+        }
+
+        session.addInput(videoInput)
+        session.addInput(audioInput)
+
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
         }
     }
     
@@ -909,43 +915,31 @@ class MediaRecorder: NSObject, ObservableObject {
         // ✅ 在后台队列中切换摄像头，避免阻塞主线程
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
-            
-            // 停止当前 session
-            if captureSession.isRunning {
-                captureSession.stopRunning()
-            }
-            
-            captureSession.beginConfiguration()
-
-            // 移除所有输入
-            captureSession.inputs.forEach { captureSession.removeInput($0) }
-            
-            // 获取新摄像头
-            let cameraPosition: AVCaptureDevice.Position = useFront ? .front : .back
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition),
-                  let audioDevice = AVCaptureDevice.default(.builtInMicrophone, for: .audio, position: .unspecified) else {
-                captureSession.commitConfiguration()
-                print("❌ 无法获取摄像头设备（前置=\(useFront)）")
+            guard let videoOutput = self.videoOutput else {
+                print("⚠️ videoOutput 未初始化，无法切换摄像头")
+                DispatchQueue.main.async {
+                    self.isConfiguringCamera = false
+                    self.isCameraReady = false
+                }
                 return
             }
-
+            
             do {
-                let videoInput = try AVCaptureDeviceInput(device: videoDevice)
-                let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+                if captureSession.isRunning {
+                    captureSession.stopRunning()
+                }
 
-                if captureSession.canAddInput(videoInput) {
-                    captureSession.addInput(videoInput)
-                }
-                if captureSession.canAddInput(audioInput) {
-                    captureSession.addInput(audioInput)
-                }
+                captureSession.inputs.forEach { captureSession.removeInput($0) }
+                try self.configureCameraSession(captureSession, videoOutput: videoOutput, useFrontCamera: useFront)
             } catch {
-                captureSession.commitConfiguration()
                 print("❌ 切换摄像头输入失败：\(error)")
+                DispatchQueue.main.async {
+                    self.isConfiguringCamera = false
+                    self.isCameraReady = false
+                }
                 return
             }
             
-            captureSession.commitConfiguration()
             if !captureSession.isRunning {
                 captureSession.startRunning()
             }
@@ -1147,22 +1141,6 @@ struct PreviewButton: View {
             .padding(.vertical, 10)
             .background(Color(hex: "6366F1"))
             .cornerRadius(10)
-        }
-    }
-}
-
-// MARK: - AVPlayerViewController
-class AVPlayerViewController: UIViewController {
-    var player: AVPlayer?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        if let player = player {
-            let playerLayer = AVPlayerLayer(player: player)
-            playerLayer.videoGravity = .resizeAspect
-            playerLayer.frame = view.bounds
-            view.layer.addSublayer(playerLayer)
         }
     }
 }

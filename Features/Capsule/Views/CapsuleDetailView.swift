@@ -50,16 +50,7 @@ struct CapsuleDetailView: View {
         .navigationTitle("胶囊详情")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $playbackItem) { item in
-            let player = AVPlayer(url: item.url)
-            VideoPlayer(player: player)
-                .ignoresSafeArea()
-                .background(Color.black)
-                .onAppear {
-                    player.play()
-                }
-                .onDisappear {
-                    player.pause()
-                }
+            CapsuleMediaPlayerSheet(url: item.url)
         }
         .sheet(isPresented: $showingEditView) {
             NavigationView {
@@ -322,45 +313,19 @@ struct CapsuleDetailView: View {
     
     // MARK: - 操作方法
     private func playMedia() {
-        var localPath = capsule.mediaURL
+        let playbackURL = resolveCapsulePlaybackURL(primary: capsule.mediaURL, fallback: capsule.mediaServerURL)
         
-        print("🎬 playMedia: mediaURL=\(localPath)")
+        print("🎬 playMedia: mediaURL=\(capsule.mediaURL), mediaServerURL=\(capsule.mediaServerURL)")
         
-        // 只允许使用本地文件播放
-        guard !localPath.isEmpty else {
-            print("❌ 没有本地媒体文件地址")
-            mediaErrorMessage = "没有本地媒体文件"
-            showingMediaError = true
-            return
-        }
-        
-        // 处理本地路径
-        if localPath.contains("Documents/TimeCapsules") {
-            // 旧数据：已经是完整的Documents路径
-            print("📍 使用旧数据本地路径：\(localPath)")
-        } else if localPath.hasPrefix("/") {
-            // 相对路径格式 /TimeCapsules/xxx
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            localPath = documentsPath.path + localPath
-        } else {
-            // 纯相对路径
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            localPath = documentsPath.appendingPathComponent(localPath).path
-        }
-        
-        let fileURL = URL(fileURLWithPath: localPath)
-        
-        // 检查本地文件是否存在
-        guard FileManager.default.fileExists(atPath: localPath) else {
-            print("⚠️ 本地媒体文件不存在：\(localPath)")
-            // 服务器是同步本地数据的，如果本地文件不存在说明服务器也没有
-            mediaErrorMessage = "媒体文件不存在，请检查是否正确同步"
+        guard let playbackURL else {
+            print("❌ 没有可用的媒体地址")
+            mediaErrorMessage = "媒体文件不存在或尚未同步"
             showingMediaError = true
             return
         }
 
-        playbackItem = PlaybackItem(url: fileURL)
-        print("🎬 播放器已准备好：\(fileURL)")
+        playbackItem = PlaybackItem(url: playbackURL)
+        print("🎬 播放器已准备好：\(playbackURL)")
     }
     
     private func deleteCapsule() {

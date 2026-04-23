@@ -18,15 +18,12 @@ struct CapsuleList: View {
     @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
     @State private var showingMembershipView = false  // ✅ 会员页面
-    @State private var showingShareSheet = false  // ✅ 分享弹窗
     @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的胶囊
     @State private var showingUpgradeForShare = false  // ✅ 分享功能需要会员
     @State private var selectedCapsuleForEdit: TimeCapsule? = nil  // 待编辑的胶囊
-    @State private var showingEditSheet = false  // ✅ 编辑弹窗
     @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的胶囊
     @State private var showingDeleteAlert = false  // ✅ 删除确认弹窗
     @State private var selectedCapsuleForDetail: TimeCapsule? = nil  // 待查看详情的胶囊
-    @State private var showingCapsuleDetail = false  // 胶囊详情弹窗
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -174,71 +171,58 @@ struct CapsuleList: View {
                 }
             }
         }
-        .sheet(isPresented: $showingShareSheet) {
-            if let capsule = selectedCapsuleForShare {
-                ShareCapsuleSheet(
-                    capsule: capsule,
-                    familyMembers: dataManager.familyMembers,
-                    onAddFamily: {
-                        showingShareSheet = false
-                        selectedCapsuleForShare = nil
-                        NotificationCenter.default.post(
-                            name: NSNotification.Name("SwitchToTab"),
-                            object: nil,
-                            userInfo: ["tab": 3]
-                        )
-                    },
-                    onShare: { [self] selectedMembers in
-                        let receiverIds = selectedMembers.map { $0.relatedUserId }
-                        Task {
-                            do {
-                                let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
-                                print("✅ 胶囊分享成功：\(result)")
+        .sheet(item: $selectedCapsuleForShare, onDismiss: {
+            selectedCapsuleForShare = nil
+        }) { capsule in
+            ShareCapsuleSheet(
+                capsule: capsule,
+                familyMembers: dataManager.familyMembers,
+                onAddFamily: {
+                    selectedCapsuleForShare = nil
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("SwitchToTab"),
+                        object: nil,
+                        userInfo: ["tab": 3]
+                    )
+                },
+                onShare: { [self] selectedMembers in
+                    let receiverIds = selectedMembers.map { $0.relatedUserId }
+                    Task {
+                        do {
+                            let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
+                            print("✅ 胶囊分享成功：\(result)")
+                            await MainActor.run {
+                                self.selectedCapsuleForShare = nil
+                            }
+                        } catch {
+                            let errorMsg = error.localizedDescription
+                            print("❌ 胶囊分享失败：\(errorMsg)")
+                            if errorMsg.contains("会员") || errorMsg.contains("premium") {
                                 await MainActor.run {
-                                    self.showingShareSheet = false
                                     self.selectedCapsuleForShare = nil
-                                }
-                            } catch {
-                                let errorMsg = error.localizedDescription
-                                print("❌ 胶囊分享失败：\(errorMsg)")
-                                // 检查是否是会员限制错误
-                                if errorMsg.contains("会员") || errorMsg.contains("premium") {
-                                    await MainActor.run {
-                                        self.showingShareSheet = false
-                                        self.showingUpgradeForShare = true
-                                    }
+                                    self.showingUpgradeForShare = true
                                 }
                             }
                         }
-                    },
-                    onCancel: {
-                        showingShareSheet = false
-                        selectedCapsuleForShare = nil
                     }
-                )
-            } else {
-                Text("加载中...")
-                    .foregroundColor(.secondary)
+                },
+                onCancel: {
+                    selectedCapsuleForShare = nil
+                }
+            )
+        }
+        .sheet(item: $selectedCapsuleForEdit, onDismiss: {
+            selectedCapsuleForEdit = nil
+        }) { capsule in
+            NavigationView {
+                CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
             }
         }
-        .sheet(isPresented: $showingEditSheet) {
+        .sheet(item: $selectedCapsuleForDetail, onDismiss: {
+            selectedCapsuleForDetail = nil
+        }) { capsule in
             NavigationView {
-                if let capsule = selectedCapsuleForEdit {
-                    CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
-                } else {
-                    Text("加载中...")
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .sheet(isPresented: $showingCapsuleDetail) {
-            NavigationView {
-                if let capsule = selectedCapsuleForDetail {
-                    CapsuleDetailView(dataManager: dataManager, capsule: capsule)
-                } else {
-                    Text("加载中...")
-                        .foregroundColor(.secondary)
-                }
+                CapsuleDetailView(dataManager: dataManager, capsule: capsule)
             }
         }
         .alert("删除胶囊", isPresented: $showingDeleteAlert) {
@@ -372,7 +356,6 @@ struct CapsuleList: View {
                     capsule: capsule,
                     onEdit: {
                         selectedCapsuleForEdit = capsule
-                        showingEditSheet = true
                     },
                     onDelete: {
                         showingDeleteAlert = true
@@ -384,11 +367,9 @@ struct CapsuleList: View {
                             return
                         }
                         selectedCapsuleForShare = capsule
-                        showingShareSheet = true
                     },
                     onTap: {
                         selectedCapsuleForDetail = capsule
-                        showingCapsuleDetail = true
                     }
                 )
             }
