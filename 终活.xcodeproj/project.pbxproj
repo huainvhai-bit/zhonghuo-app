@@ -11,11 +11,13 @@
 		031A92067F1801ED26FAB895 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BAAA1F2133C403CC319686 /* ContentView.swift */; };
 		0589E5D7C0767013EA3FD178 /* SettingsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3201035732F9FD6D818D32B4 /* SettingsDetailView.swift */; };
 		07519F3E3E04D1ED331B7AED /* BindFamilyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 436489E7FE94F62B8228B7A8 /* BindFamilyView.swift */; };
+		07F5DDC5289569F0ADBF391A /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B0497DD862983E6B262E93 /* ContentViewModel.swift */; };
 		086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA4936695B433690FA0934 /* AccountValidator.swift */; };
 		0FC881C140F43BA6C28C8345 /* ChunkedUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8FEB7A240DC0DE6FCC6D23 /* ChunkedUploadManager.swift */; };
 		11E8EE7E2FEDB055A60ABC35 /* AppStabilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5C49ABCA0366F276279596 /* AppStabilityManager.swift */; };
 		1CA14A357D5C77C95FECAC5B /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857B4271672E01AA4D3F21D9 /* ErrorHandler.swift */; };
 		1F6F3291745BAA81CB5204C2 /* ZhonghuoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B4362804BCCFF90C6A5D529 /* ZhonghuoApp.swift */; };
+		20E418CF4BE81EB62C9B26B8 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */; };
 		21B44C1908E9E902D5FFE83F /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */; };
 		26EF7A4CB6DB0AC519B025A4 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95607C2B85EA656CD5E9E77A /* AppConfig.swift */; };
 		2B81B3F6F003B14260D75CB6 /* FamilyMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAE7365AB62AA2C675749F1 /* FamilyMember.swift */; };
@@ -110,11 +112,13 @@
 		00A519C7E8CE252F57F9CA7C /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		020DFC00792D2106EBD36AFC /* HomeStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatusView.swift; sourceTree = "<group>"; };
 		045761D3B73D998072BF9E1F /* IAPManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
+		04B0497DD862983E6B262E93 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		051C6FD692B960CEEC90118B /* MembershipManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipManager.swift; sourceTree = "<group>"; };
 		07579CF4B3E70A217992B90F /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		0801AA0D893A3DFD3FF9145F /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		08BBF5D6016E155A26E01340 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		13C6462556E1984D4A645562 /* FamilyArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyArchiveView.swift; sourceTree = "<group>"; };
 		277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		27CA4936695B433690FA0934 /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountValidator.swift; sourceTree = "<group>"; };
@@ -361,6 +365,7 @@
 		475D788EFEEDAE09A7933DC0 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				ECCDD47BF694D7660432CDE5 /* ViewModels */,
 				943C50CE7C7455CFB19E92CB /* Views */,
 			);
 			path = Auth;
@@ -533,6 +538,14 @@
 			path = Features;
 			sourceTree = "<group>";
 		};
+		ECCDD47BF694D7660432CDE5 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		F104D99C2A8C99F917D8D723 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -545,6 +558,7 @@
 			isa = PBXGroup;
 			children = (
 				52BAAA1F2133C403CC319686 /* ContentView.swift */,
+				04B0497DD862983E6B262E93 /* ContentViewModel.swift */,
 				DD1EFABFCF3FE6305F1EB2C3 /* OnboardingView.swift */,
 				6B4362804BCCFF90C6A5D529 /* ZhonghuoApp.swift */,
 			);
@@ -664,6 +678,7 @@
 				D5CC89D0F6F25ACFD0A84BAC /* Colors.swift in Sources */,
 				8F442CE0E58E95308EC0DA78 /* ConfigManager.swift in Sources */,
 				031A92067F1801ED26FAB895 /* ContentView.swift in Sources */,
+				07F5DDC5289569F0ADBF391A /* ContentViewModel.swift in Sources */,
 				C69B13FE23C94A9D3B866751 /* DataManager.swift in Sources */,
 				F83A87E3F9EE1DD28C40616D /* DebugConfig.swift in Sources */,
 				45D6C1B3D2E2EE9C93A81A42 /* DesignPatterns.swift in Sources */,
@@ -684,6 +699,7 @@
 				723EA16436FD6B3130B8B96C /* LifeCheckStatusManager.swift in Sources */,
 				FE60589D2AF3BCAE07205CF2 /* Logger.swift in Sources */,
 				E48CF9DB3E36A413E7A27748 /* LoginView.swift in Sources */,
+				20E418CF4BE81EB62C9B26B8 /* LoginViewModel.swift in Sources */,
 				7DDC2EC8DF9500930CD03EF9 /* MembershipManager.swift in Sources */,
 				83A2BED9D3A609ED4B0DFBA4 /* MembershipView.swift in Sources */,
 				99A231DBA64F0A248FA87EF6 /* MemoryManager.swift in Sources */,
