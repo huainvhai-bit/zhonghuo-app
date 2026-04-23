@@ -62,17 +62,15 @@ struct SettingsView: View {
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
     @ObservedObject var membershipManager = MembershipManager.shared  // 👑 会员管理
+    @StateObject private var viewModel = SettingsViewModel()
     @State private var showingEditProfile = false
     @State private var showingMembershipView = false  // 👑 会员页面
-    @State private var showingLocationAlert = false
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
     @ObservedObject var themeManager = ThemeManager.shared  // 🎨 主题管理
-    @State private var showingLogoutConfirm = false  // 退出登录确认
     @State private var errorMessage = ""
     @State private var showingError = false
-    @State private var showingUpdateAlert = false  // ✅ 修复 #7: 检查更新弹窗
     
     // ✅ 修复 #7: 版本号
     private var appVersion: String {
@@ -257,25 +255,10 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
-                // 设置紫色导航栏背景（与首页一致）
-                setupNavigationBar()
-                
-                // 启动设备监控
-                startDeviceMonitoring()
-                
-                // 检查定位权限
-                checkLocationPermission()
-                
-                // 上传设备信息到服务器
-                Task { @MainActor in
-                    try? await Task.checkCancellation()
-                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 秒后上传
-                    await deviceMonitor.uploadDeviceInfo()
-                }
+                viewModel.onAppear()
             }
             .onDisappear {
-                // 停止监控
-                stopDeviceMonitoring()
+                viewModel.onDisappear()
             }
             .sheet(isPresented: $showingEditProfile) {
                 EditProfileModal(dataManager: dataManager, userManager: userManager)
@@ -283,23 +266,13 @@ struct SettingsView: View {
             .sheet(isPresented: $showingMembershipView) {
                 MembershipView()
             }
-            .alert("定位权限", isPresented: $showingLocationAlert) {
+            .alert("定位权限", isPresented: $viewModel.showingLocationAlert) {
                 Button("稍后", role: .cancel) {}
                 Button("去设置") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
+                    viewModel.openAppSettings()
                 }
             } message: {
                 Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
-            }
-            .confirmationDialog("确认退出", isPresented: $showingLogoutConfirm) {
-                Button(LocalizedStringKey("退出登录"), role: .destructive) {
-                    logout()
-                }
-                Button("取消", role: .cancel) {}
-            } message: {
-                Text("确定要退出登录吗？退出后需要重新登录才能使用 App。")
             }
             }
         }
@@ -506,24 +479,6 @@ struct SettingsView: View {
         default:
             return "未设置"
         }
-    }
-    
-    // MARK: - 退出登录
-    private func logout() {
-        print("🔴 退出登录")
-        
-        // 清除所有用户数据
-        userManager.logout()
-        
-        // 清除 UserDefaults
-        UserDefaults.standard.removeObject(forKey: "userToken")
-        UserDefaults.standard.removeObject(forKey: "userId")
-        UserDefaults.standard.set(false, forKey: "isLoggedIn")
-        UserDefaults.standard.synchronize()
-        
-        print("✅ 退出登录完成")
-        print("   userManager.isLoggedIn: \(userManager.isLoggedIn)")
-        print("   UserDefaults.isLoggedIn: \(UserDefaults.standard.bool(forKey: "isLoggedIn"))")
     }
     
     // MARK: - 更新签到间隔
@@ -980,7 +935,9 @@ extension SettingsView {
                     Text("v\(appVersion)")
                         .foregroundColor(.secondary)
                 }
-                Button(action: checkUpdate) {
+                Button(action: {
+                    Task { await viewModel.checkUpdate() }
+                }) {
                     HStack {
                         Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
                         Spacer()
@@ -1029,60 +986,14 @@ extension SettingsView {
         }
         .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(LocalizedStringKey("检查更新"), isPresented: $showingUpdateAlert) {
+        .alert(LocalizedStringKey("检查更新"), isPresented: $viewModel.showingUpdateAlert) {
             Button("稍后更新", role: .cancel) { }
             Button("立即更新") {
-                if let url = URL(string: "https://apps.apple.com/app/终活/id123456789") {
-                    UIApplication.shared.open(url)
-                }
+                viewModel.openUpdateURL()
             }
-        } message: { Text("发现新版本 v1.0.1\\n\\nBug 修复和性能优化") }
-    }
-    
-    private func checkUpdate() {
-        showingUpdateAlert = true
-    }
-    
-    func startDeviceMonitoring() {
-        deviceMonitor.startMonitoring()
-        print("🔋 设备监控已启动")
-    }
-    
-    func stopDeviceMonitoring() {
-        deviceMonitor.stopMonitoring()
-        print("🔋 设备监控已停止")
-    }
-    
-    /// 检查定位权限并在需要时提示用户
-    private func checkLocationPermission() {
-        let status = userManager.locationAuthStatus
-        
-        // 如果已经确定过权限，不再提示
-        guard status == .notDetermined || status == .denied else {
-            return
+        } message: {
+            Text("发现新版本 v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion)\\n\\nBug 修复和性能优化")
         }
-        
-        // 如果是被拒绝，显示提示让用户去设置
-        if status == .denied {
-            showingLocationAlert = true
-            return
-        }
-        
-        // 请求定位权限
-        userManager.requestLocationPermission()
-    }
-    
-    // 设置紫色导航栏背景（与首页一致）
-    private func setupNavigationBar() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "6366F1")
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
     }
 }
 

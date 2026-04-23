@@ -41,6 +41,7 @@
 		588B23A6C674CAD83174C5C2 /* FamilyArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6462556E1984D4A645562 /* FamilyArchiveView.swift */; };
 		60E24C8E170C37C39ADDED32 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9ABB54EC69F5E1E493947B2 /* HapticFeedback.swift */; };
 		6449A81605E02F6758C4186D /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08BBF5D6016E155A26E01340 /* ThemeManager.swift */; };
+		66F10B55D9CAE3834BB56234 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7127E42F85BC847780542599 /* SettingsViewModel.swift */; };
 		6BD3A72179342DD05311B9BB /* PerformanceOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F4A5B8412A54E639B56F48 /* PerformanceOptimizer.swift */; };
 		723EA16436FD6B3130B8B96C /* LifeCheckStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C22DB29E86DC4E95955D529 /* LifeCheckStatusManager.swift */; };
 		72EEB6DE4A659021D60DFCA1 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C925AB2B823FC81FDA1698 /* AppError.swift */; };
@@ -147,6 +148,7 @@
 		6C4D5EB7867B6C896C0FBCC8 /* jpush-ios-6.0.0.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "jpush-ios-6.0.0.xcframework"; path = "jpush-ios-6.0.0-release/Lib/JPushSDKLib/jpush-ios-6.0.0.xcframework"; sourceTree = "<group>"; };
 		6C8FEB7A240DC0DE6FCC6D23 /* ChunkedUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChunkedUploadManager.swift; sourceTree = "<group>"; };
 		70F99C3D00C3558F0C0722C1 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		7127E42F85BC847780542599 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		80DC535B7F587ACEDCB0681A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		857B4271672E01AA4D3F21D9 /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = "<group>"; };
 		86068724048E133969D095F4 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
@@ -512,6 +514,7 @@
 		AF99AC8319E4467AF8DAC65F /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				EC38B844410A9F0EB5C8CA3D /* ViewModels */,
 				4FEEBE56826F1AF1FB1F8F58 /* Views */,
 			);
 			path = Settings;
@@ -536,6 +539,14 @@
 				C693AA6A0BAD70C61C7AB163 /* Will */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		EC38B844410A9F0EB5C8CA3D /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				7127E42F85BC847780542599 /* SettingsViewModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		ECCDD47BF694D7660432CDE5 /* ViewModels */ = {
@@ -718,6 +729,7 @@
 				736A049925EF89FE0F74BE59 /* ResetPasswordView.swift in Sources */,
 				0589E5D7C0767013EA3FD178 /* SettingsDetailView.swift in Sources */,
 				00F2F6281B868D10E224D971 /* SettingsView.swift in Sources */,
+				66F10B55D9CAE3834BB56234 /* SettingsViewModel.swift in Sources */,
 				B6A4E71CF2423C9A35A63E91 /* SyncConflictResolver.swift in Sources */,
 				6449A81605E02F6758C4186D /* ThemeManager.swift in Sources */,
 				48F5001713074B9F1FD6C1A5 /* TokenManager.swift in Sources */,
