@@ -196,11 +196,20 @@ final class ContentViewModel: ObservableObject {
                     }
 
                     if let dataObj = json["data"] as? [String: Any],
-                       let user = dataObj["user"] as? [String: Any],
-                       let userId = user["id"] as? String {
-                        print("✅ validateToken: userId=\(userId)")
-                        return .success
-                    } else if let responseString = String(data: data, encoding: .utf8),
+                       let userValue = dataObj["user"] {
+                        if userValue is NSNull {
+                            print("⚠️ validateToken: 服务端返回 user = null")
+                            return .unauthorized
+                        }
+                        
+                        if let user = userValue as? [String: Any],
+                           let userId = user["id"] as? String {
+                            print("✅ validateToken: userId=\(userId)")
+                            return .success
+                        }
+                    }
+                    
+                    if let responseString = String(data: data, encoding: .utf8),
                               responseString.contains("未授权") || responseString.contains("账号不存在") || responseString.contains("登录已过期") {
                         return .unauthorized
                     } else if let errors = json["errors"] as? [[String: Any]] {

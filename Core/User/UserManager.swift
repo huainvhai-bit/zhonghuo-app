@@ -1095,8 +1095,27 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             if let httpResponse = response as? HTTPURLResponse,
                (200...299).contains(httpResponse.statusCode),
                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let dataDict = json["data"] as? [String: Any],
-               let userDict = dataDict["user"] as? [String: Any] {
+               let dataDict = json["data"] as? [String: Any] {
+                
+                if dataDict["user"] is NSNull || dataDict["user"] == nil {
+                    print("⚠️ 服务器未找到当前账号，清除本地登录态")
+                    await MainActor.run {
+                        self.logout()
+                        self.isFetchingUserData = false
+                        self.isUserLoaded = false
+                    }
+                    return
+                }
+                
+                guard let userDict = dataDict["user"] as? [String: Any] else {
+                    print("⚠️ 用户数据结构异常，清除本地登录态")
+                    await MainActor.run {
+                        self.logout()
+                        self.isFetchingUserData = false
+                        self.isUserLoaded = false
+                    }
+                    return
+                }
                 
                 // 解析用户数据
                 let userId = userDict["id"] as? String ?? ""
