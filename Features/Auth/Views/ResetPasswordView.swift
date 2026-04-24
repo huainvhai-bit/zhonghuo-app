@@ -176,7 +176,9 @@ struct ResetPasswordView: View {
         
         let errorMsg = error.localizedDescription
         DispatchQueue.main.async {
-            if errorMsg.contains("ACCOUNT_NOT_FOUND:") || errorMsg.contains("不存在") {
+            if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn't have a default value") || errorMsg.contains("cannot be null") {
+                self.errorMessage = errorMsg
+            } else if errorMsg.contains("ACCOUNT_NOT_FOUND:") || errorMsg.contains("不存在") {
                 self.errorMessage = "账号不存在，请先注册"
             } else if errorMsg.contains("密保") || errorMsg.contains("答案") {
                 self.errorMessage = "密保问题或答案错误"

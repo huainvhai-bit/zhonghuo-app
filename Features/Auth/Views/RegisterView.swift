@@ -293,7 +293,9 @@ struct RegisterView: View {
         let errorMsg = error.localizedDescription
         DispatchQueue.main.async {
             // ✅ 优先使用错误码进行精确匹配
-            if errorMsg.contains("PHONE_EXISTS:") {
+            if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn’t have a default value") || errorMsg.contains("doesn't have a default value") {
+                self.errorMessage = errorMsg
+            } else if errorMsg.contains("PHONE_EXISTS:") {
                 self.errorMessage = "该手机号已注册，请直接登录"
             } else if errorMsg.contains("ACCOUNT_EXISTS:") {
                 self.errorMessage = "该账号已注册，请直接登录"
