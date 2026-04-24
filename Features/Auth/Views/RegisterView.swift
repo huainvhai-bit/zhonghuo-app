@@ -317,6 +317,8 @@ struct RegisterView: View {
                 self.errorMessage = "密保问题或答案错误"
             } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
                 self.errorMessage = "网络连接失败，请检查网络"
+            } else if !errorMsg.isEmpty {
+                self.errorMessage = errorMsg
             } else {
                 self.errorMessage = "注册失败，请稍后重试"
             }

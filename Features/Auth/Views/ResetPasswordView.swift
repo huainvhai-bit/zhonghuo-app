@@ -190,6 +190,8 @@ struct ResetPasswordView: View {
                 self.errorMessage = "两次输入的密码不一致"
             } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
                 self.errorMessage = "网络连接失败，请检查网络"
+            } else if !errorMsg.isEmpty {
+                self.errorMessage = errorMsg
             } else {
                 self.errorMessage = "重置密码失败，请稍后重试"
             }
