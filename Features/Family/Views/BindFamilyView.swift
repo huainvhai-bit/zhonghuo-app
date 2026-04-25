@@ -163,10 +163,10 @@ struct BindFamilyView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                        en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
-                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                        ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -354,6 +354,7 @@ struct BindFamilyView: View {
             inviterId: result["inviterId"] as? String ?? "",
             inviterName: result["inviterName"] as? String ?? "",
             inviterPhone: result["inviterPhone"] as? String ?? "",
+            inviterAccount: result["inviterAccount"] as? String ?? "",
             relationType: result["relationType"] as? String ?? "family",
             requiresConfirmation: result["requiresConfirmation"] as? Bool ?? false,
             status: result["status"] as? String ?? "pending"

@@ -138,6 +138,7 @@ struct FamilyInvitePreview: Identifiable, Codable {
     var inviterId: String
     var inviterName: String
     var inviterPhone: String
+    var inviterAccount: String
     var relationType: String
     var requiresConfirmation: Bool
     var status: String
@@ -150,9 +151,14 @@ struct FamilyPendingRequest: Identifiable, Codable {
     var inviterId: String
     var inviterName: String
     var inviterPhone: String
+    var inviterAccount: String
     var acceptedById: String
     var acceptedByName: String
     var acceptedByPhone: String
+    var acceptedByAccount: String
+    var displayName: String
+    var displayPhone: String
+    var displayAccount: String
     var relationType: String
     var status: String
     var needsMyApproval: Bool

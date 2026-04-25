@@ -32,6 +32,7 @@ struct FamilyGuardView: View {
     @State private var pendingInvitePreview: FamilyInvitePreview?
     @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
     @State private var familyRefreshTask: Task<Void, Never>?
+    @State private var confirmingRequestId: String?
 
     private var approvalFamilyRequests: [FamilyPendingRequest] {
         pendingFamilyRequests.filter { $0.needsMyApproval }
@@ -114,10 +115,10 @@ struct FamilyGuardView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                        en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
-                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                        ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -484,6 +485,7 @@ struct FamilyGuardView: View {
                 FamilyPendingRequestCard(
                     request: request,
                     showsConfirmButton: true,
+                    isConfirming: confirmingRequestId == request.id,
                     onConfirm: {
                         Task { await finalizePendingFamilyRequest(request) }
                     }
@@ -518,6 +520,7 @@ struct FamilyGuardView: View {
                 FamilyPendingRequestCard(
                     request: request,
                     showsConfirmButton: false,
+                    isConfirming: false,
                     onConfirm: {}
                 )
             }
@@ -632,18 +635,33 @@ struct FamilyGuardView: View {
                         self.pendingFamilyRequests = pendingRequests.compactMap { request in
                             guard let id = request["id"] as? String, !id.isEmpty else { return nil }
                             let createdAt = parseBackendDate(request["created_at"] as? String ?? request["createdAt"] as? String)
+                            let inviterName = request["inviterName"] as? String ?? ""
+                            let inviterPhone = request["inviterPhone"] as? String ?? ""
+                            let inviterAccount = request["inviterAccount"] as? String ?? ""
+                            let acceptedByName = request["acceptedByName"] as? String ?? ""
+                            let acceptedByPhone = request["acceptedByPhone"] as? String ?? ""
+                            let acceptedByAccount = request["acceptedByAccount"] as? String ?? ""
+                            let needsMyApproval = (request["needsMyApproval"] as? Bool) ?? false
+                            let displayName = request["displayName"] as? String ?? (needsMyApproval ? acceptedByName : inviterName)
+                            let displayPhone = request["displayPhone"] as? String ?? (needsMyApproval ? acceptedByPhone : inviterPhone)
+                            let displayAccount = request["displayAccount"] as? String ?? (needsMyApproval ? acceptedByAccount : inviterAccount)
                             return FamilyPendingRequest(
                                 id: id,
                                 inviteCode: request["invite_code"] as? String ?? request["inviteCode"] as? String ?? "",
                                 inviterId: request["inviter_id"] as? String ?? request["inviterId"] as? String ?? "",
-                                inviterName: request["inviterName"] as? String ?? "",
-                                inviterPhone: request["inviterPhone"] as? String ?? "",
+                                inviterName: inviterName,
+                                inviterPhone: inviterPhone,
+                                inviterAccount: inviterAccount,
                                 acceptedById: request["accepted_by"] as? String ?? request["acceptedById"] as? String ?? "",
-                                acceptedByName: request["acceptedByName"] as? String ?? "",
-                                acceptedByPhone: request["acceptedByPhone"] as? String ?? "",
+                                acceptedByName: acceptedByName,
+                                acceptedByPhone: acceptedByPhone,
+                                acceptedByAccount: acceptedByAccount,
+                                displayName: displayName,
+                                displayPhone: displayPhone,
+                                displayAccount: displayAccount,
                                 relationType: request["relation_type"] as? String ?? request["relationType"] as? String ?? "family",
                                 status: request["status"] as? String ?? "awaiting_owner",
-                                needsMyApproval: (request["needsMyApproval"] as? Bool) ?? false,
+                                needsMyApproval: needsMyApproval,
                                 createdAt: createdAt
                             )
                         }
@@ -756,6 +774,7 @@ struct FamilyGuardView: View {
             inviterId: result["inviterId"] as? String ?? "",
             inviterName: result["inviterName"] as? String ?? "",
             inviterPhone: result["inviterPhone"] as? String ?? "",
+            inviterAccount: result["inviterAccount"] as? String ?? "",
             relationType: result["relationType"] as? String ?? "family",
             requiresConfirmation: result["requiresConfirmation"] as? Bool ?? false,
             status: result["status"] as? String ?? "pending"
@@ -875,6 +894,7 @@ struct FamilyGuardView: View {
 
     @MainActor
     private func finalizePendingFamilyRequest(_ request: FamilyPendingRequest) async {
+        confirmingRequestId = request.id
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: request.id)
             print("📡 待确认家人请求确认响应：\(result)")
@@ -891,6 +911,7 @@ struct FamilyGuardView: View {
             errorMessage = error.localizedDescription
             showingError = true
         }
+        confirmingRequestId = nil
     }
 
     private func formatDate(_ date: Date) -> String {
@@ -1282,6 +1303,7 @@ struct FamilyMemberCard: View {
 struct FamilyPendingRequestCard: View {
     let request: FamilyPendingRequest
     let showsConfirmButton: Bool
+    let isConfirming: Bool
     let onConfirm: () -> Void
 
     var body: some View {
@@ -1293,7 +1315,7 @@ struct FamilyPendingRequestCard: View {
                          : L10n.text("等待对方确认", en: "Waiting for the other side", ja: "相手の確認待ち", ko: "상대방 확인 대기"))
                         .font(.system(size: 16, weight: .semibold))
 
-                    Text(request.inviterName.isEmpty ? request.inviteCode : request.inviterName)
+                    Text(request.displayName.isEmpty ? request.inviterName : request.displayName)
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -1313,12 +1335,25 @@ struct FamilyPendingRequestCard: View {
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.text("邀请码", en: "Invite code", ja: "招待コード", ko: "초대 코드"))
+                    Text(L10n.text("对方账号", en: "Other account", ja: "相手アカウント", ko: "상대 계정"))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
-                    Text(request.inviteCode)
+                    Text(request.displayAccount.isEmpty ? request.inviteCode : request.displayAccount)
                         .font(.system(size: 18, weight: .bold, design: .monospaced))
                         .foregroundColor(Color(hex: "6366F1"))
+                }
+
+                Spacer()
+            }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.text("对方手机号", en: "Other phone", ja: "相手の電話番号", ko: "상대 전화번호"))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Text(request.displayPhone.isEmpty ? "-" : request.displayPhone)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
                 }
 
                 Spacer()
@@ -1336,19 +1371,29 @@ struct FamilyPendingRequestCard: View {
             if let createdAt = request.createdAt {
                 Text(L10n.text("创建时间", en: "Created at", ja: "作成日時", ko: "생성 시각") + "：\(createdAt.chineseDateTimeString())")
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary.opacity(0.8))
+            .foregroundColor(.secondary.opacity(0.8))
             }
 
             if showsConfirmButton {
                 Button(action: onConfirm) {
-                    Text(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인"))
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(Color(hex: "6366F1"))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                    HStack(spacing: 8) {
+                        if isConfirming {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(0.85)
+                            Text(L10n.text("确认中", en: "Confirming", ja: "確認中", ko: "확인 중"))
+                        } else {
+                            Text(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인"))
+                        }
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(isConfirming ? Color(hex: "8B95E9") : Color(hex: "6366F1"))
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                 }
+                .disabled(isConfirming)
             }
         }
         .padding(16)
@@ -1450,15 +1495,15 @@ struct ManualInputInviteCodeView: View {
                 pendingInvitePreview = nil
             }
         } message: {
-            if let preview = pendingInvitePreview {
-                Text(L10n.text(
-                    "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                    en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
-                    ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                    ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
-                ))
+                if let preview = pendingInvitePreview {
+                    Text(L10n.text(
+                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                    ))
+                }
             }
-        }
     }
     
     private func bindInviteCode() {
@@ -1528,6 +1573,7 @@ struct ManualInputInviteCodeView: View {
             inviterId: result["inviterId"] as? String ?? "",
             inviterName: result["inviterName"] as? String ?? "",
             inviterPhone: result["inviterPhone"] as? String ?? "",
+            inviterAccount: result["inviterAccount"] as? String ?? "",
             relationType: result["relationType"] as? String ?? "family",
             requiresConfirmation: result["requiresConfirmation"] as? Bool ?? false,
             status: result["status"] as? String ?? "pending"
