@@ -1546,6 +1546,7 @@ class DataManager: ObservableObject {
                 inviterId
                 inviterName
                 inviterPhone
+                inviterAccount
                 relationType
             }
         }

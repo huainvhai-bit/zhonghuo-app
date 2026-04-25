@@ -894,6 +894,7 @@ struct FamilyGuardView: View {
 
     @MainActor
     private func finalizePendingFamilyRequest(_ request: FamilyPendingRequest) async {
+        print("🔵 点击确认绑定待确认家人申请：relationId=\(request.id), inviter=\(request.inviterId), acceptedBy=\(request.acceptedById)")
         confirmingRequestId = request.id
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: request.id)
@@ -901,6 +902,7 @@ struct FamilyGuardView: View {
 
             let success = result["success"] as? Bool ?? false
             if success {
+                print("✅ 待确认家人申请确认成功，刷新本地家人列表")
                 _ = try? await DataManager.shared.refreshFamilyMembers()
                 await loadFamilyListAsync()
             } else {
