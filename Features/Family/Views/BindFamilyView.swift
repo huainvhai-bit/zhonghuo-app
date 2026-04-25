@@ -176,14 +176,17 @@ struct BindFamilyView: View {
                         showingScanner = false
                         let cleaned = self.extractInviteCode(from: code)
                         if !cleaned.isEmpty {
-                            self.inviteCode = cleaned
-                            
-                            // 震动反馈
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-                            
-                            // 进入绑定确认流程
-                            self.bindFamily()
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: 250_000_000)
+                                self.inviteCode = cleaned
+                                
+                                // 震动反馈
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                
+                                // 进入绑定确认流程
+                                self.bindFamily()
+                            }
                         } else {
                             self.errorMessage = L10n.string(.invalidQRCode)
                             self.showingError = true

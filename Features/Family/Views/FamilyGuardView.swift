@@ -13,6 +13,7 @@ import CoreImage.CIFilterBuiltins
 struct FamilyGuardView: View {
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var familyList: [FamilyMember] = []
     @State private var isLoading = true  // ✅ 修复 #2: 初始状态为加载中
     @State private var didInitialLoad = false
@@ -30,6 +31,7 @@ struct FamilyGuardView: View {
     @State private var showingInviteConfirmation = false
     @State private var pendingInvitePreview: FamilyInvitePreview?
     @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
+    @State private var familyRefreshTask: Task<Void, Never>?
 
     private var approvalFamilyRequests: [FamilyPendingRequest] {
         pendingFamilyRequests.filter { $0.needsMyApproval }
@@ -70,6 +72,14 @@ struct FamilyGuardView: View {
                 Task {
                     await loadFamilyListAsync()
                 }
+                startFamilyPolling()
+            }
+            .onDisappear {
+                stopFamilyPolling()
+            }
+            .onChange(of: scenePhase) { newPhase in
+                guard newPhase == .active else { return }
+                Task { await loadFamilyListAsync() }
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -144,7 +154,8 @@ struct FamilyGuardView: View {
                         showingScanner = false
                         let cleaned = extractInviteCode(from: code)
                         if !cleaned.isEmpty {
-                            Task {
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: 250_000_000)
                                 await bindInviteCode(cleaned)
                             }
                         } else {
@@ -772,6 +783,22 @@ struct FamilyGuardView: View {
             return
         }
         action()
+    }
+
+    private func startFamilyPolling() {
+        familyRefreshTask?.cancel()
+        familyRefreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 20_000_000_000)
+                if Task.isCancelled { break }
+                await loadFamilyListAsync()
+            }
+        }
+    }
+
+    private func stopFamilyPolling() {
+        familyRefreshTask?.cancel()
+        familyRefreshTask = nil
     }
     
     // ✅ 扫码绑定邀请码
