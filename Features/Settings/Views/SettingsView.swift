@@ -53,15 +53,12 @@ struct StatItemView: View {
 }
 
 struct SettingsView: View {
-    private let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter
-    }()
+    private let timeFormatter = ChineseDateFormatter.dateTimeFormatter
     @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var deviceMonitor = DeviceMonitor.shared  // 🔋 设备监控
     @ObservedObject var membershipManager = MembershipManager.shared  // 👑 会员管理
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showingEditProfile = false
     @State private var showingMembershipView = false  // 👑 会员页面
@@ -74,176 +71,18 @@ struct SettingsView: View {
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
     }
-    
+
     var body: some View {
-        ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
-            
-            NavigationView {
-                List {
-                // 用户信息卡片
-                Section {
-                    userInfoCard
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
+        NavigationView {
+            ZStack {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
                 
-                // 统计信息
-                Section {
-                    statsCard
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                
-                // 签到间隔
-                Section(header: Text("设置")) {
-                    HStack {
-                        Image(systemName: "calendar")
-                            .foregroundColor(Color(hex: "6366F1"))
-                            .frame(width: 30)
-                        
-                        Text("签到间隔")
-                            .font(.system(size: 16))
-                        
-                        Spacer()
-                        
-                        Menu {
-                            ForEach(CheckInInterval.allCases, id: \.self) { interval in
-                                Button(interval.rawValue) {
-                                    Task { await viewModel.updateCheckInInterval(interval) }
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(viewModel.selectedCheckInInterval.rawValue)
-                                    .foregroundColor(.indigo)
-                                
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                
-                // 🔔 通知设置
-                Section(header: Text("通知设置")) {
-                    // 🤫 静默模式
-                    Toggle(isOn: $silentModeEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: silentModeEnabled ? "bell.slash.fill" : "bell.fill")
-                                    .foregroundColor(silentModeEnabled ? .orange : .green)
-                                    .frame(width: 24)
-                                
-                                Text("静默模式")
-                                    .font(.system(size: 16))
-                            }
-                            
-                            Text(silentModeEnabled ? "已关闭所有签到通知" : "开启后不再推送任何签到通知")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .tint(.orange)
-                    .onChange(of: silentModeEnabled) { isEnabled in
-                        // 当静默模式切换时，立即取消所有已安排的签到提醒
-                        if isEnabled {
-                            NotificationManager.shared.cancelAllCheckInReminders()
-                            print("🤫 静默模式已开启，已取消所有签到提醒")
-                        }
-                    }
-                }
-                
-                // 🔋 设备信息
-                Section(header: Text("设备信息")) {
-                    VStack(spacing: 12) {
-                        // 今日步数
-                        HStack {
-                            Image(systemName: "figure.walk")
-                                .foregroundColor(Color(hex: "34C759"))
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("今日步数")
-                                    .font(.system(size: 14))
-                                Text("\(deviceMonitor.stepCount, specifier: "%d") 步")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Spacer()
-                            
-                            // 刷新动画
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.secondary)
-                                .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
-                        }
-                        
-                        Divider()
-                        
-                        // 电量信息
-                        HStack {
-                            Image(systemName: deviceMonitor.batteryIcon)
-                                .foregroundColor(deviceMonitor.batteryColor)
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("设备电量")
-                                    .font(.system(size: 14))
-                                Text(deviceMonitor.batteryLevelText)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Spacer()
-                            
-                            Text(deviceMonitor.batteryStateText)
-                                .font(.system(size: 13))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(deviceMonitor.batteryStateColor)
-                                .cornerRadius(8)
-                        }
-                        
-                        // 最后更新
-                        HStack {
-                            Image(systemName: "clock")
-                                .foregroundColor(.secondary)
-                                .font(.system(size: 12))
-                            
-                            Text("最后更新：\(deviceMonitor.lastUpdateTime, formatter: timeFormatter)")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                
+                settingsList
             }
-            .navigationTitle("我的")
+            .navigationTitle(L10n.string(.tabMe))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                        Text("我的")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: SettingsDetailView()) {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundColor(.white)
-                    }
-                }
-            }
+            .toolbar { settingsToolbar }
             .onAppear {
                 viewModel.onAppear()
             }
@@ -256,20 +95,196 @@ struct SettingsView: View {
             .sheet(isPresented: $showingMembershipView) {
                 MembershipView()
             }
-            .alert("定位权限", isPresented: $viewModel.showingLocationAlert) {
-                Button("稍后", role: .cancel) {}
-                Button("去设置") {
+            .alert(L10n.string(.locationPermission), isPresented: $viewModel.showingLocationAlert) {
+                Button(L10n.string(.later), role: .cancel) {}
+                Button(L10n.string(.goSettings)) {
                     viewModel.openAppSettings()
                 }
             } message: {
-                Text("为了您的安全，建议开启\"始终允许\"定位权限，这样即使不打开 App 也能获取位置信息。")
+                Text(L10n.string(.locationAlwaysHint))
             }
-            .alert("提示", isPresented: $viewModel.showingError) {
-                Button("确定", role: .cancel) {}
+            .alert(L10n.string(.prompt), isPresented: $viewModel.showingError) {
+                Button(L10n.string(.confirm), role: .cancel) {}
             } message: {
                 Text(viewModel.errorMessage)
             }
+        }
+        .stackNavigationStyle()
+    }
+
+    @ViewBuilder
+    private var settingsList: some View {
+        List {
+            settingsProfileSection
+            settingsStatsSection
+            settingsIntervalSection
+            settingsNotificationSection
+            settingsDeviceSection
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var settingsToolbar: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                Text(L10n.string(.tabMe))
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.primary)
             }
+        }
+
+        ToolbarItem(placement: .navigationBarTrailing) {
+            NavigationLink(destination: SettingsDetailView()) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.indigo)
+                    .frame(width: 34, height: 34)
+                    .background(Color.indigo.opacity(0.12))
+                    .clipShape(Circle())
+            }
+        }
+    }
+
+    private var settingsProfileSection: some View {
+        Section {
+            userInfoCard
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
+    }
+
+    private var settingsStatsSection: some View {
+        Section {
+            statsCard
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
+    }
+
+    private var settingsIntervalSection: some View {
+        Section(header: Text(L10n.string(.settingsTitle))) {
+            HStack {
+                Image(systemName: "calendar")
+                    .foregroundColor(Color(hex: "6366F1"))
+                    .frame(width: 30)
+
+                Text(L10n.string(.signInInterval))
+                    .font(.system(size: 16))
+
+                Spacer()
+
+                Menu {
+                    ForEach(CheckInInterval.allCases, id: \.self) { interval in
+                        Button(interval.rawValue) {
+                            Task { await viewModel.updateCheckInInterval(interval) }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(viewModel.selectedCheckInInterval.rawValue)
+                            .foregroundColor(.indigo)
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    private var settingsNotificationSection: some View {
+        Section(header: Text(L10n.string(.notificationSettings))) {
+            Toggle(isOn: $silentModeEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: silentModeEnabled ? "bell.slash.fill" : "bell.fill")
+                            .foregroundColor(silentModeEnabled ? .orange : .green)
+                            .frame(width: 24)
+
+                        Text(L10n.string(.silentMode))
+                            .font(.system(size: 16))
+                    }
+
+                    Text(silentModeEnabled ? L10n.string(.notificationsMuted) : L10n.string(.notificationsMuteHelp))
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .tint(.orange)
+            .onChange(of: silentModeEnabled) { isEnabled in
+                if isEnabled {
+                    NotificationManager.shared.cancelAllCheckInReminders()
+                    UserDefaults.standard.removeObject(forKey: "checkinNotificationScheduleSignature")
+                    print("🤫 静默模式已开启，已取消所有签到提醒")
+                }
+            }
+        }
+    }
+
+    private var settingsDeviceSection: some View {
+        Section(header: Text(L10n.string(.deviceInfo))) {
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "figure.walk")
+                        .foregroundColor(Color(hex: "34C759"))
+                        .frame(width: 30)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.string(.todaySteps))
+                            .font(.system(size: 14))
+                        Text("\(deviceMonitor.stepCount, specifier: "%d") \(L10n.string(.steps))")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(deviceMonitor.isMonitoring ? 360 : 0))
+                }
+
+                Divider()
+
+                HStack {
+                    Image(systemName: deviceMonitor.batteryIcon)
+                        .foregroundColor(deviceMonitor.batteryColor)
+                        .frame(width: 30)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.string(.deviceBattery))
+                            .font(.system(size: 14))
+                        Text(deviceMonitor.batteryLevelText)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.primary)
+                    }
+
+                    Spacer()
+
+                    Text(deviceMonitor.batteryStateText)
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(deviceMonitor.batteryStateColor)
+                        .cornerRadius(8)
+                }
+
+                HStack {
+                    Image(systemName: "clock")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
+
+                    Text("\(L10n.string(.updateTime))：\(deviceMonitor.lastUpdateTime, formatter: timeFormatter)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.vertical, 8)
         }
     }
     
@@ -283,7 +298,7 @@ struct SettingsView: View {
         let checkinCount = userManager.currentUser?.checkinCount ?? 0
         
         VStack(spacing: 12) {
-            Text("我的数据")
+                    Text(L10n.string(.tabMe))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -294,28 +309,28 @@ struct SettingsView: View {
                     icon: "capsule.fill",
                     color: Color(hex: "AF52DE"),
                     count: capsulesCount,
-                    label: "胶囊"
+                    label: L10n.string(.tabCapsule)
                 )
                 
                 StatItemView(
                     icon: "doc.text.fill",
                     color: Color(hex: "FF2D55"),
                     count: willsCount,
-                    label: "嘱托"
+                    label: L10n.string(.tabWills)
                 )
                 
                 StatItemView(
                     icon: "person.2.fill",
                     color: Color(hex: "007AFF"),
                     count: familyCount,
-                    label: "家人"
+                    label: L10n.string(.tabFamily)
                 )
                 
                 StatItemView(
                     icon: "calendar.badge.checkmark",
                     color: Color(hex: "34C759"),
                     count: checkinCount,
-                    label: "签到"
+                    label: L10n.string(.tabHome)
                 )
             }
         }
@@ -340,11 +355,11 @@ struct SettingsView: View {
                         Circle()
                             .fill(userAvatarGradient())
                             .frame(width: 70, height: 70)
-                        
+
                         Image(systemName: "person.fill")
                             .font(.system(size: 32))
                             .foregroundColor(.white)
-                        
+
                         // 编辑指示器
                         Circle()
                             .fill(Color.white)
@@ -392,10 +407,10 @@ struct SettingsView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 22, weight: .bold))
-                        Text("开通会员")
+                        Text(L10n.string(.openMembership))
                             .font(.system(size: 18, weight: .bold))
                         Spacer()
-                        Text("限时特惠 >")
+                        Text(L10n.string(.limitedOffer))
                             .font(.system(size: 14, weight: .medium))
                     }
                     .foregroundColor(.black)
@@ -414,7 +429,7 @@ struct SettingsView: View {
             } else {
                 HStack {
                     Image(systemName: "checkmark.seal.fill")
-                    Text("会员有效")
+                    Text(L10n.string(.membershipValid))
                 }
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
@@ -470,23 +485,17 @@ struct SettingsView: View {
         if !dataManager.settings.name.isEmpty {
             return dataManager.settings.name
         }
-        return "用户"
+        return L10n.string(.user)
     }
 
     private var displayUserPhone: String {
-        if let account = userManager.currentUser?.loginAccount, !account.isEmpty {
-            return account
-        }
-        if let account = KeychainManager.shared.getUserAccount(), !account.isEmpty {
-            return account
-        }
         if let phone = userManager.currentUser?.phone, !phone.isEmpty {
             return phone
         }
         if let phone = KeychainManager.shared.getUserPhone(), !phone.isEmpty {
             return phone
         }
-        return "未设置"
+        return L10n.string(.unboundPhone)
     }
 
     private var displayUserId: String {
@@ -496,19 +505,19 @@ struct SettingsView: View {
         if let userId = KeychainManager.shared.getUserId(), !userId.isEmpty {
             return String(userId.prefix(8))
         }
-        return "未知"
+        return L10n.string(.unknown)
     }
     
     private var locationStatusText: String {
         switch userManager.locationAuthStatus {
         case .authorizedAlways:
-            return "后台定位已开启"
+            return L10n.string(.backgroundLocationOn)
         case .authorizedWhenInUse:
-            return "仅使用期间允许"
+            return L10n.string(.whenInUseOnly)
         case .denied:
-            return "已拒绝"
+            return L10n.string(.denied)
         default:
-            return "未设置"
+            return L10n.string(.notSet)
         }
     }
     
@@ -532,6 +541,9 @@ struct EditProfileModal: View {
     @State private var address = ""
     @State private var gender: User.Gender = .male
     @State private var selectedAvatar = "male_1"
+    @State private var showingProfileError = false
+    @State private var profileErrorMessage = ""
+    @State private var isPhoneLocked = false
     
     // 默认头像列表
     private let maleAvatars = ["male_1", "male_2", "male_3", "male_4", "male_5"]
@@ -545,7 +557,7 @@ struct EditProfileModal: View {
         NavigationView {
             Form {
                 // 头像选择区域
-                Section(header: Text("头像")) {
+                Section(header: Text(L10n.string(.avatar))) {
                     VStack(spacing: 16) {
                         // 当前选中头像显示
                         ZStack {
@@ -560,9 +572,9 @@ struct EditProfileModal: View {
                         .padding(.top, 8)
                         
                         // 性别选择
-                        Picker("性别", selection: $gender) {
+                        Picker(L10n.string(.gender), selection: $gender) {
                             ForEach(User.Gender.allCases, id: \.self) { g in
-                                Text(g.rawValue).tag(g)
+                                Text(g == .male ? L10n.string(.maleGender) : L10n.string(.femaleGender)).tag(g)
                             }
                         }
                         .pickerStyle(.segmented)
@@ -599,37 +611,53 @@ struct EditProfileModal: View {
                     }
                 }
                 
-                Section(header: Text("姓名")) {
-                    TextField("请输入姓名", text: $name)
+                Section(header: Text(L10n.string(.name))) {
+                    TextField(L10n.string(.name), text: $name)
                 }
                 
-                Section(header: Text("手机号")) {
-                    HStack {
-                        Image(systemName: "phone.fill")
+                Section(header: Text(L10n.string(.phone))) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "phone.fill")
+                                .foregroundColor(.secondary)
+                                .frame(width: 20)
+                            TextField(L10n.string(.phone), text: $phone)
+                                .disabled(isPhoneLocked)
+                                .keyboardType(.phonePad)
+                                .textContentType(.telephoneNumber)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        }
+
+                        Text(isPhoneLocked ? L10n.string(.phoneBoundLocked) : L10n.string(.phoneBindingHint))
+                            .font(.footnote)
                             .foregroundColor(.secondary)
-                            .frame(width: 20)
-                        Text(phone)
-                            .foregroundColor(.gray)
-                        Spacer()
                     }
                 }
                 
-                Section(header: Text("身份信息")) {
+                Section(header: Text(L10n.string(.identityInfo))) {
                     // 性别选择
-                    Picker("性别", selection: $gender) {
+                    Picker(L10n.string(.gender), selection: $gender) {
                         ForEach(User.Gender.allCases, id: \.self) { g in
-                            Text(g.rawValue).tag(g)
+                            Text(g == .male ? L10n.string(.maleGender) : L10n.string(.femaleGender)).tag(g)
                         }
                     }
                     
-                    TextField("民族", text: $ethnicity)
+                    TextField(L10n.string(.ethnicity), text: $ethnicity)
                     
-                    DatePicker("出生日期", selection: $birthday, displayedComponents: .date)
+                    VStack(alignment: .leading, spacing: 8) {
+                        DatePicker(L10n.string(.birthdayLabel), selection: $birthday, displayedComponents: .date)
+                            .environment(\.locale, Locale(identifier: "zh_CN"))
+
+                        Text("\(L10n.string(.birthdayPreview))：\(AppLocalization.dateString(for: birthday))")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                     
-                    TextField("身份证号码", text: $idCard)
+                    TextField(L10n.string(.idCard), text: $idCard)
                         .textInputAutocapitalization(.characters)
                     
-                    TextField("住址", text: $address)
+                    TextField(L10n.string(.address), text: $address)
                         .lineLimit(2)
                 }
                 
@@ -641,8 +669,31 @@ struct EditProfileModal: View {
                         
                         if !name.isEmpty {
                             if var user = userManager.currentUser {
+                                let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !trimmedPhone.isEmpty && !isValidPhone(trimmedPhone) {
+                                    print("❌ 手机号格式不正确：\(trimmedPhone)")
+                                    profileErrorMessage = L10n.string(.phoneFormatError)
+                                    showingProfileError = true
+                                    return
+                                }
+                                let currentBoundPhone = !user.phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    ? user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    : (KeychainManager.shared.getUserPhone() ?? "")
+                                if !currentBoundPhone.isEmpty {
+                                    if trimmedPhone != currentBoundPhone {
+                                        print("❌ 手机号已绑定，不可再次修改")
+                                        profileErrorMessage = L10n.string(.phoneBoundLocked)
+                                        showingProfileError = true
+                                        return
+                                    }
+                                } else if trimmedPhone.isEmpty {
+                                    print("❌ 首次绑定手机号不能为空")
+                                    profileErrorMessage = L10n.string(.firstBindPhoneRequired)
+                                    showingProfileError = true
+                                    return
+                                }
                                 user.name = name
-                                // phone 不可修改
+                                user.phone = currentBoundPhone.isEmpty ? trimmedPhone : currentBoundPhone
                                 user.ethnicity = ethnicity
                                 user.birthday = birthday
                                 user.idCard = idCard
@@ -669,18 +720,23 @@ struct EditProfileModal: View {
                             }
                         }
                     }) {
-                        Text("保存")
-                            .frame(maxWidth: .infinity)
+                    Text(L10n.string(.saveProfile))
+                        .frame(maxWidth: .infinity)
                     }
                     .disabled(name.isEmpty)
                 }
             }
-            .navigationTitle("编辑资料")
+            .navigationTitle(L10n.string(.editProfile))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.string(.cancel)) { dismiss() }
                 }
+            }
+            .alert(L10n.string(.prompt), isPresented: $showingProfileError) {
+                Button(L10n.string(.confirm), role: .cancel) { }
+            } message: {
+                Text(profileErrorMessage)
             }
             .onAppear {
                 if userManager.currentUser == nil {
@@ -688,18 +744,29 @@ struct EditProfileModal: View {
                 }
 
                 if let user = userManager.currentUser {
+                    let savedPhone = KeychainManager.shared.getUserPhone() ?? ""
+                    let existingPhone = !user.phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+                        : savedPhone.trimmingCharacters(in: .whitespacesAndNewlines)
                     name = user.name
-                    phone = user.phone
+                    phone = existingPhone
                     ethnicity = user.ethnicity ?? ""
                     birthday = user.birthday ?? Date()
                     idCard = user.idCard ?? ""
                     address = user.address ?? ""
                     gender = user.gender ?? .male
                     selectedAvatar = user.avatar ?? "male_1"
+                    isPhoneLocked = !existingPhone.isEmpty
                     print("🔵 编辑资料：name=\(name), phone=\(phone), gender=\(gender.rawValue), avatar=\(selectedAvatar)")
                 }
             }
         }
+        .stackNavigationStyle()
+    }
+
+    private func isValidPhone(_ phone: String) -> Bool {
+        let pattern = "^1[3-9]\\d{9}$"
+        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: phone)
     }
     
     // 根据头像名称返回渐变色
@@ -756,34 +823,34 @@ struct ServerConfigModal: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("服务器地址")) {
-                    TextField("自动获取（推荐）", text: $tempURL)
+                Section(header: Text(L10n.string(.serverAddress))) {
+                    TextField(L10n.string(.automaticFetchRecommended), text: $tempURL)
                         .keyboardType(.URL)
                         .autocapitalization(.none)
                     
-                    Text("留空表示自动从后端获取，深度绑定当前服务器地址")
+                    Text(L10n.string(.leaveBlankAuto))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text("修改后需要重启 App 生效")
+                    Text(L10n.string(.restartRequired))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 
-                Section(header: Text("测试连接")) {
+                Section(header: Text(L10n.string(.testConnection))) {
                     HStack {
-                        Text("状态")
+                        Text(L10n.string(.status))
                         Spacer()
                         if isTesting {
                             ProgressView()
                                 .scaleEffect(0.8)
-                            Text("测试中...")
+                            Text(L10n.string(.testing))
                                 .foregroundColor(.secondary)
                         } else if !testResult.isEmpty {
                             Text(testResult)
-                                .foregroundColor(testResult == "成功" ? .green : .red)
+                                .foregroundColor(testResult.contains(L10n.string(.testSuccess)) ? .green : .red)
                         } else {
-                            Text("未测试")
+                            Text(L10n.string(.notTested))
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -791,7 +858,7 @@ struct ServerConfigModal: View {
                     Button(action: testConnection) {
                         HStack {
                             Spacer()
-                            Text("测试连接")
+                            Text(L10n.string(.testConnection))
                             Spacer()
                         }
                     }
@@ -807,24 +874,25 @@ struct ServerConfigModal: View {
                     }) {
                         HStack {
                             Spacer()
-                            Text("保存并重启")
+                            Text(L10n.string(.saveAndRestart))
                             Spacer()
                         }
                     }
                     .disabled(tempURL.isEmpty)
                 }
             }
-            .navigationTitle("服务器配置")
+            .navigationTitle(L10n.string(.serverConfig))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.string(.cancel)) { dismiss() }
                 }
             }
             .onAppear {
                 tempURL = customServerURL
             }
         }
+        .stackNavigationStyle()
     }
     
     private func testConnection() {
@@ -850,15 +918,15 @@ struct ServerConfigModal: View {
                     isTesting = false
                     if let data = response["data"] as? [String: Any],
                        data["getConfig"] != nil {
-                        testResult = "成功 (GraphQL)"
+                        testResult = L10n.string(.testSuccess) + " (GraphQL)"
                     } else {
-                        testResult = "失败"
+                        testResult = L10n.string(.testFailed)
                     }
                 }
             } catch {
                 await MainActor.run {
                     isTesting = false
-                    testResult = "失败：\(error.localizedDescription)"
+                    testResult = "\(L10n.string(.testFailed))：\(error.localizedDescription)"
                 }
             }
         }
@@ -884,25 +952,25 @@ extension SettingsView {
                 Image(systemName: "heart.fill")
                     .font(.system(size: 60))
                     .foregroundColor(Color(hex: "F59E0B"))
-                Text("终活")
+                Text(L10n.string(.appName))
                     .font(.system(size: 28, weight: .bold))
-                Text("让生命更有温度")
+                Text(L10n.string(.appTagline))
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
             .padding(.top, 40)
             VStack(spacing: 16) {
                 HStack {
-                    Text("当前版本")
+                    Text(L10n.string(.currentVersionTitle))
                     Spacer()
-                    Text("v\(appVersion)")
+                    Text(L10n.string(.currentVersionValue).replacingOccurrences(of: "%@", with: appVersion))
                         .foregroundColor(.secondary)
                 }
                 Button(action: {
                     Task { await viewModel.checkUpdate() }
                 }) {
                     HStack {
-                        Text(LocalizedStringKey("检查更新")).accessibilityLabel("检查应用更新")
+                        Text(L10n.string(.checkUpdate)).accessibilityLabel(L10n.string(.checkUpdate))
                         Spacer()
                         Image(systemName: "arrow.clockwise").foregroundColor(.secondary)
                     }
@@ -913,49 +981,54 @@ extension SettingsView {
             .cornerRadius(12)
             .padding(.horizontal)
             List {
-                Section(header: Text("应用信息")) {
+                Section(header: Text(L10n.string(.appInformation))) {
                     if let url = URL(string: "https://zhonghuo.cn") {
-                        Link("官方网站", destination: url)
+                        Link(L10n.string(.officialSite), destination: url)
                     }
                     if let url = URL(string: "https://zhonghuo.cn/privacy") {
-                        Link("隐私政策", destination: url)
+                        Link(L10n.string(.privacyPolicy), destination: url)
                     }
                     if let url = URL(string: "https://zhonghuo.cn/terms") {
-                        Link("服务条款", destination: url)
+                        Link(L10n.string(.termsOfService), destination: url)
                     }
                     
                     // ⚖️ 法律声明
                     NavigationLink(destination: LegalDisclosureView()) {
                         HStack {
                             Image(systemName: "scale")
-                            Text("电子遗嘱效力说明")
+                            Text(L10n.string(.legalDisclosure))
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
-                Section(header: Text("联系我们")) {
+                Section(header: Text(L10n.string(.contactUs))) {
                     HStack {
-                        Text("客服邮箱")
+                        Text(L10n.string(.contactEmail))
                         Spacer()
                         Text("support@zhonghuo.cn").foregroundColor(.secondary)
                     }
                 }
             }
             Spacer()
-            Text("© 2026 终活 App. All rights reserved.")
+            Text(L10n.string(.appCopyright))
                 .font(.caption).foregroundColor(.secondary).padding(.bottom, 20)
         }
-        .navigationTitle("关于")
+        .navigationTitle(L10n.string(.about))
         .navigationBarTitleDisplayMode(.inline)
-        .alert(LocalizedStringKey("检查更新"), isPresented: $viewModel.showingUpdateAlert) {
-            Button("稍后更新", role: .cancel) { }
-            Button("立即更新") {
+        .alert(L10n.string(.checkUpdate), isPresented: $viewModel.showingUpdateAlert) {
+            Button(L10n.string(.later), role: .cancel) { }
+            Button(L10n.string(.updateNow)) {
                 viewModel.openUpdateURL()
             }
         } message: {
-            Text("发现新版本 v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion)\\n\\nBug 修复和性能优化")
+            Text(L10n.text(
+                "\(L10n.string(.newVersionFound)) v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion)\n\nBug 修复和性能优化",
+                en: "New version v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion) found.\n\nBug fixes and performance improvements.",
+                ja: "新しいバージョン v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion) が見つかりました。\n\n不具合修正と性能改善。",
+                ko: "새 버전 v\(viewModel.latestVersion.isEmpty ? dataManager.systemConfig.latestVersion : viewModel.latestVersion)를 찾았습니다.\n\n버그 수정 및 성능 개선."
+            ))
         }
     }
 }

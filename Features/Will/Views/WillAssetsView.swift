@@ -41,7 +41,7 @@ struct WillAssetsView: View {
                 .padding(.top, 16)
             }
             .background(Color(.systemBackground))
-            .navigationTitle("嘱托与资产")
+            .navigationTitle(L10n.string(.willAndAssets))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
@@ -65,7 +65,7 @@ struct WillAssetsView: View {
                         Image(systemName: "signature")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("嘱托与资产")
+                        Text(L10n.string(.willAndAssets))
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -103,11 +103,11 @@ struct WillAssetsView: View {
                 })
             }
             .sheet(isPresented: $showingUpgradeForExport) {
-                UpgradePromptView(
-                    feature: "导出 PDF",
-                    statusText: "当前功能仅会员可用",
-                    currentLimit: "免费版无法导出",
-                    targetLimit: "会员版可导出",
+                    UpgradePromptView(
+                    feature: L10n.text("导出 PDF", en: "Export PDF", ja: "PDFを書き出し", ko: "PDF 내보내기"),
+                    statusText: L10n.text("当前功能仅会员可用", en: "This feature is for members only", ja: "この機能は会員限定です", ko: "이 기능은 멤버십 전용입니다"),
+                    currentLimit: L10n.text("免费版无法导出", en: "Not available on free plan", ja: "無料プランでは書き出せません", ko: "무료 플랜에서는 내보낼 수 없습니다"),
+                    targetLimit: L10n.text("会员版可导出", en: "Premium can export", ja: "会員プランでは書き出せます", ko: "멤버십에서는 내보낼 수 있습니다"),
                     onUpgrade: {
                         showingUpgradeForExport = false
                         showingMembershipView = true
@@ -118,11 +118,11 @@ struct WillAssetsView: View {
                 )
             }
             .sheet(isPresented: $showingUpgradeForWill) {
-                UpgradePromptView(
-                    feature: "新增嘱托",
-                    statusText: "当前嘱托模块数量已达上限",
-                    currentLimit: "当前最多 \(MembershipManager.shared.currentWillLimit()) 个模块",
-                    targetLimit: "会员版可创建更多嘱托模块",
+                    UpgradePromptView(
+                    feature: L10n.text("新增嘱托", en: "Add will", ja: "遺言を追加", ko: "유언 추가"),
+                    statusText: L10n.text("当前仅可使用默认嘱托模板", en: "Only default will templates are available", ja: "既定のテンプレートのみ利用できます", ko: "기본 유언 템플릿만 사용할 수 있습니다"),
+                    currentLimit: L10n.text("免费版可使用 5 个默认模板", en: "Free plan includes 5 default templates", ja: "無料プランでは 5 つの既定テンプレートを利用できます", ko: "무료 플랜은 기본 템플릿 5개를 제공합니다"),
+                    targetLimit: L10n.text("会员版可自定义嘱托且数量不限", en: "Premium can create unlimited custom wills", ja: "会員プランではカスタム遺言を無制限に作成できます", ko: "멤버십에서는 사용자 지정 유언을 무제한으로 만들 수 있습니다"),
                     onUpgrade: {
                         showingUpgradeForWill = false
                         showingMembershipView = true
@@ -136,8 +136,10 @@ struct WillAssetsView: View {
                 NavigationView {
                     MembershipView()
                 }
+                .stackNavigationStyle()
             }
         }
+        .stackNavigationStyle()
     }
     
     
@@ -145,7 +147,7 @@ struct WillAssetsView: View {
     private var segmentControl: some View {
         HStack(spacing: 4) {
             Button(action: { selectedTab = 0 }) {
-                Text("我的嘱托")
+                Text(L10n.string(.myWills))
                     .font(.system(size: 14, weight: .medium))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -155,7 +157,7 @@ struct WillAssetsView: View {
             }
             
             Button(action: { selectedTab = 1 }) {
-                Text("资产管理")
+                Text(L10n.string(.assetManagement))
                     .font(.system(size: 14, weight: .medium))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -187,16 +189,15 @@ struct WillAssetsView: View {
             // 新增嘱托按钮
             Button(action: {
                 // 创建新的空白模块（使用 otherInstructions 类型）
-                let currentCount = dataManager.willModules.count
-                if !MembershipManager.shared.canCreateWill(currentCount: currentCount) {
+                if !MembershipManager.shared.canCreateCustomWill() {
                     showingUpgradeForWill = true
                     return
                 }
-                let newModule = WillModule(
+                    let newModule = WillModule(
                     id: UUID().uuidString,
                     type: .otherInstructions,
-                    title: "自定义嘱托",
-                    subtitle: "添加您想交代的事",
+                    title: L10n.text("自定义嘱托", en: "Custom will", ja: "カスタム遺言", ko: "사용자 유언"),
+                    subtitle: L10n.text("添加您想交代的事", en: "Add what you want to explain", ja: "伝えたいことを追加してください", ko: "전하고 싶은 내용을 추가하세요"),
                     content: "",
                     isCompleted: false
                 )
@@ -204,7 +205,7 @@ struct WillAssetsView: View {
             }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("新增自定义嘱托")
+                    Text(L10n.string(.addCustomWill))
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
@@ -217,15 +218,15 @@ struct WillAssetsView: View {
             // 法律提示
             infoCard(
                 icon: "⚖️",
-                title: "关于遗嘱的法律说明",
-                desc: "本遗嘱为自书遗嘱，需亲笔签名并注明日期才具法律效力。建议有 2 名以上见证人在场，或前往公证处办理公证。"
+                title: L10n.text("关于遗嘱的法律说明", en: "Legal note on wills", ja: "遺言に関する法的説明", ko: "유언에 대한 법적 안내"),
+                desc: L10n.text("本遗嘱为自书遗嘱，需亲笔签名并注明日期才具法律效力。建议有 2 名以上见证人在场，或前往公证处办理公证。", en: "This will is a handwritten will. It must be signed and dated to be legally valid. We recommend having at least two witnesses or using a notary office.", ja: "この遺言は自筆証書遺言です。法的効力を持つには自筆署名と日付が必要です。2名以上の証人立会い、または公証役場での公証を推奨します。", ko: "이 유언은 자필 유언입니다. 법적 효력을 가지려면 자필 서명과 날짜 기재가 필요합니다. 2명 이상의 증인 또는 공증을 권장합니다.")
             )
             
             // 操作按钮
             NavigationLink(destination: WillPreviewView()) {
                 HStack {
                     Text("👁️")
-                    Text("预览嘱托")
+                    Text(L10n.string(.previewWill))
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
@@ -245,8 +246,8 @@ struct WillAssetsView: View {
             // 安全提示
             infoCard(
                 icon: "🔒",
-                title: "安全提示",
-                desc: "仅记录资产信息用于身后事务处理，不存储密码和完整账号。建议记录账号后 4 位以便识别。"
+                title: L10n.text("安全提示", en: "Safety note", ja: "安全上の注意", ko: "안전 안내"),
+                desc: L10n.text("仅记录资产信息用于身后事务处理，不存储密码和完整账号。建议记录账号后 4 位以便识别。", en: "We only store asset information for posthumous handling. Passwords and full account numbers are not stored. We recommend recording the last 4 digits of an account for identification.", ja: "資産情報のみを保存し、パスワードや完全なアカウント番号は保存しません。識別のためにアカウント末尾4桁の記録を推奨します。", ko: "사후 처리용으로 자산 정보만 기록하며, 비밀번호와 전체 계정 번호는 저장하지 않습니다. 식별을 위해 계정 마지막 4자리를 기록하는 것을 권장합니다.")
             )
             
             // 资产列表
@@ -265,7 +266,7 @@ struct WillAssetsView: View {
             Button(action: { showingAddAssetModal = true }) {
                 HStack {
                     Text("+")
-                    Text("添加资产")
+                    Text(L10n.string(.addAsset))
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity)
@@ -283,10 +284,10 @@ struct WillAssetsView: View {
         VStack(spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("填写进度")
+                    Text(L10n.string(.fillingProgress))
                         .font(.system(size: 14, weight: .semibold))
                     
-                    Text("完成度越高，您的意愿就越清晰")
+                    Text(L10n.string(.progressHint))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -320,13 +321,13 @@ struct WillAssetsView: View {
             .frame(height: 8)
             
             HStack {
-                Text("已完成 \(dataManager.willModules.filter { $0.isCompleted }.count) 项")
+                Text(L10n.string(.completedItems).replacingOccurrences(of: "%@", with: "\(dataManager.willModules.filter { $0.isCompleted }.count)"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
-                Text("共 \(dataManager.willModules.count) 项")
+                Text(L10n.string(.totalItems).replacingOccurrences(of: "%@", with: "\(dataManager.willModules.count)"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -526,13 +527,13 @@ struct AssetRow: View {
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(14)
-        .alert("删除资产", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive) {
+        .alert(L10n.string(.deleteAsset), isPresented: $showingDeleteAlert) {
+            Button(L10n.string(.cancel), role: .cancel) {}
+            Button(L10n.string(.deleteAction), role: .destructive) {
                 onDelete()
             }
         } message: {
-            Text("确定要删除资产「\(asset.name)」吗？此操作不可恢复。")
+            Text(String(format: L10n.string(.deleteAssetMessage), asset.name))
         }
     }
     
@@ -591,13 +592,13 @@ struct WillModuleRow: View {
         .background(Color(.systemBackground))
         .cornerRadius(14)
         .onTapGesture(perform: onTap)
-        .alert("删除嘱托", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive) {
+        .alert(L10n.string(.deleteWill), isPresented: $showingDeleteAlert) {
+            Button(L10n.string(.cancel), role: .cancel) {}
+            Button(L10n.string(.deleteAction), role: .destructive) {
                 onDelete()
             }
         } message: {
-            Text("确定要删除嘱托「\(module.title)」吗？此操作不可恢复。")
+            Text(String(format: L10n.string(.deleteWillMessage), module.title))
         }
     }
 }

@@ -34,65 +34,7 @@ class NotificationManager: ObservableObject {
     /// 当倒计时低于阈值时，按配置的间隔推送签到提醒（后端可配置）
     /// 如果倒计时很短（<1 小时），则立即提醒
     func scheduleCheckInReminders(hoursRemaining: Double, reminderThresholdHours: Double? = nil, reminderIntervalHours: Double? = nil) {
-        print("🔔 检查是否需要安排签到提醒：hoursRemaining=\(hoursRemaining)小时")
-        
-        // 🤫 检查静默模式
-        let silentMode = UserDefaults.standard.bool(forKey: "silentModeEnabled")
-        if silentMode {
-            print("🤫 静默模式已开启，跳过签到提醒")
-            return
-        }
-        
-        // 取消所有现有签到提醒，避免误删其他业务通知
-        cancelAllCheckInReminders()
-        
-        // 📱 优先使用后端配置，其次使用参数，最后使用默认值
-        // ✅ 修复 #1: 使用 await MainActor.run 包裹访问 @MainActor 的 DataManager
-        // ✅ Swift 6: Double 是非可选类型，但为了类型匹配需要 Double() 包装
-        let threshold = reminderThresholdHours.map { Double($0) } ?? DataManager.shared.systemConfig.checkinReminderThresholdHours
-        let interval = reminderIntervalHours.map { Double($0) } ?? DataManager.shared.systemConfig.checkinReminderIntervalHours
-        
-        print("   - 提醒阈值：\(threshold) 小时（后端配置）")
-        print("   - 推送间隔：\(interval) 小时（后端配置）")
-        
-        // 只有低于阈值才需要提醒
-        guard hoursRemaining < threshold else {
-            print("⏰ 倒计时还有 \(hoursRemaining) 小时，不需要提醒")
-            return
-        }
-        
-        // 如果倒计时非常短（<1 小时），立即提醒
-        if hoursRemaining < 1 {
-            let minutesRemaining = Int(hoursRemaining * 60)
-            print("⚠️ 倒计时紧急：只剩 \(minutesRemaining) 分钟，立即提醒")
-            scheduleImmediateReminder(minutes: minutesRemaining)
-            return
-        }
-        
-        // 📱 使用配置的推送频率
-        let intervalHours = interval
-        let reminderCount = max(1, Int(hoursRemaining / intervalHours) + 1)
-        print("📅 需要安排 \(reminderCount) 次提醒（每 \(intervalHours) 小时一次）")
-        
-        for i in 0..<reminderCount {
-            let hoursFromNow = Double(i) * intervalHours
-            let triggerTime = Date().addingTimeInterval(hoursFromNow * 3600)
-            let hoursLeft = Int(hoursRemaining - hoursFromNow)
-            
-            print("   - 提醒 \(i+1): \(hoursFromNow) 小时后 (\(triggerTime))")
-            
-            // 智能消息：如果已过期，显示紧急提示
-            let message = hoursLeft > 0 
-                ? "距离下次签到还有 \(hoursLeft) 小时，记得打开 App 签到哦~"
-                : "⚠️ 您已超过签到时间，请立即签到！"
-            
-            scheduleReminder(
-                identifier: "checkin_reminder_\(i)",
-                title: hoursLeft > 0 ? "⏰ 签到提醒" : "⚠️ 签到已过期",
-                body: message,
-                triggerDate: triggerTime
-            )
-        }
+        print("🔔 旧版兜底签到提醒接口已废弃，改由 LifeCheckStatusManager 统一调度")
     }
     
     // MARK: - 立即提醒

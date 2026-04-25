@@ -1058,6 +1058,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 memberType
                 memberExpireAt
                 memberMaxCapsules
+                memberMaxTextCapsules
+                memberMaxAudioCapsules
+                memberMaxVideoCapsules
                 memberMaxVideoMinutes
                 aiAssistEnabled
                 stats {
@@ -1135,6 +1138,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let memberType = userDict["memberType"] as? String
                 let memberExpireAtString = userDict["memberExpireAt"] as? String
                 let memberMaxCapsules = userDict["memberMaxCapsules"] as? Int ?? 5
+                let memberMaxTextCapsules = userDict["memberMaxTextCapsules"] as? Int ?? 2
+                let memberMaxAudioCapsules = userDict["memberMaxAudioCapsules"] as? Int ?? 2
+                let memberMaxVideoCapsules = userDict["memberMaxVideoCapsules"] as? Int ?? 2
                 let memberMaxVideoMinutes = userDict["memberMaxVideoMinutes"] as? Int ?? 2
                 let aiAssistEnabled = userDict["aiAssistEnabled"] as? Bool ?? false
                 
@@ -1149,12 +1155,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 // ✅ 更新会员状态（会自动检查过期）
                 await MainActor.run {
                     MembershipManager.shared.updateFromServer(
-                    isPremium: isPremium,
-                    memberType: memberType,
-                    memberExpireAt: memberExpireAt,
-                    memberMaxCapsules: memberMaxCapsules,
-                    memberMaxVideoMinutes: memberMaxVideoMinutes,
-                    aiAssistEnabled: aiAssistEnabled
+                        isPremium: isPremium,
+                        memberType: memberType,
+                        memberExpireAt: memberExpireAt,
+                        memberMaxCapsules: memberMaxCapsules,
+                        memberMaxTextCapsules: memberMaxTextCapsules,
+                        memberMaxAudioCapsules: memberMaxAudioCapsules,
+                        memberMaxVideoCapsules: memberMaxVideoCapsules,
+                        memberMaxVideoMinutes: memberMaxVideoMinutes,
+                        aiAssistEnabled: aiAssistEnabled
                     )
                 }
                 
@@ -1221,7 +1230,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             loginAccount: userDict["account"] as? String,
                             phone: phone,
                             createdAt: dateFormatter.date(from: createdAt) ?? Date(),
-                            checkInInterval: .oneDay,  // 默认值
+                            checkInInterval: .twoDays,  // 默认值
                             notificationsEnabled: true,
                             cloudSyncEnabled: true,
                             lastCheckInDate: dateFormatter.date(from: lastCheckInDate),

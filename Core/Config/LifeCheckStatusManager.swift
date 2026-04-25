@@ -14,10 +14,10 @@ import UserNotifications
 struct NotificationConfig: Codable {
     /// 签到间隔（小时）- 默认 48 小时
     var checkInInterval: Int = 48
-    
+
     /// 首次提醒时间（小时）- 剩余 12 小时时首次提醒
     var firstReminderHours: Int = 12
-    
+
     /// 重复提醒间隔（小时）- 每 2 小时提醒一次
     var reminderInterval: Int = 2
     
@@ -35,6 +35,8 @@ class LifeCheckStatusManager: ObservableObject {
     @Published var hoursRemaining: Double = 0
     @Published var lastCheckInDate: Date?
     @Published var checkInHistory: [CheckInRecord] = []
+    private let scheduleSignatureKey = "checkinNotificationScheduleSignature"
+    private var pendingScheduleRefreshTask: Task<Void, Never>?
     
     // ✅ 修复：签到间隔以用户本地设置为准
     private var checkInInterval: TimeInterval {
@@ -54,6 +56,21 @@ class LifeCheckStatusManager: ObservableObject {
         updateStatus()
     }
     
+    func requestNotificationRefresh(reason: String = "") {
+        pendingScheduleRefreshTask?.cancel()
+
+        if !reason.isEmpty {
+            print("🔄 请求刷新签到提醒：\(reason)")
+        }
+
+        pendingScheduleRefreshTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            self.scheduleCheckInNotifications()
+            self.pendingScheduleRefreshTask = nil
+        }
+        }
+
     // MARK: - 签到
     func checkIn() async {
         print("✍️ 开始签到...")
@@ -68,7 +85,9 @@ class LifeCheckStatusManager: ObservableObject {
             currentUser.lastCheckInDate = lastCheckInDate
             UserManager.shared.currentUser = currentUser
             UserManager.shared.lastCheckInDate = lastCheckInDate
+            UserManager.shared.checkInInterval = currentUser.checkInInterval
         }
+        UserDefaults.standard.removeObject(forKey: "checkinFallbackReminderScheduled")
         
         // 记录签到历史
         let record = CheckInRecord(date: Date(), status: .manual)
@@ -236,20 +255,31 @@ class LifeCheckStatusManager: ObservableObject {
     /// 设置签到提醒通知（完整流程）
     func scheduleCheckInNotifications() {
         print("📅 设置签到提醒通知流程...")
-        
-        // 取消之前的签到通知，避免误删胶囊/遗嘱等其他功能通知
-        cancelAllCheckInNotifications()
+        pendingScheduleRefreshTask?.cancel()
+        pendingScheduleRefreshTask = nil
+
+        if UserDefaults.standard.bool(forKey: "silentModeEnabled") {
+            print("🤫 静默模式开启，取消并跳过签到提醒调度")
+            cancelAllCheckInNotifications()
+            return
+        }
 
         if UserManager.shared.currentUser == nil {
             UserManager.shared.loadUser()
         }
 
-        guard let lastCheckIn = lastCheckInDate ?? UserManager.shared.currentUser?.lastCheckInDate ?? UserManager.shared.lastCheckInDate else {
+        let effectiveLastCheckIn = UserManager.shared.currentUser?.lastCheckInDate
+            ?? UserManager.shared.lastCheckInDate
+            ?? lastCheckInDate
+
+        guard let lastCheckIn = effectiveLastCheckIn else {
             print("⚠️ 无上次签到时间，无法设置通知")
+            cancelAllCheckInNotifications()
             return
         }
 
         lastCheckInDate = lastCheckIn
+        UserManager.shared.lastCheckInDate = lastCheckIn
         saveLastCheckInDate()
         
         let now = Date()
@@ -262,6 +292,16 @@ class LifeCheckStatusManager: ObservableObject {
         // 计算首次提醒时间（剩余 12 小时）
         let reminderThresholdHours = DataManager.shared.systemConfig.checkinReminderThresholdHours
         let firstReminderTime = nextCheckInTime.addingTimeInterval(-TimeInterval(reminderThresholdHours * 3600))
+        let scheduleSignature = [
+            String(format: "%.0f", lastCheckIn.timeIntervalSince1970),
+            String(format: "%.3f", checkInIntervalHours),
+            String(format: "%.3f", reminderThresholdHours),
+            String(format: "%.3f", DataManager.shared.systemConfig.checkinReminderIntervalHours),
+            String(format: "%.3f", DataManager.shared.systemConfig.overduePushIntervalHours)
+        ].joined(separator: "|")
+
+        // 取消之前的签到通知，避免误删胶囊/遗嘱等其他功能通知
+        cancelAllCheckInNotifications()
         
         // 如果已经过了首次提醒时间，立即设置
         if firstReminderTime <= now {
@@ -283,6 +323,7 @@ class LifeCheckStatusManager: ObservableObject {
         
         // 设置超时通知
         scheduleOverdueNotifications(after: nextCheckInTime)
+        UserDefaults.standard.set(scheduleSignature, forKey: scheduleSignatureKey)
         
         print("✅ 通知流程设置完成")
         print("   - 首次提醒：\(firstReminderTime)")
@@ -307,8 +348,16 @@ class LifeCheckStatusManager: ObservableObject {
         let intervalSeconds = reminderIntervalHours * 3600
         var currentTime = startTime.addingTimeInterval(TimeInterval(intervalSeconds))
         var reminderCount = 1
+        let now = Date()
         
         while currentTime < endTime {
+            if currentTime <= now {
+                currentTime.addTimeInterval(TimeInterval(intervalSeconds))
+                reminderCount += 1
+                if reminderCount > 10 { break }
+                continue
+            }
+
             let hoursLeft = Int(endTime.timeIntervalSince(currentTime) / 3600)
             scheduleNotification(
                 identifier: "checkin_repeat_reminder_\(reminderCount)",
@@ -332,9 +381,16 @@ class LifeCheckStatusManager: ObservableObject {
         let intervalSeconds = overduePushIntervalHours * 3600
         var currentTime = deadline.addingTimeInterval(TimeInterval(intervalSeconds))
         var notificationCount = 1
+        let now = Date()
         
         // 设置 5 个超时通知
         while notificationCount <= 5 {
+            if currentTime <= now {
+                currentTime.addTimeInterval(TimeInterval(intervalSeconds))
+                notificationCount += 1
+                continue
+            }
+
             let hoursOverdue = notificationCount * Int(overduePushIntervalHours)
             
             scheduleNotification(
@@ -385,6 +441,8 @@ class LifeCheckStatusManager: ObservableObject {
             "checkin_immediate"
         ] + (0..<10).map { "checkin_repeat_reminder_\($0)" } + (0..<5).map { "checkin_overdue_\($0 + 1)" } + (0..<10).map { "checkin_reminder_\($0)" }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UserDefaults.standard.removeObject(forKey: scheduleSignatureKey)
         print("🗑️ 已取消所有签到提醒")
     }
     

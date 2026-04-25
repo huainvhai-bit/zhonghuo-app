@@ -303,9 +303,7 @@ class PDFGenerator {
     }
     
     private static func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
-        return formatter.string(from: date)
+        date.chineseDateTimeString()
     }
     
     private static func formatNumber(_ number: Double) -> String {

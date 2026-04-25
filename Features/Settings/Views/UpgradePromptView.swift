@@ -23,7 +23,7 @@ struct UpgradePromptView: View {
                 .foregroundColor(Color(hex: "FFD700"))
             
             // 标题
-            Text("开通会员")
+            Text(L10n.string(.openMembership))
                 .font(.system(size: 22, weight: .bold))
             
             // 描述
@@ -34,7 +34,7 @@ struct UpgradePromptView: View {
             // 对比
             HStack(spacing: 20) {
                 VStack {
-                    Text("免费版")
+                    Text(L10n.string(.tabMe))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                     Text(currentLimit)
@@ -46,7 +46,7 @@ struct UpgradePromptView: View {
                     .foregroundColor(.gray)
                 
                 VStack {
-                    Text("会员版")
+                    Text(L10n.string(.openMembership))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                     Text(targetLimit)
@@ -61,7 +61,7 @@ struct UpgradePromptView: View {
             // 按钮
             VStack(spacing: 12) {
                 Button(action: onUpgrade) {
-                    Text("立即升级")
+                    Text(L10n.string(.updateNow))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -77,7 +77,7 @@ struct UpgradePromptView: View {
                 }
                 
                 Button(action: onCancel) {
-                    Text("稍后再说")
+                    Text(L10n.string(.later))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -100,7 +100,7 @@ struct CapsuleLimitPromptView: View {
     
     var body: some View {
         UpgradePromptView(
-            feature: "时光胶囊",
+            feature: L10n.string(.tabCapsule),
             statusText: "当前时光胶囊数量已达上限",
             currentLimit: "\(currentCount)/\(maxCount)",
             targetLimit: "20个",

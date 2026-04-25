@@ -109,10 +109,14 @@ class APIManager {
             bindFamilyByInviteCode(inviteCode: $inviteCode) {
                 success
                 message
-                data {
-                    relatedUserId
-                    relationType
-                }
+                requiresConfirmation
+                status
+                relationId
+                inviteCode
+                inviterId
+                inviterName
+                inviterPhone
+                relationType
             }
         }
         """

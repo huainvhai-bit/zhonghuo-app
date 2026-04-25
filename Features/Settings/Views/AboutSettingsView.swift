@@ -13,6 +13,7 @@ struct AboutSettingsView: View {
     @State private var showingUpdateAlert = false
     @State private var checkingUpdate = false
     @ObservedObject private var dataManager = DataManager.shared
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
@@ -25,9 +26,9 @@ struct AboutSettingsView: View {
                     Image(systemName: "heart.fill")
                         .font(.system(size: 60))
                         .foregroundColor(Color(hex: "F59E0B"))
-                    Text("终活")
+                    Text(L10n.string(.appName))
                         .font(.system(size: 28, weight: .bold))
-                    Text("让生命更有温度")
+                    Text(L10n.string(.appTagline))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -36,7 +37,7 @@ struct AboutSettingsView: View {
                     Button(action: checkUpdate) {
                         HStack {
                             Spacer()
-                            Text("检查更新")
+                            Text(L10n.string(.checkUpdate))
                                 .foregroundColor(Color(hex: "6366F1"))
                             Spacer()
                         }
@@ -47,11 +48,11 @@ struct AboutSettingsView: View {
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     }
 
-                    HStack {
-                        Text("当前版本")
+                        HStack {
+                        Text(L10n.string(.currentVersion))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("v\(appVersion)")
+                    Text("v\(appVersion)")
                             .foregroundColor(.secondary)
                     }
                     .font(.body)
@@ -59,9 +60,9 @@ struct AboutSettingsView: View {
 
                 VStack(spacing: 12) {
                     if let url = URL(string: "https://zhonghuo.cn") {
-                        Link(destination: url) {
-                            HStack {
-                                Text("官方网站")
+                            Link(destination: url) {
+                                HStack {
+                                Text(L10n.string(.officialSite))
                                     .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -70,9 +71,9 @@ struct AboutSettingsView: View {
                         }
                     }
                     if let url = URL(string: "https://zhonghuo.cn/privacy") {
-                        Link(destination: url) {
-                            HStack {
-                                Text("隐私政策")
+                            Link(destination: url) {
+                                HStack {
+                                Text(L10n.string(.privacyPolicy))
                                     .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -81,9 +82,9 @@ struct AboutSettingsView: View {
                         }
                     }
                     if let url = URL(string: "https://zhonghuo.cn/terms") {
-                        Link(destination: url) {
-                            HStack {
-                                Text("服务条款")
+                            Link(destination: url) {
+                                HStack {
+                                Text(L10n.string(.termsOfService))
                                     .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -93,7 +94,7 @@ struct AboutSettingsView: View {
                     }
 
                     HStack {
-                        Text("客服邮箱")
+                        Text(L10n.string(.customerEmail))
                             .foregroundColor(.secondary)
                         Spacer()
                         Text(dataManager.systemConfig.customerServiceEmail)
@@ -101,7 +102,7 @@ struct AboutSettingsView: View {
                     }
 
                     HStack {
-                        Text("客服电话")
+                        Text(L10n.string(.customerPhone))
                             .foregroundColor(.secondary)
                         Spacer()
                         Text(dataManager.systemConfig.customerServicePhone)
@@ -110,7 +111,7 @@ struct AboutSettingsView: View {
                 }
 
                 Spacer(minLength: 24)
-                Text("© 2026 终活 App. All rights reserved.")
+            Text(L10n.text("© 2026 \(L10n.string(.appName)). All rights reserved.", en: "© 2026 \(L10n.string(.appName)). All rights reserved.", ja: "© 2026 \(L10n.string(.appName)). All rights reserved.", ko: "© 2026 \(L10n.string(.appName)). All rights reserved."))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -123,29 +124,29 @@ struct AboutSettingsView: View {
                 Button(action: { dismiss() }) {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("返回")
+                        Text(L10n.string(.back))
                     }
                 }
             }
             ToolbarItem(placement: .principal) {
-                Text("关于")
+                Text(L10n.string(.about))
                     .font(.system(size: 18, weight: .bold))
             }
         }
         .task {
             await dataManager.loadSystemConfig()
         }
-        .alert("检查更新", isPresented: $showingUpdateAlert) {
-            Button("稍后更新", role: .cancel) { }
-            Button("立即更新") {
+        .alert(L10n.string(.checkUpdate), isPresented: $showingUpdateAlert) {
+            Button(L10n.string(.later), role: .cancel) { }
+            Button(L10n.string(.updateNow)) {
                 if let url = URL(string: dataManager.systemConfig.updateUrl), !dataManager.systemConfig.updateUrl.isEmpty {
                     UIApplication.shared.open(url)
                 }
             }
         } message: {
             Text(dataManager.systemConfig.updateUrl.isEmpty
-                 ? "发现新版本 v\(dataManager.systemConfig.latestVersion)\n\n当前未配置更新地址，请稍后再试"
-                 : "发现新版本 v\(dataManager.systemConfig.latestVersion)\n\nBug 修复和性能优化")
+                 ? L10n.text("发现新版本 v\(dataManager.systemConfig.latestVersion)\n\n当前未配置更新地址，请稍后再试", en: "New version v\(dataManager.systemConfig.latestVersion) found.\n\nNo update URL is configured yet. Please try again later.", ja: "新しいバージョン v\(dataManager.systemConfig.latestVersion) が見つかりました。\n\n更新URLがまだ設定されていません。後でもう一度お試しください。", ko: "새 버전 v\(dataManager.systemConfig.latestVersion)를 찾았습니다.\n\n업데이트 URL이 아직 설정되지 않았습니다. 잠시 후 다시 시도하세요.")
+                 : L10n.text("发现新版本 v\(dataManager.systemConfig.latestVersion)\n\nBug 修复和性能优化", en: "New version v\(dataManager.systemConfig.latestVersion) found.\n\nBug fixes and performance improvements.", ja: "新しいバージョン v\(dataManager.systemConfig.latestVersion) が見つかりました。\n\n不具合修正とパフォーマンス改善です。", ko: "새 버전 v\(dataManager.systemConfig.latestVersion)를 찾았습니다.\n\n버그 수정 및 성능 개선이 포함되어 있습니다."))
         }
     }
     

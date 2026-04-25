@@ -75,16 +75,6 @@
 	<string>终活需要访问相册以保存时光胶囊内容</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>终活需要发送通知提醒您签到</string>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array/>
-		</dict>
-	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

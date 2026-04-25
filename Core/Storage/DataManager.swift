@@ -82,9 +82,15 @@ class DataManager: ObservableObject {
                 memberPriceMonthly
                 memberPriceYearly
                 freeMaxCapsules
+                freeMaxTextCapsules
+                freeMaxAudioCapsules
+                freeMaxVideoCapsules
                 freeMaxMediaCapsules
                 freeMaxVideoMinutes
                 premiumMaxCapsules
+                premiumMaxTextCapsules
+                premiumMaxAudioCapsules
+                premiumMaxVideoCapsules
                 premiumMaxMediaCapsules
                 premiumMaxVideoMinutes
             }
@@ -1039,6 +1045,15 @@ class DataManager: ObservableObject {
         if let data = result["data"] as? [String: Any],
            let shareResult = data["shareCapsule"] as? [String: Any],
            let success = shareResult["success"] as? Bool, success {
+            await MainActor.run {
+                if let index = self.capsules.firstIndex(where: { $0.id == capsuleId }) {
+                    self.capsules[index].isSent = true
+                    self.saveCapsulesToFile()
+                    UserManager.shared.updateCapsulesCount(self.capsules.count)
+                    NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+                }
+            }
+            await loadReceivedCapsules()
             return shareResult
         }
         throw APIError.networkError
@@ -2172,18 +2187,24 @@ class DataManager: ObservableObject {
                 let priceYearly = configData["memberPriceYearly"] as? Double ?? 68.0
                 
                 // 免费版限制
-                let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 5
-                let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 2
+                let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 6
+                let freeMaxTextCapsules = configData["freeMaxTextCapsules"] as? Int ?? 2
+                let freeMaxAudioCapsules = configData["freeMaxAudioCapsules"] as? Int ?? 2
+                let freeMaxVideoCapsules = configData["freeMaxVideoCapsules"] as? Int ?? 2
+                let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 4
                 let freeMaxVideoMinutes = configData["freeMaxVideoMinutes"] as? Int ?? 2
-                let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 3
+                let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 5
                 let freeMaxFamily = configData["freeMaxFamily"] as? Int ?? 1
                 let freeCloudBackup = configData["freeCloudBackup"] as? Bool ?? false
                 let freeDataExport = configData["freeDataExport"] as? Bool ?? false
                 let freeAiAssist = configData["freeAiAssist"] as? Bool ?? false
                 
                 // 会员版限制
-                let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 20
-                let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 10
+                let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 30
+                let premiumMaxTextCapsules = configData["premiumMaxTextCapsules"] as? Int ?? 10
+                let premiumMaxAudioCapsules = configData["premiumMaxAudioCapsules"] as? Int ?? 10
+                let premiumMaxVideoCapsules = configData["premiumMaxVideoCapsules"] as? Int ?? 10
+                let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 20
                 let premiumMaxVideoMinutes = configData["premiumMaxVideoMinutes"] as? Int ?? 5
                 let premiumMaxWillModules = configData["premiumMaxWillModules"] as? Int ?? 999
                 let premiumMaxFamily = configData["premiumMaxFamily"] as? Int ?? 5
@@ -2208,6 +2229,9 @@ class DataManager: ObservableObject {
                     memberPriceMonthly: priceMonthly,
                     memberPriceYearly: priceYearly,
                     freeMaxCapsules: freeMaxCapsules,
+                    freeMaxTextCapsules: freeMaxTextCapsules,
+                    freeMaxAudioCapsules: freeMaxAudioCapsules,
+                    freeMaxVideoCapsules: freeMaxVideoCapsules,
                     freeMaxMediaCapsules: freeMaxMediaCapsules,
                     freeMaxVideoMinutes: freeMaxVideoMinutes,
                     freeMaxWillModules: freeMaxWillModules,
@@ -2216,6 +2240,9 @@ class DataManager: ObservableObject {
                     freeDataExport: freeDataExport,
                     freeAiAssist: freeAiAssist,
                     premiumMaxCapsules: premiumMaxCapsules,
+                    premiumMaxTextCapsules: premiumMaxTextCapsules,
+                    premiumMaxAudioCapsules: premiumMaxAudioCapsules,
+                    premiumMaxVideoCapsules: premiumMaxVideoCapsules,
                     premiumMaxMediaCapsules: premiumMaxMediaCapsules,
                     premiumMaxVideoMinutes: premiumMaxVideoMinutes,
                     premiumMaxWillModules: premiumMaxWillModules,
@@ -2230,6 +2257,9 @@ class DataManager: ObservableObject {
                 // ✅ 应用会员限制
                 MembershipManager.shared.applyLimits(
                     freeMaxCapsules: freeMaxCapsules,
+                    freeMaxTextCapsules: freeMaxTextCapsules,
+                    freeMaxAudioCapsules: freeMaxAudioCapsules,
+                    freeMaxVideoCapsules: freeMaxVideoCapsules,
                     freeMaxMediaCapsules: freeMaxMediaCapsules,
                     freeMaxVideoMinutes: freeMaxVideoMinutes,
                     freeMaxWillModules: freeMaxWillModules,
@@ -2238,6 +2268,9 @@ class DataManager: ObservableObject {
                     freeDataExport: freeDataExport,
                     freeAiAssist: freeAiAssist,
                     premiumMaxCapsules: premiumMaxCapsules,
+                    premiumMaxTextCapsules: premiumMaxTextCapsules,
+                    premiumMaxAudioCapsules: premiumMaxAudioCapsules,
+                    premiumMaxVideoCapsules: premiumMaxVideoCapsules,
                     premiumMaxMediaCapsules: premiumMaxMediaCapsules,
                     premiumMaxVideoMinutes: premiumMaxVideoMinutes,
                     premiumMaxWillModules: premiumMaxWillModules,
@@ -2256,7 +2289,7 @@ class DataManager: ObservableObject {
                 print("   - 强制更新版本：\(forceUpdateVersion)")
                 print("   - 更新地址：\(updateUrl)")
                 print("   - 会员价格：月卡\(priceMonthly)/年卡\(priceYearly)")
-                print("   - 免费版限制：\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟")
+                print("   - 免费版限制：\(freeMaxCapsules)胶囊（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
                 print("   - 免费版遗嘱：\(freeMaxWillModules)/家庭\(freeMaxFamily)/云备份\(freeCloudBackup ? "是" : "否")")
                 print("   - 客服电话：\(customerServicePhone)")
             } else {
@@ -2299,6 +2332,8 @@ class DataManager: ObservableObject {
             } else {
                 Logger.shared.w("资产同步失败")
             }
+
+            await loadReceivedCapsules()
             
             Logger.shared.i("数据下载完成")
         } catch {

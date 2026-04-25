@@ -24,6 +24,9 @@ struct CapsuleEditView: View {
     @State private var showingRecorder = false
     @State private var showingPlayer = false
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
+    @State private var upgradePromptFeature = ""  // ✅ 升级提示：功能名称
+    @State private var upgradePromptCurrentCount = 0  // ✅ 升级提示：当前数量
+    @State private var upgradePromptMaxCount = 0  // ✅ 升级提示：上限数量
     @State private var upgradePromptMessage = ""  // ✅ 升级提示信息
     @State private var showingMembershipView = false  // ✅ 会员页面
     @State private var showingAlert = false
@@ -37,12 +40,12 @@ struct CapsuleEditView: View {
             // ✅ UI 统一：背景色与其他界面一致
             Color(.systemBackground)
                 .ignoresSafeArea(edges: .all)
-            
+
             ScrollView {
                 VStack(spacing: 16) {
                     // 类型卡片（编辑模式只显示当前类型，不允许修改）
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("胶囊类型")
+                        Text(L10n.text("胶囊类型", en: "Capsule Type", ja: "カプセル種類", ko: "캡슐 유형"))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.secondary)
                         
@@ -54,7 +57,7 @@ struct CapsuleEditView: View {
                                 Text(existingCapsule!.type.rawValue)
                                     .font(.system(size: 16, weight: .medium))
                                 Spacer()
-                                Text("不可修改")
+                                Text(L10n.text("不可修改", en: "Locked", ja: "変更不可", ko: "수정 불가"))
                                     .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                             }
@@ -64,20 +67,18 @@ struct CapsuleEditView: View {
                         } else {
                             // 新建模式：显示类型选择器
                             Picker("类型", selection: $selectedType) {
-                                Label("文字", systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
-                                Label("语音", systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
-                                Label("视频", systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
+                                Label(L10n.text("文字", en: "Text", ja: "テキスト", ko: "텍스트"), systemImage: "doc.text.fill").tag(TimeCapsule.CapsuleType.text)
+                                Label(L10n.text("语音", en: "Audio", ja: "音声", ko: "음성"), systemImage: "mic.fill").tag(TimeCapsule.CapsuleType.audio)
+                                Label(L10n.text("视频", en: "Video", ja: "動画", ko: "동영상"), systemImage: "video.fill").tag(TimeCapsule.CapsuleType.video)
                             }
                             .pickerStyle(.segmented)
                             .onChange(of: selectedType) { newType in
-                                // ✅ 检查媒体胶囊数量限制
-                                if newType == .audio || newType == .video {
-                                    let membership = MembershipManager.shared
-                                    let currentMediaCount = dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count
-                                    if !membership.canCreateMediaCapsule(currentMediaCount: currentMediaCount) {
-                                        upgradePromptMessage = "语音/视频胶囊已达上限（\(currentMediaCount)/\(membership.maxMediaCapsules)），升级会员可享受更多"
-                                        showingUpgradePrompt = true
-                                    }
+                                guard existingCapsule == nil else { return }
+                                let currentCount = capsuleCount(for: newType)
+                                let limit = MembershipManager.shared.capsuleLimit(for: newType)
+                                if currentCount >= limit {
+                                    prepareLimitPrompt(for: newType, currentCount: currentCount, limit: limit)
+                                    showingUpgradePrompt = true
                                 }
                             }
                         }
@@ -90,11 +91,11 @@ struct CapsuleEditView: View {
                     
                     // 内容卡片
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("内容")
+                        Text(L10n.text("内容", en: "Content", ja: "内容", ko: "내용"))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.secondary)
                         
-                        TextField("请输入标题", text: $title)
+                        TextField(L10n.text("请输入标题", en: "Enter title", ja: "タイトルを入力", ko: "제목을 입력하세요"), text: $title)
                             .padding(14)
                             .background(Color(.systemBackground))
                             .cornerRadius(10)
@@ -114,7 +115,12 @@ struct CapsuleEditView: View {
                                         HStack(spacing: 8) {
                                             Image(systemName: selectedType == .audio ? "mic.fill" : "video.fill")
                                                 .font(.system(size: 18))
-                                            Text("录制\(selectedType == .audio ? "语音" : "视频")")
+                                            Text(L10n.text(
+                                                "录制\(selectedType == .audio ? "语音" : "视频")",
+                                                en: selectedType == .audio ? "Record Audio" : "Record Video",
+                                                ja: selectedType == .audio ? "音声を録音" : "動画を録画",
+                                                ko: selectedType == .audio ? "음성 녹음" : "동영상 녹화"
+                                            ))
                                                 .font(.system(size: 15, weight: .medium))
                                         }
                                         .foregroundColor(.white)
@@ -129,7 +135,7 @@ struct CapsuleEditView: View {
                                         Button(action: { showingPlayer = true }) {
                                             HStack(spacing: 8) {
                                                 Image(systemName: "play.fill").font(.system(size: 14))
-                                                Text("播放").font(.system(size: 14, weight: .medium))
+                                                Text(L10n.string(.clickToPlay)).font(.system(size: 14, weight: .medium))
                                             }
                                             .foregroundColor(Color(hex: "6366F1"))
                                             .padding(.horizontal, 16)
@@ -141,7 +147,7 @@ struct CapsuleEditView: View {
                                         Button(action: { showingPlayer = true }) {
                                             HStack(spacing: 8) {
                                                 Image(systemName: "play.fill").font(.system(size: 14))
-                                                Text("播放").font(.system(size: 14, weight: .medium))
+                                                Text(L10n.string(.clickToPlay)).font(.system(size: 14, weight: .medium))
                                             }
                                             .foregroundColor(Color(hex: "6366F1"))
                                             .padding(.horizontal, 16)
@@ -165,12 +171,12 @@ struct CapsuleEditView: View {
                         HStack {
                             Image(systemName: "clock.fill")
                                 .foregroundColor(Color(hex: "6366F1"))
-                            Text("发送时间")
+                            Text(L10n.string(.sendDate))
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.secondary)
                         }
                         
-                        DatePicker("发送日期", selection: $sendDate)
+                        DatePicker(L10n.string(.sendDate), selection: $sendDate)
                             .datePickerStyle(.compact)
                     }
                     .padding(16)
@@ -222,17 +228,19 @@ struct CapsuleEditView: View {
                 }
             }
         }
-        .navigationTitle(existingCapsule == nil ? "新增胶囊" : "编辑胶囊")
+        .navigationTitle(existingCapsule == nil ? L10n.text("新增胶囊", en: "New Capsule", ja: "新しいカプセル", ko: "새 캡슐") : L10n.string(.editCapsule))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // ✅ 取消按钮（左上角）
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") { dismiss() }
+                Button(L10n.string(.cancel)) {
+                    cancelEditingAndDismiss()
+                }
             }
-            
+
             // ✅ 保存按钮（右上角）
             ToolbarItem(placement: .confirmationAction) {
-                Button(isSaving ? "保存中..." : "保存") {
+                Button(isSaving ? L10n.text("保存中...", en: "Saving...", ja: "保存中...", ko: "저장 중...") : L10n.string(.save)) {
                     guard !isSaving else { return }
                     print("🔵 保存按钮被点击")
                     if validateCapsule() {
@@ -259,8 +267,8 @@ struct CapsuleEditView: View {
                 playerView(for: url)
             }
         }
-        .alert("提示", isPresented: $showingAlert) {
-            Button("确定", role: .cancel) { }
+        .alert(L10n.string(.prompt), isPresented: $showingAlert) {
+            Button(L10n.string(.confirm), role: .cancel) { }
         } message: {
             Text(alertMessage)
         }
@@ -269,8 +277,16 @@ struct CapsuleEditView: View {
                 Color.black.opacity(0.5)
                     .ignoresSafeArea()
                 
-                MediaCapsuleLimitPromptView(
-                    currentCount: dataManager.capsules.filter { $0.type == .audio || $0.type == .video }.count,
+                UpgradePromptView(
+                    feature: upgradePromptFeature,
+                    statusText: upgradePromptMessage,
+                    currentLimit: "\(upgradePromptCurrentCount)/\(upgradePromptMaxCount)",
+                    targetLimit: L10n.text(
+                        "升级会员后可继续创建",
+                        en: "Upgrade membership to create more",
+                        ja: "会員にアップグレードすると続けて作成できます",
+                        ko: "멤버십을 업그레이드하면 계속 만들 수 있습니다"
+                    ),
                     onUpgrade: {
                         showingUpgradePrompt = false
                         showingMembershipView = true
@@ -286,55 +302,135 @@ struct CapsuleEditView: View {
             NavigationView {
                 MembershipView()
             }
+            .stackNavigationStyle()
         }
     }
     
     // ✅ 添加验证方法
     private func validateCapsule() -> Bool {
         if title.isEmpty {
-            alertMessage = "请输入标题"
+            alertMessage = L10n.text("请输入标题", en: "Please enter a title", ja: "タイトルを入力してください", ko: "제목을 입력하세요")
             showingAlert = true
             return false
         }
+
+        if existingCapsule == nil {
+            let currentCount = capsuleCount(for: selectedType)
+            let limit = MembershipManager.shared.capsuleLimit(for: selectedType)
+            if currentCount >= limit {
+                prepareLimitPrompt(for: selectedType, currentCount: currentCount, limit: limit)
+                showingUpgradePrompt = true
+                return false
+            }
+        }
         
         if selectedType == .text && content.isEmpty {
-            alertMessage = "请输入内容"
+            alertMessage = L10n.text("请输入内容", en: "Please enter content", ja: "内容を入力してください", ko: "내용을 입력하세요")
             showingAlert = true
             return false
         }
         
         if (selectedType == .audio && recordedAudioURL == nil) ||
            (selectedType == .video && recordedVideoURL == nil) {
-            alertMessage = "请先录制\(selectedType == .audio ? "语音" : "视频")"
+            alertMessage = L10n.text(
+                "请先录制\(selectedType == .audio ? "语音" : "视频")",
+                en: selectedType == .audio ? "Please record audio first" : "Please record video first",
+                ja: selectedType == .audio ? "先に音声を録音してください" : "先に動画を録画してください",
+                ko: selectedType == .audio ? "먼저 음성을 녹음하세요" : "먼저 동영상을 녹화하세요"
+            )
             showingAlert = true
             return false
         }
         
         return true
     }
+
+    private func capsuleCount(for type: TimeCapsule.CapsuleType) -> Int {
+        dataManager.capsules.filter { capsule in
+            switch type {
+            case .text:
+                return capsule.type == .text
+            case .audio:
+                return capsule.type == .audio || capsule.type == .voice
+            case .video:
+                return capsule.type == .video
+            case .voice:
+                return capsule.type == .audio || capsule.type == .voice
+            case .image, .sticker:
+                return capsule.type == type
+            }
+        }.count
+    }
+
+    private func prepareLimitPrompt(for type: TimeCapsule.CapsuleType, currentCount: Int, limit: Int) {
+        upgradePromptCurrentCount = currentCount
+        upgradePromptMaxCount = limit
+
+        switch type {
+        case .text:
+            upgradePromptFeature = L10n.text("文字胶囊", en: "Text capsules", ja: "テキストカプセル", ko: "텍스트 캡슐")
+            upgradePromptMessage = L10n.text(
+                "文字胶囊已达上限",
+                en: "Text capsules have reached the limit",
+                ja: "テキストカプセルの上限に達しました",
+                ko: "텍스트 캡슐 한도에 도달했습니다"
+            )
+        case .audio, .voice:
+            upgradePromptFeature = L10n.text("录音胶囊", en: "Audio capsules", ja: "音声カプセル", ko: "음성 캡슐")
+            upgradePromptMessage = L10n.text(
+                "录音胶囊已达上限",
+                en: "Audio capsules have reached the limit",
+                ja: "音声カプセルの上限に達しました",
+                ko: "음성 캡슐 한도에 도달했습니다"
+            )
+        case .video:
+            upgradePromptFeature = L10n.text("视频胶囊", en: "Video capsules", ja: "動画カプセル", ko: "동영상 캡슐")
+            upgradePromptMessage = L10n.text(
+                "视频胶囊已达上限",
+                en: "Video capsules have reached the limit",
+                ja: "動画カプセルの上限に達しました",
+                ko: "동영상 캡슐 한도에 도달했습니다"
+            )
+        case .image, .sticker:
+            upgradePromptFeature = L10n.text("时光胶囊", en: "Capsules", ja: "カプセル", ko: "캡슐")
+            upgradePromptMessage = L10n.text(
+                "时光胶囊已达上限",
+                en: "Capsules have reached the limit",
+                ja: "カプセルの上限に達しました",
+                ko: "캡슐 한도에 도달했습니다"
+            )
+        }
+    }
+
+    private func cancelEditingAndDismiss() {
+        showingRecorder = false
+        showingPlayer = false
+        showingUpgradePrompt = false
+        showingMembershipView = false
+        dismiss()
+    }
     
     private func saveCapsule() {
         Task {
-            var mediaServerUrl: String? = nil
             var localMediaPath: String = ""  // ✅ Bug 修复：保存相对路径
-            
+            var localMediaURL: URL? = nil
+            var localMediaType: TimeCapsule.CapsuleType? = nil
+
             print("🔵 saveCapsule 开始: selectedType=\(selectedType), recordedAudioURL=\(recordedAudioURL?.absoluteString ?? "nil"), recordedVideoURL=\(recordedVideoURL?.absoluteString ?? "nil")")
             
-            // 📤 上传媒体文件到服务器
+            // ✅ 本地优先：先拿到可用的本地媒体路径，上传放到后台补做
             if let audioURL = recordedAudioURL {
-                print("📤 开始上传音频: \(audioURL)")
-                mediaServerUrl = await DataManager.shared.uploadMediaToServer(audioURL, type: .audio)
-                print("📤 音频上传结果：\(mediaServerUrl ?? "失败")")
                 // ✅ Bug 修复：保存相对路径（避免 iOS sandbox 变化导致无法播放）
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
                 localMediaPath = audioURL.path.replacingOccurrences(of: documentsPath, with: "")
+                localMediaURL = audioURL
+                localMediaType = .audio
             } else if let videoURL = recordedVideoURL {
-                print("📤 开始上传视频: \(videoURL)")
-                mediaServerUrl = await DataManager.shared.uploadMediaToServer(videoURL, type: .video)
-                print("📤 视频上传结果：\(mediaServerUrl ?? "失败")")
                 // ✅ Bug 修复：保存相对路径
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].path
                 localMediaPath = videoURL.path.replacingOccurrences(of: documentsPath, with: "")
+                localMediaURL = videoURL
+                localMediaType = .video
             } else {
                 print("⚠️ 没有录制文件（recordedAudioURL 和 recordedVideoURL 都是 nil）")
             }
@@ -345,7 +441,7 @@ struct CapsuleEditView: View {
                 content: content,
                 type: selectedType,
                 mediaURL: localMediaPath.isEmpty ? (existingCapsule?.mediaURL ?? "") : localMediaPath,  // ✅ 保留原有本地路径
-                mediaServerURL: mediaServerUrl ?? existingCapsule?.mediaServerURL ?? "",  // ✅ 保留原有服务器URL
+                mediaServerURL: localMediaURL == nil ? (existingCapsule?.mediaServerURL ?? "") : "",  // ✅ 新媒体交给后台静默补传
                 sendDate: sendDate,
                 isSent: existingCapsule?.isSent ?? false,
                 createdAt: existingCapsule?.createdAt ?? Date()  // ✅ 修复：编辑模式保持原创建时间
@@ -356,17 +452,24 @@ struct CapsuleEditView: View {
             // ✅ Bug 修复：编辑模式更新，新增模式添加
             if existingCapsule != nil {
                 print("🔵 更新胶囊")
-                dataManager.updateCapsule(capsule)
+                dataManager.updateCapsule(capsule, syncImmediately: false)
             } else {
                 print("🔵 添加胶囊")
-                dataManager.addCapsule(capsule)
+                dataManager.addCapsule(capsule, syncImmediately: false)
             }
             
             // 📢 通知同步到服务器
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
-            // 📤 同步到云端
-            _ = await dataManager.batchSyncCapsules()
+            // 📤 媒体文件在后台静默补传，不阻塞保存流程
+            if let localMediaURL, let localMediaType {
+                dataManager.queueCapsuleMediaUpload(capsuleID: capsule.id, fileURL: localMediaURL, type: localMediaType)
+            }
+
+            // 📤 胶囊元数据也在后台同步，避免卡住保存
+            Task(priority: .background) {
+                _ = await dataManager.batchSyncCapsules()
+            }
             
             // ✅ 防止重复保存：保存完成后重置状态
             isSaving = false
@@ -412,10 +515,10 @@ struct CapsuleEditView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "player.fill")
                         .font(.system(size: 48))
-                        .foregroundColor(.red)
-                    Text("媒体文件无法播放")
+                .foregroundColor(.red)
+                    Text(L10n.text("媒体文件无法播放", en: "Media file cannot be played", ja: "メディアファイルを再生できません", ko: "미디어 파일을 재생할 수 없습니다"))
                         .font(.headline)
-                    Text("文件路径：\(absoluteURL.path)")
+                    Text("\(L10n.text("文件路径：", en: "File path: ", ja: "ファイルパス: ", ko: "파일 경로: "))\(absoluteURL.path)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -481,28 +584,27 @@ struct CapsuleMediaRecorderView: View {
                 recorder.setupCameraForVideo(useFrontCamera: useFrontCamera)
             }
         }
-        .navigationTitle(selectedType == .audio ? "录制语音" : "录制视频")
+        .navigationTitle(selectedType == .audio ? L10n.text("录制语音", en: "Record Audio", ja: "音声を録音", ko: "음성 녹음") : L10n.text("录制视频", en: "Record Video", ja: "動画を録画", ko: "동영상 녹화"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") {
-                    if recorder.isRecording {
-                        recorder.stopRecording()
-                    }
-                    dismiss()
+                Button(L10n.string(.cancel)) {
+                    cancelRecordingAndDismiss()
                 }
                 .foregroundColor(.white)
             }
         }
-        .alert("需要访问权限", isPresented: $showingPermissionAlert) {
-            Button("取消", role: .cancel) { dismiss() }
-            Button("去设置") {
+        .alert(L10n.text("需要访问权限", en: "Permission Required", ja: "権限が必要です", ko: "권한 필요"), isPresented: $showingPermissionAlert) {
+            Button(L10n.string(.cancel), role: .cancel) { dismiss() }
+            Button(L10n.string(.goSettings)) {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(settingsURL)
                 }
             }
         } message: {
-            Text(selectedType == .audio ? "请允许访问麦克风" : "请允许访问相机和麦克风")
+            Text(selectedType == .audio
+                 ? L10n.text("请允许访问麦克风", en: "Please allow microphone access", ja: "マイクへのアクセスを許可してください", ko: "마이크 접근을 허용해 주세요")
+                 : L10n.text("请允许访问相机和麦克风", en: "Please allow camera and microphone access", ja: "カメラとマイクへのアクセスを許可してください", ko: "카메라와 마이크 접근을 허용해 주세요"))
         }
         .onDisappear {
             timer?.invalidate()
@@ -536,10 +638,7 @@ struct CapsuleMediaRecorderView: View {
         HStack {
             // 取消按钮
             Button(action: {
-                if recorder.isRecording {
-                    recorder.stopRecording()
-                }
-                dismiss()
+                cancelRecordingAndDismiss()
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .semibold))
@@ -572,11 +671,7 @@ struct CapsuleMediaRecorderView: View {
         VStack(spacing: 20) {
             if recorder.isRecording {
                 // 录制中状态
-                Image(systemName: "record.circle")
-                    .font(.system(size: 60))
-                    .foregroundColor(.red)
-                
-                Text("录制中...")
+                Text(L10n.text("录制中...", en: "Recording...", ja: "録音/録画中...", ko: "녹화 중..."))
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.white)
                 
@@ -598,7 +693,12 @@ struct CapsuleMediaRecorderView: View {
                 
                 // 显示会员时长限制提示
                 if isCountdownMode && !MembershipManager.shared.isPremium {
-                    Text("升级会员可录制\(MembershipManager.Limits.premiumMaxVideoMinutes)分钟")
+                    Text(L10n.text(
+                        "升级会员可录制\(MembershipManager.Limits.premiumMaxVideoMinutes)分钟",
+                        en: "Upgrade to record up to \(MembershipManager.Limits.premiumMaxVideoMinutes) minutes",
+                        ja: "会員にアップグレードすると最大\(MembershipManager.Limits.premiumMaxVideoMinutes)分録画できます",
+                        ko: "회원 업그레이드 시 최대 \(MembershipManager.Limits.premiumMaxVideoMinutes)분까지 녹화할 수 있습니다"
+                    ))
                         .font(.system(size: 12))
                         .foregroundColor(.orange)
                 }
@@ -617,10 +717,34 @@ struct CapsuleMediaRecorderView: View {
                     }
 
                     VStack(spacing: 8) {
-                        Text("语音录制")
+                        Text(L10n.text("语音录制", en: "Audio Recording", ja: "音声録音", ko: "음성 녹음"))
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
-                        Text("点击底部圆形按钮开始录音")
+                        Text(L10n.text("点击底部圆形按钮开始录音", en: "Tap the circular button below to start recording", ja: "下の丸いボタンを押して録音を開始", ko: "아래 원형 버튼을 눌러 녹음을 시작하세요"))
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
+            } else if selectedType == .video {
+                VStack(spacing: 16) {
+                    Image(systemName: "video.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.white.opacity(0.85))
+
+                    if recorder.isCameraReady {
+                        Text(L10n.text("镜头已就绪", en: "Camera Ready", ja: "カメラ準備完了", ko: "카메라 준비됨"))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text(L10n.text("点击底部圆形按钮开始录像", en: "Tap the circular button below to start recording", ja: "下の丸いボタンを押して録画を開始", ko: "아래 원형 버튼을 눌러 녹화를 시작하세요"))
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.75))
+                    } else {
+                        Text(L10n.text("视频预览加载中", en: "Loading video preview", ja: "動画プレビューを読み込み中", ko: "동영상 미리보기 로딩 중"))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text(L10n.text("请允许相机权限并稍后片刻", en: "Allow camera access and wait a moment", ja: "カメラ権限を許可してしばらくお待ちください", ko: "카메라 권한을 허용하고 잠시 기다려 주세요"))
                             .font(.system(size: 15))
                             .foregroundColor(.white.opacity(0.75))
                     }
@@ -631,11 +755,11 @@ struct CapsuleMediaRecorderView: View {
                         .font(.system(size: 60))
                         .foregroundColor(.white.opacity(0.85))
 
-                    Text("视频预览加载中")
+                    Text(L10n.text("视频预览加载中", en: "Loading video preview", ja: "動画プレビューを読み込み中", ko: "동영상 미리보기 로딩 중"))
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
 
-                    Text("请允许相机权限并稍候片刻")
+                    Text(L10n.text("请允许相机权限并稍后片刻", en: "Allow camera access and wait a moment", ja: "カメラ権限を許可してしばらくお待ちください", ko: "카메라 권한을 허용하고 잠시 기다려 주세요"))
                         .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.75))
                 }
@@ -669,7 +793,11 @@ struct CapsuleMediaRecorderView: View {
             }
             .disabled(selectedType == .video && !recorder.isCameraReady)
 
-            Text(recorder.isRecording ? "点击停止" : (selectedType == .audio ? "点击开始录音" : "点击开始录像"))
+            Text(recorder.isRecording
+                 ? L10n.text("点击停止", en: "Tap to Stop", ja: "停止する", ko: "중지하려면 탭")
+                 : (selectedType == .audio
+                    ? L10n.text("点击开始录音", en: "Tap to Start Recording", ja: "録音を開始", ko: "녹음 시작")
+                    : L10n.text("点击开始录像", en: "Tap to Start Recording", ja: "録画を開始", ko: "녹화 시작")))
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.7))
         }
@@ -736,10 +864,7 @@ struct CapsuleMediaRecorderView: View {
     
     private func stopRecording() {
         timer?.invalidate()
-        
-        // ✅ 标记视图即将 dismiss，防止录制完成回调触发
-        recorder.markViewDismissed()
-        
+
         // ✅ 根据类型停止录制
         if selectedType == .video {
             // 视频录制：使用 onRecordingFinished 回调（不持有 dismiss，避免循环引用）
@@ -757,7 +882,16 @@ struct CapsuleMediaRecorderView: View {
                 onRecordComplete(url)
             }
         }
+    }
+
+    private func cancelRecordingAndDismiss() {
+        timer?.invalidate()
+        if recorder.isRecording {
+            recorder.markViewDismissed()
+            recorder.stopRecording()
+        }
         recorder.cleanupCameraSession()
+        dismiss()
     }
     
     private func startTimer() {

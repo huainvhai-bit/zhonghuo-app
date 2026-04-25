@@ -50,20 +50,14 @@ final class HomeStatusViewModel: ObservableObject {
             return
         }
 
-        didRetryAutoCheckIn = false
-
         guard userManager.isLoggedIn else {
             print("⚠️ 自动签到：用户未登录")
             return
         }
 
-        let now = Date()
-        let autoCheckInCooldown: TimeInterval = 300
-        if now.timeIntervalSince(userManager.lastAutoSignInTimeValue) < autoCheckInCooldown {
-            print("⏭️ handleAutoCheckIn 跳过：\(Int(autoCheckInCooldown - now.timeIntervalSince(userManager.lastAutoSignInTimeValue))) 秒后可再次签到")
-            return
-        }
+        didRetryAutoCheckIn = false
 
+        let now = Date()
         let lastCheckIn = userManager.lastCheckInDate
         let intervalSeconds = userManager.checkInInterval.hours * 3600
 
@@ -81,14 +75,15 @@ final class HomeStatusViewModel: ObservableObject {
         }
 
         print("✅ 执行自动签到")
-        let result = userManager.recordCheckIn(isAuto: true)
-        print("   - recordCheckIn 结果：\(result)")
+        let didSignIn = userManager.performAutoSignIn()
 
-        dataManager.lastCheckInDate = userManager.lastCheckInDate
-        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
-
-        print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
-        print("📍 位置和数据已自动上传到服务器")
+        if didSignIn {
+            dataManager.lastCheckInDate = userManager.lastCheckInDate
+            print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
+            print("📍 位置和数据已自动上传到服务器")
+        } else {
+            print("⏭️ 自动签到未执行：已被同轮激活去重或用户资料未就绪")
+        }
     }
 
     func updateStatus(timerManager: CountdownTimerManager) {

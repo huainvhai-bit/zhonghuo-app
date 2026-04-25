@@ -61,10 +61,6 @@ targets:
         CFBundleSignature: ????
         CFBundleExecutable: $(EXECUTABLE_NAME)
         LSRequiresIPhoneOS: YES
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: NO
-          UISceneConfigurations:
-            UIWindowSceneSessionRoleApplication: []
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
         UISupportedInterfaceOrientations:

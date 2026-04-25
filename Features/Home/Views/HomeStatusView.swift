@@ -44,7 +44,7 @@ struct HomeStatusView: View {
                     .padding(.vertical, 14)
                 }
             }
-            .navigationTitle("终活与您相伴")
+            .navigationTitle(L10n.string(.homeWithYou))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
@@ -55,7 +55,7 @@ struct HomeStatusView: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("终活与您相伴")
+                        Text(L10n.string(.homeWithYou))
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -103,6 +103,9 @@ struct HomeStatusView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SceneDidBecomeActive"))) { _ in
                 print("🔔 收到场景激活通知，刷新倒计时")
                 Task { @MainActor in
+                    await dataManager.loadReceivedCapsules()
+                }
+                Task { @MainActor in
                     viewModel.updateStatus(timerManager: timerManager)
                 }
             }
@@ -116,7 +119,7 @@ struct HomeStatusView: View {
                 print("🔔 收到签到完成通知，刷新倒计时")
                 Task { @MainActor in
                     viewModel.updateStatus(timerManager: timerManager)
-                    LifeCheckStatusManager.shared.scheduleCheckInNotifications()
+                    LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "签到完成通知")
                 }
             }
             // 隐藏的全局导航链接
@@ -139,6 +142,7 @@ struct HomeStatusView: View {
                 }
             )
         }
+        .stackNavigationStyle()
     }
     
     // MARK: - 签到卡片
@@ -151,7 +155,7 @@ struct HomeStatusView: View {
                 HStack(spacing: 8) {
                     Image(systemName: isFamilyMode ? "person.2.fill" : "checkmark.shield.fill")
                         .font(.system(size: 18))
-                    Text(isFamilyMode ? "家人守护中" : "安全签到")
+                    Text(isFamilyMode ? L10n.string(.familyGuarding) : L10n.string(.safeCheckIn))
                         .font(.headline)
                 }
                 .foregroundColor(.white.opacity(0.95))
@@ -163,7 +167,7 @@ struct HomeStatusView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.fill")
                             .font(.system(size: 12))
-                        Text("距下次签到")
+                        Text(L10n.string(.signInInterval))
                             .font(.system(size: 12))
                     }
                     .foregroundColor(.white.opacity(0.8))
@@ -176,11 +180,11 @@ struct HomeStatusView: View {
                     .font(.system(size: 72))
                     .foregroundColor(.white)
                 
-                Text("您正在守护家人的安全")
+                Text(L10n.string(.familyProtected))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white.opacity(0.9))
                 
-                Text("查看家人的签到状态")
+                Text(L10n.string(.familyCheckStatus))
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.8))
             } else {
@@ -190,7 +194,7 @@ struct HomeStatusView: View {
                     .monospacedDigit()
                 
                 // ✅ 提示文字：打开 App 即可自动签到
-                Text("打开 App 即可自动签到")
+                Text(L10n.string(.autoCheckIn))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.9))
             }
@@ -321,23 +325,23 @@ struct HomeStatusView: View {
         if hoursRemaining > 0 {
             return (
                 color: Color(hex: "34C759"),
-                text: "监测正常",
+                text: L10n.string(.monitorNormalTitle),
                 icon: "checkmark.circle.fill",
-                description: "一切安好，记得定期签到哦"
+                description: L10n.string(.monitorNormalDesc)
             )
         } else if hoursRemaining > -offlineThreshold {
             return (
                 color: Color(hex: "FF9500"),
-                text: "警告：已超时",
+                text: L10n.string(.monitorWarningTitle),
                 icon: "exclamationmark.circle.fill",
-                description: "您已超过签到时间，请尽快签到"
+                description: L10n.string(.monitorWarningDesc)
             )
         } else {
             return (
                 color: Color(hex: "FF3B30"),
-                text: "危险：离线超时",
+                text: L10n.string(.monitorDangerTitle),
                 icon: "xmark.circle.fill",
-                description: "您已离线超时，请立即签到！"
+                description: L10n.string(.monitorDangerDesc)
             )
         }
     }
@@ -362,7 +366,7 @@ struct HomeStatusView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "list.bullet.clipboard")
                         .font(.system(size: 16))
-                    Text("我的事务")
+                    Text(L10n.string(.myTasks))
                         .font(.headline)
                 }
                 .foregroundColor(.primary)
@@ -379,7 +383,7 @@ struct HomeStatusView: View {
                     )
                 }) {
                     HStack(spacing: 4) {
-                        Text("查看全部")
+                        Text(L10n.string(.viewAll))
                             .font(.subheadline)
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
@@ -388,11 +392,11 @@ struct HomeStatusView: View {
                 }
             }
             
-            ProgressRow(label: "我的嘱托", progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
+            ProgressRow(label: L10n.string(.myWills), progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
                 print("🔵 点击我的嘱托进度")
                 navigateToWillAssets = true
             })
-            ProgressRow(label: "资产管理", progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
+            ProgressRow(label: L10n.string(.assetManagement), progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
                 print("🔵 点击资产管理进度")
                 navigateToWillAssets = true
             })
@@ -410,7 +414,7 @@ struct HomeStatusView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "capsule.fill")
                         .font(.system(size: 16))
-                    Text("我收到的时光胶囊")
+                    Text(L10n.string(.receivedCapsules))
                         .font(.headline)
                 }
                 .foregroundColor(.primary)
@@ -422,7 +426,7 @@ struct HomeStatusView: View {
                     navigateToReceivedCapsules = true
                 }) {
                     HStack(spacing: 4) {
-                        Text("全部")
+                        Text(L10n.string(.all))
                             .font(.subheadline)
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12))
@@ -443,11 +447,11 @@ struct HomeStatusView: View {
                             .foregroundColor(Color(hex: "6366F1"))
                     }
                     
-                    Text("暂无收到的胶囊")
+                    Text(L10n.string(.noReceivedCapsules))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
-                    Text("家人分享的胶囊会出现在这里")
+                    Text(L10n.string(.receivedCapsuleHint))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -590,7 +594,7 @@ struct CapsulePreviewRow: View {
             HStack(spacing: 4) {
                 Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
                     .font(.system(size: 11))
-                Text(capsule.isSent ? "已发送" : "待发送")
+                Text(capsule.isSent ? L10n.string(.sent) : L10n.string(.pendingSend))
                     .font(.system(size: 12, weight: .medium))
             }
             .padding(.horizontal, 12)
@@ -610,10 +614,7 @@ struct CapsulePreviewRow: View {
     
     // 📅 中文日期格式化
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
-        return formatter.string(from: date)
+        date.chineseDateTimeString()
     }
 }
 
@@ -640,7 +641,7 @@ struct ReceivedCapsulePreviewRow: View {
                 HStack(spacing: 4) {
                     Image(systemName: "person.fill")
                         .font(.system(size: 11))
-                    Text("来自：\(capsule.senderName)")
+                    Text("\(L10n.string(.from))：\(capsule.senderName)")
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
@@ -653,7 +654,7 @@ struct ReceivedCapsulePreviewRow: View {
                 HStack(spacing: 4) {
                     Image(systemName: "envelope.fill")
                         .font(.system(size: 11))
-                    Text("未读")
+                    Text(L10n.string(.unread))
                         .font(.system(size: 12, weight: .medium))
                 }
                 .padding(.horizontal, 12)
@@ -665,7 +666,7 @@ struct ReceivedCapsulePreviewRow: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 11))
-                    Text("已读")
+                    Text(L10n.string(.read))
                         .font(.system(size: 12, weight: .medium))
                 }
                 .padding(.horizontal, 12)

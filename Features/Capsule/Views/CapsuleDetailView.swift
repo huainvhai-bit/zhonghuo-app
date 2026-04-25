@@ -47,7 +47,7 @@ struct CapsuleDetailView: View {
                 .padding(.vertical, 16)
             }
         }
-        .navigationTitle("胶囊详情")
+        .navigationTitle(L10n.string(.capsuleDetail))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $playbackItem) { item in
             CapsuleMediaPlayerSheet(url: item.url)
@@ -57,16 +57,16 @@ struct CapsuleDetailView: View {
                 CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
             }
         }
-        .alert("确认删除", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive) {
+        .alert(L10n.string(.deleteCapsule), isPresented: $showingDeleteAlert) {
+            Button(L10n.string(.cancel), role: .cancel) {}
+            Button(L10n.string(.deleteAction), role: .destructive) {
                 deleteCapsule()
             }
         } message: {
-            Text("确定要删除胶囊「\(capsule.title)」吗？此操作不可恢复。")
+            Text(String(format: L10n.string(.deleteCapsuleMessage), capsule.title))
         }
-        .alert("播放失败", isPresented: $showingMediaError) {
-            Button("确定", role: .cancel) {}
+        .alert(L10n.string(.playFailed), isPresented: $showingMediaError) {
+            Button(L10n.string(.confirm), role: .cancel) {}
         } message: {
             Text(mediaErrorMessage)
         }
@@ -118,7 +118,7 @@ struct CapsuleDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
                                 .font(.system(size: 11))
-                            Text(capsule.isSent ? "已发送" : "待发送")
+                            Text(capsule.isSent ? L10n.string(.sent) : L10n.string(.pendingSend))
                                 .font(.system(size: 12, weight: .medium))
                         }
                         .foregroundColor(capsule.isSent ? .green : .orange)
@@ -144,13 +144,13 @@ struct CapsuleDetailView: View {
             HStack {
                 Image(systemName: "doc.text.fill")
                     .foregroundColor(Color(hex: "6366F1"))
-                Text("文字内容")
+                Text(L10n.string(.textContent))
                     .font(.headline)
             }
             
             Divider()
             
-            Text(capsule.content.isEmpty ? "（无内容）" : capsule.content)
+            Text(capsule.content.isEmpty ? L10n.string(.noContent) : capsule.content)
                 .font(.system(size: 16))
                 .foregroundColor(capsule.content.isEmpty ? .secondary : .primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -168,7 +168,7 @@ struct CapsuleDetailView: View {
             HStack {
                 Image(systemName: capsule.type == .audio ? "mic.fill" : "video.fill")
                     .foregroundColor(Color(hex: "6366F1"))
-                Text(capsule.type == .audio ? "语音内容" : "视频内容")
+                Text(capsule.type == .audio ? L10n.string(.audioContent) : L10n.string(.videoContent))
                     .font(.headline)
                 Spacer()
             }
@@ -195,11 +195,11 @@ struct CapsuleDetailView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("点击播放")
+                        Text(L10n.string(.clickToPlay))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.primary)
                         
-                        Text(capsule.type == .audio ? "语音" : "视频")
+                        Text(capsule.type == .audio ? L10n.string(.audioContent) : L10n.string(.videoContent))
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
@@ -227,7 +227,7 @@ struct CapsuleDetailView: View {
             HStack {
                 Image(systemName: "calendar")
                     .foregroundColor(Color(hex: "6366F1"))
-                Text("日期信息")
+                Text(L10n.string(.dateInfo))
                     .font(.headline)
                 Spacer()
             }
@@ -239,7 +239,7 @@ struct CapsuleDetailView: View {
                         Image(systemName: "paperplane.fill")
                             .font(.system(size: 12))
                             .foregroundColor(Color(hex: "6366F1"))
-                        Text("发送日期")
+                        Text(L10n.string(.sendDate))
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
@@ -259,7 +259,7 @@ struct CapsuleDetailView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 12))
                             .foregroundColor(Color(hex: "8B5CF6"))
-                        Text("创建日期")
+                        Text(L10n.string(.createdDate))
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
@@ -284,7 +284,7 @@ struct CapsuleDetailView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "pencil")
                         .font(.system(size: 16))
-                    Text("编辑胶囊")
+                    Text(L10n.string(.editCapsule))
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -299,7 +299,7 @@ struct CapsuleDetailView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "trash.fill")
                         .font(.system(size: 16))
-                    Text("删除胶囊")
+                    Text(L10n.string(.deleteCapsule))
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -349,15 +349,11 @@ struct CapsuleDetailView: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日"
-        return formatter.string(from: date)
+        date.chineseDateString()
     }
     
     private func formatCreateDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日"
-        return formatter.string(from: date)
+        date.chineseDateString()
     }
 }
 

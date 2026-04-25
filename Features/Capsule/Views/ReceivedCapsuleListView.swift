@@ -36,7 +36,7 @@ struct ReceivedCapsuleListView: View {
                     }
                 }
             }
-            .navigationTitle("📦 我收到的胶囊")
+            .navigationTitle(L10n.text("我收到的胶囊", en: "Received Capsules", ja: "受け取ったカプセル", ko: "받은 캡슐"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -44,13 +44,13 @@ struct ReceivedCapsuleListView: View {
                         Image(systemName: "envelope.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(Color(hex: "6366F1"))
-                        Text("我收到的胶囊")
+                        Text(L10n.text("我收到的胶囊", en: "Received Capsules", ja: "受け取ったカプセル", ko: "받은 캡슐"))
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.primary)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(L10n.string(.done)) {
                         dismiss()
                     }
                     .foregroundColor(Color(hex: "6366F1"))
@@ -62,6 +62,7 @@ struct ReceivedCapsuleListView: View {
                 ReceivedCapsuleDetailView(capsule: capsule)
             }
         }
+        .stackNavigationStyle()
     }
     
     var emptyState: some View {
@@ -70,10 +71,10 @@ struct ReceivedCapsuleListView: View {
             Image(systemName: "tray")
                 .font(.system(size: 60))
                 .foregroundColor(.gray.opacity(0.5))
-            Text("暂无收到的胶囊")
+            Text(L10n.text("暂无收到的胶囊", en: "No received capsules yet", ja: "まだ受け取ったカプセルはありません", ko: "아직 받은 캡슐이 없습니다"))
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text("家人分享胶囊后，您将在这里看到")
+            Text(L10n.text("家人分享胶囊后，您将在这里看到", en: "Capsules shared by family will appear here.", ja: "家族が共有したカプセルはここに表示されます。", ko: "가족이 공유한 캡슐이 여기에 표시됩니다."))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -105,7 +106,7 @@ struct ReceivedCapsuleRow: View {
                     .lineLimit(1)
                 
                 HStack(spacing: 4) {
-                    Text("来自：\(capsule.senderName)")
+                    Text(L10n.text("来自：\(capsule.senderName)", en: "From: \(capsule.senderName)", ja: "送信元：\(capsule.senderName)", ko: "발신: \(capsule.senderName)"))
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     
@@ -134,16 +135,12 @@ struct ReceivedCapsuleRow: View {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
-            return displayFormatter.string(from: date)
+            return date.chineseDateTimeString()
         }
         // 尝试不带毫秒的格式
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm"
-            return displayFormatter.string(from: date)
+            return date.chineseDateTimeString()
         }
         return dateString
     }
@@ -178,7 +175,7 @@ struct ReceivedCapsuleDetailView: View {
                                 .font(.system(size: 22, weight: .bold))
                                 .multilineTextAlignment(.center)
                             
-                            Text("发送者：\(capsule.senderName)")
+                            Text(L10n.text("发送者：\(capsule.senderName)", en: "Sender: \(capsule.senderName)", ja: "送信者：\(capsule.senderName)", ko: "보낸 사람: \(capsule.senderName)"))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -190,7 +187,7 @@ struct ReceivedCapsuleDetailView: View {
                         
                         // 内容区域
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("内容")
+                            Text(L10n.string(.textContent))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.secondary)
                             
@@ -207,7 +204,7 @@ struct ReceivedCapsuleDetailView: View {
                                 }) {
                                     HStack {
                                         Image(systemName: capsule.typeEnum.icon)
-                                        Text("点击播放\(capsule.typeEnum.rawValue)")
+                                        Text(L10n.text("点击播放\(capsule.typeEnum.rawValue)", en: "Tap to play \(capsule.typeEnum.rawValue)", ja: "\(capsule.typeEnum.rawValue)をタップして再生", ko: "\(capsule.typeEnum.rawValue)를 탭하여 재생"))
                                         Spacer()
                                         Image(systemName: "play.circle.fill")
                                             .font(.system(size: 30))
@@ -218,7 +215,7 @@ struct ReceivedCapsuleDetailView: View {
                                 }
                                 .foregroundColor(Color(hex: capsule.typeEnum.color))
                             } else {
-                                Text("无文字内容")
+                                Text(L10n.text("无文字内容", en: "No text content", ja: "テキスト内容なし", ko: "텍스트 내용 없음"))
                                     .font(.body)
                                     .foregroundColor(.secondary)
                                     .padding(16)
@@ -231,7 +228,7 @@ struct ReceivedCapsuleDetailView: View {
                         
                         // 发送时间
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("发送时间")
+                            Text(L10n.string(.sendDate))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.secondary)
                             Text(formatDate(capsule.sentAt))
@@ -251,11 +248,11 @@ struct ReceivedCapsuleDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("胶囊详情")
+                    Text(L10n.string(.capsuleDetail))
                         .font(.system(size: 16, weight: .bold))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("关闭") {
+                    Button(L10n.string(.close)) {
                         dismiss()
                     }
                     .foregroundColor(Color(hex: "6366F1"))
@@ -265,21 +262,18 @@ struct ReceivedCapsuleDetailView: View {
                 CapsuleMediaPlayerSheet(url: item.url)
             }
         }
+        .stackNavigationStyle()
     }
     
     private func formatDate(_ dateString: String) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm:ss"
-            return displayFormatter.string(from: date)
+            return date.chineseDateTimeSecondString()
         }
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy 年 MM 月 dd 日 HH:mm:ss"
-            return displayFormatter.string(from: date)
+            return date.chineseDateTimeSecondString()
         }
         return dateString
     }
@@ -309,7 +303,7 @@ struct CapsuleMediaPlayerSheet: View {
                 CapsuleVideoPlayerContainer(player: player)
                     .ignoresSafeArea()
             } else {
-                ProgressView("正在加载播放器")
+                ProgressView(L10n.text("正在加载播放器", en: "Loading player", ja: "プレーヤーを読み込み中", ko: "플레이어 로딩 중"))
                     .foregroundColor(.white)
                     .tint(.white)
             }

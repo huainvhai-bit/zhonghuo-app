@@ -19,7 +19,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var restoreMessage = ""
     @Published var latestVersion = ""
     @Published var updateUrl = ""
-    @Published var selectedCheckInInterval: CheckInInterval = .oneDay
+    @Published var selectedCheckInInterval: CheckInInterval = .twoDays
     @Published var errorMessage = ""
 
     private let dataManager = DataManager.shared
@@ -101,7 +101,7 @@ final class SettingsViewModel: ObservableObject {
             _ = userManager.saveUser(currentUser)
         }
 
-        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
+        LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "签到间隔设置变更")
     }
 
     private func scheduleDeviceInfoUpload() {

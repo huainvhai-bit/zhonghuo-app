@@ -145,7 +145,7 @@ struct PDFExportSheet: View {
         
         // 保存到临时文件
         let tempDir = FileManager.default.temporaryDirectory
-        let filename = "终活_嘱托文档_\(Date().timeIntervalSince1970).pdf"
+        let filename = "终活_嘱托文档_\(Date().chineseFileNameString()).pdf"
         let fileURL = tempDir.appendingPathComponent(filename)
         
         do {
@@ -159,10 +159,7 @@ struct PDFExportSheet: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日_HHmm"
-        return formatter.string(from: date)
+        date.chineseFileNameString()
     }
 }
 

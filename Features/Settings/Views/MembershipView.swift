@@ -42,18 +42,19 @@ struct MembershipView: View {
                 .padding()
             }
             .background(Color(.systemBackground))
-            .navigationTitle("开通会员")
+            .navigationTitle(L10n.string(.openMembership))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
+                    Button(L10n.string(.close)) {
                         dismiss()
                     }
                 }
             }
         }
-        .alert("提示", isPresented: $showingPurchaseAlert) {
-            Button("确定") {}
+        .stackNavigationStyle()
+        .alert(L10n.string(.prompt), isPresented: $showingPurchaseAlert) {
+            Button(L10n.string(.confirm)) {}
         } message: {
             Text(purchaseMessage)
         }
@@ -66,10 +67,10 @@ struct MembershipView: View {
                 .font(.system(size: 60))
                 .foregroundColor(Color(hex: "FFD700"))
             
-            Text("终活会员")
+            Text(L10n.string(.appName) + L10n.text("会员", en: " Membership", ja: "会員", ko: " 멤버십"))
                 .font(.system(size: 28, weight: .bold))
             
-            Text("你的数字遗产值得更好的保护")
+            Text(L10n.text("你的数字遗产值得更好的保护", en: "Your digital legacy deserves better protection", ja: "あなたのデジタル資産は、より良い保護に値します", ko: "당신의 디지털 유산은 더 나은 보호를 받을 가치가 있습니다"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondary)
         }
@@ -82,7 +83,7 @@ struct MembershipView: View {
             HStack {
                 Image(systemName: "checkmark.seal.fill")
                     .foregroundColor(.green)
-                Text("当前为 \(membership.memberTypeDisplayName())")
+                Text(L10n.text("当前为 \(membership.memberTypeDisplayName())", en: "Current plan: \(membership.memberTypeDisplayName())", ja: "現在のプラン：\(membership.memberTypeDisplayName())", ko: "현재 플랜: \(membership.memberTypeDisplayName())"))
                     .font(.system(size: 16, weight: .medium))
             }
             
@@ -101,26 +102,26 @@ struct MembershipView: View {
     // MARK: - 会员方案
     private var plansSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("选择方案")
+            Text(L10n.text("选择方案", en: "Choose a plan", ja: "プランを選択", ko: "플랜 선택"))
                 .font(.system(size: 20, weight: .bold))
             
             // 年卡（推荐）
             PlanCard(
-                name: "年卡",
+                name: L10n.text("年卡", en: "Yearly", ja: "年額", ko: "연간"),
                 price: "¥68",
                 originalPrice: "¥98",
-                period: "/年",
-                badge: "推荐",
+                period: L10n.text("/年", en: "/year", ja: "/年", ko: "/년"),
+                badge: L10n.text("推荐", en: "Recommended", ja: "おすすめ", ko: "추천"),
                 isSelected: selectedPlan == "yearly",
                 onTap: { selectedPlan = "yearly" }
             )
             
             // 月卡
             PlanCard(
-                name: "月卡",
+                name: L10n.text("月卡", en: "Monthly", ja: "月額", ko: "월간"),
                 price: "¥8",
                 originalPrice: nil,
-                period: "/月",
+                period: L10n.text("/月", en: "/month", ja: "/月", ko: "/월"),
                 badge: nil,
                 isSelected: selectedPlan == "monthly",
                 onTap: { selectedPlan = "monthly" }
@@ -131,22 +132,22 @@ struct MembershipView: View {
     // MARK: - 功能对比
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("会员特权")
+            Text(L10n.text("会员特权", en: "Member benefits", ja: "会員特典", ko: "멤버십 혜택"))
                 .font(.system(size: 20, weight: .bold))
             
             // 表格标题
             HStack {
-                Text("功能")
+                Text(L10n.text("功能", en: "Feature", ja: "機能", ko: "기능"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
                     .frame(width: 100, alignment: .leading)
                 
-                Text("免费版")
+                Text(L10n.text("免费版", en: "Free", ja: "無料版", ko: "무료"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity)
                 
-                Text("会员版")
+                Text(L10n.text("会员版", en: "Premium", ja: "会員版", ko: "유료"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(hex: "6366F1"))
                     .frame(maxWidth: .infinity)
@@ -160,9 +161,9 @@ struct MembershipView: View {
             VStack(spacing: 0) {
                 FeatureTableRow(
                     icon: "capsule.fill",
-                    title: "时光胶囊",
-                    free: "5 个",
-                    premium: "20 个",
+                    title: L10n.string(.tabCapsule),
+                    free: L10n.text("5 个", en: "5", ja: "5個", ko: "5개"),
+                    premium: L10n.text("20 个", en: "20", ja: "20個", ko: "20개"),
                     isLast: false
                 )
                 
@@ -170,9 +171,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "mic.fill",
-                    title: "语音/视频胶囊",
-                    free: "2个/各2分钟",
-                    premium: "10个/各5分钟",
+                    title: L10n.text("语音/视频胶囊", en: "Audio / Video Capsules", ja: "音声 / 動画カプセル", ko: "음성 / 비디오 캡슐"),
+                    free: L10n.text("2个/各2分钟", en: "2 / 2 min each", ja: "2個 / 各2分", ko: "2개 / 각 2분"),
+                    premium: L10n.text("10个/各5分钟", en: "10 / 5 min each", ja: "10個 / 各5分", ko: "10개 / 각 5분"),
                     isLast: false
                 )
                 
@@ -180,9 +181,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "doc.text.fill",
-                    title: "遗嘱嘱托",
-                    free: "3 个模块",
-                    premium: "无限",
+                    title: L10n.string(.myWills),
+                    free: L10n.text("3 个模块", en: "3 modules", ja: "3モジュール", ko: "3개 모듈"),
+                    premium: L10n.text("无限", en: "Unlimited", ja: "無制限", ko: "무제한"),
                     isLast: false
                 )
                 
@@ -190,9 +191,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "icloud.fill",
-                    title: "云端同步",
-                    free: "自动同步",
-                    premium: "自动同步 + 一键恢复",
+                    title: L10n.text("云端同步", en: "Cloud sync", ja: "クラウド同期", ko: "클라우드 동기화"),
+                    free: L10n.text("自动同步", en: "Auto sync", ja: "自動同期", ko: "자동 동기화"),
+                    premium: L10n.text("自动同步 + 一键恢复", en: "Auto sync + one-tap restore", ja: "自動同期 + ワンタップ復元", ko: "자동 동기화 + 원탭 복원"),
                     isLast: false
                 )
                 
@@ -200,9 +201,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "person.2.fill",
-                    title: "家庭守护",
-                    free: "1 位家人",
-                    premium: "5 位家人",
+                    title: L10n.string(.familyGuard),
+                    free: L10n.text("1 位家人", en: "1 family member", ja: "1人", ko: "1명"),
+                    premium: L10n.text("5 位家人", en: "5 family members", ja: "5人", ko: "5명"),
                     isLast: false
                 )
                 
@@ -210,9 +211,9 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "square.and.arrow.up.fill",
-                    title: "数据导出",
+                    title: L10n.text("数据导出", en: "Data export", ja: "データ書き出し", ko: "데이터 내보내기"),
                     free: "-",
-                    premium: "PDF/视频/加密包（含媒体下载地址）",
+                    premium: L10n.text("PDF/视频/加密包（含媒体下载地址）", en: "PDF / video / encrypted package (with media download links)", ja: "PDF / 動画 / 暗号化パッケージ（メディアダウンロードリンク付き）", ko: "PDF / 비디오 / 암호화 패키지(미디어 다운로드 링크 포함)"),
                     isLast: true
                 )
             }
@@ -239,7 +240,7 @@ struct MembershipView: View {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
-                        Text("立即开通 \(selectedPlanName)")
+                        Text(L10n.text("立即开通 \(selectedPlanName)", en: "Subscribe \(selectedPlanName)", ja: "\(selectedPlanName)を開通", ko: "\(selectedPlanName) 시작하기"))
                     }
                 }
                 .font(.system(size: 18, weight: .semibold))
@@ -257,7 +258,7 @@ struct MembershipView: View {
             }
             .disabled(isPurchasing)
             
-            Text("7天免费试用 · 随时取消")
+            Text(L10n.text("7天免费试用 · 随时取消", en: "7-day free trial · Cancel anytime", ja: "7日間無料体験・いつでも解約可", ko: "7일 무료 체험 · 언제든지 취소 가능"))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
         }
@@ -265,8 +266,8 @@ struct MembershipView: View {
     
     private var selectedPlanName: String {
         switch selectedPlan {
-        case "monthly": return "月卡会员"
-        case "yearly": return "年卡会员"
+        case "monthly": return L10n.text("月卡会员", en: "Monthly", ja: "月額会員", ko: "월간 멤버십")
+        case "yearly": return L10n.text("年卡会员", en: "Yearly", ja: "年額会員", ko: "연간 멤버십")
         default: return ""
         }
     }
@@ -296,11 +297,11 @@ struct MembershipView: View {
                 // 调用服务器激活会员
                 await activateMembershipOnServer(type: selectedPlan, transactionId: transactionId, expiryDate: expiryDate)
                 
-                purchaseMessage = "\(selectedPlanName)开通成功！"
+                purchaseMessage = L10n.text("\(selectedPlanName)开通成功！", en: "\(selectedPlanName) subscription activated!", ja: "\(selectedPlanName)の開通に成功しました！", ko: "\(selectedPlanName) 시작에 성공했습니다!")
                 showingPurchaseAlert = true
                 
             case .pending:
-                purchaseMessage = "购买处理中，请稍候..."
+                purchaseMessage = L10n.text("购买处理中，请稍候...", en: "Purchase pending, please wait...", ja: "購入処理中です。しばらくお待ちください...", ko: "구매 처리 중입니다. 잠시만 기다려 주세요...")
                 showingPurchaseAlert = true
                 
             case .cancelled:
@@ -308,7 +309,7 @@ struct MembershipView: View {
                 break
                 
             case .failure(let error):
-                purchaseMessage = "购买失败：\(error)"
+                purchaseMessage = L10n.text("购买失败：\(error)", en: "Purchase failed: \(error)", ja: "購入に失敗しました：\(error)", ko: "구매 실패: \(error)")
                 showingPurchaseAlert = true
             }
         }

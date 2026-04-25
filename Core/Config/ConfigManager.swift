@@ -80,6 +80,9 @@ class ConfigManager: ObservableObject {
                 memberPriceMonthly
                 memberPriceYearly
                 freeMaxCapsules
+                freeMaxTextCapsules
+                freeMaxAudioCapsules
+                freeMaxVideoCapsules
                 freeMaxMediaCapsules
                 freeMaxVideoMinutes
                 freeMaxWillModules
@@ -88,6 +91,9 @@ class ConfigManager: ObservableObject {
                 freeDataExport
                 freeAiAssist
                 premiumMaxCapsules
+                premiumMaxTextCapsules
+                premiumMaxAudioCapsules
+                premiumMaxVideoCapsules
                 premiumMaxMediaCapsules
                 premiumMaxVideoMinutes
                 premiumMaxWillModules
@@ -119,18 +125,24 @@ class ConfigManager: ObservableObject {
             let priceYearly = configData["memberPriceYearly"] as? Double ?? 68.0
             
             // 免费版限制
-            let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 5
-            let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 2
+            let freeMaxCapsules = configData["freeMaxCapsules"] as? Int ?? 6
+            let freeMaxTextCapsules = configData["freeMaxTextCapsules"] as? Int ?? 2
+            let freeMaxAudioCapsules = configData["freeMaxAudioCapsules"] as? Int ?? 2
+            let freeMaxVideoCapsules = configData["freeMaxVideoCapsules"] as? Int ?? 2
+            let freeMaxMediaCapsules = configData["freeMaxMediaCapsules"] as? Int ?? 4
             let freeMaxVideoMinutes = configData["freeMaxVideoMinutes"] as? Int ?? 2
-            let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 3
+            let freeMaxWillModules = configData["freeMaxWillModules"] as? Int ?? 5
             let freeMaxFamily = configData["freeMaxFamily"] as? Int ?? 1
             let freeCloudBackup = configData["freeCloudBackup"] as? Bool ?? false
             let freeDataExport = configData["freeDataExport"] as? Bool ?? false
             let freeAiAssist = configData["freeAiAssist"] as? Bool ?? false
             
             // 会员版限制
-            let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 20
-            let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 10
+            let premiumMaxCapsules = configData["premiumMaxCapsules"] as? Int ?? 30
+            let premiumMaxTextCapsules = configData["premiumMaxTextCapsules"] as? Int ?? 10
+            let premiumMaxAudioCapsules = configData["premiumMaxAudioCapsules"] as? Int ?? 10
+            let premiumMaxVideoCapsules = configData["premiumMaxVideoCapsules"] as? Int ?? 10
+            let premiumMaxMediaCapsules = configData["premiumMaxMediaCapsules"] as? Int ?? 20
             let premiumMaxVideoMinutes = configData["premiumMaxVideoMinutes"] as? Int ?? 5
             let premiumMaxWillModules = configData["premiumMaxWillModules"] as? Int ?? 999
             let premiumMaxFamily = configData["premiumMaxFamily"] as? Int ?? 5
@@ -156,6 +168,9 @@ class ConfigManager: ObservableObject {
                 memberPriceYearly: priceYearly,
                 // 免费版限制
                 freeMaxCapsules: freeMaxCapsules,
+                freeMaxTextCapsules: freeMaxTextCapsules,
+                freeMaxAudioCapsules: freeMaxAudioCapsules,
+                freeMaxVideoCapsules: freeMaxVideoCapsules,
                 freeMaxMediaCapsules: freeMaxMediaCapsules,
                 freeMaxVideoMinutes: freeMaxVideoMinutes,
                 freeMaxWillModules: freeMaxWillModules,
@@ -165,6 +180,9 @@ class ConfigManager: ObservableObject {
                 freeAiAssist: freeAiAssist,
                 // 会员版限制
                 premiumMaxCapsules: premiumMaxCapsules,
+                premiumMaxTextCapsules: premiumMaxTextCapsules,
+                premiumMaxAudioCapsules: premiumMaxAudioCapsules,
+                premiumMaxVideoCapsules: premiumMaxVideoCapsules,
                 premiumMaxMediaCapsules: premiumMaxMediaCapsules,
                 premiumMaxVideoMinutes: premiumMaxVideoMinutes,
                 premiumMaxWillModules: premiumMaxWillModules,

@@ -11,6 +11,7 @@ import SwiftUI
 struct ResetPasswordView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     
     @State private var identifier = ""
     @State private var selectedSecurityQuestion = Self.securityQuestions.first ?? ""
@@ -22,13 +23,15 @@ struct ResetPasswordView: View {
     @State private var errorMessage = ""
     @State private var isSuccess = false
     
-    private static let securityQuestions = [
-        "我的第一所学校名称是？",
-        "我最喜欢的城市是？",
-        "我母亲的姓氏是？",
-        "我最喜欢的电影是？",
-        "我童年最好的朋友名字是？"
-    ]
+    private static var securityQuestions: [String] {
+        [
+            L10n.text("我的第一所学校名称是？", en: "What was the name of my first school?", ja: "最初の学校の名前は？", ko: "내 첫 번째 학교 이름은?"),
+            L10n.text("我最喜欢的城市是？", en: "What is my favorite city?", ja: "一番好きな都市は？", ko: "내가 가장 좋아하는 도시는?"),
+            L10n.text("我母亲的姓氏是？", en: "What is my mother's maiden name?", ja: "母の旧姓は？", ko: "어머니의 성은?"),
+            L10n.text("我最喜欢的电影是？", en: "What is my favorite movie?", ja: "一番好きな映画は？", ko: "내가 가장 좋아하는 영화는?"),
+            L10n.text("我童年最好的朋友名字是？", en: "What is the name of my childhood best friend?", ja: "子どもの頃の親友の名前は？", ko: "어릴 때 가장 친했던 친구의 이름은?")
+        ]
+    }
     private var securityQuestions: [String] { Self.securityQuestions }
     
     // MARK: - 辅助方法
@@ -51,19 +54,19 @@ struct ResetPasswordView: View {
             // 验证输入
             let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
             guard isValidIdentifier(trimmedIdentifier) else {
-                throw NSError(domain: "账号或手机号格式错误", code: -1)
+                throw NSError(domain: L10n.text("账号或手机号格式错误", en: "Invalid account or phone format.", ja: "アカウントまたは電話番号の形式が正しくありません。", ko: "계정 또는 전화번호 형식이 올바르지 않습니다."), code: -1)
             }
             
             guard newPassword.count >= 6 else {
-                throw NSError(domain: "密码至少 6 位", code: -1)
+                throw NSError(domain: L10n.text("密码至少 6 位", en: "Password must be at least 6 characters.", ja: "パスワードは6文字以上で入力してください。", ko: "비밀번호는 6자 이상이어야 합니다."), code: -1)
             }
             
             guard newPassword == confirmPassword else {
-                throw NSError(domain: "两次输入的密码不一致", code: -1)
+                throw NSError(domain: L10n.text("两次输入的密码不一致", en: "The two passwords do not match.", ja: "2つのパスワードが一致しません。", ko: "두 비밀번호가 일치하지 않습니다."), code: -1)
             }
             
             guard !securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                throw NSError(domain: "请输入密保答案", code: -1)
+                throw NSError(domain: L10n.text("请输入密保答案", en: "Please enter the security answer.", ja: "秘密の答えを入力してください。", ko: "보안 답변을 입력하세요."), code: -1)
             }
             
             // 调用重置密码 API
@@ -146,7 +149,7 @@ struct ResetPasswordView: View {
               let resetData = data["resetPassword"] as? [String: Any],
               let success = resetData["success"] as? Bool,
               success else {
-            let message = authMessage(from: response, fallback: "重置密码失败，请稍后重试")
+            let message = authMessage(from: response, fallback: L10n.text("重置密码失败，请稍后重试", en: "Password reset failed. Please try again later.", ja: "パスワードの再設定に失敗しました。後でもう一度お試しください。", ko: "비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도하세요."))
             print("❌ 重置密码失败")
             await MainActor.run {
                 errorMessage = message
@@ -179,21 +182,21 @@ struct ResetPasswordView: View {
             if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn't have a default value") || errorMsg.contains("cannot be null") {
                 self.errorMessage = errorMsg
             } else if errorMsg.contains("ACCOUNT_NOT_FOUND:") || errorMsg.contains("不存在") {
-                self.errorMessage = "账号不存在，请先注册"
+                self.errorMessage = L10n.text("账号不存在，请先注册", en: "Account not found. Please register first.", ja: "アカウントが見つかりません。先に登録してください。", ko: "계정을 찾을 수 없습니다. 먼저 등록하세요.")
             } else if errorMsg.contains("密保") || errorMsg.contains("答案") {
-                self.errorMessage = "密保问题或答案错误"
+                self.errorMessage = L10n.text("密保问题或答案错误", en: "Security question or answer is incorrect.", ja: "秘密の質問または答えが正しくありません。", ko: "보안 질문 또는 답변이 올바르지 않습니다.")
             } else if errorMsg.contains("账号") || errorMsg.contains("手机号") {
-                self.errorMessage = "账号或手机号格式错误"
+                self.errorMessage = L10n.text("账号或手机号格式错误", en: "Invalid account or phone format.", ja: "アカウントまたは電話番号の形式が正しくありません。", ko: "계정 또는 전화번호 형식이 올바르지 않습니다.")
             } else if errorMsg.contains("密码") {
-                self.errorMessage = "密码至少 6 位"
+                self.errorMessage = L10n.text("密码至少 6 位", en: "Password must be at least 6 characters.", ja: "パスワードは6文字以上で入力してください。", ko: "비밀번호는 6자 이상이어야 합니다.")
             } else if errorMsg.contains("不一致") {
-                self.errorMessage = "两次输入的密码不一致"
+                self.errorMessage = L10n.text("两次输入的密码不一致", en: "The two passwords do not match.", ja: "2つのパスワードが一致しません。", ko: "두 비밀번호가 일치하지 않습니다.")
             } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
-                self.errorMessage = "网络连接失败，请检查网络"
+                self.errorMessage = L10n.text("网络连接失败，请检查网络", en: "Network connection failed. Please check your connection.", ja: "ネットワーク接続に失敗しました。接続を確認してください。", ko: "네트워크 연결에 실패했습니다. 연결을 확인하세요.")
             } else if !errorMsg.isEmpty {
                 self.errorMessage = errorMsg
             } else {
-                self.errorMessage = "重置密码失败，请稍后重试"
+                self.errorMessage = L10n.text("重置密码失败，请稍后重试", en: "Password reset failed. Please try again later.", ja: "パスワードの再設定に失敗しました。後でもう一度お試しください。", ko: "비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도하세요.")
             }
             self.showingError = true
         }
@@ -251,11 +254,11 @@ struct ResetPasswordView: View {
                             .font(.system(size: 60))
                             .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("终活")
+                        Text(L10n.string(.appName))
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("重置密码")
+                        Text(L10n.string(.resetSubtitle))
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
                     }
@@ -263,7 +266,7 @@ struct ResetPasswordView: View {
                     
                     // 重置密码表单
                     VStack(spacing: 20) {
-                        TextField("账号或手机号", text: $identifier)
+                        TextField(L10n.string(.identifierPlaceholder), text: $identifier)
                             .textFieldStyle(CustomTextFieldStyle())
                             .keyboardType(.default)
                             .autocapitalization(.none)
@@ -271,38 +274,38 @@ struct ResetPasswordView: View {
                             .font(.system(size: 18, weight: .medium))
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("忘记密码时的唯一找回方式")
+                            Text(L10n.string(.resetSecurityTitle))
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.secondary)
 
-                            Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
+                            Text(L10n.string(.resetSecurityHelp))
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
 
-                            Picker("密保问题", selection: $selectedSecurityQuestion) {
+                            Picker(L10n.string(.securityQuestionPicker), selection: $selectedSecurityQuestion) {
                                 ForEach(securityQuestions, id: \.self) { question in
                                     Text(question).tag(question)
                                 }
                             }
                             .pickerStyle(.menu)
 
-                            TextField("密保答案", text: $securityAnswer)
+                            TextField(L10n.string(.securityAnswer), text: $securityAnswer)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
                                 .font(.system(size: 18, weight: .medium))
                         }
                         
-                        SecureField("新密码（6 位以上）", text: $newPassword)
+                        SecureField(L10n.string(.registerPassword), text: $newPassword)
                             .textFieldStyle(CustomTextFieldStyle())
                             .font(.system(size: 18, weight: .medium))
                         
-                        SecureField("确认新密码", text: $confirmPassword)
+                        SecureField(L10n.string(.registerConfirmPassword), text: $confirmPassword)
                             .textFieldStyle(CustomTextFieldStyle())
                             .font(.system(size: 18, weight: .medium))
                         
                         Button(action: { Task { await resetPassword() } }) {
-                            Text("重置密码")
+                            Text(L10n.string(.resetPasswordButton))
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -316,16 +319,16 @@ struct ResetPasswordView: View {
                     .padding(.horizontal, 24)
                     .alert(isPresented: $showingError) {
                         Alert(
-                            title: Text("错误"),
+                            title: Text(L10n.string(.error)),
                             message: Text(errorMessage),
-                            dismissButton: .default(Text("确定"))
+                            dismissButton: .default(Text(L10n.string(.confirm)))
                         )
                     }
                     
                     // 返回登录
                     HStack {
                         Button(action: { isPresented = false }) {
-                            Text("返回登录")
+                            Text(L10n.string(.returnLogin))
                                 .foregroundColor(Color(hex: "AF52DE"))
                                 .font(.system(size: 16, weight: .bold))
                         }
@@ -338,6 +341,11 @@ struct ResetPasswordView: View {
                 .scrollDismissesKeyboard(.interactively)
                 .background(Color("BackgroundColor"))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        languageMenu
+                    }
+                }
                 .onDisappear {
                     isLoading = false
                 }
@@ -350,11 +358,11 @@ struct ResetPasswordView: View {
                                 .font(.system(size: 60))
                                 .foregroundColor(Color(hex: "AF52DE"))
                             
-                            Text("终活")
+                            Text(L10n.string(.appName))
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(Color(hex: "AF52DE"))
                             
-                            Text("重置密码")
+                            Text(L10n.string(.resetSubtitle))
                                 .font(.system(size: 14))
                                 .foregroundColor(.gray)
                         }
@@ -362,7 +370,7 @@ struct ResetPasswordView: View {
                         
                         // 重置密码表单
                         VStack(spacing: 20) {
-                            TextField("账号或手机号", text: $identifier)
+                            TextField(L10n.string(.identifierPlaceholder), text: $identifier)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .keyboardType(.default)
                                 .autocapitalization(.none)
@@ -370,38 +378,38 @@ struct ResetPasswordView: View {
                                 .font(.system(size: 18, weight: .medium))
 
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("忘记密码时的唯一找回方式")
+                                Text(L10n.string(.resetSecurityTitle))
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.secondary)
 
-                                Text("请输入注册时选择的密保问题和答案。请务必记住，这是找回密码的唯一方式。")
+                                Text(L10n.string(.resetSecurityHelp))
                                     .font(.system(size: 13))
                                     .foregroundColor(.secondary)
 
-                                Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                Picker(L10n.string(.securityQuestionPicker), selection: $selectedSecurityQuestion) {
                                     ForEach(securityQuestions, id: \.self) { question in
                                         Text(question).tag(question)
                                     }
                                 }
                                 .pickerStyle(.menu)
 
-                                TextField("密保答案", text: $securityAnswer)
+                                TextField(L10n.string(.securityAnswer), text: $securityAnswer)
                                     .textFieldStyle(CustomTextFieldStyle())
                                     .autocapitalization(.none)
                                     .disableAutocorrection(true)
                                     .font(.system(size: 18, weight: .medium))
                             }
                             
-                            SecureField("新密码（6 位以上）", text: $newPassword)
+                            SecureField(L10n.string(.registerPassword), text: $newPassword)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .font(.system(size: 18, weight: .medium))
                             
-                            SecureField("确认新密码", text: $confirmPassword)
+                            SecureField(L10n.string(.registerConfirmPassword), text: $confirmPassword)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .font(.system(size: 18, weight: .medium))
                             
                             Button(action: { Task { await resetPassword() } }) {
-                                Text("重置密码")
+                                Text(L10n.string(.resetPasswordButton))
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
@@ -415,16 +423,16 @@ struct ResetPasswordView: View {
                         .padding(.horizontal, 24)
                         .alert(isPresented: $showingError) {
                             Alert(
-                                title: Text("错误"),
+                                title: Text(L10n.string(.error)),
                                 message: Text(errorMessage),
-                                dismissButton: .default(Text("确定"))
+                                dismissButton: .default(Text(L10n.string(.confirm)))
                             )
                         }
                         
                         // 返回登录
                         HStack {
                             Button(action: { isPresented = false }) {
-                                Text("返回登录")
+                                Text(L10n.string(.returnLogin))
                                     .foregroundColor(Color(hex: "AF52DE"))
                                     .font(.system(size: 16, weight: .bold))
                             }
@@ -436,10 +444,29 @@ struct ResetPasswordView: View {
                 }
                 .background(Color("BackgroundColor"))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        languageMenu
+                    }
+                }
                 .onDisappear {
                     isLoading = false
                 }
             }
+        }
+        .stackNavigationStyle()
+    }
+
+    private var languageMenu: some View {
+        Menu {
+            ForEach(AppLanguageManager.Language.allCases, id: \.self) { language in
+                Button(language.displayName) {
+                    languageManager.setLanguage(language)
+                }
+            }
+        } label: {
+            Image(systemName: "globe")
+                .font(.system(size: 16, weight: .semibold))
         }
     }
     

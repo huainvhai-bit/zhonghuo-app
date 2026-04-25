@@ -819,18 +819,24 @@ struct SystemConfig: Codable {
     var memberPriceYearly: Double = 68.0
     
     // MARK: - 免费版限制
-    var freeMaxCapsules: Int = 5
-    var freeMaxMediaCapsules: Int = 2
+    var freeMaxCapsules: Int = 6
+    var freeMaxTextCapsules: Int = 2
+    var freeMaxAudioCapsules: Int = 2
+    var freeMaxVideoCapsules: Int = 2
+    var freeMaxMediaCapsules: Int = 4
     var freeMaxVideoMinutes: Int = 2
-    var freeMaxWillModules: Int = 3
+    var freeMaxWillModules: Int = 5
     var freeMaxFamily: Int = 1
     var freeCloudBackup: Bool = false
     var freeDataExport: Bool = false
     var freeAiAssist: Bool = false
     
     // MARK: - 会员版限制
-    var premiumMaxCapsules: Int = 20
-    var premiumMaxMediaCapsules: Int = 10
+    var premiumMaxCapsules: Int = 30
+    var premiumMaxTextCapsules: Int = 10
+    var premiumMaxAudioCapsules: Int = 10
+    var premiumMaxVideoCapsules: Int = 10
+    var premiumMaxMediaCapsules: Int = 20
     var premiumMaxVideoMinutes: Int = 5
     var premiumMaxWillModules: Int = 999
     var premiumMaxFamily: Int = 5

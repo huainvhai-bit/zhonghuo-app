@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     private let dataManager = DataManager.shared
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""
@@ -31,17 +32,22 @@ struct ContentView: View {
                 }
             }
         }
-        .alert("版本更新", isPresented: $viewModel.showingUpdateAlert) {
-            Button("立即更新") {
+        .alert(L10n.string(.versionUpdate), isPresented: $viewModel.showingUpdateAlert) {
+            Button(L10n.string(.updateNow)) {
                 viewModel.openUpdateURL()
             }
             if !viewModel.isForceUpdate {
-                Button("稍后再说", role: .cancel) {
+                Button(L10n.string(.later), role: .cancel) {
                     viewModel.showingUpdateAlert = false
                 }
             }
         } message: {
-            Text("发现新版本 \(viewModel.updateVersion)，是否立即更新？")
+            Text(L10n.text(
+                "\(L10n.string(.newVersionFound)) \(viewModel.updateVersion)，是否立即更新？",
+                en: "New version \(viewModel.updateVersion) found. Update now?",
+                ja: "新しいバージョン \(viewModel.updateVersion) が見つかりました。今すぐ更新しますか？",
+                ko: "새 버전 \(viewModel.updateVersion)을 찾았습니다. 지금 업데이트하시겠습니까?"
+            ))
         }
         .onAppear {
             viewModel.start()
@@ -67,16 +73,18 @@ struct ContentView: View {
                 HomeStatusView()
                     .navigationBarHidden(true)
             }
+            .stackNavigationStyle()
             .tabItem {
-                Label("首页", systemImage: "house.fill")
+                Label(L10n.string(.tabHome), systemImage: "house.fill")
             }
             .tag(0)
             
             NavigationView {
                 CapsuleList(dataManager: dataManager)
             }
+            .stackNavigationStyle()
             .tabItem {
-                Label("时光胶囊", systemImage: "clock.fill")
+                Label(L10n.string(.tabCapsule), systemImage: "clock.fill")
             }
             .tag(1)
             
@@ -84,8 +92,9 @@ struct ContentView: View {
                 WillAssetsView()
                     .navigationBarHidden(true)
             }
+            .stackNavigationStyle()
             .tabItem {
-                Label("嘱托与资产", systemImage: "doc.text.fill")
+                Label(L10n.string(.tabWills), systemImage: "doc.text.fill")
             }
             .tag(2)
             
@@ -93,14 +102,15 @@ struct ContentView: View {
                 FamilyGuardView()
                     .navigationBarHidden(true)
             }
+            .stackNavigationStyle()
             .tabItem {
-                Label("家人守护", systemImage: "person.2.fill")
+                Label(L10n.string(.tabFamily), systemImage: "person.2.fill")
             }
             .tag(3)
             
             SettingsView()
             .tabItem {
-                Label("我的", systemImage: "person.fill")
+                Label(L10n.string(.tabMe), systemImage: "person.fill")
             }
             .tag(4)
         }
@@ -150,7 +160,7 @@ struct MaintenanceView: View {
                 .foregroundColor(.orange)
             
             // 标题
-            Text("系统维护中")
+            Text(L10n.string(.systemMaintenance))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.primary)
             
@@ -164,13 +174,13 @@ struct MaintenanceView: View {
             Spacer()
             
             // 底部信息
-            Text("请稍后再试")
+            Text(L10n.string(.pleaseRetry))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
                 .padding(.bottom, 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "F5F5F7"))
+        .background(Color(.systemBackground))
     }
 }
 
@@ -182,12 +192,12 @@ struct LoadingView: View {
             ProgressView()
                 .scaleEffect(1.5)
             
-            Text("正在加载...")
+            Text(L10n.string(.loading))
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "F5F5F7"))
+        .background(Color(.systemBackground))
         .onAppear {
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                 opacity = 1.0

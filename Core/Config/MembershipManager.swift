@@ -15,29 +15,38 @@ class MembershipManager: ObservableObject {
     @Published var isPremium: Bool = false
     @Published var memberType: String? = nil  // monthly/yearly/lifetime
     @Published var memberExpireAt: Date? = nil
-    @Published var maxCapsules: Int = 5       // 免费版默认5个
+    @Published var maxCapsules: Int = 6       // 免费版默认6个总胶囊
+    @Published var maxTextCapsules: Int = 2   // 免费版默认2个文字胶囊
+    @Published var maxAudioCapsules: Int = 2  // 免费版默认2个录音胶囊
+    @Published var maxVideoCapsules: Int = 2  // 免费版默认2个视频胶囊
     @Published var maxVideoMinutes: Int = 2   // 免费版默认2分钟
-    @Published var maxMediaCapsules: Int = 2  // 免费版默认2个语音/视频胶囊
+    @Published var maxMediaCapsules: Int = 4  // 免费版默认4个媒体胶囊（录音+视频）
     @Published var aiAssistEnabled: Bool = false  // AI智能辅助是否启用
     @Published var lastCheckedAt: Date? = nil   // 上次检查时间
     
     // MARK: - Limits
     struct Limits {
         // 免费版
-        static let freeMaxCapsules = 5
-        static let freeMaxMediaCapsules = 2
+        static let freeMaxCapsules = 6
+        static let freeMaxTextCapsules = 2
+        static let freeMaxAudioCapsules = 2
+        static let freeMaxVideoCapsules = 2
+        static let freeMaxMediaCapsules = 4
         static let freeMaxVideoMinutes = 2
-        static let freeMaxWills = 3
+        static let freeMaxWills = 5
         static let freeFamilyMembers = 1
-        static let freeMaxWillModules = 3
+        static let freeMaxWillModules = 5
         static let freeMaxFamily = 1
         static let freeCloudBackup = false
         static let freeDataExport = false
         static let freeAiAssist = false
         
         // 会员版
-        static let premiumMaxCapsules = 20
-        static let premiumMaxMediaCapsules = 10
+        static let premiumMaxCapsules = 30
+        static let premiumMaxTextCapsules = 10
+        static let premiumMaxAudioCapsules = 10
+        static let premiumMaxVideoCapsules = 10
+        static let premiumMaxMediaCapsules = 20
         static let premiumMaxVideoMinutes = 5
         static let premiumMaxWills = 999
         static let premiumFamilyMembers = 5
@@ -51,6 +60,9 @@ class MembershipManager: ObservableObject {
     // 服务器配置的限制（运行时覆盖）
     struct ServerLimits {
         var freeMaxCapsules: Int
+        var freeMaxTextCapsules: Int
+        var freeMaxAudioCapsules: Int
+        var freeMaxVideoCapsules: Int
         var freeMaxMediaCapsules: Int
         var freeMaxVideoMinutes: Int
         var freeMaxWillModules: Int
@@ -59,6 +71,9 @@ class MembershipManager: ObservableObject {
         var freeDataExport: Bool
         var freeAiAssist: Bool
         var premiumMaxCapsules: Int
+        var premiumMaxTextCapsules: Int
+        var premiumMaxAudioCapsules: Int
+        var premiumMaxVideoCapsules: Int
         var premiumMaxMediaCapsules: Int
         var premiumMaxVideoMinutes: Int
         var premiumMaxWillModules: Int
@@ -71,6 +86,9 @@ class MembershipManager: ObservableObject {
     // 默认使用编译时常量
     private var serverLimits = ServerLimits(
         freeMaxCapsules: Limits.freeMaxCapsules,
+        freeMaxTextCapsules: Limits.freeMaxTextCapsules,
+        freeMaxAudioCapsules: Limits.freeMaxAudioCapsules,
+        freeMaxVideoCapsules: Limits.freeMaxVideoCapsules,
         freeMaxMediaCapsules: Limits.freeMaxMediaCapsules,
         freeMaxVideoMinutes: Limits.freeMaxVideoMinutes,
         freeMaxWillModules: Limits.freeMaxWillModules,
@@ -79,6 +97,9 @@ class MembershipManager: ObservableObject {
         freeDataExport: Limits.freeDataExport,
         freeAiAssist: Limits.freeAiAssist,
         premiumMaxCapsules: Limits.premiumMaxCapsules,
+        premiumMaxTextCapsules: Limits.premiumMaxTextCapsules,
+        premiumMaxAudioCapsules: Limits.premiumMaxAudioCapsules,
+        premiumMaxVideoCapsules: Limits.premiumMaxVideoCapsules,
         premiumMaxMediaCapsules: Limits.premiumMaxMediaCapsules,
         premiumMaxVideoMinutes: Limits.premiumMaxVideoMinutes,
         premiumMaxWillModules: Limits.premiumMaxWillModules,
@@ -101,8 +122,12 @@ class MembershipManager: ObservableObject {
         isPremium = user.isPremium ?? false
         memberType = user.memberType
         memberExpireAt = user.memberExpireAt
-        maxCapsules = user.memberMaxCapsules ?? Limits.freeMaxCapsules
-        maxVideoMinutes = user.memberMaxVideoMinutes ?? Limits.freeMaxVideoMinutes
+        maxCapsules = isPremium ? serverLimits.premiumMaxCapsules : serverLimits.freeMaxCapsules
+        maxTextCapsules = isPremium ? serverLimits.premiumMaxTextCapsules : serverLimits.freeMaxTextCapsules
+        maxAudioCapsules = isPremium ? serverLimits.premiumMaxAudioCapsules : serverLimits.freeMaxAudioCapsules
+        maxVideoCapsules = isPremium ? serverLimits.premiumMaxVideoCapsules : serverLimits.freeMaxVideoCapsules
+        maxMediaCapsules = isPremium ? serverLimits.premiumMaxMediaCapsules : serverLimits.freeMaxMediaCapsules
+        maxVideoMinutes = isPremium ? serverLimits.premiumMaxVideoMinutes : serverLimits.freeMaxVideoMinutes
         
         // ✅ 检查会员是否过期
         checkExpiration()
@@ -126,7 +151,17 @@ class MembershipManager: ObservableObject {
     
     /// ✅ 基于服务器数据更新会员状态（推荐在获取用户数据时调用）
     @MainActor
-    func updateFromServer(isPremium: Bool, memberType: String?, memberExpireAt: Date?, memberMaxCapsules: Int, memberMaxVideoMinutes: Int, aiAssistEnabled: Bool = false) {
+    func updateFromServer(
+        isPremium: Bool,
+        memberType: String?,
+        memberExpireAt: Date?,
+        memberMaxCapsules: Int,
+        memberMaxTextCapsules: Int,
+        memberMaxAudioCapsules: Int,
+        memberMaxVideoCapsules: Int,
+        memberMaxVideoMinutes: Int,
+        aiAssistEnabled: Bool = false
+    ) {
         // 检查是否过期
         if isPremium, let expireAt = memberExpireAt, Date() >= expireAt {
             // 服务器返回已过期状态，降至免费版
@@ -134,6 +169,9 @@ class MembershipManager: ObservableObject {
             self.memberType = nil
             self.memberExpireAt = nil
             self.maxCapsules = Limits.freeMaxCapsules
+            self.maxTextCapsules = Limits.freeMaxTextCapsules
+            self.maxAudioCapsules = Limits.freeMaxAudioCapsules
+            self.maxVideoCapsules = Limits.freeMaxVideoCapsules
             self.maxVideoMinutes = Limits.freeMaxVideoMinutes
             self.maxMediaCapsules = Limits.freeMaxMediaCapsules
             self.aiAssistEnabled = false  // 过期时关闭AI辅助
@@ -141,8 +179,11 @@ class MembershipManager: ObservableObject {
             self.isPremium = isPremium
             self.memberType = memberType
             self.memberExpireAt = memberExpireAt
-            self.maxCapsules = memberMaxCapsules > 0 ? memberMaxCapsules : Limits.freeMaxCapsules
-            self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : Limits.freeMaxVideoMinutes
+            self.maxCapsules = memberMaxCapsules > 0 ? memberMaxCapsules : (isPremium ? Limits.premiumMaxCapsules : Limits.freeMaxCapsules)
+            self.maxTextCapsules = memberMaxTextCapsules > 0 ? memberMaxTextCapsules : (isPremium ? Limits.premiumMaxTextCapsules : Limits.freeMaxTextCapsules)
+            self.maxAudioCapsules = memberMaxAudioCapsules > 0 ? memberMaxAudioCapsules : (isPremium ? Limits.premiumMaxAudioCapsules : Limits.freeMaxAudioCapsules)
+            self.maxVideoCapsules = memberMaxVideoCapsules > 0 ? memberMaxVideoCapsules : (isPremium ? Limits.premiumMaxVideoCapsules : Limits.freeMaxVideoCapsules)
+            self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : (isPremium ? Limits.premiumMaxVideoMinutes : Limits.freeMaxVideoMinutes)
             self.maxMediaCapsules = isPremium ? Limits.premiumMaxMediaCapsules : Limits.freeMaxMediaCapsules
             self.aiAssistEnabled = aiAssistEnabled && isPremium  // 仅会员且服务器启用时开启
         }
@@ -171,6 +212,11 @@ class MembershipManager: ObservableObject {
     func canCreateCapsule(currentCount: Int) -> Bool {
         return currentCount < maxCapsules
     }
+
+    /// 检查是否可以创建指定类型胶囊
+    func canCreateCapsule(of type: TimeCapsule.CapsuleType, currentCount: Int) -> Bool {
+        return currentCount < capsuleLimit(for: type)
+    }
     
     /// 检查是否可以创建媒体胶囊（语音/视频）
     func canCreateMediaCapsule(currentMediaCount: Int) -> Bool {
@@ -181,10 +227,29 @@ class MembershipManager: ObservableObject {
     func remainingCapsules(currentCount: Int) -> Int {
         return max(0, maxCapsules - currentCount)
     }
+
+    /// 获取指定类型胶囊的剩余可创建数量
+    func remainingCapsules(of type: TimeCapsule.CapsuleType, currentCount: Int) -> Int {
+        return max(0, capsuleLimit(for: type) - currentCount)
+    }
     
     /// 获取剩余可创建媒体胶囊数量
     func remainingMediaCapsules(currentMediaCount: Int) -> Int {
         return max(0, maxMediaCapsules - currentMediaCount)
+    }
+
+    /// 获取指定类型胶囊的上限
+    func capsuleLimit(for type: TimeCapsule.CapsuleType) -> Int {
+        switch type {
+        case .text:
+            return maxTextCapsules
+        case .audio, .voice:
+            return maxAudioCapsules
+        case .video:
+            return maxVideoCapsules
+        case .image, .sticker:
+            return maxCapsules
+        }
     }
     
     /// 获取视频录制最大时长（秒）
@@ -199,7 +264,12 @@ class MembershipManager: ObservableObject {
     
     /// 检查是否可以创建遗嘱模块
     func canCreateWill(currentCount: Int) -> Bool {
-        return currentCount < currentWillLimit()
+        return canCreateCustomWill()
+    }
+
+    /// 检查是否可以创建自定义嘱托
+    func canCreateCustomWill() -> Bool {
+        return isPremium
     }
 
     /// 检查是否可以一键从云端恢复到本地（会员功能）
@@ -266,6 +336,9 @@ class MembershipManager: ObservableObject {
     /// ✅ 从服务器应用会员限制配置
     func applyLimits(
         freeMaxCapsules: Int,
+        freeMaxTextCapsules: Int,
+        freeMaxAudioCapsules: Int,
+        freeMaxVideoCapsules: Int,
         freeMaxMediaCapsules: Int,
         freeMaxVideoMinutes: Int,
         freeMaxWillModules: Int,
@@ -274,6 +347,9 @@ class MembershipManager: ObservableObject {
         freeDataExport: Bool,
         freeAiAssist: Bool,
         premiumMaxCapsules: Int,
+        premiumMaxTextCapsules: Int,
+        premiumMaxAudioCapsules: Int,
+        premiumMaxVideoCapsules: Int,
         premiumMaxMediaCapsules: Int,
         premiumMaxVideoMinutes: Int,
         premiumMaxWillModules: Int,
@@ -285,6 +361,9 @@ class MembershipManager: ObservableObject {
         // 更新服务器限制
         self.serverLimits = ServerLimits(
             freeMaxCapsules: freeMaxCapsules,
+            freeMaxTextCapsules: freeMaxTextCapsules,
+            freeMaxAudioCapsules: freeMaxAudioCapsules,
+            freeMaxVideoCapsules: freeMaxVideoCapsules,
             freeMaxMediaCapsules: freeMaxMediaCapsules,
             freeMaxVideoMinutes: freeMaxVideoMinutes,
             freeMaxWillModules: freeMaxWillModules,
@@ -293,6 +372,9 @@ class MembershipManager: ObservableObject {
             freeDataExport: freeDataExport,
             freeAiAssist: freeAiAssist,
             premiumMaxCapsules: premiumMaxCapsules,
+            premiumMaxTextCapsules: premiumMaxTextCapsules,
+            premiumMaxAudioCapsules: premiumMaxAudioCapsules,
+            premiumMaxVideoCapsules: premiumMaxVideoCapsules,
             premiumMaxMediaCapsules: premiumMaxMediaCapsules,
             premiumMaxVideoMinutes: premiumMaxVideoMinutes,
             premiumMaxWillModules: premiumMaxWillModules,
@@ -305,13 +387,16 @@ class MembershipManager: ObservableObject {
         // 如果当前是免费版，更新当前限制
         if !isPremium {
             maxCapsules = serverLimits.freeMaxCapsules
+            maxTextCapsules = serverLimits.freeMaxTextCapsules
+            maxAudioCapsules = serverLimits.freeMaxAudioCapsules
+            maxVideoCapsules = serverLimits.freeMaxVideoCapsules
             maxMediaCapsules = serverLimits.freeMaxMediaCapsules
             maxVideoMinutes = serverLimits.freeMaxVideoMinutes
         }
         
         print("✅ 会员限制已从服务器更新")
-        print("   免费版：\(freeMaxCapsules)胶囊/\(freeMaxMediaCapsules)媒体/\(freeMaxVideoMinutes)分钟")
-        print("   会员版：\(premiumMaxCapsules)胶囊/\(premiumMaxMediaCapsules)媒体/\(premiumMaxVideoMinutes)分钟")
+        print("   免费版：\(freeMaxCapsules)胶囊（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
+        print("   会员版：\(premiumMaxCapsules)胶囊（文字\(premiumMaxTextCapsules)/录音\(premiumMaxAudioCapsules)/视频\(premiumMaxVideoCapsules)）/\(premiumMaxVideoMinutes)分钟")
     }
     
     // MARK: - 会员类型显示
@@ -332,9 +417,7 @@ class MembershipManager: ObservableObject {
             return nil
         }
         
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return "有效期至：\(formatter.string(from: expireAt))"
+        return "有效期至：\(expireAt.chineseDateString())"
     }
     
     // MARK: - 缓存
@@ -345,7 +428,11 @@ class MembershipManager: ObservableObject {
             userDefaults.set(expireAt.timeIntervalSince1970, forKey: "membership.memberExpireAt")
         }
         userDefaults.set(maxCapsules, forKey: "membership.maxCapsules")
+        userDefaults.set(maxTextCapsules, forKey: "membership.maxTextCapsules")
+        userDefaults.set(maxAudioCapsules, forKey: "membership.maxAudioCapsules")
+        userDefaults.set(maxVideoCapsules, forKey: "membership.maxVideoCapsules")
         userDefaults.set(maxVideoMinutes, forKey: "membership.maxVideoMinutes")
+        userDefaults.set(maxMediaCapsules, forKey: "membership.maxMediaCapsules")
     }
     
     private func loadFromCache() {
@@ -358,9 +445,21 @@ class MembershipManager: ObservableObject {
         
         maxCapsules = userDefaults.integer(forKey: "membership.maxCapsules")
         if maxCapsules == 0 { maxCapsules = Limits.freeMaxCapsules }
+
+        maxTextCapsules = userDefaults.integer(forKey: "membership.maxTextCapsules")
+        if maxTextCapsules == 0 { maxTextCapsules = Limits.freeMaxTextCapsules }
+
+        maxAudioCapsules = userDefaults.integer(forKey: "membership.maxAudioCapsules")
+        if maxAudioCapsules == 0 { maxAudioCapsules = Limits.freeMaxAudioCapsules }
+
+        maxVideoCapsules = userDefaults.integer(forKey: "membership.maxVideoCapsules")
+        if maxVideoCapsules == 0 { maxVideoCapsules = Limits.freeMaxVideoCapsules }
         
         maxVideoMinutes = userDefaults.integer(forKey: "membership.maxVideoMinutes")
         if maxVideoMinutes == 0 { maxVideoMinutes = Limits.freeMaxVideoMinutes }
+
+        maxMediaCapsules = userDefaults.integer(forKey: "membership.maxMediaCapsules")
+        if maxMediaCapsules == 0 { maxMediaCapsules = Limits.freeMaxMediaCapsules }
     }
     
     // MARK: - 激活会员
@@ -372,10 +471,16 @@ class MembershipManager: ObservableObject {
         case "monthly":
             memberExpireAt = Calendar.current.date(byAdding: .month, value: 1, to: Date())
             maxCapsules = serverLimits.premiumMaxCapsules
+            maxTextCapsules = serverLimits.premiumMaxTextCapsules
+            maxAudioCapsules = serverLimits.premiumMaxAudioCapsules
+            maxVideoCapsules = serverLimits.premiumMaxVideoCapsules
             maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
         case "yearly":
             memberExpireAt = Calendar.current.date(byAdding: .year, value: 1, to: Date())
             maxCapsules = serverLimits.premiumMaxCapsules
+            maxTextCapsules = serverLimits.premiumMaxTextCapsules
+            maxAudioCapsules = serverLimits.premiumMaxAudioCapsules
+            maxVideoCapsules = serverLimits.premiumMaxVideoCapsules
             maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
         default:
             break
@@ -432,6 +537,9 @@ class MembershipManager: ObservableObject {
         memberType = nil
         memberExpireAt = nil
         maxCapsules = Limits.freeMaxCapsules
+        maxTextCapsules = Limits.freeMaxTextCapsules
+        maxAudioCapsules = Limits.freeMaxAudioCapsules
+        maxVideoCapsules = Limits.freeMaxVideoCapsules
         maxVideoMinutes = Limits.freeMaxVideoMinutes
         maxMediaCapsules = Limits.freeMaxMediaCapsules
         saveToCache()

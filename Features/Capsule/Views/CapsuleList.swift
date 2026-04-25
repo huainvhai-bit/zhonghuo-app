@@ -62,7 +62,8 @@ struct CapsuleList: View {
                             }) {
                                 HStack {
                                     Text("+")
-                                    Text(LocalizedStringKey("添加胶囊")).accessibilityLabel("添加新的时光胶囊")
+                                    Text(L10n.text("添加胶囊", en: "Add Capsule", ja: "カプセルを追加", ko: "캡슐 추가"))
+                                        .accessibilityLabel(L10n.text("添加新的时光胶囊", en: "Add a new time capsule", ja: "新しいタイムカプセルを追加", ko: "새 타임 캡슐 추가"))
                                 }
                                 .font(.system(size: 16, weight: .semibold))
                                 .frame(maxWidth: .infinity)
@@ -78,7 +79,7 @@ struct CapsuleList: View {
                     .padding(.vertical, 14)
                 }
             }
-            .navigationTitle("⏰ 时光胶囊")
+            .navigationTitle(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -86,17 +87,19 @@ struct CapsuleList: View {
                         Image(systemName: "capsule.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("时光胶囊")
+                        Text(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }
             }
         }
+        .stackNavigationStyle()
         .sheet(isPresented: $showingAddCapsule) {
             NavigationView {
                 CapsuleEditView(dataManager: dataManager)  // ✅ 新增模式
             }
+            .stackNavigationStyle()
         }
         .sheet(isPresented: $showingUpgradePrompt) {
             ZStack {
@@ -120,6 +123,7 @@ struct CapsuleList: View {
             NavigationView {
                 MembershipView()
             }
+            .stackNavigationStyle()
         }
         .sheet(isPresented: $showingUpgradeForShare) {
             ZStack {
@@ -132,10 +136,10 @@ struct CapsuleList: View {
                             .font(.system(size: 48))
                             .foregroundColor(Color(hex: "6366F1"))
                         
-                        Text("胶囊分享是会员功能")
+                        Text(L10n.text("胶囊分享是会员功能", en: "Capsule sharing is a premium feature", ja: "カプセル共有は会員機能です", ko: "캡슐 공유는 멤버십 기능입니다"))
                             .font(.system(size: 20, weight: .bold))
                         
-                        Text("升级到会员版，即可将时光胶囊分享给家人，让他们及时收到您的祝福")
+                        Text(L10n.text("升级到会员版，即可将时光胶囊分享给家人，让他们及时收到您的祝福", en: "Upgrade to premium to share capsules with your family and let them receive your message in time.", ja: "会員プランにアップグレードすると、タイムカプセルを家族と共有でき、タイムリーにメッセージを届けられます。", ko: "멤버십으로 업그레이드하면 타임 캡슐을 가족과 공유해 제때 메시지를 전달할 수 있습니다."))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -150,7 +154,7 @@ struct CapsuleList: View {
                             showingUpgradeForShare = false
                             showingMembershipView = true
                         }) {
-                            Text("升级会员")
+                            Text(L10n.text("升级会员", en: "Upgrade", ja: "アップグレード", ko: "업그레이드"))
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -162,7 +166,7 @@ struct CapsuleList: View {
                         Button(action: {
                             showingUpgradeForShare = false
                         }) {
-                            Text("稍后再说")
+                            Text(L10n.string(.later))
                                 .font(.system(size: 16))
                                 .foregroundColor(.secondary)
                         }
@@ -217,6 +221,7 @@ struct CapsuleList: View {
             NavigationView {
                 CapsuleEditView(dataManager: dataManager, existingCapsule: capsule)
             }
+            .stackNavigationStyle()
         }
         .sheet(item: $selectedCapsuleForDetail, onDismiss: {
             selectedCapsuleForDetail = nil
@@ -224,12 +229,13 @@ struct CapsuleList: View {
             NavigationView {
                 CapsuleDetailView(dataManager: dataManager, capsule: capsule)
             }
+            .stackNavigationStyle()
         }
-        .alert("删除胶囊", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {
+        .alert(L10n.string(.deleteCapsule), isPresented: $showingDeleteAlert) {
+            Button(L10n.string(.cancel), role: .cancel) {
                 capsuleToDelete = nil
             }
-            Button("删除", role: .destructive) {
+            Button(L10n.string(.deleteAction), role: .destructive) {
                 if let capsule = capsuleToDelete {
                     dataManager.capsules.removeAll { $0.id == capsule.id }
                     dataManager.saveCapsulesToFile()
@@ -237,7 +243,7 @@ struct CapsuleList: View {
                 capsuleToDelete = nil
             }
         } message: {
-            Text("确定要删除这个胶囊吗？此操作不可撤销。")
+            Text(L10n.text("确定要删除这个胶囊吗？此操作不可撤销。", en: "Delete this capsule? This cannot be undone.", ja: "このカプセルを削除しますか？この操作は元に戻せません。", ko: "이 캡슐을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."))
         }
         .refreshable {
             await viewModel.refresh()
@@ -268,12 +274,12 @@ struct CapsuleList: View {
                     HStack(spacing: 8) {
                         Image(systemName: "capsule.fill")
                             .font(.system(size: 20))
-                        Text("时光胶囊")
+                    Text(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
                             .font(.system(size: 20, weight: .bold))
                     }
                     .foregroundColor(.white)
                     
-                    Text("记录美好，留给未来的自己")
+                    Text(L10n.text("记录美好，留给未来的自己", en: "Capture memories for your future self", ja: "素敵な思い出を、未来の自分へ", ko: "미래의 자신에게 남길 아름다운 기억"))
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.85))
                 }
@@ -285,7 +291,7 @@ struct CapsuleList: View {
                     Text("\(dataManager.capsules.count)")
                         .font(.system(size: 36, weight: .bold))
                         .foregroundColor(.white)
-                    Text("个胶囊")
+                    Text(L10n.text("个胶囊", en: "capsules", ja: "個のカプセル", ko: "개의 캡슐"))
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.85))
                 }
@@ -391,7 +397,8 @@ struct CapsuleList: View {
                 .foregroundColor(.secondary)
             
             NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
-                Text("创建胶囊").accessibilityLabel("创建新的时光胶囊")
+                Text(L10n.text("创建胶囊", en: "Create capsule", ja: "カプセルを作成", ko: "캡슐 만들기"))
+                    .accessibilityLabel(L10n.text("创建新的时光胶囊", en: "Create a new time capsule", ja: "新しいタイムカプセルを作成", ko: "새 타임 캡슐 만들기"))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24)
@@ -536,9 +543,7 @@ struct CapsuleCard: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy 年 MM 月 dd 日 发送"
-        return formatter.string(from: date)
+        "\(date.chineseDateString()) 发送"
     }
 }
 
@@ -594,7 +599,7 @@ struct ShareCapsuleSheet: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(capsule.title)
                             .font(.system(size: 16, weight: .semibold))
-                        Text("选择要发送的家人")
+                        Text(L10n.text("选择要发送的家人", en: "Choose family members to send to", ja: "送信する家族を選択", ko: "보낼 가족을 선택하세요"))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -617,10 +622,10 @@ struct ShareCapsuleSheet: View {
                     HStack {
                         Image(systemName: isAllSelected ? "checkmark.square.fill" : "square")
                             .foregroundColor(isAllSelected ? Color(hex: "6366F1") : .secondary)
-                        Text("全选")
+                        Text(L10n.text("全选", en: "Select all", ja: "すべて選択", ko: "전체 선택"))
                             .foregroundColor(.primary)
                         Spacer()
-                        Text("\(selectedMembers.count)/\(familyMembers.count) 人已选")
+                        Text(L10n.text("\(selectedMembers.count)/\(familyMembers.count) 人已选", en: "\(selectedMembers.count)/\(familyMembers.count) selected", ja: "\(selectedMembers.count)/\(familyMembers.count) 人選択済み", ko: "\(selectedMembers.count)/\(familyMembers.count)명 선택됨"))
                             .foregroundColor(.secondary)
                     }
                     .padding(.horizontal)
@@ -632,14 +637,14 @@ struct ShareCapsuleSheet: View {
                         Image(systemName: "person.2.slash")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary)
-                        Text("暂无已绑定的家人")
+                        Text(L10n.text("暂无已绑定的家人", en: "No family bound yet", ja: "まだ家族が連携されていません", ko: "아직 연결된 가족이 없습니다"))
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        Text("请先在「家人守护」中添加家人")
+                        Text(L10n.text("请先在「家人守护」中添加家人", en: "Please add family members in Family", ja: "まず「家族」から家族を追加してください", ko: "먼저 가족 보호에서 가족을 추가하세요"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Button(action: onAddFamily) {
-                            Text("去添加家人")
+                            Text(L10n.text("去添加家人", en: "Add family", ja: "家族を追加", ko: "가족 추가"))
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
@@ -675,7 +680,7 @@ struct ShareCapsuleSheet: View {
                         let selected = familyMembers.filter { selectedMembers.contains($0.relatedUserId) }
                         onShare(selected)
                     }) {
-                        Text("发送给家人")
+                        Text(L10n.text("发送给家人", en: "Send to family", ja: "家族に送信", ko: "가족에게 보내기"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -686,23 +691,24 @@ struct ShareCapsuleSheet: View {
                     .disabled(selectedMembers.isEmpty)
                     
                     Button(action: onCancel) {
-                        Text("取消")
+                        Text(L10n.string(.cancel))
                             .font(.system(size: 16))
                             .foregroundColor(.secondary)
                     }
                 }
             }
             .padding()
-            .navigationTitle("分享胶囊")
+            .navigationTitle(L10n.text("分享胶囊", en: "Share Capsule", ja: "カプセルを共有", ko: "캡슐 공유"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("取消") {
+                    Button(L10n.string(.cancel)) {
                         onCancel()
                     }
                 }
             }
         }
+        .stackNavigationStyle()
     }
 }
 
@@ -799,10 +805,7 @@ struct CapsuleRow: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
-        return formatter.string(from: date)
+        "\(date.chineseDateString()) \(capsule.isSent ? "已发送" : "发送")"
     }
 }
 
@@ -1020,10 +1023,7 @@ struct SwipeableCapsuleCard: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = capsule.isSent ? "yyyy 年 MM 月 dd 日 已发送" : "yyyy 年 MM 月 dd 日 发送"
-        return formatter.string(from: date)
+        "\(date.chineseDateString()) \(capsule.isSent ? "已发送" : "发送")"
     }
 }
 
@@ -1031,4 +1031,5 @@ struct SwipeableCapsuleCard: View {
     NavigationView {
         CapsuleList(dataManager: DataManager.shared)
     }
+    .stackNavigationStyle()
 }

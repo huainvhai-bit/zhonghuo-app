@@ -13,6 +13,7 @@ struct ZhonghuoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var themeManager = ThemeManager.shared  // 使用 @StateObject 监听主题变化
+    @StateObject private var languageManager = AppLanguageManager.shared
     
     init() {
         // 设置全局导航栏背景色
@@ -31,6 +32,8 @@ struct ZhonghuoApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(themeManager)
+                .environmentObject(languageManager)
+                .environment(\.locale, Locale(identifier: languageManager.language.localeIdentifier))
                 .preferredColorScheme(themeManager.preferredColorScheme)
                 .onAppear {
                     Task {
@@ -133,6 +136,14 @@ struct ZhonghuoApp: App {
     /// 检查网络是否可用
     private func isNetworkAvailable() async -> Bool {
         return await DataManager.shared.checkNetworkConnectivity()
+    }
+}
+
+// MARK: - Navigation Style
+extension View {
+    /// iPad 也保持单栏全屏，避免系统把 NavigationView 变成分栏样式
+    func stackNavigationStyle() -> some View {
+        navigationViewStyle(StackNavigationViewStyle())
     }
 }
 
@@ -386,7 +397,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     /// 设置签到提醒通知
     private func setupCheckInNotifications() {
-        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
+        LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "App 启动")
     }
     
     // 后台任务注册（在 didFinishLaunchingWithOptions 之后立即注册）
@@ -408,7 +419,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         task.expirationHandler = {
             task.setTaskCompleted(success: false)
         }
-        LifeCheckStatusManager.shared.scheduleCheckInNotifications()
+        LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "后台任务刷新")
         task.setTaskCompleted(success: true)
     }
     
