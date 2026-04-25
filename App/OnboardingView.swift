@@ -14,32 +14,32 @@ struct OnboardingView: View {
     let pages: [OnboardingPageItem] = [
         OnboardingPageItem(
             icon: "hand.thumbsup.fill",
-            title: "安全签到",
-            description: "每 48 小时签到一次，让家人安心。如果忘记签到，紧急联系人会收到提醒。",
+            title: L10n.string(.onboardingSafeCheckIn),
+            description: L10n.string(.onboardingSafeCheckInDesc),
             color: Color(hex: "34C759")
         ),
         OnboardingPageItem(
             icon: "capsule.fill",
-            title: "时光胶囊",
-            description: "写下想说的话，设置未来的发送时间。让爱与关怀穿越时空，温暖每一个重要时刻。",
+            title: L10n.string(.onboardingCapsule),
+            description: L10n.string(.onboardingCapsuleDesc),
             color: Color(hex: "AF52DE")
         ),
         OnboardingPageItem(
             icon: "doc.text.fill",
-            title: "遗嘱嘱托",
-            description: "提前规划财产分配、丧葬意愿等身后事。内置模板帮助你快速完成，让家人少一份负担。",
+            title: L10n.string(.onboardingWill),
+            description: L10n.string(.onboardingWillDesc),
             color: Color(hex: "007AFF")
         ),
         OnboardingPageItem(
             icon: "person.2.fill",
-            title: "见证人",
-            description: "邀请可信赖的人作为见证人，增强遗嘱的法律效力。支持多人管理，随时更新状态。",
+            title: L10n.string(.onboardingFamilyGuard),
+            description: L10n.string(.onboardingFamilyGuardDesc),
             color: Color(hex: "FF9500")
         ),
         OnboardingPageItem(
             icon: "heart.fill",
-            title: "温暖陪伴",
-            description: "终活不是终点，而是对生命的尊重。我们陪你规划每一天，让爱没有遗憾。",
+            title: L10n.string(.onboardingCompanion),
+            description: L10n.string(.onboardingCompanionDesc),
             color: Color(hex: "FF3B30")
         )
     ]
@@ -79,7 +79,7 @@ struct OnboardingView: View {
                                 currentPage += 1
                             }
                         }) {
-                            Text("下一页")
+                            Text(L10n.string(.nextPage))
                                 .font(.system(size: 17, weight: .semibold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -94,7 +94,7 @@ struct OnboardingView: View {
                                 currentPage = pages.count - 1
                             }
                         }) {
-                            Text("跳过")
+                            Text(L10n.string(.skip))
                                 .font(.system(size: 15))
                                 .foregroundColor(.secondary)
                         }
@@ -106,7 +106,7 @@ struct OnboardingView: View {
                         }) {
                             HStack {
                                 Image(systemName: "checkmark")
-                                Text("开始使用")
+                                Text(L10n.string(.startUsing))
                             }
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
