@@ -106,10 +106,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// - 活动类型：其他导航（自动优化定位策略）
     private func setupLocationManager() {
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = AppConfig.locationDistanceFilter
         locationManager.activityType = .otherNavigation  // 自动优化定位策略
-        locationManager.pausesLocationUpdatesAutomatically = false
         
         locationAuthStatus = CLLocationManager.authorizationStatus()
     }
@@ -171,7 +170,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() -> String? {
-        guard let location = bestAvailableLocation() else { return nil }
+        guard let location = currentLocation ?? locationManager.location else { return nil }
         return "\(location.coordinate.latitude), \(location.coordinate.longitude)"
     }
     
@@ -255,9 +254,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("🔄 开始持续定位模式（查找我的 iPhone 风格）")
         
         // 配置定位：最高精度
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = AppConfig.continuousLocationDistanceFilter
-        locationManager.pausesLocationUpdatesAutomatically = false
         
         // 开始定位
         locationManager.startUpdatingLocation()
@@ -286,7 +284,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     /// 上传最新位置（即使用户未移动）- 定时器调用
     private func uploadLatestLocation() {
-        guard let location = bestAvailableLocation() else {
+        guard let location = currentLocation ?? locationManager.location else {
             print("⚠️ 暂无可用位置")
             return
         }
@@ -365,9 +363,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        if shouldAcceptLocation(location, comparedWith: currentLocation) {
-            currentLocation = location
-        }
+        currentLocation = location
         
         // 持续定位模式下，处理每个位置更新（但不递增计数器）
         if isContinuouslyUpdating {
@@ -440,46 +436,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    /// 选择当前最可信的定位结果，避免使用过期缓存
-    private func bestAvailableLocation() -> CLLocation? {
-        let candidates = [currentLocation, locationManager.location].compactMap { $0 }
-            .filter { location in
-                guard location.horizontalAccuracy >= 0 else { return false }
-                let age = Date().timeIntervalSince(location.timestamp)
-                return age <= AppConfig.maxLocationAge
-        }
-
-        return candidates.min { lhs, rhs in
-            let lhsAccuracy = lhs.horizontalAccuracy
-            let rhsAccuracy = rhs.horizontalAccuracy
-            if lhsAccuracy == rhsAccuracy {
-                return lhs.timestamp > rhs.timestamp
-            }
-            return lhsAccuracy < rhsAccuracy
-        }
-    }
-
-    /// 判断是否应该用新定位覆盖当前定位
-    private func shouldAcceptLocation(_ newLocation: CLLocation, comparedWith currentLocation: CLLocation?) -> Bool {
-        guard newLocation.horizontalAccuracy >= 0 else { return false }
-        guard newLocation.coordinate.latitude != 0, newLocation.coordinate.longitude != 0 else { return false }
-        guard Date().timeIntervalSince(newLocation.timestamp) <= AppConfig.maxLocationAge else { return false }
-
-        guard let currentLocation = currentLocation else { return true }
-
-        if currentLocation.horizontalAccuracy < 0 {
-            return true
-        }
-
-        if newLocation.horizontalAccuracy <= currentLocation.horizontalAccuracy {
-            return true
-        }
-
-        let newAge = Date().timeIntervalSince(newLocation.timestamp)
-        let currentAge = Date().timeIntervalSince(currentLocation.timestamp)
-        return newAge <= currentAge
-    }
-    
     // MARK: - GraphQL 辅助方法
     
     /// 发送带 Token 的 GraphQL 请求（静态方法）

@@ -39,10 +39,10 @@ struct AppConfig {
     // MARK: - 位置服务配置
     
     /// 位置更新距离过滤器（米）- 移动多少米才更新
-    static let locationDistanceFilter: Double = 5
+    static let locationDistanceFilter: Double = 10
     
     /// 持续定位时的距离过滤器（米）
-    static let continuousLocationDistanceFilter: Double = 1
+    static let continuousLocationDistanceFilter: Double = 5
     
     /// 位置上传间隔（秒）
     static let locationUploadInterval: TimeInterval = 3
