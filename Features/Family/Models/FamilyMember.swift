@@ -130,3 +130,15 @@ struct DeviceInfo: Codable {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 }
+
+/// 家人邀请码预览信息
+struct FamilyInvitePreview: Identifiable, Codable {
+    var id: String
+    var inviteCode: String
+    var inviterId: String
+    var inviterName: String
+    var inviterPhone: String
+    var relationType: String
+    var requiresConfirmation: Bool
+    var status: String
+}

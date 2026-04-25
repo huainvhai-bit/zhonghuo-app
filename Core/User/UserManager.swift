@@ -41,6 +41,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // 🔴 防重复签到标志
     private var isAutoSigningIn = false
     private var lastAutoSignInTime: Date = .distantPast
+    private var lastAutoSignInRequestTime: Date = .distantPast
     
     // 🔴 防重复签到：公共访问方法
     var lastAutoSignInTimeValue: Date {
@@ -100,14 +101,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     /// 配置定位管理器
-    /// - 授权级别：导航级精度（kCLLocationAccuracyBestForNavigation）
-    /// - 距离过滤器：50 米（移动 50 米以上才更新）
+    /// - 授权级别：高精度定位
+    /// - 距离过滤器：按配置项控制，默认更灵敏
     /// - 活动类型：其他导航（自动优化定位策略）
     private func setupLocationManager() {
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation  // 导航级精度
-        locationManager.distanceFilter = 50  // 移动 50 米以上再更新
+        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        locationManager.distanceFilter = AppConfig.locationDistanceFilter
         locationManager.activityType = .otherNavigation  // 自动优化定位策略
+        locationManager.pausesLocationUpdatesAutomatically = false
         
         locationAuthStatus = CLLocationManager.authorizationStatus()
     }
@@ -152,7 +154,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
               locationAuthStatus == .authorizedWhenInUse else {
             return
         }
-        
+
         if DebugConfig.enableLogs {
             print("🔔 请求后台定位权限")
         }
@@ -169,7 +171,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() -> String? {
-        guard let location = currentLocation else { return nil }
+        guard let location = bestAvailableLocation() else { return nil }
         return "\(location.coordinate.latitude), \(location.coordinate.longitude)"
     }
     
@@ -253,8 +255,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("🔄 开始持续定位模式（查找我的 iPhone 风格）")
         
         // 配置定位：最高精度
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 5  // 移动 5 米更新
+        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        locationManager.distanceFilter = AppConfig.continuousLocationDistanceFilter
+        locationManager.pausesLocationUpdatesAutomatically = false
         
         // 开始定位
         locationManager.startUpdatingLocation()
@@ -283,7 +286,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     /// 上传最新位置（即使用户未移动）- 定时器调用
     private func uploadLatestLocation() {
-        guard let location = locationManager.location else {
+        guard let location = bestAvailableLocation() else {
             print("⚠️ 暂无可用位置")
             return
         }
@@ -362,6 +365,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        if shouldAcceptLocation(location, comparedWith: currentLocation) {
+            currentLocation = location
+        }
         
         // 持续定位模式下，处理每个位置更新（但不递增计数器）
         if isContinuouslyUpdating {
@@ -432,6 +438,46 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         } catch {
             print("❌ 位置上传失败：\(error)")
         }
+    }
+
+    /// 选择当前最可信的定位结果，避免使用过期缓存
+    private func bestAvailableLocation() -> CLLocation? {
+        let candidates = [currentLocation, locationManager.location].compactMap { $0 }
+            .filter { location in
+                guard location.horizontalAccuracy >= 0 else { return false }
+                let age = Date().timeIntervalSince(location.timestamp)
+                return age <= AppConfig.maxLocationAge
+        }
+
+        return candidates.min { lhs, rhs in
+            let lhsAccuracy = lhs.horizontalAccuracy
+            let rhsAccuracy = rhs.horizontalAccuracy
+            if lhsAccuracy == rhsAccuracy {
+                return lhs.timestamp > rhs.timestamp
+            }
+            return lhsAccuracy < rhsAccuracy
+        }
+    }
+
+    /// 判断是否应该用新定位覆盖当前定位
+    private func shouldAcceptLocation(_ newLocation: CLLocation, comparedWith currentLocation: CLLocation?) -> Bool {
+        guard newLocation.horizontalAccuracy >= 0 else { return false }
+        guard newLocation.coordinate.latitude != 0, newLocation.coordinate.longitude != 0 else { return false }
+        guard Date().timeIntervalSince(newLocation.timestamp) <= AppConfig.maxLocationAge else { return false }
+
+        guard let currentLocation = currentLocation else { return true }
+
+        if currentLocation.horizontalAccuracy < 0 {
+            return true
+        }
+
+        if newLocation.horizontalAccuracy <= currentLocation.horizontalAccuracy {
+            return true
+        }
+
+        let newAge = Date().timeIntervalSince(newLocation.timestamp)
+        let currentAge = Date().timeIntervalSince(currentLocation.timestamp)
+        return newAge <= currentAge
     }
     
     // MARK: - GraphQL 辅助方法
@@ -580,21 +626,20 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
-    func performAutoSignIn() {
+    func performAutoSignIn() -> Bool {
         if currentUser == nil {
             loadUser()
         }
 
-        // 🔴 防重复：5 分钟（300 秒）内不重复签到
+        // 🔴 防重复：同一轮激活内只处理一次自动签到请求
         let now = Date()
-        let autoSignInCooldown: TimeInterval = 300 // 5 分钟
-        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < autoSignInCooldown {
-            print("⏭️ 跳过重复签到（防重复机制，5分钟内不重复签到）")
-            return
+        let requestDebounce: TimeInterval = 2
+        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInRequestTime) < requestDebounce {
+            print("⏭️ 跳过重复自动签到请求（同一轮激活内已处理）")
+            return false
         }
-        
+        lastAutoSignInRequestTime = now
         isAutoSigningIn = true
-        lastAutoSignInTime = now
         
         defer {
             isAutoSigningIn = false
@@ -615,7 +660,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         guard let user = currentUser else {
             writeLog("❌ 自动签到失败：currentUser 为 nil")
-            return
+            return false
         }
         
         let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
@@ -625,7 +670,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let hoursRemaining = (requiredInterval - timeSinceLastCheckIn) / 3600
         
         writeLog("👤 当前用户：\(user.name)")
-        writeLog("📅 上次签到：\(user.lastCheckInDate?.formatted() ?? "从未签到")")
+        writeLog("📅 上次签到：\(user.lastCheckInDate?.chineseDateTimeString() ?? "从未签到")")
         writeLog("⏰ 签到间隔：\(intervalHours) 小时")
         writeLog("📊 距离上次签到：\(String(format: "%.1f", timeSinceLastCheckIn / 3600)) 小时")
         writeLog("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
@@ -633,33 +678,34 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 🎯 核心逻辑：打开 App 自动重置倒计时（证明用户安全）
         // 无论是否过期，只要打开 App 就自动签到（重置倒计时）
         writeLog("🔄 打开 App 自动签到，重置倒计时（证明用户安全）...")
-        let result = recordCheckIn(isAuto: true)
+        let result = recordCheckIn(isAuto: true, bypassCooldown: true)
         if case .success = result {
             writeLog("✅ 自动签到成功！倒计时已重置为 \(intervalHours) 小时")
 
             // 🔄 通知 HomeStatusView 刷新倒计时
             NotificationCenter.default.post(name: NSNotification.Name("CheckInDidComplete"), object: nil)
+            return true
         } else {
             writeLog("❌ 自动签到失败：\(result)")
+            return false
         }
     }
     
     @MainActor
-    func performAutoCheckIn() {
+    func performAutoCheckIn() -> Bool {
         if currentUser == nil {
             loadUser()
         }
 
-        // 🔴 防重复：5 分钟（300 秒）内不重复签到
+        // 🔴 防重复：同一轮激活内只处理一次自动签到请求
         let now = Date()
-        let autoSignInCooldown: TimeInterval = 300 // 5 分钟
-        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInTime) < autoSignInCooldown {
-            print("⏭️ performAutoCheckIn 跳过重复签到（防重复机制，5分钟内不重复签到）")
-            return
+        let requestDebounce: TimeInterval = 2
+        if isAutoSigningIn || now.timeIntervalSince(lastAutoSignInRequestTime) < requestDebounce {
+            print("⏭️ performAutoCheckIn 跳过重复签到（同一轮激活内已处理）")
+            return false
         }
-        
+        lastAutoSignInRequestTime = now
         isAutoSigningIn = true
-        lastAutoSignInTime = now
         
         defer {
             isAutoSigningIn = false
@@ -680,7 +726,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
         guard let user = currentUser else {
             writeLog("⚠️ 自动签到暂缓：用户资料尚未就绪")
-            return
+            return false
         }
         
         let lastCheckIn = user.lastCheckInDate ?? Date.distantPast
@@ -690,45 +736,35 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let hoursRemaining = (requiredInterval - timeSinceLastCheckIn) / 3600
         
         writeLog("👤 当前用户：\(user.name)")
-        writeLog("📅 上次签到：\(user.lastCheckInDate?.formatted() ?? "从未签到")")
+        writeLog("📅 上次签到：\(user.lastCheckInDate?.chineseDateTimeString() ?? "从未签到")")
         writeLog("⏰ 签到间隔：\(intervalHours) 小时")
         writeLog("📊 距离上次签到：\(String(format: "%.1f", timeSinceLastCheckIn / 3600)) 小时")
         writeLog("📊 剩余时间：\(String(format: "%.1f", hoursRemaining)) 小时")
         
         // 🎯 核心逻辑：打开 App 自动重置倒计时（证明用户安全）
         writeLog("🔄 自动重置签到倒计时（证明用户安全）...")
-        let result = recordCheckIn(isAuto: true)
+        let result = recordCheckIn(isAuto: true, bypassCooldown: true)
         if case .success = result {
             writeLog("✅ 自动签到成功！倒计时已重置")
+            return true
         } else {
             print("❌ 自动签到失败：\(result)")
+            return false
         }
-    }
-    
-    // 推送签到提醒
-    @MainActor
-    private func scheduleCheckInReminder(hoursRemaining: Double) {
-        let hoursLeft = Int(hoursRemaining)
-        let message = "您的签到还剩 \(hoursLeft) 小时，请及时签到"
-        
-        print("🔔 推送提醒：\(message)")
-        
-        // 📱 使用本地通知（倒计时剩余 12 小时时开始提醒，每 1 小时推送一次）
-        NotificationManager.shared.scheduleCheckInReminders(hoursRemaining: hoursRemaining)
     }
     
     // 紧急联系人功能已移除（由家人替代）
     
     @MainActor
-    func recordCheckIn(isAuto: Bool = false) -> Result<Void, Error> {
+    func recordCheckIn(isAuto: Bool = false, bypassCooldown: Bool = false) -> Result<Void, Error> {
         if currentUser == nil {
             loadUser()
         }
 
-        // 🔴 防重复签到：5 分钟（300 秒）内不重复签到
+        // 🔴 防重复签到：仅在未显式绕过时保留短冷却
         let now = Date()
         let autoCheckInCooldown: TimeInterval = 300 // 5 分钟
-        if now.timeIntervalSince(lastAutoSignInTime) < autoCheckInCooldown {
+        if !bypassCooldown, now.timeIntervalSince(lastAutoSignInTime) < autoCheckInCooldown {
             print("⏭️ recordCheckIn 跳过重复签到（\(Int(autoCheckInCooldown - now.timeIntervalSince(lastAutoSignInTime))) 秒后可再次签到）")
             return .success(())  // 返回成功但不执行签到
         }
@@ -763,6 +799,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         if saveUser(user) {
             print("✅ 用户数据已保存到本地")
+            UserDefaults.standard.removeObject(forKey: "checkinFallbackReminderScheduled")
+            LifeCheckStatusManager.shared.lastCheckInDate = user.lastCheckInDate
+            LifeCheckStatusManager.shared.requestNotificationRefresh(reason: isAuto ? "自动签到记录" : "手动签到记录")
             
             // 同步到服务器
             Task {

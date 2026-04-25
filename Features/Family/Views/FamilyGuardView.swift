@@ -27,6 +27,8 @@ struct FamilyGuardView: View {
     @State private var inviteCode = ""
     @State private var qrImage: UIImage?
     @State private var showingFamilyArchive = false  // 📚 家族档案
+    @State private var showingInviteConfirmation = false
+    @State private var pendingInvitePreview: FamilyInvitePreview?
     
     var body: some View {
         NavigationView {
@@ -77,6 +79,27 @@ struct FamilyGuardView: View {
                     Button(action: { showingFamilyArchive = true }) {
                         Image(systemName: "folder.fill")
                     }
+                }
+            }
+            .confirmationDialog(
+                L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
+                isPresented: $showingInviteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인")) {
+                    Task { await acceptPendingInvite() }
+                }
+                Button(L10n.string(.cancel), role: .cancel) {
+                    pendingInvitePreview = nil
+                }
+            } message: {
+                if let preview = pendingInvitePreview {
+                    Text(L10n.text(
+                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）确认绑定，确认后双方才会正式成为家人关系。",
+                        en: "You are about to confirm binding with \(preview.inviterName) (\(preview.inviterPhone)). Only after confirmation will both sides become family members.",
+                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）との連携を確認します。確認後に双方が正式に家族関係になります。",
+                        ko: "\(preview.inviterName)(\(preview.inviterPhone))와의 연결을 확인합니다. 확인 후 양쪽이 정식 가족 관계가 됩니다."
+                    ))
                 }
             }
             .sheet(isPresented: $showingFamilyArchive) {
@@ -598,6 +621,21 @@ struct FamilyGuardView: View {
         return ""
     }
 
+    private func makeInvitePreview(from result: [String: Any]) -> FamilyInvitePreview? {
+        guard let relationId = result["relationId"] as? String, !relationId.isEmpty else { return nil }
+
+        return FamilyInvitePreview(
+            id: relationId,
+            inviteCode: result["inviteCode"] as? String ?? "",
+            inviterId: result["inviterId"] as? String ?? "",
+            inviterName: result["inviterName"] as? String ?? "",
+            inviterPhone: result["inviterPhone"] as? String ?? "",
+            relationType: result["relationType"] as? String ?? "family",
+            requiresConfirmation: result["requiresConfirmation"] as? Bool ?? false,
+            status: result["status"] as? String ?? "pending"
+        )
+    }
+
     private func parseBackendDate(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
 
@@ -630,54 +668,67 @@ struct FamilyGuardView: View {
             showingError = true
             return
         }
-        
+
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             errorMessage = L10n.string(.noAccount)
             showingError = true
             return
         }
-        
+
         guard !DataManager.apiURL.isEmpty else {
             errorMessage = L10n.string(.pleaseRetry)
             showingError = true
             return
         }
-        
+
         do {
-            let query = """
-            mutation($inviteCode: String!) {
-                bindFamilyByInviteCode(inviteCode: $inviteCode) {
-                    success
-                    message
-                    data {
-                        members { id name phone relation status createdAt }
-                        invited { id name phone relation status createdAt }
-                    }
-                }
-            }
-            """
-            
-            let variables: [String: Any] = ["inviteCode": inviteCode]
-            let result = try await GraphQLClient.shared.query(query, variables: variables)
+            let result = try await DataManager.shared.bindFamilyByInviteCode(inviteCode: inviteCode)
             print("📡 GraphQL 绑定家人响应：\(result)")
-            
-            if let data = result["data"] as? [String: Any],
-               let bindFamily = data["bindFamilyByInviteCode"] as? [String: Any] {
-                let success = bindFamily["success"] as? Bool ?? false
-                if success {
-                    _ = try? await DataManager.shared.refreshFamilyMembers()
-                    await loadFamilyListAsync()
-                    return
-                } else {
-                    errorMessage = bindFamily["message"] as? String ?? L10n.string(.bindFailed)
-                }
+
+            let success = result["success"] as? Bool ?? false
+            guard success else {
+                errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
+                showingError = true
+                return
+            }
+
+            if let preview = makeInvitePreview(from: result), preview.requiresConfirmation {
+                pendingInvitePreview = preview
+                showingInviteConfirmation = true
+                return
+            }
+
+            _ = try? await DataManager.shared.refreshFamilyMembers()
+            await loadFamilyListAsync()
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    @MainActor
+    private func acceptPendingInvite() async {
+        guard let preview = pendingInvitePreview else { return }
+
+        do {
+            let result = try await DataManager.shared.acceptFamilyInvite(relationId: preview.id)
+            print("📡 家人关系确认响应：\(result)")
+
+            let success = result["success"] as? Bool ?? false
+            if success {
+                _ = try? await DataManager.shared.refreshFamilyMembers()
+                pendingInvitePreview = nil
+                showingInviteConfirmation = false
+                await loadFamilyListAsync()
+            } else {
+                errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
+                showingError = true
             }
         } catch {
             errorMessage = error.localizedDescription
+            showingError = true
         }
-        
-        showingError = true
     }
 
     private func formatDate(_ date: Date) -> String {
@@ -1072,6 +1123,8 @@ struct ManualInputInviteCodeView: View {
     @State private var isBinding = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showingInviteConfirmation = false
+    @State private var pendingInvitePreview: FamilyInvitePreview?
     
     var onBound: (() -> Void)?
     var onCancel: (() -> Void)?
@@ -1144,6 +1197,27 @@ struct ManualInputInviteCodeView: View {
         .alert(L10n.string(.bindFailed), isPresented: $showError) {
             Button(L10n.string(.confirm), role: .cancel) { }
         } message: { Text(errorMessage) }
+        .confirmationDialog(
+            L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
+            isPresented: $showingInviteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인")) {
+                Task { await confirmPendingInvite() }
+            }
+            Button(L10n.string(.cancel), role: .cancel) {
+                pendingInvitePreview = nil
+            }
+        } message: {
+            if let preview = pendingInvitePreview {
+                Text(L10n.text(
+                    "将与 \(preview.inviterName)（\(preview.inviterPhone)）确认绑定，确认后双方才会正式成为家人关系。",
+                    en: "You are about to confirm binding with \(preview.inviterName) (\(preview.inviterPhone)). Only after confirmation will both sides become family members.",
+                    ja: "\(preview.inviterName)（\(preview.inviterPhone)）との連携を確認します。確認後に双方が正式に家族関係になります。",
+                    ko: "\(preview.inviterName)(\(preview.inviterPhone))와의 연결을 확인합니다. 확인 후 양쪽이 정식 가족 관계가 됩니다."
+                ))
+            }
+        }
     }
     
     private func bindInviteCode() {
@@ -1158,22 +1232,18 @@ struct ManualInputInviteCodeView: View {
         isBinding = true
         Task {
             do {
-                let query = """
-                mutation($inviteCode: String!) {
-                    bindFamilyByInviteCode(inviteCode: $inviteCode) {
-                        success
-                        message
-                        data {
-                            members { id name phone relation status createdAt }
-                            invited { id name phone relation status createdAt }
+                let result = try await DataManager.shared.bindFamilyByInviteCode(inviteCode: inviteCode)
+                if let success = result["success"] as? Bool, success {
+                    if let preview = makeInvitePreview(from: result), preview.requiresConfirmation {
+                        await MainActor.run {
+                            pendingInvitePreview = preview
+                            showingInviteConfirmation = true
+                            isBinding = false
                         }
+                        return
                     }
-                }
-                """
-                let result = try await GraphQLClient.shared.query(query, variables: ["inviteCode": inviteCode])
-                if let data = result["data"] as? [String: Any],
-                   let bindFamily = data["bindFamilyByInviteCode"] as? [String: Any],
-                   let success = bindFamily["success"] as? Bool, success {
+
+                    _ = try? await DataManager.shared.refreshFamilyMembers()
                     await MainActor.run { onBound?(); dismiss() }
                     return
                 }
@@ -1183,5 +1253,43 @@ struct ManualInputInviteCodeView: View {
             }
             await MainActor.run { isBinding = false }
         }
+    }
+
+    @MainActor
+    private func confirmPendingInvite() async {
+        guard let preview = pendingInvitePreview else { return }
+        isBinding = true
+        showingInviteConfirmation = false
+
+        do {
+            let result = try await DataManager.shared.acceptFamilyInvite(relationId: preview.id)
+            if let success = result["success"] as? Bool, success {
+                _ = try? await DataManager.shared.refreshFamilyMembers()
+                await MainActor.run { onBound?(); dismiss() }
+                return
+            }
+            errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
+            showError = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+
+        isBinding = false
+    }
+
+    private func makeInvitePreview(from result: [String: Any]) -> FamilyInvitePreview? {
+        guard let relationId = result["relationId"] as? String, !relationId.isEmpty else { return nil }
+
+        return FamilyInvitePreview(
+            id: relationId,
+            inviteCode: result["inviteCode"] as? String ?? inviteCode,
+            inviterId: result["inviterId"] as? String ?? "",
+            inviterName: result["inviterName"] as? String ?? "",
+            inviterPhone: result["inviterPhone"] as? String ?? "",
+            relationType: result["relationType"] as? String ?? "family",
+            requiresConfirmation: result["requiresConfirmation"] as? Bool ?? false,
+            status: result["status"] as? String ?? "pending"
+        )
     }
 }

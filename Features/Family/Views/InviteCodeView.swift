@@ -31,7 +31,7 @@ struct InviteCodeView: View {
                     errorView
                 }
             }
-            .navigationTitle("我的邀请码")
+            .navigationTitle(L10n.text("我的邀请码", en: "My invite code", ja: "招待コード", ko: "내 초대 코드"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -40,7 +40,7 @@ struct InviteCodeView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") { dismiss() }
+                    Button(L10n.string(.done)) { dismiss() }
                 }
             }
             .onAppear {
@@ -52,8 +52,8 @@ struct InviteCodeView: View {
                     dismiss()
                 })
             }
-            .alert("错误", isPresented: .constant(!errorMessage.isEmpty)) {
-                Button("确定") {
+            .alert(L10n.string(.error), isPresented: .constant(!errorMessage.isEmpty)) {
+                Button(L10n.string(.confirm)) {
                     errorMessage = ""
                     dismiss()
                 }
@@ -61,6 +61,7 @@ struct InviteCodeView: View {
                 Text(errorMessage)
             }
         }
+        .stackNavigationStyle()
     }
     
     // MARK: - 加载状态
@@ -68,7 +69,7 @@ struct InviteCodeView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.2)
-            Text("正在生成邀请码...")
+            Text(L10n.string(.qrGenerating))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
@@ -81,7 +82,7 @@ struct InviteCodeView: View {
                 .font(.system(size: 50))
                 .foregroundColor(.orange)
             
-            Text("生成失败")
+            Text(L10n.text("生成失败", en: "Failed to generate", ja: "生成に失敗しました", ko: "생성 실패"))
                 .font(.system(size: 18, weight: .medium))
             
             Text(errorMessage)
@@ -90,7 +91,7 @@ struct InviteCodeView: View {
                 .multilineTextAlignment(.center)
             
             Button(action: loadInviteCode) {
-                Text("重试")
+                Text(L10n.text("重试", en: "Retry", ja: "再試行", ko: "다시 시도"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 30)
@@ -112,10 +113,10 @@ struct InviteCodeView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.indigo)
                     
-                    Text("邀请家人")
+                    Text(L10n.text("邀请家人", en: "Invite family", ja: "家族を招待", ko: "가족 초대"))
                         .font(.system(size: 20, weight: .bold))
                     
-                    Text("扫描二维码或分享邀请码")
+                    Text(L10n.text("扫描二维码或分享邀请码", en: "Scan the QR code or share the invite code", ja: "QRコードを読み取るか、招待コードを共有してください", ko: "QR 코드를 스캔하거나 초대 코드를 공유하세요"))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -141,7 +142,7 @@ struct InviteCodeView: View {
                         .frame(width: 220, height: 220)
                     }
                     
-                    Text("扫描二维码快速绑定")
+                    Text(L10n.text("扫描二维码快速绑定", en: "Scan the QR code to bind quickly", ja: "QRコードを読み取ってすばやく連携", ko: "QR 코드를 스캔해 빠르게 연결"))
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
@@ -149,7 +150,7 @@ struct InviteCodeView: View {
                 
                 // 邀请码卡片（放在二维码下面）
                 VStack(spacing: 10) {
-                    Text("邀请码")
+                    Text(L10n.string(.inviteCode))
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                     
@@ -175,7 +176,7 @@ struct InviteCodeView: View {
                     .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                     
                     if copied {
-                        Text("✓ 已复制到剪贴板")
+                        Text(L10n.text("✓ 已复制到剪贴板", en: "✓ Copied to clipboard", ja: "✓ クリップボードにコピーしました", ko: "✓ 클립보드에 복사됨"))
                             .font(.system(size: 12))
                             .foregroundColor(.green)
                     }
@@ -187,7 +188,7 @@ struct InviteCodeView: View {
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(height: 1)
-                    Text("或")
+                    Text(L10n.text("或", en: "or", ja: "または", ko: "또는"))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 8)
@@ -204,7 +205,7 @@ struct InviteCodeView: View {
                 }) {
                     HStack {
                         Image(systemName: "link")
-                        Text("立即绑定")
+                        Text(L10n.string(.bindNow))
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
@@ -231,15 +232,15 @@ struct InviteCodeView: View {
                     HStack {
                         Image(systemName: "lightbulb")
                             .foregroundColor(.orange)
-                        Text("如何邀请家人？")
+                    Text(L10n.text("如何邀请家人？", en: "How do I invite family?", ja: "家族を招待するには？", ko: "가족은 어떻게 초대하나요?"))
                             .font(.system(size: 15, weight: .semibold))
                     }
                     
                     VStack(alignment: .leading, spacing: 10) {
-                        InstructionRow(number: 1, text: "分享邀请码或二维码给家人")
-                        InstructionRow(number: 2, text: "家人在 App 中输入邀请码或扫码")
-                        InstructionRow(number: 3, text: "双方自动成为家人关系")
-                        InstructionRow(number: 4, text: "可以互相查看设备信息和位置")
+                        InstructionRow(number: 1, text: L10n.text("分享邀请码或二维码给家人", en: "Share the invite code or QR code with your family.", ja: "招待コードまたはQRコードを家族に共有します。", ko: "초대 코드나 QR 코드를 가족에게 공유하세요."))
+                        InstructionRow(number: 2, text: L10n.text("家人在 App 中输入邀请码或扫码", en: "Family members enter the code or scan it in the app.", ja: "家族はアプリでコードを入力するか、スキャンします。", ko: "가족은 앱에서 코드를 입력하거나 스캔합니다."))
+                        InstructionRow(number: 3, text: L10n.text("对方确认后才会正式成为家人关系", en: "Only after the other side confirms will both sides become family members.", ja: "相手が確認してから正式に家族関係になります。", ko: "상대방이 확인한 후에야 정식 가족 관계가 됩니다."))
+                        InstructionRow(number: 4, text: L10n.text("可以互相查看设备信息和位置", en: "You can view each other's device info and location.", ja: "お互いの端末情報や位置情報を確認できます。", ko: "서로의 기기 정보와 위치를 볼 수 있습니다."))
                     }
                     .padding()
                     .background(Color.white.opacity(0.6))
