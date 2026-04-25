@@ -33,10 +33,10 @@ struct BindFamilyView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.indigo)
                         
-                        Text("绑定家人")
+                        Text(L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"))
                             .font(.system(size: 22, weight: .bold))
                         
-                        Text("输入邀请码或扫描二维码")
+                        Text(L10n.text("输入邀请码或扫描二维码", en: "Enter the invite code or scan the QR code", ja: "招待コードを入力するか、QRコードを読み取ってください", ko: "초대 코드를 입력하거나 QR 코드를 스캔하세요"))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -44,13 +44,13 @@ struct BindFamilyView: View {
                     
                     // 输入框
                     VStack(spacing: 12) {
-                        Text("邀请码")
+                        Text(L10n.string(.inviteCode))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         
                         HStack(spacing: 12) {
-                            TextField("6 位邀请码", text: $inviteCode)
+                            TextField(L10n.text("6 位邀请码", en: "6-digit invite code", ja: "6桁の招待コード", ko: "6자리 초대 코드"), text: $inviteCode)
                                 .font(.system(size: 24, weight: .medium, design: .monospaced))
                                 .textContentType(.oneTimeCode)
                                 .keyboardType(.asciiCapable)
@@ -93,7 +93,7 @@ struct BindFamilyView: View {
                                     .scaleEffect(0.8)
                             }
                             
-                            Text(isBinding ? "绑定中..." : "立即绑定")
+                            Text(isBinding ? L10n.string(.binding) : L10n.string(.bindNow))
                                 .font(.system(size: 16, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
@@ -111,11 +111,11 @@ struct BindFamilyView: View {
                     VStack(spacing: 8) {
                         Divider()
                         
-                        Text("温馨提示")
+                        Text(L10n.text("温馨提示", en: "Tip", ja: "ヒント", ko: "안내"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
                         
-                        Text("绑定后双方将成为家人关系，可以互相查看设备信息和位置")
+                        Text(L10n.text("绑定后双方将成为家人关系，可以互相查看设备信息和位置", en: "After binding, both sides will become family members and can view each other's device info and location.", ja: "連携後は双方が家族関係になり、お互いの端末情報や位置を確認できます。", ko: "연결 후 양쪽은 가족 관계가 되며 서로의 기기 정보와 위치를 볼 수 있습니다."))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -124,25 +124,25 @@ struct BindFamilyView: View {
                     .padding(.bottom, 20)
                 }
             }
-            .navigationTitle("绑定家人")
+            .navigationTitle(L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.string(.cancel)) { dismiss() }
                 }
             }
-            .alert("错误", isPresented: $showingError) {
-                Button("确定") {}
+            .alert(L10n.string(.error), isPresented: $showingError) {
+                Button(L10n.string(.confirm)) {}
             } message: {
                 Text(errorMessage)
             }
-            .alert("绑定成功", isPresented: $showingSuccess) {
-                Button("完成") {
+            .alert(L10n.string(.bindSuccess), isPresented: $showingSuccess) {
+                Button(L10n.string(.done)) {
                     dismiss()
                     onBound?()
                 }
             } message: {
-                Text("绑定成功，等待对方接受邀请")
+                Text(L10n.text("绑定成功，等待对方接受邀请", en: "Binding succeeded. Waiting for the other side to accept the invitation.", ja: "連携に成功しました。相手の承認をお待ちください。", ko: "연결에 성공했습니다. 상대방의 수락을 기다리는 중입니다."))
             }
             .sheet(isPresented: $showingScanner) {
                 QRCodeScannerView(
@@ -159,7 +159,7 @@ struct BindFamilyView: View {
                             // 自动绑定
                             self.bindFamily()
                         } else {
-                            self.errorMessage = "无效的二维码"
+                            self.errorMessage = L10n.string(.invalidQRCode)
                             self.showingError = true
                         }
                     },
@@ -174,10 +174,10 @@ struct BindFamilyView: View {
                         .ignoresSafeArea()
                     
                     UpgradePromptView(
-                        feature: "绑定家人",
-                        statusText: "当前家人数量已达上限",
-                        currentLimit: "当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人",
-                        targetLimit: "会员版可绑定更多家人",
+                        feature: L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"),
+                        statusText: L10n.text("当前家人数量已达上限", en: "You have reached the family limit", ja: "家族数の上限に達しました", ko: "가족 수 한도에 도달했습니다"),
+                        currentLimit: L10n.text("当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人", en: "Up to \(MembershipManager.shared.currentFamilyLimit()) family members", ja: "最大 \(MembershipManager.shared.currentFamilyLimit()) 人の家族", ko: "최대 \(MembershipManager.shared.currentFamilyLimit())명의 가족"),
+                        targetLimit: L10n.text("会员版可绑定更多家人", en: "Premium can bind more family members", ja: "会員プランではより多く連携できます", ko: "멤버십에서는 더 많은 가족을 연결할 수 있습니다"),
                         onUpgrade: {
                             showingUpgradeForFamily = false
                             showingMembershipView = true
@@ -192,8 +192,10 @@ struct BindFamilyView: View {
                 NavigationView {
                     MembershipView()
                 }
+                .stackNavigationStyle()
             }
         }
+        .stackNavigationStyle()
     }
     
     // MARK: - 方法
@@ -209,7 +211,7 @@ struct BindFamilyView: View {
 
         guard inviteCode.count == 6 else {
             print("❌ 邀请码长度不正确：\(inviteCode.count) 位")
-            errorMessage = "邀请码必须是 6 位"
+            errorMessage = L10n.text("邀请码必须是 6 位", en: "Invite code must be 6 digits.", ja: "招待コードは6桁で入力してください。", ko: "초대 코드는 6자리여야 합니다.")
             showingError = true
             return
         }
@@ -235,7 +237,7 @@ struct BindFamilyView: View {
     private func bindFamilyAsync() async {
         let currentCount = DataManager.shared.familyMembers.count
         if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
-            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            errorMessage = L10n.text("家人数量已达上限，升级会员可绑定更多家人", en: "You have reached the family limit. Upgrade to bind more family members.", ja: "家族数の上限に達しました。会員プランでより多く連携できます。", ko: "가족 수 한도에 도달했습니다. 멤버십을 업그레이드하면 더 많이 연결할 수 있습니다.")
             showingUpgradeForFamily = true
             isBinding = false
             return
@@ -243,14 +245,14 @@ struct BindFamilyView: View {
         
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
-            errorMessage = "请先登录"
+            errorMessage = L10n.text("请先登录", en: "Please sign in first.", ja: "先にログインしてください。", ko: "먼저 로그인하세요.")
             showingError = true
             isBinding = false
             return
         }
         
         guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
+            errorMessage = L10n.text("API 未初始化", en: "API not initialized.", ja: "API が初期化されていません。", ko: "API가 초기화되지 않았습니다.")
             showingError = true
             isBinding = false
             return
@@ -263,6 +265,8 @@ struct BindFamilyView: View {
             
             let success = result["success"] as? Bool ?? false
             if success {
+                _ = try? await DataManager.shared.refreshFamilyMembers()
+                isBinding = false
                 showingSuccess = true
                 return
             } else {

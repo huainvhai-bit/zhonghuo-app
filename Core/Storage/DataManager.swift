@@ -60,6 +60,9 @@ class DataManager: ObservableObject {
     @Published var settings: UserSettings
     @Published var systemConfig: SystemConfig = SystemConfig()  // 系统配置
     
+    // MARK: - 胶囊媒体后台上传队列
+    private var pendingMediaUploadTasks: [String: Task<Void, Never>] = [:]
+    
     // MARK: - API 配置管理
     
     /// 从服务器获取 API 配置（GraphQL）
@@ -347,6 +350,9 @@ class DataManager: ObservableObject {
         
         // 🔥 加载已删除的 items（用于同步删除到服务器）
         loadDeletedItemsFromFile()
+        
+        // 🔄 启动时静默补传本地已有但尚未上传到云端的媒体
+        resumePendingCapsuleMediaUploads()
     }
     
     // MARK: - 文件操作
@@ -1081,7 +1087,7 @@ class DataManager: ObservableObject {
         }
     }
     
-    func addCapsule(_ capsule: TimeCapsule) {
+    func addCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = true) {
         // ✅ 防止重复添加：如果已存在相同 ID 的胶囊，则跳过
         if capsules.contains(where: { $0.id == capsule.id }) {
             print("⚠️ 胶囊 \(capsule.id) 已存在，跳过添加")
@@ -1100,16 +1106,18 @@ class DataManager: ObservableObject {
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
         // 异步同步到服务器
-        Task {
-            if let result = await batchSyncCapsules() {
-                print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-            } else {
-                print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+        if syncImmediately {
+            Task(priority: .background) {
+                if let result = await batchSyncCapsules() {
+                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                } else {
+                    print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+                }
             }
         }
     }
     
-    func updateCapsule(_ capsule: TimeCapsule) {
+    func updateCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = true) {
         if let index = capsules.firstIndex(where: { $0.id == capsule.id }) {
             capsules[index] = capsule
             saveCapsulesToFile()
@@ -1119,14 +1127,100 @@ class DataManager: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
             // 异步同步到服务器
-            Task {
-                if let result = await batchSyncCapsules() {
-                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-                } else {
-                    print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+            if syncImmediately {
+                Task(priority: .background) {
+                    if let result = await batchSyncCapsules() {
+                        print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                    } else {
+                        print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+                    }
                 }
             }
         }
+    }
+
+    /// 让单个胶囊的媒体在后台静默补传
+    func queueCapsuleMediaUpload(capsuleID: String, fileURL: URL, type: TimeCapsule.CapsuleType) {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("⚠️ 胶囊媒体文件不存在，跳过补传：\(fileURL.path)")
+            return
+        }
+        
+        pendingMediaUploadTasks[capsuleID]?.cancel()
+        
+        pendingMediaUploadTasks[capsuleID] = Task.detached(priority: .background) { [capsuleID, fileURL, type] in
+            let uploadedURL = await DataManager.shared.uploadMediaToServer(fileURL, type: type)
+            
+            await MainActor.run {
+                DataManager.shared.pendingMediaUploadTasks.removeValue(forKey: capsuleID)
+                
+                guard let uploadedURL else {
+                    DataManager.shared.markCapsuleMediaUploadFailed(capsuleID: capsuleID)
+                    return
+                }
+                
+                DataManager.shared.applyUploadedCapsuleMedia(capsuleID: capsuleID, uploadedURL: uploadedURL)
+            }
+        }
+    }
+
+    /// 启动时补传所有待上传的胶囊媒体
+    func resumePendingCapsuleMediaUploads() {
+        guard !capsules.isEmpty else { return }
+        
+        for capsule in capsules {
+            guard capsule.deletedAt == nil else { continue }
+            guard capsule.mediaServerURL.isEmpty else { continue }
+            guard !capsule.mediaURL.isEmpty else { continue }
+            guard capsule.type == .audio || capsule.type == .voice || capsule.type == .video else { continue }
+            
+            let localURL = resolveLocalMediaURL(from: capsule.mediaURL)
+            queueCapsuleMediaUpload(capsuleID: capsule.id, fileURL: localURL, type: capsule.type)
+        }
+    }
+
+    private func applyUploadedCapsuleMedia(capsuleID: String, uploadedURL: String) {
+        guard let index = capsules.firstIndex(where: { $0.id == capsuleID }) else { return }
+        
+        capsules[index].mediaServerURL = uploadedURL
+        capsules[index].cloudBackupStatus = .backedUp
+        capsules[index].cloudBackupAt = Date()
+        saveCapsulesToFile()
+        
+        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+        
+        Task(priority: .background) {
+            if let result = await batchSyncCapsules() {
+                print("✅ 胶囊补传后同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+            } else {
+                print("⚠️ 胶囊补传后同步失败（可能无网络或未登录）")
+            }
+        }
+    }
+
+    private func markCapsuleMediaUploadFailed(capsuleID: String) {
+        guard let index = capsules.firstIndex(where: { $0.id == capsuleID }) else { return }
+        
+        capsules[index].cloudBackupStatus = .failed
+        saveCapsulesToFile()
+        NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
+    }
+
+    private func resolveLocalMediaURL(from rawPath: String) -> URL {
+        if rawPath.hasPrefix("file://"), let url = URL(string: rawPath) {
+            return url
+        }
+        
+        if rawPath.hasPrefix("/") {
+            if rawPath.contains("Documents") {
+                return URL(fileURLWithPath: rawPath)
+            }
+            let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            return documentsPath.appendingPathComponent(String(rawPath.dropFirst()))
+        }
+        
+        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return documentsPath.appendingPathComponent(rawPath)
     }
     
     // MARK: - 批量同步到服务器
@@ -1527,6 +1621,37 @@ class DataManager: ObservableObject {
         }
         return []
     }
+
+    /// 刷新并缓存家人列表到共享状态
+    func refreshFamilyMembers() async throws -> [FamilyInfo] {
+        let records = try await fetchFamilyMembers()
+        let cached = records.compactMap { record -> FamilyInfo? in
+            let id = record["id"] as? String ?? UUID().uuidString
+            let relationType = record["relationType"] as? String
+                ?? record["relation"] as? String
+                ?? "family"
+            let relatedUserId = record["relatedUserId"] as? String
+                ?? record["user_id"] as? String
+                ?? record["id"] as? String
+                ?? id
+
+            return FamilyInfo(
+                id: id,
+                relationType: relationType,
+                relatedUserId: relatedUserId,
+                relatedUserName: record["relatedUserName"] as? String ?? record["name"] as? String,
+                relatedUserPhone: record["relatedUserPhone"] as? String ?? record["phone"] as? String
+            )
+        }
+
+        familyMembers = cached
+        return cached
+    }
+
+    /// 直接用已解析的家人列表覆盖共享缓存
+    func updateFamilyMembersCache(_ members: [FamilyInfo]) {
+        familyMembers = members
+    }
     
     /// 获取家庭档案列表（GraphQL）
     // ✅ 修复：将 UI 层调用迁移到 DataManager 统一管理
@@ -1814,7 +1939,7 @@ class DataManager: ObservableObject {
     /// 上传媒体文件到服务器（带重试）
     /// ✅ P0 修复 #3: 从 Keychain 读取 Token（安全存储）
     /// ✅ 修复: 支持后端返回的 success 字段（而非 status）
-    func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType, maxRetries: Int = 2) async -> String? {
+    nonisolated func uploadMediaToServer(_ fileURL: URL, type: TimeCapsule.CapsuleType, maxRetries: Int = 2) async -> String? {
         print("☁️ ====== uploadMediaToServer 开始 ======")
         
         guard !DataManager.apiURL.isEmpty else {
@@ -1847,7 +1972,7 @@ class DataManager: ObservableObject {
     }
     
     /// 单次上传尝试
-    private func attemptUpload(fileURL: URL, type: TimeCapsule.CapsuleType, token: String) async -> String? {
+    nonisolated private func attemptUpload(fileURL: URL, type: TimeCapsule.CapsuleType, token: String) async -> String? {
         // 创建上传请求
         var request = URLRequest(url: URL(string: "\(DataManager.apiURL)/api/upload.php?action=upload") ?? URL(fileURLWithPath: ""))
         request.httpMethod = "POST"

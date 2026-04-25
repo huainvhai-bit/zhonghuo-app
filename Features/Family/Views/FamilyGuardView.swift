@@ -66,7 +66,7 @@ struct FamilyGuardView: View {
                         Image(systemName: "person.2.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text("家人守护")
+                        Text(L10n.string(.familyGuard))
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -116,7 +116,7 @@ struct FamilyGuardView: View {
                                 await bindInviteCode(cleaned)
                             }
                         } else {
-                            errorMessage = "无效的二维码"
+                            errorMessage = L10n.string(.invalidQRCode)
                             showingError = true
                         }
                     },
@@ -139,10 +139,10 @@ struct FamilyGuardView: View {
                         .ignoresSafeArea()
                     
                     UpgradePromptView(
-                        feature: "绑定家人",
-                        statusText: "当前家人数量已达上限",
-                        currentLimit: "当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人",
-                        targetLimit: "会员版可绑定更多家人",
+                        feature: L10n.string(.familyGuard),
+                        statusText: L10n.string(.familyLimitReached),
+                        currentLimit: String(format: L10n.string(.familyLimitCurrent), "\(MembershipManager.shared.currentFamilyLimit())"),
+                        targetLimit: L10n.string(.familyLimitTarget),
                         onUpgrade: {
                             showingUpgradeForFamily = false
                             showingMembershipView = true
@@ -162,6 +162,7 @@ struct FamilyGuardView: View {
                 await loadFamilyListAsync()
             }
         }
+        .stackNavigationStyle()
     }
     
     // MARK: - 加载状态
@@ -169,7 +170,7 @@ struct FamilyGuardView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.2)
-            Text("正在加载家人列表...")
+            Text(L10n.string(.loadingFamilyListTitle))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
@@ -186,9 +187,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "qrcode.viewfinder",
                         iconColor: Color(hex: "6366F1"),
-                        title: "扫码关联家人",
-                        subtitle: "扫描家人的邀请码，快速绑定关系",
-                        buttonTitle: "开始扫码",
+                        title: L10n.string(.scanFamilyTitle),
+                        subtitle: L10n.string(.scanFamilySubtitle),
+                        buttonTitle: L10n.string(.scanFamilyButton),
                         buttonColor: Color(hex: "6366F1")
                     ) {
                         handleFamilyBindEntry {
@@ -200,9 +201,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "qrcode",
                         iconColor: Color(hex: "AF52DE"),
-                        title: "分享我的二维码",
-                        subtitle: "家人扫描下方二维码绑定你",
-                        buttonTitle: "查看二维码",
+                        title: L10n.string(.shareQRCodeTitle),
+                        subtitle: L10n.string(.shareQRCodeSubtitle),
+                        buttonTitle: L10n.string(.shareQRCodeButton),
                         buttonColor: Color(hex: "AF52DE")
                     ) {
                         showingShareQR = true
@@ -212,9 +213,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "textformat",
                         iconColor: Color(hex: "F59E0B"),
-                        title: "手动输入邀请码",
-                        subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
-                        buttonTitle: "立即输入",
+                        title: L10n.string(.manualInviteTitle),
+                        subtitle: L10n.string(.manualInviteSubtitle),
+                        buttonTitle: L10n.string(.manualInviteButton),
                         buttonColor: Color(hex: "F59E0B")
                     ) {
                         handleFamilyBindEntry {
@@ -238,7 +239,7 @@ struct FamilyGuardView: View {
                     .font(.system(size: 20))
                     .foregroundColor(Color(hex: "10B981").opacity(0.5))
                 
-                Text("已关联的家人")
+                Text(L10n.string(.linkedFamily))
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.secondary)
                 
@@ -250,11 +251,11 @@ struct FamilyGuardView: View {
                     .font(.system(size: 50))
                     .foregroundColor(.secondary.opacity(0.5))
                 
-                Text("暂时还没有绑定家人")
+                Text(L10n.string(.noFamilyBoundTitle))
                     .font(.system(size: 16))
                     .foregroundColor(.secondary)
                 
-                Text("使用上方功能绑定家人，互相关爱守护")
+                Text(L10n.string(.noFamilyBoundHint))
                     .font(.system(size: 14))
                     .foregroundColor(.secondary.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -278,9 +279,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "qrcode.viewfinder",
                         iconColor: Color(hex: "6366F1"),
-                        title: "扫码关联家人",
-                        subtitle: "扫描家人的邀请码，快速绑定关系",
-                        buttonTitle: "开始扫码",
+                        title: L10n.string(.scanFamilyTitle),
+                        subtitle: L10n.string(.scanFamilySubtitle),
+                        buttonTitle: L10n.string(.scanFamilyButton),
                         buttonColor: Color(hex: "6366F1")
                     ) {
                         handleFamilyBindEntry {
@@ -292,9 +293,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "qrcode",
                         iconColor: Color(hex: "AF52DE"),
-                        title: "分享我的二维码",
-                        subtitle: "家人扫描下方二维码绑定你",
-                        buttonTitle: "查看二维码",
+                        title: L10n.string(.shareQRCodeTitle),
+                        subtitle: L10n.string(.shareQRCodeSubtitle),
+                        buttonTitle: L10n.string(.shareQRCodeButton),
                         buttonColor: Color(hex: "AF52DE")
                     ) {
                         showingShareQR = true
@@ -304,9 +305,9 @@ struct FamilyGuardView: View {
                     actionCard(
                         icon: "textformat",
                         iconColor: Color(hex: "F59E0B"),
-                        title: "手动输入邀请码",
-                        subtitle: "如果无法扫码，可以手动输入 6 位邀请码",
-                        buttonTitle: "立即输入",
+                        title: L10n.string(.manualInviteTitle),
+                        subtitle: L10n.string(.manualInviteSubtitle),
+                        buttonTitle: L10n.string(.manualInviteButton),
                         buttonColor: Color(hex: "F59E0B")
                     ) {
                         handleFamilyBindEntry {
@@ -378,12 +379,12 @@ struct FamilyGuardView: View {
                     .font(.system(size: 20))
                     .foregroundColor(Color(hex: "10B981"))
                 
-                Text("已关联的家人")
+                Text(L10n.string(.linkedFamily))
                     .font(.system(size: 18, weight: .semibold))
                 
                 Spacer()
                 
-                Text("\(familyList.count) 人")
+                Text("\(familyList.count) \(L10n.string(.familyCountSuffix))")
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
@@ -481,19 +482,28 @@ struct FamilyGuardView: View {
                                 avatar: member["avatar"] as? String ?? "",
                                 relationship: member["relation"] as? String ?? "",
                                 status: .accepted,
-                                statusText: "已绑定",
+                                statusText: L10n.string(.bindSuccess),
                                 lastCheckInDate: parseBackendDate(member["relatedUserLastCheckInDate"] as? String),
                                 createdAt: parseBackendDate(member["createdAt"] as? String) ?? Date(),
                                 deviceInfo: nil
                             )
                         }
                         self.familyList = newFamilyList
+                        DataManager.shared.updateFamilyMembersCache(newFamilyList.map { member in
+                            FamilyInfo(
+                                id: member.relationId,
+                                relationType: member.relationship,
+                                relatedUserId: member.id,
+                                relatedUserName: member.name,
+                                relatedUserPhone: member.phone
+                            )
+                        })
                     }
                     
                     print("✅ 家人列表加载成功：\(familyList.count) 人")
                 }
             } else if let familyResult = (result["data"] as? [String: Any])?["family"] as? [String: Any] {
-                let message = familyResult["message"] as? String ?? "加载失败"
+                let message = familyResult["message"] as? String ?? L10n.string(.pleaseRetry)
                 print("❌ 家人列表加载失败：\(message)")
             }
         } catch {
@@ -616,20 +626,20 @@ struct FamilyGuardView: View {
     private func bindInviteCode(_ inviteCode: String) async {
         let currentCount = familyList.count
         if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
-            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            errorMessage = L10n.string(.familyLimitReached)
             showingError = true
             return
         }
         
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
-            errorMessage = "请先登录"
+            errorMessage = L10n.string(.noAccount)
             showingError = true
             return
         }
         
         guard !DataManager.apiURL.isEmpty else {
-            errorMessage = "API 未初始化"
+            errorMessage = L10n.string(.pleaseRetry)
             showingError = true
             return
         }
@@ -656,10 +666,11 @@ struct FamilyGuardView: View {
                let bindFamily = data["bindFamilyByInviteCode"] as? [String: Any] {
                 let success = bindFamily["success"] as? Bool ?? false
                 if success {
+                    _ = try? await DataManager.shared.refreshFamilyMembers()
                     await loadFamilyListAsync()
                     return
                 } else {
-                    errorMessage = bindFamily["message"] as? String ?? "绑定失败"
+                    errorMessage = bindFamily["message"] as? String ?? L10n.string(.bindFailed)
                 }
             }
         } catch {
@@ -670,11 +681,7 @@ struct FamilyGuardView: View {
     }
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter.string(from: date)
+        date.chineseDateTimeString()
     }
 
     private func checkInStateText(for date: Date) -> String {
@@ -683,11 +690,11 @@ struct FamilyGuardView: View {
         let elapsedHours = Date().timeIntervalSince(date) / 3600
 
         if elapsedHours <= intervalHours {
-            return "签到正常"
+            return L10n.string(.checkingNormal)
         } else if elapsedHours <= intervalHours + offlineHours {
-            return "已超时，等待用户打开 App"
+            return L10n.string(.checkingOverdue)
         } else {
-            return "严重超时"
+            return L10n.string(.checkingSevere)
         }
     }
 
@@ -720,10 +727,10 @@ struct ShareQRView: View {
             VStack(spacing: 24) {
                 // 标题
                 VStack(spacing: 8) {
-                    Text("分享我的邀请码")
+                    Text(L10n.string(.shareQRCodeTitle))
                         .font(.system(size: 22, weight: .bold))
                     
-                    Text("家人扫描下方二维码绑定你")
+                    Text(L10n.string(.shareQRCodeSubtitle))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -744,7 +751,7 @@ struct ShareQRView: View {
                     } else {
                         VStack(spacing: 12) {
                             ProgressView()
-                            Text("正在生成...")
+                            Text(L10n.string(.qrGenerating))
                                 .font(.system(size: 14))
                                 .foregroundColor(.secondary)
                         }
@@ -756,7 +763,7 @@ struct ShareQRView: View {
                     HStack {
                         Image(systemName: isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
                             .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                        Text("刷新二维码")
+                        Text(L10n.string(.refreshQRCode))
                     }
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Color(hex: "AF52DE"))
@@ -765,12 +772,12 @@ struct ShareQRView: View {
                 
                 // 邀请码
                 VStack(spacing: 8) {
-                    Text("邀请码")
+                    Text(L10n.string(.inviteCode))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                     
                     if inviteCode.isEmpty {
-                        Text("正在获取...")
+                        Text(L10n.string(.qrFetching))
                             .font(.system(size: 32, weight: .bold, design: .monospaced))
                             .foregroundColor(.secondary)
                     } else {
@@ -788,7 +795,7 @@ struct ShareQRView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
                         .font(.system(size: 12))
-                    Text("可手动输入邀请码绑定")
+                    Text(L10n.string(.manualInviteHint))
                         .font(.system(size: 13))
                 }
                 .foregroundColor(.secondary)
@@ -799,7 +806,7 @@ struct ShareQRView: View {
                 Button(action: copyInviteCode) {
                     HStack {
                         Image(systemName: "doc.on.doc")
-                        Text("复制邀请码")
+                        Text(L10n.string(.copyInviteCode))
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
@@ -813,11 +820,11 @@ struct ShareQRView: View {
                 .padding(.bottom, 30)
             }
             .padding()
-            .navigationTitle("分享邀请码")
+            .navigationTitle(L10n.string(.shareInviteCode))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("关闭") {
+                    Button(L10n.string(.closeButton)) {
                         dismiss()
                     }
                 }
@@ -901,11 +908,11 @@ struct FamilyMemberCard: View {
                         .foregroundColor(.secondary)
 
                     if let lastCheckInDate = member.lastCheckInDate {
-                        Text("最后签到：\(formatDate(lastCheckInDate))")
+                        Text("\(L10n.string(.lastCheckIn))：\(formatDate(lastCheckInDate))")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     } else {
-                        Text("最后签到：暂无记录")
+                        Text(L10n.string(.noRecordPrefix))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -915,7 +922,7 @@ struct FamilyMemberCard: View {
                 
                 // 状态
                 if member.status == .pending {
-                    Text("待接受")
+                    Text(L10n.string(.pendingAcceptance))
                         .font(.system(size: 12))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -977,22 +984,18 @@ struct FamilyMemberCard: View {
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(12)
-        .confirmationDialog("解除关系", isPresented: $showingDeleteConfirm) {
-            Button("解除", role: .destructive) {
+        .confirmationDialog(L10n.string(.bindRelationTitle), isPresented: $showingDeleteConfirm) {
+            Button(L10n.string(.removeRelation), role: .destructive) {
                 deleteMember()
             }
-            Button("取消", role: .cancel) {}
+            Button(L10n.string(.cancel), role: .cancel) {}
         } message: {
-            Text("确定要与 \(member.name) 解除家人关系吗？此操作不可恢复。")
+            Text(String(format: L10n.string(.bindRelationMessage), member.name))
         }
     }
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        return formatter.string(from: date)
+        date.chineseDateTimeString()
     }
 
     private func checkInStateText(for date: Date) -> String {
@@ -1001,11 +1004,11 @@ struct FamilyMemberCard: View {
         let elapsedHours = Date().timeIntervalSince(date) / 3600
 
         if elapsedHours <= intervalHours {
-            return "签到正常"
+            return L10n.string(.checkingNormal)
         } else if elapsedHours <= intervalHours + offlineHours {
-            return "已超时，等待用户打开 App"
+            return L10n.string(.checkingOverdue)
         } else {
-            return "严重超时"
+            return L10n.string(.checkingSevere)
         }
     }
 
@@ -1080,10 +1083,10 @@ struct ManualInputInviteCodeView: View {
                     Image(systemName: "textformat")
                         .font(.system(size: 24))
                         .foregroundColor(Color(hex: "F59E0B"))
-                    Text("手动输入邀请码")
+                    Text(L10n.string(.manualInviteTitle))
                         .font(.system(size: 18, weight: .semibold))
                 }
-                Text("请输入家人分享给你的 6 位邀请码，完成绑定后你们将互相关爱守护。")
+                Text(L10n.string(.manualInviteSubtitle))
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
@@ -1093,10 +1096,10 @@ struct ManualInputInviteCodeView: View {
             .padding(.horizontal)
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("邀请码")
+                Text(L10n.string(.inviteCode))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
-                TextField("6 位邀请码", text: $inviteCode)
+                TextField(L10n.string(.inviteCodePlaceholder), text: $inviteCode)
                     .font(.system(size: 24, weight: .semibold, design: .monospaced))
                     .textContentType(.oneTimeCode)
                     .keyboardType(.asciiCapable)
@@ -1115,9 +1118,9 @@ struct ManualInputInviteCodeView: View {
                 HStack {
                     if isBinding {
                         ProgressView().tint(.white).scaleEffect(0.8)
-                        Text("绑定中...")
+                        Text(L10n.string(.binding))
                     } else {
-                        Text("立即绑定").font(.system(size: 16, weight: .semibold))
+                        Text(L10n.string(.bindNow)).font(.system(size: 16, weight: .semibold))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -1131,22 +1134,22 @@ struct ManualInputInviteCodeView: View {
             
             Spacer()
         }
-        .navigationTitle("手动输入邀请码")
+        .navigationTitle(L10n.string(.manualInvite))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("取消") { onCancel?() }
+                Button(L10n.string(.cancel)) { onCancel?() }
             }
         }
-        .alert("绑定失败", isPresented: $showError) {
-            Button("确定", role: .cancel) { }
+        .alert(L10n.string(.bindFailed), isPresented: $showError) {
+            Button(L10n.string(.confirm), role: .cancel) { }
         } message: { Text(errorMessage) }
     }
     
     private func bindInviteCode() {
         let currentCount = DataManager.shared.familyMembers.count
         if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
-            errorMessage = "家人数量已达上限，升级会员可绑定更多家人"
+            errorMessage = L10n.string(.familyLimitReached)
             showError = true
             return
         }
@@ -1174,7 +1177,7 @@ struct ManualInputInviteCodeView: View {
                     await MainActor.run { onBound?(); dismiss() }
                     return
                 }
-                throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: "绑定失败"])
+                throw NSError(domain: "API", code: -1, userInfo: [NSLocalizedDescriptionKey: L10n.string(.bindFailed)])
             } catch {
                 await MainActor.run { errorMessage = error.localizedDescription; showError = true }
             }

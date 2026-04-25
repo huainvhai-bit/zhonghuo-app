@@ -106,9 +106,13 @@ class APIManager {
     func bindFamilyMember(inviteCode: String) async throws -> [String: Any] {
         let mutation = """
         mutation($inviteCode: String!) {
-            bindFamily(inviteCode: $inviteCode) {
+            bindFamilyByInviteCode(inviteCode: $inviteCode) {
                 success
                 message
+                data {
+                    relatedUserId
+                    relationType
+                }
             }
         }
         """
