@@ -12,8 +12,14 @@ struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = LoginViewModel()
     @StateObject private var captchaService = AppCaptchaService(purpose: "login")
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     @State private var isRegistering = false
     @State private var showingResetPassword = false
+
+    private func captchaFrameWidth(for availableWidth: CGFloat) -> CGFloat {
+        let preferred = availableWidth * 0.38
+        return max(150, min(preferred, 240))
+    }
     
     // MARK: - 视图
     
@@ -24,7 +30,7 @@ struct LoginView: View {
                     content
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .background(Color("BackgroundColor"))
+                .background(Color(.systemBackground))
                 .navigationBarTitleDisplayMode(.inline)
                 .onTapGesture {
                     hideKeyboard()
@@ -33,18 +39,33 @@ struct LoginView: View {
                 ScrollView {
                     content
                 }
-                .background(Color("BackgroundColor"))
+                .background(Color(.systemBackground))
                 .navigationBarTitleDisplayMode(.inline)
                 .onTapGesture {
                     hideKeyboard()
                 }
             }
         }
+        .stackNavigationStyle()
         .fullScreenCover(isPresented: $isRegistering) {
             RegisterView(isPresented: $isRegistering)
         }
         .sheet(isPresented: $showingResetPassword) {
             ResetPasswordView(isPresented: $showingResetPassword)
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    ForEach(AppLanguageManager.Language.allCases, id: \.self) { language in
+                        Button(language.displayName) {
+                            languageManager.setLanguage(language)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "globe")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
         }
         .task {
             if captchaService.image == nil {
@@ -55,17 +76,17 @@ struct LoginView: View {
 
     private var content: some View {
         VStack(spacing: 30) {
-                    // Logo
-                    VStack(spacing: 12) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(Color(hex: "AF52DE"))
+                // Logo
+                VStack(spacing: 12) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("终活")
+                        Text(L10n.string(.appName))
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("让生命更有尊严，让告别更有温度")
+                        Text(L10n.string(.appTagline))
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
                     }
@@ -73,7 +94,7 @@ struct LoginView: View {
                     
                     // 登录表单
                     VStack(spacing: 20) {
-                        TextField("账号或手机号", text: $viewModel.identifier)
+                        TextField(L10n.string(.identifierPlaceholder), text: $viewModel.identifier)
                             .textFieldStyle(CustomTextFieldStyle())
                             .keyboardType(.default)
                             .autocapitalization(.none)
@@ -82,45 +103,48 @@ struct LoginView: View {
                             .onChange(of: viewModel.identifier) { _ in viewModel.clearError() }
                             .onTapGesture { viewModel.clearError() }
                         
-                        SecureField("密码", text: $viewModel.password)
+                        SecureField(L10n.string(.passwordPlaceholder), text: $viewModel.password)
                             .textFieldStyle(CustomTextFieldStyle())
                             .font(.system(size: 18, weight: .medium))
                             .onChange(of: viewModel.password) { _ in viewModel.clearError() }
 
-                        HStack(spacing: 12) {
-                            TextField("图形验证码", text: $viewModel.captchaInput)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                                .onChange(of: viewModel.captchaInput) { _ in viewModel.clearError() }
+                        GeometryReader { proxy in
+                            HStack(spacing: 12) {
+                                TextField(L10n.string(.captchaPlaceholder), text: $viewModel.captchaInput)
+                                    .textFieldStyle(CustomTextFieldStyle())
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .onChange(of: viewModel.captchaInput) { _ in viewModel.clearError() }
 
-                            Button {
-                                Task {
-                                    await captchaService.loadCaptcha()
-                                    viewModel.captchaInput = ""
-                                }
-                            } label: {
-                                Group {
-                                    if let image = captchaService.image {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 120, height: 44)
-                                            .cornerRadius(8)
-                                    } else if captchaService.isLoading {
-                                        ProgressView()
-                                            .frame(width: 120, height: 44)
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color(.systemGray5))
-                                            .frame(width: 120, height: 44)
-                                            .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                                Button {
+                                    Task {
+                                        await captchaService.loadCaptcha()
+                                        viewModel.captchaInput = ""
+                                    }
+                                } label: {
+                                    Group {
+                                        if let image = captchaService.image {
+                                            Image(uiImage: image)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                .cornerRadius(10)
+                                        } else if captchaService.isLoading {
+                                            ProgressView()
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color(.systemGray5))
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                .overlay(Text(L10n.string(.captchaRefresh)).font(.system(size: 15, weight: .medium)).foregroundColor(.secondary))
+                                        }
                                     }
                                 }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .frame(height: 56)
 
                         Button(action: {
                             Task {
@@ -130,7 +154,7 @@ struct LoginView: View {
                                 }
                             }
                         }) {
-                            Text("登录")
+                            Text(L10n.string(.loginButton))
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -144,9 +168,9 @@ struct LoginView: View {
                     .padding(.horizontal, 24)
                     .alert(isPresented: $viewModel.showingError) {
                         Alert(
-                            title: Text("错误"),
+                            title: Text(L10n.string(.error)),
                             message: Text(viewModel.errorMessage),
-                            dismissButton: .default(Text("确定"))
+                            dismissButton: .default(Text(L10n.string(.confirm)))
                         )
                     }
                     .onChange(of: viewModel.errorMessage, perform: { newValue in
@@ -163,7 +187,7 @@ struct LoginView: View {
                         Button {
                             showingResetPassword = true
                         } label: {
-                            Text("忘记密码？")
+                        Text(L10n.string(.forgotPassword))
                                 .foregroundColor(Color(hex: "AF52DE"))
                                 .font(.system(size: 16))
                         }
@@ -172,7 +196,7 @@ struct LoginView: View {
                     
                     // 切换到注册
                     HStack {
-                        Text("还没有账号？")
+                        Text(L10n.string(.noAccount))
                             .foregroundColor(.gray)
                             .font(.system(size: 16))
                         
@@ -181,7 +205,7 @@ struct LoginView: View {
                             isRegistering = true 
                             print("🔵 isRegistering = \(isRegistering)")
                         } label: {
-                            Text("立即注册")
+                            Text(L10n.string(.registerNow))
                                 .foregroundColor(Color(hex: "AF52DE"))
                                 .font(.system(size: 16, weight: .bold))
                         }

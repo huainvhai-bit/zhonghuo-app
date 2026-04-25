@@ -21,6 +21,7 @@ struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
     @StateObject private var captchaService = AppCaptchaService(purpose: "register")
+    @ObservedObject private var languageManager = AppLanguageManager.shared
     
     @State private var name = ""
     @State private var account = ""
@@ -34,14 +35,21 @@ struct RegisterView: View {
     @State private var showingError = false
     @State private var errorMessage = ""
 
-    private static let securityQuestions = [
-        "我的第一所学校名称是？",
-        "我最喜欢的城市是？",
-        "我母亲的姓氏是？",
-        "我最喜欢的电影是？",
-        "我童年最好的朋友名字是？"
-    ]
+    private static var securityQuestions: [String] {
+        [
+            L10n.text("我的第一所学校名称是？", en: "What was the name of my first school?", ja: "最初の学校の名前は？", ko: "내 첫 번째 학교 이름은?"),
+            L10n.text("我最喜欢的城市是？", en: "What is my favorite city?", ja: "一番好きな都市は？", ko: "내가 가장 좋아하는 도시는?"),
+            L10n.text("我母亲的姓氏是？", en: "What is my mother's maiden name?", ja: "母の旧姓は？", ko: "어머니의 성은?"),
+            L10n.text("我最喜欢的电影是？", en: "What is my favorite movie?", ja: "一番好きな映画は？", ko: "내가 가장 좋아하는 영화는?"),
+            L10n.text("我童年最好的朋友名字是？", en: "What is the name of my childhood best friend?", ja: "子どもの頃の親友の名前は？", ko: "어릴 때 가장 친했던 친구의 이름은?")
+        ]
+    }
     private var securityQuestions: [String] { Self.securityQuestions }
+
+    private func captchaFrameWidth(for availableWidth: CGFloat) -> CGFloat {
+        let preferred = availableWidth * 0.38
+        return max(150, min(preferred, 240))
+    }
     
     // MARK: - 辅助方法
     
@@ -103,32 +111,32 @@ struct RegisterView: View {
 
             guard isValidAccount(trimmedAccount) else {
                 print("❌ 账号验证失败")
-                throw NSError(domain: "账号格式错误", code: -1)
+                throw NSError(domain: L10n.text("账号格式错误，请输入 4-30 位非空白字符", en: "Invalid account format. Use 4-30 non-space characters.", ja: "アカウント形式が正しくありません。4〜30文字の空白以外を入力してください。", ko: "계정 형식이 올바르지 않습니다. 공백이 없는 4~30자를 입력하세요."), code: -1)
             }
 
             guard isValidPhone(trimmedPhone) else {
                 print("❌ 手机号验证失败")
-                throw NSError(domain: "手机号格式错误", code: -1)
+                throw NSError(domain: L10n.text("手机号格式错误", en: "Invalid phone format.", ja: "電話番号の形式が正しくありません。", ko: "휴대폰 번호 형식이 올바르지 않습니다."), code: -1)
             }
             
             guard isValidPassword(password) else {
                 print("❌ 密码验证失败")
-                throw NSError(domain: "密码至少 8 位，包含字母和数字", code: -1)
+                throw NSError(domain: L10n.text("密码至少 8 位，包含字母和数字", en: "Password must be at least 8 characters and include letters and numbers.", ja: "パスワードは8文字以上で、英字と数字を含めてください。", ko: "비밀번호는 8자 이상이며 문자와 숫자를 포함해야 합니다."), code: -1)
             }
             
             guard password == confirmPassword else {
                 print("❌ 两次密码不一致")
-                throw NSError(domain: "两次输入的密码不一致", code: -1)
+                throw NSError(domain: L10n.text("两次输入的密码不一致", en: "The two passwords do not match.", ja: "2つのパスワードが一致しません。", ko: "두 비밀번호가 일치하지 않습니다."), code: -1)
             }
 
             guard !captchaInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 print("❌ 图形验证码为空")
-                throw NSError(domain: "请输入图形验证码", code: -1)
+                throw NSError(domain: L10n.text("请输入图形验证码", en: "Please enter the captcha.", ja: "画像認証を入力してください。", ko: "이미지 인증을 입력하세요."), code: -1)
             }
 
             guard !securityAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 print("❌ 密保答案为空")
-                throw NSError(domain: "请输入密保答案", code: -1)
+                throw NSError(domain: L10n.text("请输入密保答案", en: "Please enter the security answer.", ja: "秘密の答えを入力してください。", ko: "보안 답변을 입력하세요."), code: -1)
             }
             
             print("✅ 所有验证通过，开始注册请求...")
@@ -241,7 +249,7 @@ struct RegisterView: View {
               let registerData = data["register"] as? [String: Any],
               let success = registerData["success"] as? Bool,
               success else {
-            let message = authMessage(from: response, fallback: "注册失败，请稍后重试")
+            let message = authMessage(from: response, fallback: L10n.text("注册失败，请稍后重试", en: "Registration failed. Please try again later.", ja: "登録に失敗しました。後でもう一度お試しください。", ko: "등록에 실패했습니다. 잠시 후 다시 시도하세요."))
             print("❌ 注册失败")
             await MainActor.run {
                 errorMessage = message
@@ -296,31 +304,31 @@ struct RegisterView: View {
             if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn’t have a default value") || errorMsg.contains("doesn't have a default value") {
                 self.errorMessage = errorMsg
             } else if errorMsg.contains("PHONE_EXISTS:") {
-                self.errorMessage = "该手机号已注册，请直接登录"
+                self.errorMessage = L10n.text("该手机号已注册，请直接登录", en: "This phone number is already registered. Please sign in.", ja: "この電話番号はすでに登録されています。ログインしてください。", ko: "이미 등록된 전화번호입니다. 로그인하세요.")
             } else if errorMsg.contains("ACCOUNT_EXISTS:") {
-                self.errorMessage = "该账号已注册，请直接登录"
+                self.errorMessage = L10n.text("该账号已注册，请直接登录", en: "This account is already registered. Please sign in.", ja: "このアカウントはすでに登録されています。ログインしてください。", ko: "이미 등록된 계정입니다. 로그인하세요.")
             } else if errorMsg.contains("账号格式") {
-                self.errorMessage = "账号格式错误，请输入 4-30 位非空白字符"
+                self.errorMessage = L10n.text("账号格式错误，请输入 4-30 位非空白字符", en: "Invalid account format. Use 4-30 non-space characters.", ja: "アカウント形式が正しくありません。4〜30文字の空白以外を入力してください。", ko: "계정 형식이 올바르지 않습니다. 공백이 없는 4~30자를 입력하세요.")
             } else if errorMsg.contains("已注册") || errorMsg.contains("已经存在") {
-                self.errorMessage = "账号已注册，请登录"
+                self.errorMessage = L10n.text("账号已注册，请登录", en: "This account is already registered. Please sign in.", ja: "このアカウントはすでに登録されています。ログインしてください。", ko: "이미 등록된 계정입니다. 로그인하세요.")
             } else if errorMsg.contains("手机号") || errorMsg.contains("手机号格式") {
-                self.errorMessage = "手机号格式错误"
+                self.errorMessage = L10n.text("手机号格式错误", en: "Invalid phone format.", ja: "電話番号の形式が正しくありません。", ko: "휴대폰 번호 형식이 올바르지 않습니다.")
             } else if errorMsg.contains("密码") && errorMsg.contains("不一致") {
-                self.errorMessage = "两次输入的密码不一致"
+                self.errorMessage = L10n.text("两次输入的密码不一致", en: "The two passwords do not match.", ja: "2つのパスワードが一致しません。", ko: "두 비밀번호가 일치하지 않습니다.")
             } else if errorMsg.contains("密码") {
-                self.errorMessage = "密码至少 8 位，包含字母和数字"
+                self.errorMessage = L10n.text("密码至少 8 位，包含字母和数字", en: "Password must be at least 8 characters and include letters and numbers.", ja: "パスワードは8文字以上で、英字と数字を含めてください。", ko: "비밀번호는 8자 이상이며 문자와 숫자를 포함해야 합니다.")
             } else if errorMsg.contains("验证码") {
-                self.errorMessage = "图形验证码错误或已过期，请刷新后重试"
+                self.errorMessage = L10n.text("图形验证码错误或已过期，请刷新后重试", en: "Captcha is invalid or expired. Please refresh and try again.", ja: "画像認証が正しくないか期限切れです。更新して再度お試しください。", ko: "이미지 인증이 잘못되었거나 만료되었습니다. 새로고침 후 다시 시도하세요.")
                 self.captchaInput = ""
                 Task { await self.captchaService.loadCaptcha() }
             } else if errorMsg.contains("密保") {
-                self.errorMessage = "密保问题或答案错误"
+                self.errorMessage = L10n.text("密保问题或答案错误", en: "Security question or answer is incorrect.", ja: "秘密の質問または答えが正しくありません。", ko: "보안 질문 또는 답변이 올바르지 않습니다.")
             } else if errorMsg.contains("网络") || errorMsg.contains("network") || errorMsg.contains("timed out") {
-                self.errorMessage = "网络连接失败，请检查网络"
+                self.errorMessage = L10n.text("网络连接失败，请检查网络", en: "Network connection failed. Please check your connection.", ja: "ネットワーク接続に失敗しました。接続を確認してください。", ko: "네트워크 연결에 실패했습니다. 연결을 확인하세요.")
             } else if !errorMsg.isEmpty {
                 self.errorMessage = errorMsg
             } else {
-                self.errorMessage = "注册失败，请稍后重试"
+                self.errorMessage = L10n.text("注册失败，请稍后重试", en: "Registration failed. Please try again later.", ja: "登録に失敗しました。後でもう一度お試しください。", ko: "등록에 실패했습니다. 잠시 후 다시 시도하세요.")
             }
             self.showingError = true
         }
@@ -378,11 +386,11 @@ struct RegisterView: View {
                             .font(.system(size: 60))
                             .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("终活")
+                        Text(L10n.string(.appName))
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(Color(hex: "AF52DE"))
                         
-                        Text("注册账号")
+                        Text(L10n.string(.registerTitle))
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
                     }
@@ -390,199 +398,34 @@ struct RegisterView: View {
                     
                     // 注册表单
                     VStack(spacing: 20) {
-                        TextField("姓名", text: $name)
+                        TextField(L10n.string(.registerName), text: $name)
                             .textFieldStyle(CustomTextFieldStyle())
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                             .font(.system(size: 18, weight: .medium))
                         
-                        TextField("账号（4-30 位）", text: $account)
+                        TextField(L10n.string(.registerAccount), text: $account)
                             .textFieldStyle(CustomTextFieldStyle())
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                             .font(.system(size: 18, weight: .medium))
                             .onChange(of: account) { _ in self.clearError() }
                         
-                        TextField("手机号（选填）", text: $phone)
+                        TextField(L10n.string(.registerPhoneOptional), text: $phone)
                             .textFieldStyle(CustomTextFieldStyle())
                             .keyboardType(.phonePad)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                             .font(.system(size: 18, weight: .medium))
                             .onChange(of: phone) { _ in self.clearError() }
-                        Text("如果你不想使用手机号，可以只填写账号。")
+                        Text(L10n.string(.registerPhoneHelp))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        HStack(spacing: 12) {
-                            TextField("验证码", text: $captchaInput)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                            
-                            Button(action: {
-                                Task {
-                                    await captchaService.loadCaptcha()
-                                    captchaInput = ""
-                                }
-                            }) {
-                                Group {
-                                    if let image = captchaService.image {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 120, height: 44)
-                                            .cornerRadius(8)
-                                    } else if captchaService.isLoading {
-                                        ProgressView()
-                                            .frame(width: 120, height: 44)
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color(.systemGray5))
-                                            .frame(width: 120, height: 44)
-                                            .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        SecureField("设置密码（8 位以上）", text: $password)
-                            .textFieldStyle(CustomTextFieldStyle())
-                            .font(.system(size: 18, weight: .medium))
-                        
-                        SecureField("确认密码", text: $confirmPassword)
-                            .textFieldStyle(CustomTextFieldStyle())
-                            .font(.system(size: 18, weight: .medium))
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("找回密码唯一方式")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.secondary)
-
-                            Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-
-                            Picker("密保问题", selection: $selectedSecurityQuestion) {
-                                ForEach(securityQuestions, id: \.self) { question in
-                                    Text(question).tag(question)
-                                }
-                            }
-                            .pickerStyle(.menu)
-
-                            TextField("密保答案", text: $securityAnswer)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                        }
-                        .padding(.top, 4)
-                        
-                        Button(action: {
-                            print("🔴🔴🔴 立即注册按钮被点击！！！")
-                            Task { @MainActor in
-                                print("🔴 Task 开始执行")
-                                await register()
-                                print("🔴 Task 执行完成")
-                            }
-                        }, label: {
-                            Text("立即注册")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(Color(hex: "AF52DE"))
-                                .cornerRadius(12)
-                        })
-                        .contentShape(Rectangle())
-                        .disabled(false)
-                        .opacity(isLoading ? 0.5 : 1)
-                    }
-                    .padding(.horizontal, 24)
-                    
-                    // 切换到登录
-                    HStack {
-                        Text("已经有账号？")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 16))
-                        
-                        Button(action: { isPresented = false }) {
-                            Text("立即登录")
-                                .foregroundColor(Color(hex: "AF52DE"))
-                                .font(.system(size: 16, weight: .bold))
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 40)
-                }
-                    .frame(maxWidth: .infinity)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .alert(isPresented: $showingError) {
-                    Alert(
-                        title: Text("错误"),
-                        message: Text(errorMessage),
-                        dismissButton: .default(Text("确定"))
-                    )
-                }
-                .background(Color("BackgroundColor"))
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    if captchaService.image == nil {
-                        await captchaService.loadCaptcha()
-                    }
-                }
-            } else {
-                ScrollView {
-                    VStack(spacing: 30) {
-                        // Logo
-                        VStack(spacing: 12) {
-                            Image(systemName: "heart.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(Color(hex: "AF52DE"))
-                            
-                            Text("终活")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(Color(hex: "AF52DE"))
-                            
-                            Text("注册账号")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.top, 40)
-                        
-                        // 注册表单
-                        VStack(spacing: 20) {
-                            TextField("姓名", text: $name)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                            
-                            TextField("账号（4-30 位）", text: $account)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                                .onChange(of: account) { _ in self.clearError() }
-                            
-                            TextField("手机号（选填）", text: $phone)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .keyboardType(.phonePad)
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .font(.system(size: 18, weight: .medium))
-                                .onChange(of: phone) { _ in self.clearError() }
-                            Text("如果你不想使用手机号，可以只填写账号。")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
+                        GeometryReader { proxy in
                             HStack(spacing: 12) {
-                                TextField("验证码", text: $captchaInput)
+                                TextField(L10n.string(.registerCaptcha), text: $captchaInput)
                                     .textFieldStyle(CustomTextFieldStyle())
                                     .autocapitalization(.none)
                                     .disableAutocorrection(true)
@@ -599,47 +442,223 @@ struct RegisterView: View {
                                             Image(uiImage: image)
                                                 .resizable()
                                                 .scaledToFit()
-                                                .frame(width: 120, height: 44)
-                                                .cornerRadius(8)
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                .cornerRadius(10)
                                         } else if captchaService.isLoading {
                                             ProgressView()
-                                                .frame(width: 120, height: 44)
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
                                         } else {
-                                            RoundedRectangle(cornerRadius: 8)
+                                            RoundedRectangle(cornerRadius: 10)
                                                 .fill(Color(.systemGray5))
-                                                .frame(width: 120, height: 44)
-                                                .overlay(Text("点击刷新").font(.system(size: 13)).foregroundColor(.secondary))
+                                                .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                .overlay(Text(L10n.string(.captchaRefresh)).font(.system(size: 15, weight: .medium)).foregroundColor(.secondary))
                                         }
                                     }
                                 }
                                 .buttonStyle(.plain)
                             }
+                        }
+                        .frame(height: 56)
 
-                            SecureField("设置密码（8 位以上）", text: $password)
+                        SecureField(L10n.string(.registerPassword), text: $password)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+                        
+                        SecureField(L10n.string(.registerConfirmPassword), text: $confirmPassword)
+                            .textFieldStyle(CustomTextFieldStyle())
+                            .font(.system(size: 18, weight: .medium))
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(L10n.string(.securityQuestionTitle))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.secondary)
+
+                            Text(L10n.string(.securityQuestionHelp))
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+
+                            Picker(L10n.string(.securityQuestionPicker), selection: $selectedSecurityQuestion) {
+                                ForEach(securityQuestions, id: \.self) { question in
+                                    Text(question).tag(question)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            TextField(L10n.string(.securityAnswer), text: $securityAnswer)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                        }
+                        .padding(.top, 4)
+                        
+                        Button(action: {
+                            print("🔴🔴🔴 立即注册按钮被点击！！！")
+                            Task { @MainActor in
+                                print("🔴 Task 开始执行")
+                                await register()
+                                print("🔴 Task 执行完成")
+                            }
+                        }, label: {
+                            Text(L10n.string(.registerButton))
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(Color(hex: "AF52DE"))
+                                .cornerRadius(12)
+                        })
+                        .contentShape(Rectangle())
+                        .disabled(false)
+                        .opacity(isLoading ? 0.5 : 1)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    // 切换到登录
+                    HStack {
+                        Text(L10n.string(.alreadyHaveAccount))
+                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                        
+                        Button(action: { isPresented = false }) {
+                            Text(L10n.string(.loginNow))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                                .font(.system(size: 16, weight: .bold))
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
+                }
+                    .frame(maxWidth: .infinity)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .alert(isPresented: $showingError) {
+                    Alert(
+                        title: Text(L10n.string(.error)),
+                        message: Text(errorMessage),
+                        dismissButton: .default(Text(L10n.string(.confirm)))
+                    )
+                }
+                .background(Color("BackgroundColor"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        languageMenu
+                    }
+                }
+                .task {
+                    if captchaService.image == nil {
+                        await captchaService.loadCaptcha()
+                    }
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 30) {
+                        // Logo
+                        VStack(spacing: 12) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text(L10n.string(.appName))
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(Color(hex: "AF52DE"))
+                            
+                            Text(L10n.string(.registerTitle))
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.top, 40)
+                        
+                        // 注册表单
+                        VStack(spacing: 20) {
+                            TextField(L10n.string(.registerName), text: $name)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            TextField(L10n.string(.registerAccount), text: $account)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                                .onChange(of: account) { _ in self.clearError() }
+                            
+                            TextField(L10n.string(.registerPhoneOptional), text: $phone)
+                                .textFieldStyle(CustomTextFieldStyle())
+                                .keyboardType(.phonePad)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .font(.system(size: 18, weight: .medium))
+                                .onChange(of: phone) { _ in self.clearError() }
+                            Text(L10n.string(.registerPhoneHelp))
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            GeometryReader { proxy in
+                                HStack(spacing: 12) {
+                                    TextField(L10n.string(.registerCaptcha), text: $captchaInput)
+                                        .textFieldStyle(CustomTextFieldStyle())
+                                        .autocapitalization(.none)
+                                        .disableAutocorrection(true)
+                                        .font(.system(size: 18, weight: .medium))
+                                    
+                                    Button(action: {
+                                        Task {
+                                            await captchaService.loadCaptcha()
+                                            captchaInput = ""
+                                        }
+                                    }) {
+                                        Group {
+                                            if let image = captchaService.image {
+                                                Image(uiImage: image)
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                    .cornerRadius(10)
+                                            } else if captchaService.isLoading {
+                                                ProgressView()
+                                                    .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color(.systemGray5))
+                                                    .frame(width: captchaFrameWidth(for: proxy.size.width), height: 56)
+                                                    .overlay(Text(L10n.string(.captchaRefresh)).font(.system(size: 15, weight: .medium)).foregroundColor(.secondary))
+                                            }
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .frame(height: 56)
+
+                            SecureField(L10n.string(.registerPassword), text: $password)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .font(.system(size: 18, weight: .medium))
                             
-                            SecureField("确认密码", text: $confirmPassword)
+                            SecureField(L10n.string(.registerConfirmPassword), text: $confirmPassword)
                                 .textFieldStyle(CustomTextFieldStyle())
                                 .font(.system(size: 18, weight: .medium))
 
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("找回密码唯一方式")
+                                Text(L10n.string(.securityQuestionTitle))
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.secondary)
 
-                                Text("注册时必须选择并牢记密保问题与答案。以后忘记密码，只能通过它找回。")
+                                Text(L10n.string(.securityQuestionHelp))
                                     .font(.system(size: 13))
                                     .foregroundColor(.secondary)
 
-                                Picker("密保问题", selection: $selectedSecurityQuestion) {
+                                Picker(L10n.string(.securityQuestionPicker), selection: $selectedSecurityQuestion) {
                                     ForEach(securityQuestions, id: \.self) { question in
                                         Text(question).tag(question)
                                     }
                                 }
                                 .pickerStyle(.menu)
 
-                                TextField("密保答案", text: $securityAnswer)
+                                TextField(L10n.string(.securityAnswer), text: $securityAnswer)
                                     .textFieldStyle(CustomTextFieldStyle())
                                     .autocapitalization(.none)
                                     .disableAutocorrection(true)
@@ -655,7 +674,7 @@ struct RegisterView: View {
                                     print("🔴 Task 执行完成")
                                 }
                             }, label: {
-                                Text("立即注册")
+                                Text(L10n.string(.registerButton))
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
@@ -671,12 +690,12 @@ struct RegisterView: View {
                         
                         // 切换到登录
                         HStack {
-                            Text("已经有账号？")
+                            Text(L10n.string(.alreadyHaveAccount))
                                 .foregroundColor(.gray)
                                 .font(.system(size: 16))
                             
                             Button(action: { isPresented = false }) {
-                                Text("立即登录")
+                                Text(L10n.string(.loginNow))
                                     .foregroundColor(Color(hex: "AF52DE"))
                                     .font(.system(size: 16, weight: .bold))
                             }
@@ -688,19 +707,38 @@ struct RegisterView: View {
                 }
                 .alert(isPresented: $showingError) {
                     Alert(
-                        title: Text("错误"),
+                        title: Text(L10n.string(.error)),
                         message: Text(errorMessage),
-                        dismissButton: .default(Text("确定"))
+                        dismissButton: .default(Text(L10n.string(.confirm)))
                     )
                 }
                 .background(Color("BackgroundColor"))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        languageMenu
+                    }
+                }
                 .task {
                     if captchaService.image == nil {
                         await captchaService.loadCaptcha()
                     }
                 }
             }
+        }
+        .stackNavigationStyle()
+    }
+
+    private var languageMenu: some View {
+        Menu {
+            ForEach(AppLanguageManager.Language.allCases, id: \.self) { language in
+                Button(language.displayName) {
+                    languageManager.setLanguage(language)
+                }
+            }
+        } label: {
+            Image(systemName: "globe")
+                .font(.system(size: 16, weight: .semibold))
         }
     }
 }
