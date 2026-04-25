@@ -142,3 +142,19 @@ struct FamilyInvitePreview: Identifiable, Codable {
     var requiresConfirmation: Bool
     var status: String
 }
+
+/// 待确认的家人绑定请求
+struct FamilyPendingRequest: Identifiable, Codable {
+    var id: String
+    var inviteCode: String
+    var inviterId: String
+    var inviterName: String
+    var inviterPhone: String
+    var acceptedById: String
+    var acceptedByName: String
+    var acceptedByPhone: String
+    var relationType: String
+    var status: String
+    var needsMyApproval: Bool
+    var createdAt: Date?
+}

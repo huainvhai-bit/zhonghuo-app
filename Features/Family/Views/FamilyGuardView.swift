@@ -29,6 +29,15 @@ struct FamilyGuardView: View {
     @State private var showingFamilyArchive = false  // 📚 家族档案
     @State private var showingInviteConfirmation = false
     @State private var pendingInvitePreview: FamilyInvitePreview?
+    @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
+
+    private var approvalFamilyRequests: [FamilyPendingRequest] {
+        pendingFamilyRequests.filter { $0.needsMyApproval }
+    }
+
+    private var waitingFamilyRequests: [FamilyPendingRequest] {
+        pendingFamilyRequests.filter { !$0.needsMyApproval }
+    }
     
     var body: some View {
         NavigationView {
@@ -38,7 +47,7 @@ struct FamilyGuardView: View {
                 if isLoading {
                     // 加载状态
                     loadingState
-                } else if familyList.isEmpty {
+                } else if familyList.isEmpty && pendingFamilyRequests.isEmpty {
                     // 空状态
                     emptyState
                 } else {
@@ -86,7 +95,7 @@ struct FamilyGuardView: View {
                 isPresented: $showingInviteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인")) {
+                Button(L10n.text("提交申请", en: "Submit request", ja: "申請を送信", ko: "요청 제출")) {
                     Task { await acceptPendingInvite() }
                 }
                 Button(L10n.string(.cancel), role: .cancel) {
@@ -95,10 +104,10 @@ struct FamilyGuardView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）确认绑定，确认后双方才会正式成为家人关系。",
-                        en: "You are about to confirm binding with \(preview.inviterName) (\(preview.inviterPhone)). Only after confirmation will both sides become family members.",
-                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）との連携を確認します。確認後に双方が正式に家族関係になります。",
-                        ko: "\(preview.inviterName)(\(preview.inviterPhone))와의 연결을 확인합니다. 확인 후 양쪽이 정식 가족 관계가 됩니다."
+                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -340,6 +349,15 @@ struct FamilyGuardView: View {
                 }
                 
                 // 4. 已关联家人列表
+                if !approvalFamilyRequests.isEmpty {
+                    pendingRequestsSection
+                }
+
+                if !waitingFamilyRequests.isEmpty {
+                    awaitingRequestsSection
+                }
+
+                // 5. 已关联家人列表
                 familyListSection
             }
             .padding()
@@ -411,11 +429,86 @@ struct FamilyGuardView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
-            
-            ForEach(familyList) { member in
-                FamilyMemberCard(member: member, onDelete: {
-                    loadFamilyList()
-                })
+
+            if familyList.isEmpty {
+                Text(pendingFamilyRequests.isEmpty
+                     ? L10n.text("暂时还没有已绑定的家人", en: "No family members bound yet.", ja: "まだ家族は連携されていません。", ko: "아직 연결된 가족이 없습니다.")
+                     : L10n.text("已有家人申请在处理中，确认后会显示在这里", en: "There is a family request in progress. It will appear here after confirmation.", ja: "家族申請が進行中です。確認後にここへ表示されます。", ko: "가족 요청이 진행 중입니다. 확인 후 여기에 표시됩니다."))
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 8)
+            } else {
+                ForEach(familyList) { member in
+                    FamilyMemberCard(member: member, onDelete: {
+                        loadFamilyList()
+                    })
+                }
+            }
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+
+    // MARK: - 待确认请求
+    private var pendingRequestsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "F59E0B"))
+
+                Text(L10n.text("待我确认的家人申请", en: "Family requests waiting for my confirmation", ja: "私の確認待ちの家族申請", ko: "내 확인을 기다리는 가족 요청"))
+                    .font(.system(size: 18, weight: .semibold))
+
+                Spacer()
+
+                Text("\(approvalFamilyRequests.count)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+
+            ForEach(approvalFamilyRequests) { request in
+                FamilyPendingRequestCard(
+                    request: request,
+                    showsConfirmButton: true,
+                    onConfirm: {
+                        Task { await finalizePendingFamilyRequest(request) }
+                    }
+                )
+            }
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+    }
+
+    // MARK: - 等待对方确认
+    private var awaitingRequestsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "clock.badge.checkmark")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "6366F1"))
+
+                Text(L10n.text("等待对方确认", en: "Waiting for the other side", ja: "相手の確認待ち", ko: "상대방 확인 대기"))
+                    .font(.system(size: 18, weight: .semibold))
+
+                Spacer()
+
+                Text("\(waitingFamilyRequests.count)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+
+            ForEach(waitingFamilyRequests) { request in
+                FamilyPendingRequestCard(
+                    request: request,
+                    showsConfirmButton: false,
+                    onConfirm: {}
+                )
             }
         }
         .padding(20)
@@ -494,6 +587,7 @@ struct FamilyGuardView: View {
                let success = familyResult["success"] as? Bool,
                success {
                 if let familyData = familyResult["data"] as? [String: Any] {
+                    self.pendingFamilyRequests = []
                     // 解析 members
                     if let members = familyData["members"] as? [[String: Any]] {
                         let newFamilyList = members.compactMap { member in
@@ -521,6 +615,27 @@ struct FamilyGuardView: View {
                                 relatedUserPhone: member.phone
                             )
                         })
+                    }
+
+                    if let pendingRequests = familyData["pendingRequests"] as? [[String: Any]] {
+                        self.pendingFamilyRequests = pendingRequests.compactMap { request in
+                            guard let id = request["id"] as? String, !id.isEmpty else { return nil }
+                            let createdAt = parseBackendDate(request["created_at"] as? String ?? request["createdAt"] as? String)
+                            return FamilyPendingRequest(
+                                id: id,
+                                inviteCode: request["invite_code"] as? String ?? request["inviteCode"] as? String ?? "",
+                                inviterId: request["inviter_id"] as? String ?? request["inviterId"] as? String ?? "",
+                                inviterName: request["inviterName"] as? String ?? "",
+                                inviterPhone: request["inviterPhone"] as? String ?? "",
+                                acceptedById: request["accepted_by"] as? String ?? request["acceptedById"] as? String ?? "",
+                                acceptedByName: request["acceptedByName"] as? String ?? "",
+                                acceptedByPhone: request["acceptedByPhone"] as? String ?? "",
+                                relationType: request["relation_type"] as? String ?? request["relationType"] as? String ?? "family",
+                                status: request["status"] as? String ?? "awaiting_owner",
+                                needsMyApproval: (request["needsMyApproval"] as? Bool) ?? false,
+                                createdAt: createdAt
+                            )
+                        }
                     }
                     
                     print("✅ 家人列表加载成功：\(familyList.count) 人")
@@ -720,6 +835,26 @@ struct FamilyGuardView: View {
                 _ = try? await DataManager.shared.refreshFamilyMembers()
                 pendingInvitePreview = nil
                 showingInviteConfirmation = false
+                await loadFamilyListAsync()
+            } else {
+                errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
+                showingError = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    @MainActor
+    private func finalizePendingFamilyRequest(_ request: FamilyPendingRequest) async {
+        do {
+            let result = try await DataManager.shared.acceptFamilyInvite(relationId: request.id)
+            print("📡 待确认家人请求确认响应：\(result)")
+
+            let success = result["success"] as? Bool ?? false
+            if success {
+                _ = try? await DataManager.shared.refreshFamilyMembers()
                 await loadFamilyListAsync()
             } else {
                 errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
@@ -1116,6 +1251,85 @@ struct FamilyMemberCard: View {
     }
 }
 
+// MARK: - 待确认家人卡片
+struct FamilyPendingRequestCard: View {
+    let request: FamilyPendingRequest
+    let showsConfirmButton: Bool
+    let onConfirm: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(request.needsMyApproval
+                         ? L10n.text("等待我确认", en: "Waiting for my confirmation", ja: "私の確認待ち", ko: "내 확인 대기")
+                         : L10n.text("等待对方确认", en: "Waiting for the other side", ja: "相手の確認待ち", ko: "상대방 확인 대기"))
+                        .font(.system(size: 16, weight: .semibold))
+
+                    Text(request.inviterName.isEmpty ? request.inviteCode : request.inviterName)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Text(request.needsMyApproval
+                     ? L10n.text("待确认", en: "Pending", ja: "確認待ち", ko: "확인 대기")
+                     : L10n.text("已提交", en: "Submitted", ja: "申請済み", ko: "제출됨"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(hex: "F59E0B").opacity(0.12))
+                    .foregroundColor(Color(hex: "F59E0B"))
+                    .cornerRadius(6)
+            }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.text("邀请码", en: "Invite code", ja: "招待コード", ko: "초대 코드"))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Text(request.inviteCode)
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(hex: "6366F1"))
+                }
+
+                Spacer()
+            }
+
+            Text(L10n.text(
+                "申请会先进入待确认状态，等邀请人再次确认后才会正式建立关系。",
+                en: "The request will first stay pending. The relationship becomes official only after the inviter confirms again.",
+                ja: "申請はまず確認待ちになります。招待者が再確認してから正式な関係になります。",
+                ko: "요청은 먼저 확인 대기 상태가 됩니다. 초대자가 다시 확인해야 정식 관계가 됩니다."
+            ))
+            .font(.system(size: 13))
+            .foregroundColor(.secondary)
+
+            if let createdAt = request.createdAt {
+                Text(L10n.text("创建时间", en: "Created at", ja: "作成日時", ko: "생성 시각") + "：\(createdAt.chineseDateTimeString())")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary.opacity(0.8))
+            }
+
+            if showsConfirmButton {
+                Button(action: onConfirm) {
+                    Text(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(Color(hex: "6366F1"))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(14)
+    }
+}
+
 // MARK: - 手动输入邀请码视图 (内联) - ✅ 修复 #6
 struct ManualInputInviteCodeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -1202,7 +1416,7 @@ struct ManualInputInviteCodeView: View {
             isPresented: $showingInviteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인")) {
+            Button(L10n.text("提交申请", en: "Submit request", ja: "申請を送信", ko: "요청 제출")) {
                 Task { await confirmPendingInvite() }
             }
             Button(L10n.string(.cancel), role: .cancel) {
@@ -1211,10 +1425,10 @@ struct ManualInputInviteCodeView: View {
         } message: {
             if let preview = pendingInvitePreview {
                 Text(L10n.text(
-                    "将与 \(preview.inviterName)（\(preview.inviterPhone)）确认绑定，确认后双方才会正式成为家人关系。",
-                    en: "You are about to confirm binding with \(preview.inviterName) (\(preview.inviterPhone)). Only after confirmation will both sides become family members.",
-                    ja: "\(preview.inviterName)（\(preview.inviterPhone)）との連携を確認します。確認後に双方が正式に家族関係になります。",
-                    ko: "\(preview.inviterName)(\(preview.inviterPhone))와의 연결을 확인합니다. 확인 후 양쪽이 정식 가족 관계가 됩니다."
+                    "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                    en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
+                    ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                    ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                 ))
             }
         }

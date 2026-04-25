@@ -1473,6 +1473,9 @@ class DataManager: ObservableObject {
             acceptFamilyInvite(relationId: $relationId) {
                 success
                 message
+                status
+                requiresOwnerConfirmation
+                relationId
             }
         }
         """
@@ -1536,10 +1539,14 @@ class DataManager: ObservableObject {
             bindFamilyByInviteCode(inviteCode: $inviteCode) {
                 success
                 message
-                family {
-                    id
-                    name
-                }
+                requiresConfirmation
+                status
+                relationId
+                inviteCode
+                inviterId
+                inviterName
+                inviterPhone
+                relationType
             }
         }
         """

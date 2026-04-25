@@ -22,6 +22,7 @@ struct BindFamilyView: View {
     @State private var showingMembershipView = false
     @State private var showingInviteConfirmation = false
     @State private var pendingInvitePreview: FamilyInvitePreview?
+    @State private var successMessage = ""
     
     var body: some View {
         NavigationView {
@@ -117,7 +118,7 @@ struct BindFamilyView: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
                         
-                        Text(L10n.text("确认后双方才会正式成为家人关系，可以互相查看设备信息和位置", en: "Only after confirmation will both sides become family members and be able to view each other's device info and location.", ja: "確認後に双方が正式に家族関係になり、お互いの端末情報や位置を確認できます。", ko: "확인 후 양쪽이 정식 가족 관계가 되며 서로의 기기 정보와 위치를 볼 수 있습니다."))
+                        Text(L10n.text("确认后会先提交绑定申请，等待对方最终确认后才会正式成为家人关系。", en: "After confirmation, a binding request will be submitted first. The relationship becomes official only after the other side confirms it.", ja: "確認するとまず連携申請が送信されます。相手が最終確認してから正式な家族関係になります。", ko: "확인하면 먼저 연결 요청이 제출됩니다. 상대방이 최종 확인해야 정식 가족 관계가 됩니다."))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -144,14 +145,16 @@ struct BindFamilyView: View {
                     onBound?()
                 }
             } message: {
-                Text(L10n.text("绑定成功", en: "Binding succeeded", ja: "連携に成功しました", ko: "연결에 성공했습니다"))
+                Text(successMessage.isEmpty
+                     ? L10n.text("绑定成功", en: "Binding succeeded", ja: "連携に成功しました", ko: "연결에 성공했습니다")
+                     : successMessage)
             }
             .confirmationDialog(
                 L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
                 isPresented: $showingInviteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인")) {
+                Button(L10n.text("提交申请", en: "Submit request", ja: "申請を送信", ko: "요청 제출")) {
                     Task { await acceptPendingInvite() }
                 }
                 Button(L10n.string(.cancel), role: .cancel) {
@@ -160,10 +163,10 @@ struct BindFamilyView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）确认绑定，确认后双方才会正式成为家人关系。",
-                        en: "You are about to confirm binding with \(preview.inviterName) (\(preview.inviterPhone)). Only after confirmation will both sides become family members.",
-                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）との連携を確認します。確認後に双方が正式に家族関係になります。",
-                        ko: "\(preview.inviterName)(\(preview.inviterPhone))와의 연결을 확인합니다. 확인 후 양쪽이 정식 가족 관계가 됩니다."
+                        "将与 \(preview.inviterName)（\(preview.inviterPhone)）提交绑定申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit a binding request with \(preview.inviterName) (\(preview.inviterPhone)). The binding becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（\(preview.inviterPhone)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(\(preview.inviterPhone))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -288,17 +291,18 @@ struct BindFamilyView: View {
             
             let success = result["success"] as? Bool ?? false
             if success {
-                if let preview = makeInvitePreview(from: result), preview.requiresConfirmation {
-                    pendingInvitePreview = preview
-                    showingInviteConfirmation = true
-                    isBinding = false
-                    return
-                }
-
-                _ = try? await DataManager.shared.refreshFamilyMembers()
+            if let preview = makeInvitePreview(from: result), preview.requiresConfirmation {
+                pendingInvitePreview = preview
+                showingInviteConfirmation = true
                 isBinding = false
-                showingSuccess = true
                 return
+            }
+
+            _ = try? await DataManager.shared.refreshFamilyMembers()
+            successMessage = result["message"] as? String ?? L10n.string(.bindSuccess)
+            isBinding = false
+            showingSuccess = true
+            return
             } else {
                 errorMessage = result["message"] as? String ?? "绑定失败"
             }
@@ -324,6 +328,7 @@ struct BindFamilyView: View {
             if success {
                 _ = try? await DataManager.shared.refreshFamilyMembers()
                 pendingInvitePreview = nil
+                successMessage = result["message"] as? String ?? L10n.text("已提交绑定申请，等待对方确认", en: "Binding request submitted. Waiting for the other side to confirm.", ja: "連携申請を送信しました。相手の確認をお待ちください。", ko: "연결 요청을 제출했습니다. 상대방의 확인을 기다려 주세요.")
                 showingSuccess = true
             } else {
                 errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)
