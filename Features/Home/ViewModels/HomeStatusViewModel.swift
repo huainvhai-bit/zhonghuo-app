@@ -25,6 +25,7 @@ final class HomeStatusViewModel: ObservableObject {
         }
         await dataManager.loadSystemConfig()
         await dataManager.loadReceivedCapsules()
+        _ = try? await dataManager.refreshFamilyMembers()
     }
 
     func handleAutoCheckIn() {
@@ -122,6 +123,7 @@ final class HomeStatusViewModel: ObservableObject {
 
         print("📥 1. 从云端下载数据...")
         await dataManager.downloadAllData()
+        _ = try? await dataManager.refreshFamilyMembers()
 
         print("📤 2. 上传本地新数据到云端...")
         print("📍 上传位置信息...")

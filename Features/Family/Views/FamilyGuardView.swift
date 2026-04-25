@@ -626,7 +626,8 @@ struct FamilyGuardView: View {
                                 relationType: member.relationship,
                                 relatedUserId: member.id,
                                 relatedUserName: member.name,
-                                relatedUserPhone: member.phone
+                                relatedUserPhone: member.phone,
+                                relatedUserLastCheckInDate: member.lastCheckInDate
                             )
                         })
                     }

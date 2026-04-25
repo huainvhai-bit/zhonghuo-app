@@ -1620,6 +1620,7 @@ class DataManager: ObservableObject {
                         role
                         status
                         createdAt
+                        relatedUserLastCheckInDate
                     }
                     invited {
                         id
@@ -1657,13 +1658,15 @@ class DataManager: ObservableObject {
                 ?? record["user_id"] as? String
                 ?? record["id"] as? String
                 ?? id
+            let relatedUserLastCheckInDate = Self.parseBackendDate(record["relatedUserLastCheckInDate"] as? String)
 
             return FamilyInfo(
                 id: id,
                 relationType: relationType,
                 relatedUserId: relatedUserId,
                 relatedUserName: record["relatedUserName"] as? String ?? record["name"] as? String,
-                relatedUserPhone: record["relatedUserPhone"] as? String ?? record["phone"] as? String
+                relatedUserPhone: record["relatedUserPhone"] as? String ?? record["phone"] as? String,
+                relatedUserLastCheckInDate: relatedUserLastCheckInDate
             )
         }
 
@@ -1674,6 +1677,21 @@ class DataManager: ObservableObject {
     /// 直接用已解析的家人列表覆盖共享缓存
     func updateFamilyMembersCache(_ members: [FamilyInfo]) {
         familyMembers = members
+    }
+
+    private static func parseBackendDate(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let date = formatter.date(from: value) {
+            return date
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        return isoFormatter.date(from: value)
     }
     
     /// 获取家庭档案列表（GraphQL）

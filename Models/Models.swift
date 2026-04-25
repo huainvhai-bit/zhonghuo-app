@@ -1253,6 +1253,7 @@ struct FamilyInfo: Decodable, Identifiable {
     let relatedUserId: String
     let relatedUserName: String?
     let relatedUserPhone: String?
+    let relatedUserLastCheckInDate: Date?
 }
 
 // MARK: - User Mutation

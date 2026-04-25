@@ -785,6 +785,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 } else {
                     print("❌ 遗嘱同步失败或无数据")
                 }
+
+                // 5. 刷新家人缓存，确保签到后家人页可尽快拿到最新签到时间
+                print("👨‍👩‍👧 5. 刷新家人缓存...")
+                _ = try? await DataManager.shared.refreshFamilyMembers()
                 
                 print("🎉 所有同步任务完成！")
                 print("🔵 ====== recordCheckIn 结束 ======")
@@ -853,6 +857,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 // 重新拉取用户数据，更新签到次数
                 await fetchUserData()
+
+                // 刷新家人缓存，确保签到时间尽快同步到家人页与共享状态
+                _ = try? await DataManager.shared.refreshFamilyMembers()
             } else {
                 print("⚠️ 签到同步返回失败")
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
