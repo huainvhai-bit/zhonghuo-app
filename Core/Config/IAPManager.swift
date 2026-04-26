@@ -314,8 +314,105 @@ class IAPManager: ObservableObject {
             print("📦 交易信息已保存：\(transactionData)")
         }
         
-        // TODO: 发送到服务器验证（生产环境需要）
-        // await verifyReceiptWithServer(transaction)
+        // 发送到服务器验证
+        await verifyReceiptWithServer(transaction)
+    }
+    
+    /// 将 Receipt 发送到服务器验证并激活会员
+    private func verifyReceiptWithServer(_ transaction: Transaction) async {
+        let userId = UserDefaults.standard.string(forKey: "userId") ?? ""
+        guard !userId.isEmpty else {
+            print("⚠️ 用户未登录，跳过服务器验证")
+            return
+        }
+        
+        let memberType: String
+        switch transaction.productID {
+        case "zhonghuo.monthly":
+            memberType = "monthly"
+        case "zhonghuo.yearly":
+            memberType = "yearly"
+        default:
+            memberType = "monthly"
+        }
+        
+        // 构建 GraphQL mutation
+        let mutation = """
+        mutation ActivateMembership($memberType: String!, $receipt: String!) {
+            activateMembership(memberType: $memberType, receipt: $receipt) {
+                success
+                isPremium
+                memberType
+                memberExpireAt
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "memberType": memberType,
+            "receipt": String(transaction.id)  // 发送 transactionId
+        ]
+        
+        guard let url = URL(string: "\(API_BASE_URL)/graphql.php") else {
+            print("❌ 无效的 API URL")
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(AuthManager.shared.getToken() ?? "")", forHTTPHeaderField: "Authorization")
+        
+        let body: [String: Any] = [
+            "query": mutation,
+            "variables": variables
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ 服务器响应无效")
+                return
+            }
+            
+            if httpResponse.statusCode == 200 {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let result = json["data"] as? [String: Any],
+                   let activateMembership = result["activateMembership"] as? [String: Any] {
+                    
+                    let success = activateMembership["success"] as? Bool ?? false
+                    if success {
+                        print("✅ 服务器会员激活成功")
+                        
+                        // 更新本地会员过期时间
+                        if let expireAtString = activateMembership["memberExpireAt"] as? String {
+                            let formatter = ISO8601DateFormatter()
+                            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                            if let expireAt = formatter.date(from: expireAtString) {
+                                let expiryData: [String: Any] = [
+                                    "memberExpireAt": expireAt.timeIntervalSince1970,
+                                    "memberType": memberType
+                                ]
+                                if let data = try? JSONSerialization.data(withJSONObject: expiryData) {
+                                    UserDefaults.standard.set(data, forKey: "MemberInfo")
+                                }
+                            }
+                        }
+                    } else {
+                        let message = activateMembership["message"] as? String ?? "未知错误"
+                        print("⚠️ 服务器会员激活失败：\(message)")
+                    }
+                }
+            } else {
+                print("❌ 服务器返回错误状态码：\(httpResponse.statusCode)")
+            }
+        } catch {
+            print("❌ 发送 receipt 验证失败：\(error.localizedDescription)")
+        }
     }
     
     /// 获取订阅过期日期
