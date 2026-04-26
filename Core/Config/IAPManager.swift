@@ -354,7 +354,8 @@ class IAPManager: ObservableObject {
             "receipt": String(transaction.id)  // 发送 transactionId
         ]
         
-        guard let url = URL(string: "\(API_BASE_URL)/graphql.php") else {
+        let apiURL = AppConfig.defaultAPIURL
+        guard let url = URL(string: "\(apiURL)/graphql.php") else {
             print("❌ 无效的 API URL")
             return
         }
@@ -362,7 +363,7 @@ class IAPManager: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(AuthManager.shared.getToken() ?? "")", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(KeychainManager.shared.getToken() ?? "")", forHTTPHeaderField: "Authorization")
         
         let body: [String: Any] = [
             "query": mutation,
