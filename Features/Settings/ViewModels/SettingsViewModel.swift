@@ -102,6 +102,19 @@ final class SettingsViewModel: ObservableObject {
         }
 
         LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "签到间隔设置变更")
+
+        // 关键修复：把新的签到间隔同步到服务端，否则后端 users.check_in_interval / checkin_expire_at
+        // 永远停留在旧值，导致家人 tab 与后台用户列表都看不到本次更改
+        let intervalHoursInt = Int(interval.hours)
+        do {
+            _ = try await APIManager.shared.updateCheckInInterval(hours: intervalHoursInt)
+        } catch {
+            print("⚠️ 同步签到间隔到服务端失败: \(error)")
+        }
+
+        // 间隔改变意味着"安全倒计时重置"。立即把新的剩余小时数上报，
+        // 让后台用户列表的"安全倒计时"列即时反映本次更改
+        _ = await dataManager.recordLastActive(hoursRemaining: Double(intervalHoursInt))
     }
 
     private func scheduleDeviceInfoUpload() {

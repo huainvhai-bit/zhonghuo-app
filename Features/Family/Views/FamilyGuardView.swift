@@ -64,17 +64,17 @@ struct FamilyGuardView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupNavigationBar()
-                
+
                 print("🔵 家人守护页面 onAppear")
-                
-                // ✅ 修复 #8: 只加载家人列表，不自动获取邀请码（避免卡顿）
-                // 邀请码只在点击"查看二维码"时才获取
-                guard !didInitialLoad else { return }
+
+                // 进入家人 tab 时拉一次最新的家人列表（含每个家人最新的"安全倒计时"），
+                // 不再用后台 30s 轮询，避免 tab 频繁刷新；
+                // 首次进入显示 loading，再次进入静默刷新避免闪烁
+                let isFirstAppear = !didInitialLoad
                 didInitialLoad = true
                 Task {
-                    await loadFamilyListAsync(showLoading: true)
+                    await loadFamilyListAsync(showLoading: isFirstAppear)
                 }
-                startFamilyPolling()
             }
             .onDisappear {
                 stopFamilyPolling()
@@ -901,15 +901,9 @@ struct FamilyGuardView: View {
     }
 
     private func startFamilyPolling() {
-        familyRefreshTask?.cancel()
-        familyRefreshTask = Task {
-            // 静默 30s 轮询：仅在数据变化时触发 UI 刷新；倒计时由各家人卡片的 TimelineView 每秒滚动
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-                if Task.isCancelled { break }
-                await loadFamilyListAsync(showLoading: false)
-            }
-        }
+        // 已弃用：移除 30s 后台轮询，改为每次进入家人 tab / App 回前台时按需刷新一次。
+        // 数据准确性由对方 App 在"安全倒计时重置"时主动上传保证；
+        // 单条家人卡片的倒计时滚动由 TimelineView 每秒推进，不依赖网络刷新。
     }
 
     /// 比较两份家人列表是否一致（仅基于会影响 UI 的字段）
