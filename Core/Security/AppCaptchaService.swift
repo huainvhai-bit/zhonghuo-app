@@ -60,7 +60,7 @@ final class AppCaptchaService: ObservableObject {
     }
 
     private func resolveBaseURL() -> String {
-        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
+        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "zhonghuo.zhonghuo.xyz"
         return NetworkUtils.normalizeBaseURL(rawBaseURL)
     }
 }

@@ -147,7 +147,27 @@ final class HomeStatusViewModel: ObservableObject {
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
         let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
         if isFamilyMode {
-            return (true, 999)
+            // 👨‍👩‍👧 家人模式：显示家人的签到倒计时
+            let hours = userManager.currentUser?.checkInInterval.hours ?? dataManager.settings.checkInInterval.hours
+            let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
+
+            // 找到已绑定的家人成员
+            guard let familyMember = dataManager.familyMembers.first(where: { !$0.relatedUserId.isEmpty }),
+                  let lastCheckIn = familyMember.relatedUserLastCheckInDate else {
+                // 没有家人数据时返回安全状态
+                return (true, Double(hours))
+            }
+
+            let elapsed = Date().timeIntervalSince(lastCheckIn) / 3600
+            let remaining = Double(hours) - elapsed
+
+            if remaining > 0 {
+                return (true, max(0, remaining))
+            } else if remaining > -offlineThreshold {
+                return (true, max(0, remaining))
+            } else {
+                return (false, 0)
+            }
         }
 
         let hours = userManager.currentUser?.checkInInterval.hours ?? dataManager.settings.checkInInterval.hours

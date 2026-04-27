@@ -614,7 +614,7 @@ struct FamilyGuardView: View {
                                 relationship: member["relation"] as? String ?? "",
                                 status: .accepted,
                                 statusText: L10n.string(.bindSuccess),
-                                lastCheckInDate: parseBackendDate(member["relatedUserLastCheckInDate"] as? String),
+                                lastCheckInDate: relatedUserCheckInDate(from: member),
                                 createdAt: parseBackendDate(member["createdAt"] as? String) ?? Date(),
                                 deviceInfo: nil
                             )
@@ -784,6 +784,7 @@ struct FamilyGuardView: View {
 
     private func parseBackendDate(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
+        if value == "0000-00-00 00:00:00" { return nil }
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -793,8 +794,40 @@ struct FamilyGuardView: View {
             return date
         }
 
-        let isoFormatter = ISO8601DateFormatter()
-        return isoFormatter.date(from: value)
+        var iso = ISO8601DateFormatter()
+        if let d = iso.date(from: value) { return d }
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: value) { return d }
+
+        return nil
+    }
+
+    /// 解析对方最后签到时间：兼容 String / 数字时间戳、以及下划线/大小写变体键名
+    private func relatedUserCheckInDate(from member: [String: Any]) -> Date? {
+        if let s = stringOrNilFromJSON(member["relatedUserLastCheckInDate"])
+            ?? stringOrNilFromJSON(member["related_user_last_check_in_date"]) {
+            return parseBackendDate(s)
+        }
+        if let d = member["relatedUserLastCheckInDate"] as? Double, d > 0 {
+            if d > 1_000_000_000_000 { return Date(timeIntervalSince1970: d / 1000) }
+            return Date(timeIntervalSince1970: d)
+        }
+        if let i = member["relatedUserLastCheckInDate"] as? Int, i > 0 {
+            let d = TimeInterval(i)
+            if d > 1_000_000_000_000 { return Date(timeIntervalSince1970: d / 1000) }
+            return Date(timeIntervalSince1970: d)
+        }
+        if let n = member["relatedUserLastCheckInDate"] as? NSNumber, n.doubleValue > 0 {
+            let d = n.doubleValue
+            if d > 1_000_000_000_000 { return Date(timeIntervalSince1970: d / 1000) }
+            return Date(timeIntervalSince1970: d)
+        }
+        return nil
+    }
+
+    private func stringOrNilFromJSON(_ value: Any?) -> String? {
+        if let s = value as? String, !s.isEmpty { return s }
+        return nil
     }
 
     private func handleFamilyBindEntry(_ action: () -> Void) {
@@ -915,38 +948,6 @@ struct FamilyGuardView: View {
             showingError = true
         }
         confirmingRequestId = nil
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        date.chineseDateTimeString()
-    }
-
-    private func checkInStateText(for date: Date) -> String {
-        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
-        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
-        let elapsedHours = Date().timeIntervalSince(date) / 3600
-
-        if elapsedHours <= intervalHours {
-            return L10n.string(.checkingNormal)
-        } else if elapsedHours <= intervalHours + offlineHours {
-            return L10n.string(.checkingOverdue)
-        } else {
-            return L10n.string(.checkingSevere)
-        }
-    }
-
-    private func checkInStateColor(for date: Date) -> Color {
-        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
-        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
-        let elapsedHours = Date().timeIntervalSince(date) / 3600
-
-        if elapsedHours <= intervalHours {
-            return .green
-        } else if elapsedHours <= intervalHours + offlineHours {
-            return .orange
-        } else {
-            return .red
-        }
     }
 }
 
@@ -1145,9 +1146,7 @@ struct FamilyMemberCard: View {
                         .foregroundColor(.secondary)
 
                     if let lastCheckInDate = member.lastCheckInDate {
-                        Text("\(L10n.string(.lastCheckIn))：\(formatDate(lastCheckInDate))")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
+                        otherPartyCountdownBlock(lastCheckIn: lastCheckInDate)
                     } else {
                         Text(L10n.string(.noRecordPrefix))
                             .font(.system(size: 12))
@@ -1204,19 +1203,6 @@ struct FamilyMemberCard: View {
                 }
             }
 
-            if let lastCheckInDate = member.lastCheckInDate {
-                Divider()
-
-                HStack {
-                    Text(checkInStateText(for: lastCheckInDate))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(checkInStateColor(for: lastCheckInDate))
-                    Spacer()
-                    Text(formatDate(lastCheckInDate))
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
-            }
         }
         .padding(16)
         .background(Color(.systemBackground))
@@ -1235,32 +1221,44 @@ struct FamilyMemberCard: View {
         date.chineseDateTimeString()
     }
 
-    private func checkInStateText(for date: Date) -> String {
-        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
-        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
-        let elapsedHours = Date().timeIntervalSince(date) / 3600
-
-        if elapsedHours <= intervalHours {
-            return L10n.string(.checkingNormal)
-        } else if elapsedHours <= intervalHours + offlineHours {
-            return L10n.string(.checkingOverdue)
-        } else {
-            return L10n.string(.checkingSevere)
+    /// 对方最后签到：倒计时（与系统签到间隔/离线宽限一致），约每 30 秒刷新
+    @ViewBuilder
+    private func otherPartyCountdownBlock(lastCheckIn: Date) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                let out = otherPartyCountdownText(lastCheckIn: lastCheckIn, now: context.date)
+                Text(out.text)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(out.color)
+            }
+            Text("\(L10n.string(.lastCheckIn))：\(formatDate(lastCheckIn))")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
         }
     }
 
-    private func checkInStateColor(for date: Date) -> Color {
+    private func otherPartyCountdownText(lastCheckIn: Date, now: Date) -> (text: String, color: Color) {
         let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
         let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
-        let elapsedHours = Date().timeIntervalSince(date) / 3600
+        let elapsed = now.timeIntervalSince(lastCheckIn) / 3600
+        let remaining = intervalHours - elapsed
 
-        if elapsedHours <= intervalHours {
-            return .green
-        } else if elapsedHours <= intervalHours + offlineHours {
-            return .orange
-        } else {
-            return .red
+        if remaining > 0 {
+            let totalMins = max(1, Int(ceil(remaining * 60.0 - 0.0001)))
+            let h = totalMins / 60
+            let m = totalMins % 60
+            let text = L10n.text(
+                "距下次应签到还有 \(h) 小时 \(m) 分",
+                en: "Next check-in in \(h)h \(m)m",
+                ja: "次のチェックインまであと \(h) 時間 \(m) 分",
+                ko: "다음 체크인까지 약 \(h)시간 \(m)분"
+            )
+            return (text, .green)
         }
+        if elapsed <= intervalHours + offlineHours {
+            return (L10n.string(.checkingOverdue), .orange)
+        }
+        return (L10n.string(.checkingSevere), .red)
     }
     
     private func deleteMember() {

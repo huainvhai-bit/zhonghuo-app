@@ -50,7 +50,7 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>8.136.41.211</key>
+			<key>zhonghuo.zhonghuo.xyz</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>

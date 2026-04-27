@@ -308,7 +308,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // 同步设置默认 API URL（在后台任务注册前）
         // 使用 NetworkUtils 自动转换为正确的协议（本地 IP 强制使用 HTTP）
-        let defaultURL = "8.136.41.211:3395"
+        let defaultURL = "zhonghuo.zhonghuo.xyz"
         let normalizedURL = NetworkUtils.normalizeBaseURL(defaultURL)
         DataManager.apiURL = normalizedURL
         DataManager.baseURL = normalizedURL
@@ -443,7 +443,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     private func initializeAPIConfig() async {
         // 关键：立即设置默认值（同步，确保在异步操作前就设置好）
-        let defaultURL = "8.136.41.211:3395"
+        let defaultURL = "zhonghuo.zhonghuo.xyz"
         let normalizedURL = NetworkUtils.normalizeBaseURL(defaultURL)
         await MainActor.run {
             DataManager.apiURL = normalizedURL
@@ -464,7 +464,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
             
             // 从服务器获取配置（超时 3 秒）
-            let baseURL = "8.136.41.211:3395"
+            let baseURL = "zhonghuo.zhonghuo.xyz"
             try await withTimeout(seconds: 3) {
                 try await DataManager.shared.fetchServerConfig(from: baseURL)
             }

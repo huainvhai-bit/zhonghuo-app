@@ -94,7 +94,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSExceptionDomains:
-            "8.136.41.211":
+            "zhonghuo.zhonghuo.xyz":
               NSExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
         CFBundleIcons:

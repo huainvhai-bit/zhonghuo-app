@@ -179,7 +179,7 @@ struct RegisterView: View {
     
     /// GraphQL Auth 请求
     private func graphqlAuthRequest(mutation: String, variables: [String: Any]) async throws -> [String: Any] {
-        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "8.136.41.211:3395"
+        let rawBaseURL = UserDefaults.standard.string(forKey: "lastUsedBaseURL") ?? "zhonghuo.zhonghuo.xyz"
         let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL)
         print("🌐 注册请求 URL: \(baseURL)/api/graphql.php")
         print("📦 请求数据：account=\(account), name=\(name), phone=\(phone)")

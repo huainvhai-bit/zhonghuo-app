@@ -18,7 +18,7 @@ enum NetworkProtocol {
         switch self {
         case .http: return "http"
         case .https: return "https"
-        case .auto: return "http" // 默认使用 HTTP
+        case .auto: return "https" // 默认使用 HTTPS
         }
     }
 }
@@ -32,8 +32,8 @@ class NetworkUtils {
     static func normalizeBaseURL(_ baseURL: String) -> String {
         let cleanURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 如果是本地开发 IP（8.136.41.211），强制使用 HTTP
-        if cleanURL.contains("8.136.41.211") || cleanURL.contains("127.0.0.1") || cleanURL.contains("localhost") {
+        // 如果是本地开发环境，强制使用 HTTP
+        if cleanURL.contains("127.0.0.1") || cleanURL.contains("localhost") {
             if cleanURL.hasPrefix("https://") {
                 return cleanURL.replacingOccurrences(of: "https://", with: "http://")
             }
@@ -48,8 +48,8 @@ class NetworkUtils {
             return cleanURL
         }
         
-        // 默认使用 HTTP（适配本地开发环境）
-        return "http://\(cleanURL)"
+        // 默认使用 HTTPS
+        return "https://\(cleanURL)"
     }
     
     /// 智能检测服务器协议
