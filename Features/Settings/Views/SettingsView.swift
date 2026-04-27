@@ -982,13 +982,13 @@ extension SettingsView {
             .padding(.horizontal)
             List {
                 Section(header: Text(L10n.string(.appInformation))) {
-                    if let url = URL(string: "https://zhonghuo.cn") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz") {
                         Link(L10n.string(.officialSite), destination: url)
                     }
-                    if let url = URL(string: "https://zhonghuo.cn/privacy") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/privacy") {
                         Link(L10n.string(.privacyPolicy), destination: url)
                     }
-                    if let url = URL(string: "https://zhonghuo.cn/terms") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/terms") {
                         Link(L10n.string(.termsOfService), destination: url)
                     }
                     

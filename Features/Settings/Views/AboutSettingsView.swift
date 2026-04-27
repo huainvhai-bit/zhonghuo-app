@@ -59,7 +59,7 @@ struct AboutSettingsView: View {
                 }
 
                 VStack(spacing: 12) {
-                    if let url = URL(string: "https://zhonghuo.cn") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz") {
                             Link(destination: url) {
                                 HStack {
                                 Text(L10n.string(.officialSite))
@@ -70,7 +70,7 @@ struct AboutSettingsView: View {
                             }
                         }
                     }
-                    if let url = URL(string: "https://zhonghuo.cn/privacy") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/privacy") {
                             Link(destination: url) {
                                 HStack {
                                 Text(L10n.string(.privacyPolicy))
@@ -81,7 +81,7 @@ struct AboutSettingsView: View {
                             }
                         }
                     }
-                    if let url = URL(string: "https://zhonghuo.cn/terms") {
+                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/terms") {
                             Link(destination: url) {
                                 HStack {
                                 Text(L10n.string(.termsOfService))

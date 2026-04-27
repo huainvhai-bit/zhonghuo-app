@@ -266,9 +266,10 @@ struct MembershipView: View {
             }
             .disabled(isPurchasing)
             
-            Text(L10n.text("7天免费试用 · 随时取消", en: "7-day free trial · Cancel anytime", ja: "7日間無料体験・いつでも解約可", ko: "7일 무료 체험 · 언제든지 취소 가능"))
+            Text(L10n.text("订阅自动续期，随时可在 Apple ID 中取消", en: "Subscription auto-renews. Cancel anytime in your Apple ID.", ja: "サブスクリプションは自動更新されます。Apple IDからいつでも解約できます。", ko: "구독은 자동 갱신됩니다. Apple ID에서 언제든지 취소할 수 있습니다."))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
         }
     }
     
@@ -426,14 +427,14 @@ struct MembershipView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 16) {
-                if let url = URL(string: "https://zhonghuo.cn/privacy") {
+                if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/privacy") {
                     Link(L10n.string(.privacyPolicy), destination: url)
                         .font(.system(size: 12))
                 }
                 Text("|")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                if let url = URL(string: "https://zhonghuo.cn/terms") {
+                if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/terms") {
                     Link(L10n.string(.termsOfService), destination: url)
                         .font(.system(size: 12))
                 }
