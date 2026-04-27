@@ -1007,7 +1007,8 @@ extension SettingsView {
                     HStack {
                         Text(L10n.string(.contactEmail))
                         Spacer()
-                        Text("support@zhonghuo.cn").foregroundColor(.secondary)
+                        Text(dataManager.systemConfig.customerServiceEmail)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -1017,6 +1018,10 @@ extension SettingsView {
         }
         .navigationTitle(L10n.string(.about))
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            // 进入关于页时拉一次最新的系统配置（含客服邮箱、电话、版本号等）
+            await dataManager.loadSystemConfig()
+        }
         .alert(L10n.string(.checkUpdate), isPresented: $viewModel.showingUpdateAlert) {
             Button(L10n.string(.later), role: .cancel) { }
             Button(L10n.string(.updateNow)) {
