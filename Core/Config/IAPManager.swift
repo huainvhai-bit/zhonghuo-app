@@ -11,8 +11,8 @@ import StoreKit
 
 /// IAP 商品类型
 enum IAPProductType: String, CaseIterable {
-    case monthly = "zhonghuo.monthly"
-    case yearly = "zhonghuo.yearly"
+    case monthly = "zhonghuo.month1"
+    case yearly = "zhonghuo.year1"
     
     var displayName: String {
         switch self {
@@ -70,8 +70,8 @@ class IAPManager: ObservableObject {
     
     // 商品ID到产品类型的映射
     private var productTypeMap: [String: IAPProductType] = [
-        "zhonghuo.monthly": .monthly,
-        "zhonghuo.yearly": .yearly
+        "zhonghuo.month1": .monthly,
+        "zhonghuo.year1": .yearly
     ]
     
     // 事务监听任务
@@ -335,9 +335,9 @@ class IAPManager: ObservableObject {
         
         let memberType: String
         switch transaction.productID {
-        case "zhonghuo.monthly":
+        case "zhonghuo.month1":
             memberType = "monthly"
-        case "zhonghuo.yearly":
+        case "zhonghuo.year1":
             memberType = "yearly"
         default:
             memberType = "monthly"
