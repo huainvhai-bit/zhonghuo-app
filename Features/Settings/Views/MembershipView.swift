@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct MembershipView: View {
     @StateObject private var membership = MembershipManager.shared
@@ -15,6 +16,7 @@ struct MembershipView: View {
     @State private var showingPurchaseAlert = false
     @State private var purchaseMessage = ""
     @State private var isPurchasing = false
+    @State private var isRestoring = false
     
     var body: some View {
         NavigationView {
@@ -36,7 +38,13 @@ struct MembershipView: View {
                     
                     // 购买按钮
                     purchaseButton
-                    
+
+                    // 辅助操作：恢复购买 / 管理订阅
+                    subscriptionActionsSection
+
+                    // 自动续费披露 + 隐私政策 + 用户协议
+                    legalDisclosureSection
+
                     Spacer(minLength: 40)
                 }
                 .padding()
@@ -290,12 +298,17 @@ struct MembershipView: View {
             isPurchasing = false
             
             switch result {
-            case .success(let transactionId, let expiryDate):
+            case .success(let transactionId, let originalTransactionId, let expiryDate):
                 // 购买成功，激活会员
-                print("✅ IAP 购买成功: transactionId=\(transactionId), expiry=\(expiryDate)")
+                print("✅ IAP 购买成功: txId=\(transactionId), origTxId=\(originalTransactionId), expiry=\(expiryDate)")
                 
-                // 调用服务器激活会员
-                await activateMembershipOnServer(type: selectedPlan, transactionId: transactionId, expiryDate: expiryDate)
+                // 调用服务器激活会员（带上 originalTransactionId 用于跨设备绑定）
+                await activateMembershipOnServer(
+                    type: selectedPlan,
+                    transactionId: transactionId,
+                    originalTransactionId: originalTransactionId,
+                    expiryDate: expiryDate
+                )
                 
                 purchaseMessage = L10n.text("\(selectedPlanName)开通成功！", en: "\(selectedPlanName) subscription activated!", ja: "\(selectedPlanName)の開通に成功しました！", ko: "\(selectedPlanName) 시작에 성공했습니다!")
                 showingPurchaseAlert = true
@@ -316,26 +329,37 @@ struct MembershipView: View {
     }
     
     /// 在服务器上激活会员
-    private func activateMembershipOnServer(type: String, transactionId: String, expiryDate: Date) async {
+    /// - Parameters:
+    ///   - type: 月卡/年卡
+    ///   - transactionId: 当前事务 ID
+    ///   - originalTransactionId: 原始订阅事务 ID，整条订阅链不变；服务器据此把订阅绑定到 App 账号
+    private func activateMembershipOnServer(
+        type: String,
+        transactionId: String,
+        originalTransactionId: String,
+        expiryDate: Date
+    ) async {
         // 1. 先在本地激活
         membership.activatePremium(type: type)
         
         // 2. 同步到服务器
         do {
             let mutation = """
-            mutation($memberType: String!, $receipt: String!) {
-                activateMembership(memberType: $memberType, receipt: $receipt) {
+            mutation($memberType: String!, $receipt: String!, $originalTransactionId: String) {
+                activateMembership(memberType: $memberType, receipt: $receipt, originalTransactionId: $originalTransactionId) {
                     success
                     isPremium
                     memberType
                     memberExpireAt
+                    message
                 }
             }
             """
             
             let variables: [String: Any] = [
                 "memberType": type,
-                "receipt": transactionId  // 发送交易ID用于验证
+                "receipt": transactionId,
+                "originalTransactionId": originalTransactionId
             ]
             
             let result = try await GraphQLClient.shared.query(mutation, variables: variables)
@@ -345,10 +369,122 @@ struct MembershipView: View {
                let success = activation["success"] as? Bool, success {
                 print("✅ 会员激活已同步到服务器")
             } else {
-                print("⚠️ 会员激活同步失败，但本地已激活")
+                let message = ((result["data"] as? [String: Any])?["activateMembership"] as? [String: Any])?["message"] as? String
+                    ?? (result["errors"] as? [[String: Any]])?.first?["message"] as? String
+                    ?? "未知错误"
+                print("⚠️ 会员激活同步失败：\(message)")
             }
         } catch {
             print("❌ 会员激活同步异常：\(error)")
+        }
+    }
+
+    // MARK: - 恢复购买 / 管理订阅
+    private var subscriptionActionsSection: some View {
+        HStack(spacing: 24) {
+            Button(action: { restorePurchases() }) {
+                HStack(spacing: 6) {
+                    if isRestoring {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    Text(L10n.text("恢复购买", en: "Restore Purchases", ja: "購入を復元", ko: "구매 복원"))
+                }
+                .font(.system(size: 14))
+                .foregroundColor(Color(hex: "6366F1"))
+            }
+            .disabled(isRestoring)
+
+            Text("|")
+                .foregroundColor(.secondary)
+
+            Button(action: { openManageSubscriptions() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gearshape")
+                    Text(L10n.text("管理订阅", en: "Manage Subscription", ja: "サブスクリプション管理", ko: "구독 관리"))
+                }
+                .font(.system(size: 14))
+                .foregroundColor(Color(hex: "6366F1"))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
+    }
+
+    private var legalDisclosureSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.text(
+                "订阅说明：通过 Apple ID 账户扣款，订阅将自动续期。如需取消，请在当前订阅周期结束前至少 24 小时，前往 Apple ID 的「订阅」中关闭自动续期。续订费用将在当前周期结束前 24 小时内扣除。购买后可在 Apple ID 设置中或本页「管理订阅」入口取消或更换套餐。",
+                en: "Subscription terms: Payment will be charged to your Apple ID account at confirmation of purchase. Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Renewal is charged within 24 hours prior to the end of the current period. You can manage and cancel your subscription in your Apple ID account settings, or via the “Manage Subscription” entry above.",
+                ja: "サブスクリプションについて：お支払いは購入確定時に Apple ID アカウントへ請求されます。サブスクリプションは現在の期間終了の少なくとも 24 時間前に自動更新を解除しない限り、自動的に更新されます。更新料金は現在の期間終了の 24 時間以内に請求されます。Apple ID の設定または上記「サブスクリプション管理」からいつでも管理・解約できます。",
+                ko: "구독 안내: 결제는 구매 확인 시 Apple ID 계정에 청구됩니다. 현재 기간 종료 24시간 전까지 자동 갱신을 해제하지 않으면 구독이 자동으로 갱신됩니다. 갱신 비용은 현재 기간 종료 전 24시간 이내에 청구됩니다. Apple ID 설정 또는 위의 ‘구독 관리’에서 언제든지 관리하거나 취소할 수 있습니다."
+            ))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 16) {
+                if let url = URL(string: "https://zhonghuo.cn/privacy") {
+                    Link(L10n.string(.privacyPolicy), destination: url)
+                        .font(.system(size: 12))
+                }
+                Text("|")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                if let url = URL(string: "https://zhonghuo.cn/terms") {
+                    Link(L10n.string(.termsOfService), destination: url)
+                        .font(.system(size: 12))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func restorePurchases() {
+        Task {
+            isRestoring = true
+            await iapManager.restorePurchases()
+            // 拉一次服务器最新会员状态，把恢复出的订阅同步到当前 App 账号
+            await UserManager.shared.fetchUserData()
+            isRestoring = false
+            if iapManager.isSubscribed {
+                purchaseMessage = L10n.text(
+                    "已为当前账号恢复有效订阅。",
+                    en: "Active subscription restored for the current account.",
+                    ja: "現在のアカウントに有効なサブスクリプションを復元しました。",
+                    ko: "현재 계정에 활성 구독이 복원되었습니다."
+                )
+            } else {
+                purchaseMessage = L10n.text(
+                    "未发现可恢复的订阅。如有疑问，请联系客服或登录原 App 账号。",
+                    en: "No restorable subscription was found. Please contact support or sign in with the original account if needed.",
+                    ja: "復元可能なサブスクリプションが見つかりません。必要に応じてカスタマーサポートに連絡するか、元のアカウントでサインインしてください。",
+                    ko: "복원 가능한 구독을 찾을 수 없습니다. 필요한 경우 고객지원에 문의하거나 원본 계정으로 로그인하세요."
+                )
+            }
+            showingPurchaseAlert = true
+        }
+    }
+
+    private func openManageSubscriptions() {
+        Task {
+            // iOS 15+ 直接拉起 App 内系统订阅管理 sheet；失败时回退到打开订阅管理 URL
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                do {
+                    try await AppStore.showManageSubscriptions(in: scene)
+                    return
+                } catch {
+                    print("⚠️ showManageSubscriptions 失败: \(error)")
+                }
+            }
+            if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                await MainActor.run {
+                    UIApplication.shared.open(url)
+                }
+            }
         }
     }
 }

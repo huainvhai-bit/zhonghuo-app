@@ -48,7 +48,9 @@ enum IAPSubscriptionDuration {
 
 /// 购买结果
 enum IAPPurchaseResult {
-    case success(transactionId: String, expiryDate: Date)
+    /// transactionId: 当前事务 ID（每次续订/恢复都会变）
+    /// originalTransactionId: 原始订阅事务 ID，整条订阅链不变，用于服务器绑定到 App 账号
+    case success(transactionId: String, originalTransactionId: String, expiryDate: Date)
     case pending
     case failure(error: String)
     case cancelled
@@ -161,9 +163,14 @@ class IAPManager: ObservableObject {
                 purchasedProductIds.insert(product.id)
                 isSubscribed = true
                 
-                print("✅ IAP 购买成功：\(product.id), 到期日：\(expiryDate)")
+                let originalId = String(transaction.originalID)
+                print("✅ IAP 购买成功：\(product.id), txId=\(transaction.id), originalTxId=\(originalId), 到期日：\(expiryDate)")
                 
-                return .success(transactionId: String(transaction.id), expiryDate: expiryDate)
+                return .success(
+                    transactionId: String(transaction.id),
+                    originalTransactionId: originalId,
+                    expiryDate: expiryDate
+                )
                 
             case .userCancelled:
                 isLoading = false
@@ -337,9 +344,10 @@ class IAPManager: ObservableObject {
         }
         
         // 构建 GraphQL mutation
+        // 把 originalTransactionId 一起送上去，让服务器把订阅绑定到当前 App 账号
         let mutation = """
-        mutation ActivateMembership($memberType: String!, $receipt: String!) {
-            activateMembership(memberType: $memberType, receipt: $receipt) {
+        mutation ActivateMembership($memberType: String!, $receipt: String!, $originalTransactionId: String) {
+            activateMembership(memberType: $memberType, receipt: $receipt, originalTransactionId: $originalTransactionId) {
                 success
                 isPremium
                 memberType
@@ -351,11 +359,12 @@ class IAPManager: ObservableObject {
         
         let variables: [String: Any] = [
             "memberType": memberType,
-            "receipt": String(transaction.id)  // 发送 transactionId
+            "receipt": String(transaction.id),
+            "originalTransactionId": String(transaction.originalID)
         ]
         
         let apiURL = AppConfig.defaultAPIURL
-        guard let url = URL(string: "\(apiURL)/graphql.php") else {
+        guard let url = URL(string: "\(apiURL)/api/graphql.php") else {
             print("❌ 无效的 API URL")
             return
         }
