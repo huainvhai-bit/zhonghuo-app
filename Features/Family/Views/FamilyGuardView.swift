@@ -785,11 +785,17 @@ struct FamilyGuardView: View {
     private func parseBackendDate(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
         if value == "0000-00-00 00:00:00" { return nil }
+        if value.hasPrefix("0000-00-00") { return nil }
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone.current
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let date = formatter.date(from: value) {
+            return date
+        }
+        // users.last_check_in_date 在库中多为 DATE 类型，接口常见仅日期：2026-04-27
+        formatter.dateFormat = "yyyy-MM-dd"
         if let date = formatter.date(from: value) {
             return date
         }

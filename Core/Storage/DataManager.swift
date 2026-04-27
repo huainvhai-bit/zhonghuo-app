@@ -1681,6 +1681,8 @@ class DataManager: ObservableObject {
 
     private static func parseBackendDate(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
+        if value == "0000-00-00 00:00:00" { return nil }
+        if value.hasPrefix("0000-00-00") { return nil }
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -1689,9 +1691,15 @@ class DataManager: ObservableObject {
         if let date = formatter.date(from: value) {
             return date
         }
+        formatter.dateFormat = "yyyy-MM-dd"
+        if let date = formatter.date(from: value) {
+            return date
+        }
 
-        let isoFormatter = ISO8601DateFormatter()
-        return isoFormatter.date(from: value)
+        var iso = ISO8601DateFormatter()
+        if let d = iso.date(from: value) { return d }
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return iso.date(from: value)
     }
     
     /// 获取家庭档案列表（GraphQL）
