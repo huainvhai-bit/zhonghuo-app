@@ -862,8 +862,9 @@ struct FamilyGuardView: View {
     private func startFamilyPolling() {
         familyRefreshTask?.cancel()
         familyRefreshTask = Task {
+            // 15s 轮询：拿对方最新的 checkin_expire_at；UI 倒计时由 TimelineView 每秒刷新
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 20_000_000_000)
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
                 if Task.isCancelled { break }
                 await loadFamilyListAsync()
             }
@@ -1238,14 +1239,9 @@ struct FamilyMemberCard: View {
         }
     }
 
-    /// 优先使用对方账号自己的「下次签到截止时间」；无则按对方最后签到时间 + 系统签到间隔降级
+    /// 仅使用对方账号自己的「下次签到截止时间」（来自服务端 checkin_expire_at），避免按本机/系统默认间隔误算
     private var effectiveDeadline: Date? {
-        if let d = member.nextCheckInDeadline { return d }
-        if let last = member.lastCheckInDate {
-            let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
-            return last.addingTimeInterval(intervalHours * 3600)
-        }
-        return nil
+        return member.nextCheckInDeadline
     }
 
     /// 倒计时块：仅显示 HH:MM:SS（每秒刷新）；超时后按 offlineTimeoutHours 决定颜色与文案
