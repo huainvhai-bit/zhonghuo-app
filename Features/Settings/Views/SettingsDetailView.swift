@@ -21,6 +21,7 @@ struct SettingsDetailView: View {
     @State private var showingUpgradeForCloudBackup = false
     @State private var showingMembershipView = false
     @State private var showingAbout = false
+    @State private var showingDeleteAccount = false
     @State private var restoreMessage = ""
     
     var body: some View {
@@ -120,6 +121,30 @@ struct SettingsDetailView: View {
                         }
                     }
                 }
+
+                // ⚠️ 注销账号（位于设置最底部，独立分区，与"退出登录"明显区分）
+                Section {
+                    Button(action: { showingDeleteAccount = true }) {
+                        HStack {
+                            Image(systemName: "person.crop.circle.badge.xmark")
+                                .foregroundColor(.red)
+                                .frame(width: 28)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(L10n.text("注销账号", en: "Delete Account", ja: "アカウント削除", ko: "계정 삭제"))
+                                    .foregroundColor(.red)
+                                Text(L10n.text(
+                                    "永久删除账号及全部数据，操作不可撤销",
+                                    en: "Permanently delete your account and all data. This cannot be undone.",
+                                    ja: "アカウントとすべてのデータを完全に削除します。元に戻せません。",
+                                    ko: "계정과 모든 데이터를 영구히 삭제합니다. 되돌릴 수 없습니다."
+                                ))
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
             }
             .listStyle(.insetGrouped)
         }
@@ -182,6 +207,9 @@ struct SettingsDetailView: View {
             NavigationView {
                 AboutSettingsView()
             }
+        }
+        .sheet(isPresented: $showingDeleteAccount) {
+            DeleteAccountView()
         }
     }
     

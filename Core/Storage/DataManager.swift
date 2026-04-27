@@ -1332,8 +1332,53 @@ class DataManager: ObservableObject {
         }
         return false
     }
-    
-    
+
+    /// 自助注销账号
+    ///
+    /// 沿用"找回密码"的二次身份校验：必须传入用户在注册时设置的密保问题 + 答案。
+    /// 服务端校验通过后会在事务内删除该账号在所有业务表中的数据，并最终删除 users 行。
+    ///
+    /// 调用方在拿到 `success == true` 后，应当立即在本地执行 `UserManager.shared.logout()`
+    /// 并清掉本地的胶囊/遗嘱/资产等持久化数据，避免下一个账号在同一台设备上看到残留数据。
+    @discardableResult
+    func deleteAccount(securityQuestion: String, securityAnswer: String) async throws -> (success: Bool, message: String) {
+        guard !DataManager.apiURL.isEmpty else {
+            throw NSError(domain: "服务器地址未配置", code: -1, userInfo: [NSLocalizedDescriptionKey: "服务器地址未配置"])
+        }
+
+        let mutation = """
+        mutation($securityQuestion: String!, $securityAnswer: String!) {
+            deleteAccount(securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
+                success
+                message
+            }
+        }
+        """
+        let variables: [String: Any] = [
+            "securityQuestion": securityQuestion,
+            "securityAnswer": securityAnswer
+        ]
+
+        let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+
+        if let errors = result["errors"] as? [[String: Any]], let first = errors.first {
+            let message = (first["message"] as? String) ?? "注销失败，请稍后重试"
+            throw NSError(domain: message, code: -1, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+
+        guard let data = result["data"] as? [String: Any],
+              let payload = data["deleteAccount"] as? [String: Any] else {
+            throw NSError(domain: "注销失败，请稍后重试", code: -1, userInfo: [NSLocalizedDescriptionKey: "注销失败，请稍后重试"])
+        }
+
+        let success = (payload["success"] as? Bool) ?? false
+        let message = (payload["message"] as? String) ?? (success ? "账号已注销" : "注销失败，请稍后重试")
+        if !success {
+            throw NSError(domain: message, code: -1, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        return (true, message)
+    }
+
     /// 批量同步胶囊到服务器
     /// ✅ 修复：标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
     @MainActor

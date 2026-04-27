@@ -10,6 +10,7 @@
 		00F2F6281B868D10E224D971 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80DC535B7F587ACEDCB0681A /* SettingsView.swift */; };
 		031A92067F1801ED26FAB895 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BAAA1F2133C403CC319686 /* ContentView.swift */; };
 		0589E5D7C0767013EA3FD178 /* SettingsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3201035732F9FD6D818D32B4 /* SettingsDetailView.swift */; };
+		D4A1E2C36F8B79140A5D11B0 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1E2C36F8B79140A5D11B1 /* DeleteAccountView.swift */; };
 		07519F3E3E04D1ED331B7AED /* BindFamilyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 436489E7FE94F62B8228B7A8 /* BindFamilyView.swift */; };
 		07F5DDC5289569F0ADBF391A /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B0497DD862983E6B262E93 /* ContentViewModel.swift */; };
 		086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA4936695B433690FA0934 /* AccountValidator.swift */; };
@@ -110,6 +111,7 @@
 		B11E0B7E2D4C4A5F9A1B2C3D /* ChineseDateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChineseDateFormatter.swift; sourceTree = "<group>"; };
 		314413A6788032D19A22F630 /* ElectronicSignatureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicSignatureManager.swift; sourceTree = "<group>"; };
 		3201035732F9FD6D818D32B4 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
+		D4A1E2C36F8B79140A5D11B1 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
 		38A16566FA6A3CFC2001EA6D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3B8932B627A35B65B89EEC0D /* OfflineEditorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineEditorManager.swift; sourceTree = "<group>"; };
 		3F5C2800D4435BF60FDBF674 /* WillAssetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WillAssetsView.swift; sourceTree = "<group>"; };
@@ -350,6 +352,7 @@
 			isa = PBXGroup;
 			children = (
 				96D562099C30B55933868C44 /* AboutSettingsView.swift */,
+				D4A1E2C36F8B79140A5D11B1 /* DeleteAccountView.swift */,
 				2DEE4DD2B8ECBC15062589F9 /* LegalDisclosureView.swift */,
 				585D4487EE3FB1C7623DC3CB /* MembershipView.swift */,
 				3201035732F9FD6D818D32B4 /* SettingsDetailView.swift */,
@@ -707,6 +710,7 @@
 				8BE54187F4BFDCF7EFF03F84 /* RegisterView.swift in Sources */,
 				736A049925EF89FE0F74BE59 /* ResetPasswordView.swift in Sources */,
 				0589E5D7C0767013EA3FD178 /* SettingsDetailView.swift in Sources */,
+				D4A1E2C36F8B79140A5D11B0 /* DeleteAccountView.swift in Sources */,
 				00F2F6281B868D10E224D971 /* SettingsView.swift in Sources */,
 				66F10B55D9CAE3834BB56234 /* SettingsViewModel.swift in Sources */,
 				B6A4E71CF2423C9A35A63E91 /* SyncConflictResolver.swift in Sources */,
