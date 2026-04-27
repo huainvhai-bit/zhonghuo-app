@@ -19,6 +19,7 @@ struct FamilyMember: Identifiable, Codable {
     var status: Status       // 关系状态
     var statusText: String   // 状态文本
     var lastCheckInDate: Date? = nil  // 被守护端最后签到时间
+    var nextCheckInDeadline: Date? = nil  // 被守护端下次应签到的截止时间（来自 checkin_expire_at）
     var createdAt: Date      // 创建时间
     var deviceInfo: DeviceInfo?  // 设备信息
     
@@ -53,6 +54,7 @@ struct FamilyMember: Identifiable, Codable {
         status: Status,
         statusText: String,
         lastCheckInDate: Date? = nil,
+        nextCheckInDeadline: Date? = nil,
         createdAt: Date,
         deviceInfo: DeviceInfo? = nil
     ) {
@@ -65,6 +67,7 @@ struct FamilyMember: Identifiable, Codable {
         self.status = status
         self.statusText = statusText
         self.lastCheckInDate = lastCheckInDate
+        self.nextCheckInDeadline = nextCheckInDeadline
         self.createdAt = createdAt
         self.deviceInfo = deviceInfo
     }

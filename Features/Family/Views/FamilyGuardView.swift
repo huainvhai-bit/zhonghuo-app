@@ -579,6 +579,7 @@ struct FamilyGuardView: View {
                             status
                             createdAt
                             relatedUserLastCheckInDate
+                            relatedUserCheckInExpireAt
                         }
                         invited {
                             id
@@ -615,6 +616,7 @@ struct FamilyGuardView: View {
                                 status: .accepted,
                                 statusText: L10n.string(.bindSuccess),
                                 lastCheckInDate: relatedUserCheckInDate(from: member),
+                                nextCheckInDeadline: relatedUserCheckInDeadline(from: member),
                                 createdAt: parseBackendDate(member["createdAt"] as? String) ?? Date(),
                                 deviceInfo: nil
                             )
@@ -834,6 +836,19 @@ struct FamilyGuardView: View {
     private func stringOrNilFromJSON(_ value: Any?) -> String? {
         if let s = value as? String, !s.isEmpty { return s }
         return nil
+    }
+
+    /// 解析对方下次应签到的截止时间（Unix 秒级时间戳）
+    private func relatedUserCheckInDeadline(from member: [String: Any]) -> Date? {
+        let raw: Double? = {
+            if let n = member["relatedUserCheckInExpireAt"] as? NSNumber { return n.doubleValue }
+            if let i = member["relatedUserCheckInExpireAt"] as? Int { return Double(i) }
+            if let d = member["relatedUserCheckInExpireAt"] as? Double { return d }
+            if let s = member["relatedUserCheckInExpireAt"] as? String, let d = Double(s) { return d }
+            return nil
+        }()
+        guard let value = raw, value > 0 else { return nil }
+        return Date(timeIntervalSince1970: value > 1_000_000_000_000 ? value / 1000 : value)
     }
 
     private func handleFamilyBindEntry(_ action: () -> Void) {
@@ -1151,8 +1166,8 @@ struct FamilyMemberCard: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
 
-                    if let lastCheckInDate = member.lastCheckInDate {
-                        otherPartyCountdownBlock(lastCheckIn: lastCheckInDate)
+                    if let deadline = effectiveDeadline {
+                        otherPartyCountdownBlock(deadline: deadline)
                     } else {
                         Text(L10n.string(.noRecordPrefix))
                             .font(.system(size: 12))
@@ -1223,48 +1238,47 @@ struct FamilyMemberCard: View {
         }
     }
 
-    private func formatDate(_ date: Date) -> String {
-        date.chineseDateTimeString()
+    /// 优先使用对方账号自己的「下次签到截止时间」；无则按对方最后签到时间 + 系统签到间隔降级
+    private var effectiveDeadline: Date? {
+        if let d = member.nextCheckInDeadline { return d }
+        if let last = member.lastCheckInDate {
+            let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
+            return last.addingTimeInterval(intervalHours * 3600)
+        }
+        return nil
     }
 
-    /// 对方最后签到：倒计时（与系统签到间隔/离线宽限一致），约每 30 秒刷新
+    /// 倒计时块：仅显示 HH:MM:SS（每秒刷新）；超时后按 offlineTimeoutHours 决定颜色与文案
     @ViewBuilder
-    private func otherPartyCountdownBlock(lastCheckIn: Date) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            TimelineView(.periodic(from: .now, by: 30)) { context in
-                let out = otherPartyCountdownText(lastCheckIn: lastCheckIn, now: context.date)
-                Text(out.text)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(out.color)
-            }
-            Text("\(L10n.string(.lastCheckIn))：\(formatDate(lastCheckIn))")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+    private func otherPartyCountdownBlock(deadline: Date) -> some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let out = otherPartyCountdownText(deadline: deadline, now: context.date)
+            Text(out.text)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(out.color)
+                .monospacedDigit()
         }
     }
 
-    private func otherPartyCountdownText(lastCheckIn: Date, now: Date) -> (text: String, color: Color) {
-        let intervalHours = DataManager.shared.systemConfig.checkinIntervalHours
-        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
-        let elapsed = now.timeIntervalSince(lastCheckIn) / 3600
-        let remaining = intervalHours - elapsed
-
-        if remaining > 0 {
-            let totalMins = max(1, Int(ceil(remaining * 60.0 - 0.0001)))
-            let h = totalMins / 60
-            let m = totalMins % 60
-            let text = L10n.text(
-                "距下次应签到还有 \(h) 小时 \(m) 分",
-                en: "Next check-in in \(h)h \(m)m",
-                ja: "次のチェックインまであと \(h) 時間 \(m) 分",
-                ko: "다음 체크인까지 약 \(h)시간 \(m)분"
-            )
-            return (text, .green)
+    private func otherPartyCountdownText(deadline: Date, now: Date) -> (text: String, color: Color) {
+        let remainingSeconds = deadline.timeIntervalSince(now)
+        if remainingSeconds > 0 {
+            return (formatHMS(seconds: Int(remainingSeconds.rounded(.down))), .green)
         }
-        if elapsed <= intervalHours + offlineHours {
+        let offlineHours = DataManager.shared.systemConfig.offlineTimeoutHours
+        let overdueSeconds = -remainingSeconds
+        if overdueSeconds <= offlineHours * 3600 {
             return (L10n.string(.checkingOverdue), .orange)
         }
         return (L10n.string(.checkingSevere), .red)
+    }
+
+    private func formatHMS(seconds: Int) -> String {
+        let s = max(0, seconds)
+        let h = s / 3600
+        let m = (s % 3600) / 60
+        let sec = s % 60
+        return String(format: "%02d:%02d:%02d", h, m, sec)
     }
     
     private func deleteMember() {
