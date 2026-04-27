@@ -49,6 +49,12 @@ struct SettingsDetailView: View {
                         CountdownTimerManager.shared.start { }
                     }
                     NotificationCenter.default.post(name: NSNotification.Name("FamilyModeChanged"), object: nil)
+                    // 重新排程本人签到提醒：开启家人守护后会清空，关闭后会按当前签到记录重建
+                    LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "家人守护模式切换")
+                    // 同步到后端：让关联家人能在家人 tab 看到"家人守护中"，不再收到我的超时推送
+                    Task {
+                        await DataManager.shared.setFamilyMode(enabled: newValue)
+                    }
                 }
             }
                 

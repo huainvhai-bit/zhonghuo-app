@@ -613,6 +613,7 @@ struct FamilyGuardView: View {
                             createdAt
                             relatedUserLastCheckInDate
                             relatedUserCheckInExpireAt
+                            relatedUserIsFamilyMode
                         }
                         invited {
                             id
@@ -649,6 +650,7 @@ struct FamilyGuardView: View {
                                 statusText: L10n.string(.bindSuccess),
                                 lastCheckInDate: relatedUserCheckInDate(from: member),
                                 nextCheckInDeadline: relatedUserCheckInDeadline(from: member),
+                                isFamilyMode: relatedUserIsFamilyMode(from: member),
                                 createdAt: parseBackendDate(member["createdAt"] as? String) ?? Date(),
                                 deviceInfo: nil
                             )
@@ -712,6 +714,9 @@ struct FamilyGuardView: View {
                     }
 
                     print("✅ 家人列表加载成功：\(familyList.count) 人")
+
+                    // 家人列表更新后，按当前数据重排"家人超时未签到"本地推送
+                    LifeCheckStatusManager.shared.scheduleFamilyOverdueNotifications(self.familyList)
                 }
             } else if let familyResult = (result["data"] as? [String: Any])?["family"] as? [String: Any] {
                 let message = familyResult["message"] as? String ?? L10n.string(.pleaseRetry)
@@ -892,6 +897,18 @@ struct FamilyGuardView: View {
         return Date(timeIntervalSince1970: value > 1_000_000_000_000 ? value / 1000 : value)
     }
 
+    /// 解析对方是否处于"家人守护"模式（兼容 Bool / Int / String）
+    private func relatedUserIsFamilyMode(from member: [String: Any]) -> Bool {
+        if let b = member["relatedUserIsFamilyMode"] as? Bool { return b }
+        if let n = member["relatedUserIsFamilyMode"] as? NSNumber { return n.boolValue }
+        if let i = member["relatedUserIsFamilyMode"] as? Int { return i != 0 }
+        if let s = member["relatedUserIsFamilyMode"] as? String {
+            let lower = s.lowercased()
+            return lower == "true" || lower == "1" || lower == "yes"
+        }
+        return false
+    }
+
     private func handleFamilyBindEntry(_ action: () -> Void) {
         if !MembershipManager.shared.canAddFamilyMember(currentCount: familyList.count) {
             showingUpgradeForFamily = true
@@ -918,6 +935,7 @@ struct FamilyGuardView: View {
             if lhs.status != rhs.status { return false }
             if lhs.lastCheckInDate != rhs.lastCheckInDate { return false }
             if lhs.nextCheckInDeadline != rhs.nextCheckInDeadline { return false }
+            if lhs.isFamilyMode != rhs.isFamilyMode { return false }
         }
         return true
     }
@@ -1229,7 +1247,16 @@ struct FamilyMemberCard: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
 
-                    if let deadline = effectiveDeadline {
+                    if member.isFamilyMode {
+                        // 对方已开启"家人守护"模式，自身不再签到——不再显示倒计时
+                        HStack(spacing: 4) {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 12))
+                            Text(L10n.string(.familyGuarding))
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(.green)
+                    } else if let deadline = effectiveDeadline {
                         otherPartyCountdownBlock(deadline: deadline)
                     } else {
                         Text(L10n.string(.noRecordPrefix))

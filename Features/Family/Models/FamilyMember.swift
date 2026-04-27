@@ -20,6 +20,8 @@ struct FamilyMember: Identifiable, Codable {
     var statusText: String   // 状态文本
     var lastCheckInDate: Date? = nil  // 被守护端最后签到时间
     var nextCheckInDeadline: Date? = nil  // 被守护端下次应签到的截止时间（来自 checkin_expire_at）
+    /// 对方是否处于"家人守护"模式（开启后对方不再需要签到，本端家人卡片应显示"家人守护中"）
+    var isFamilyMode: Bool = false
     var createdAt: Date      // 创建时间
     var deviceInfo: DeviceInfo?  // 设备信息
     
@@ -55,6 +57,7 @@ struct FamilyMember: Identifiable, Codable {
         statusText: String,
         lastCheckInDate: Date? = nil,
         nextCheckInDeadline: Date? = nil,
+        isFamilyMode: Bool = false,
         createdAt: Date,
         deviceInfo: DeviceInfo? = nil
     ) {
@@ -68,6 +71,7 @@ struct FamilyMember: Identifiable, Codable {
         self.statusText = statusText
         self.lastCheckInDate = lastCheckInDate
         self.nextCheckInDeadline = nextCheckInDeadline
+        self.isFamilyMode = isFamilyMode
         self.createdAt = createdAt
         self.deviceInfo = deviceInfo
     }

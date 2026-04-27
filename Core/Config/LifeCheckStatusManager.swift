@@ -264,6 +264,14 @@ class LifeCheckStatusManager: ObservableObject {
             return
         }
 
+        // 家人守护模式开启时，本人不再需要签到——同时取消本人所有的签到/超时提醒，
+        // 避免在守护状态下还收到"您已超时"等推送
+        if UserDefaults.standard.bool(forKey: "isFamilyMode") {
+            print("👨‍👩‍👧 家人守护模式开启，取消并跳过本人签到提醒调度")
+            cancelAllCheckInNotifications()
+            return
+        }
+
         if UserManager.shared.currentUser == nil {
             UserManager.shared.loadUser()
         }
@@ -444,6 +452,67 @@ class LifeCheckStatusManager: ObservableObject {
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         UserDefaults.standard.removeObject(forKey: scheduleSignatureKey)
         print("🗑️ 已取消所有签到提醒")
+    }
+
+    // MARK: - 家人超时未签到 推送
+
+    /// 取消并重排所有"家人超时未签到"本地推送
+    /// 调用时机：
+    ///   1. 家人 tab 拉取到最新的 family 列表（含对方的 checkin_expire_at / is_family_mode）
+    ///   2. App 回前台 / 切换到家人 tab
+    /// 取消所有 `family_overdue_*` 标识符的待发推送，再依据每个家人的下次签到截止时间重新排程
+    func scheduleFamilyOverdueNotifications(_ members: [FamilyMember]) {
+        let silentMode = UserDefaults.standard.bool(forKey: "silentModeEnabled")
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { [weak self] requests in
+            let toCancel = requests
+                .filter { $0.identifier.hasPrefix("family_overdue_") }
+                .map { $0.identifier }
+            if !toCancel.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: toCancel)
+            }
+            if silentMode {
+                print("🤫 静默模式开启，已清空家人超时推送")
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.rescheduleFamilyOverdueInternal(members)
+            }
+        }
+    }
+
+    private func rescheduleFamilyOverdueInternal(_ members: [FamilyMember]) {
+        // 超时间隔（小时）取后端配置；最小兜底 15 分钟，避免误配置导致风暴
+        let intervalHours = DataManager.shared.systemConfig.overduePushIntervalHours
+        let intervalSeconds = max(15.0 * 60.0, intervalHours * 3600.0)
+        let now = Date()
+        let maxPushPerMember = 10
+        var scheduled = 0
+
+        for member in members {
+            // 对方处于"家人守护"模式时不再推送（对方本就不需要签到）
+            guard !member.isFamilyMode else { continue }
+            guard let deadline = member.nextCheckInDeadline else { continue }
+            guard !member.relationId.isEmpty else { continue }
+            // 状态非"已绑定"的家人不发推送（pending/rejected 等）
+            guard member.status == .accepted else { continue }
+
+            for index in 0..<maxPushPerMember {
+                let fireDate = deadline.addingTimeInterval(TimeInterval(index) * intervalSeconds)
+                if fireDate <= now { continue }
+                let identifier = "family_overdue_\(member.relationId)_\(index)"
+                let displayName = member.name.isEmpty ? "您的家人" : member.name
+                scheduleNotification(
+                    identifier: identifier,
+                    title: "⚠️ 家人超时未签到",
+                    body: "\(displayName)超时未签到，请及时留意家人情况",
+                    fireDate: fireDate,
+                    repeats: false
+                )
+                scheduled += 1
+            }
+        }
+        print("🔔 已排程家人超时推送：\(scheduled) 条（家人数 \(members.count)）")
     }
     
     /// 通知所有监护人

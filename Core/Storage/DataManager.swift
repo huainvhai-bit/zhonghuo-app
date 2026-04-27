@@ -1303,6 +1303,35 @@ class DataManager: ObservableObject {
         }
         return false
     }
+
+    /// 同步"家人守护"开关到服务端
+    /// 开启后：1) 自己不再签到；2) 关联家人在家人 tab 中看到我的卡片显示"家人守护中"；
+    /// 3) 关联家人不会再收到我"家人超时未签到"的本地推送
+    @discardableResult
+    func setFamilyMode(enabled: Bool) async -> Bool {
+        guard !DataManager.apiURL.isEmpty else { return false }
+        do {
+            let mutation = """
+            mutation($enabled: Boolean!) {
+                setFamilyMode(enabled: $enabled) {
+                    success
+                    enabled
+                }
+            }
+            """
+            let variables: [String: Any] = ["enabled": enabled]
+            let result = try await GraphQLClient.shared.query(mutation, variables: variables)
+            if let data = result["data"] as? [String: Any],
+               let modeData = data["setFamilyMode"] as? [String: Any],
+               let success = modeData["success"] as? Bool, success {
+                print("✅ 家人守护模式同步成功：\(enabled)")
+                return true
+            }
+        } catch {
+            print("❌ 家人守护模式同步失败：\(error)")
+        }
+        return false
+    }
     
     
     /// 批量同步胶囊到服务器
