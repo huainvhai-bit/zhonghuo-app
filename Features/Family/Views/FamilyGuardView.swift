@@ -33,6 +33,7 @@ struct FamilyGuardView: View {
     @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
     @State private var familyRefreshTask: Task<Void, Never>?
     @State private var confirmingRequestId: String?
+    @State private var isManualRefreshing = false
 
     private var approvalFamilyRequests: [FamilyPendingRequest] {
         pendingFamilyRequests.filter { $0.needsMyApproval }
@@ -71,7 +72,7 @@ struct FamilyGuardView: View {
                 guard !didInitialLoad else { return }
                 didInitialLoad = true
                 Task {
-                    await loadFamilyListAsync()
+                    await loadFamilyListAsync(showLoading: true)
                 }
                 startFamilyPolling()
             }
@@ -80,7 +81,7 @@ struct FamilyGuardView: View {
             }
             .onChange(of: scenePhase) { newPhase in
                 guard newPhase == .active else { return }
-                Task { await loadFamilyListAsync() }
+                Task { await loadFamilyListAsync(showLoading: false) }
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -426,21 +427,52 @@ struct FamilyGuardView: View {
     
     // MARK: - 家人列表
     private var familyListSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 20))
                     .foregroundColor(Color(hex: "10B981"))
-                
+
                 Text(L10n.string(.linkedFamily))
                     .font(.system(size: 18, weight: .semibold))
-                
+
                 Spacer()
-                
+
                 Text("\(familyList.count) \(L10n.string(.familyCountSuffix))")
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
+
+                Button {
+                    Task {
+                        isManualRefreshing = true
+                        await loadFamilyListAsync(showLoading: false)
+                        isManualRefreshing = false
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 16, weight: .semibold))
+                        .rotationEffect(.degrees(isManualRefreshing ? 360 : 0))
+                        .animation(isManualRefreshing
+                                   ? .linear(duration: 0.8).repeatForever(autoreverses: false)
+                                   : .default,
+                                   value: isManualRefreshing)
+                        .foregroundColor(Color(hex: "6366F1"))
+                        .padding(.leading, 4)
+                }
+                .accessibilityLabel(L10n.text("刷新家人列表",
+                                              en: "Refresh family list",
+                                              ja: "家族リストを更新",
+                                              ko: "가족 목록 새로고침"))
             }
+
+            Text(L10n.text(
+                "如绑定后未显示确认请求，请点击右上角刷新；倒计时按对方账号的设置自动同步。",
+                en: "If a binding confirmation isn't shown after pairing, tap the refresh button. Countdowns sync to the other party's settings.",
+                ja: "連携後に確認リクエストが表示されない場合は更新ボタンを押してください。カウントダウンは相手側の設定に同期します。",
+                ko: "연결 후 확인 요청이 보이지 않으면 새로고침 버튼을 누르세요. 카운트다운은 상대방 설정에 따라 동기화됩니다."))
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if familyList.isEmpty {
                 Text(pendingFamilyRequests.isEmpty
@@ -541,16 +573,17 @@ struct FamilyGuardView: View {
     }
     
     @MainActor
-    private func loadFamilyListAsync() async {
-        // ✅ 修复：使用 defer 确保 isLoading 总是被重置
+    private func loadFamilyListAsync(showLoading: Bool = false) async {
+        // 仅在首屏/手动刷新时显示加载占位，避免后台轮询导致 tab 反复闪烁
+        if showLoading {
+            isLoading = true
+        }
         defer {
-            DispatchQueue.main.async {
-                self.isLoading = false
+            if showLoading {
+                DispatchQueue.main.async { self.isLoading = false }
             }
         }
-        
-        isLoading = true
-        
+
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
             print("⚠️ 加载家人列表失败：Token 为空")
@@ -602,7 +635,6 @@ struct FamilyGuardView: View {
                let success = familyResult["success"] as? Bool,
                success {
                 if let familyData = familyResult["data"] as? [String: Any] {
-                    self.pendingFamilyRequests = []
                     // 解析 members
                     if let members = familyData["members"] as? [[String: Any]] {
                         let newFamilyList = members.compactMap { member in
@@ -621,21 +653,25 @@ struct FamilyGuardView: View {
                                 deviceInfo: nil
                             )
                         }
-                        self.familyList = newFamilyList
-                        DataManager.shared.updateFamilyMembersCache(newFamilyList.map { member in
-                            FamilyInfo(
-                                id: member.relationId,
-                                relationType: member.relationship,
-                                relatedUserId: member.id,
-                                relatedUserName: member.name,
-                                relatedUserPhone: member.phone,
-                                relatedUserLastCheckInDate: member.lastCheckInDate
-                            )
-                        })
+                        // 仅当数据真的变化时再 set，避免 SwiftUI 不必要的重渲染
+                        if !sameFamilyList(self.familyList, newFamilyList) {
+                            self.familyList = newFamilyList
+                            DataManager.shared.updateFamilyMembersCache(newFamilyList.map { member in
+                                FamilyInfo(
+                                    id: member.relationId,
+                                    relationType: member.relationship,
+                                    relatedUserId: member.id,
+                                    relatedUserName: member.name,
+                                    relatedUserPhone: member.phone,
+                                    relatedUserLastCheckInDate: member.lastCheckInDate
+                                )
+                            })
+                        }
                     }
 
+                    let parsedRequests: [FamilyPendingRequest]
                     if let pendingRequests = familyData["pendingRequests"] as? [[String: Any]] {
-                        self.pendingFamilyRequests = pendingRequests.compactMap { request in
+                        parsedRequests = pendingRequests.compactMap { request in
                             guard let id = request["id"] as? String, !id.isEmpty else { return nil }
                             let createdAt = parseBackendDate(request["created_at"] as? String ?? request["createdAt"] as? String)
                             let inviterName = request["inviterName"] as? String ?? ""
@@ -668,8 +704,13 @@ struct FamilyGuardView: View {
                                 createdAt: createdAt
                             )
                         }
+                    } else {
+                        parsedRequests = []
                     }
-                    
+                    if !samePendingRequestList(self.pendingFamilyRequests, parsedRequests) {
+                        self.pendingFamilyRequests = parsedRequests
+                    }
+
                     print("✅ 家人列表加载成功：\(familyList.count) 人")
                 }
             } else if let familyResult = (result["data"] as? [String: Any])?["family"] as? [String: Any] {
@@ -862,13 +903,40 @@ struct FamilyGuardView: View {
     private func startFamilyPolling() {
         familyRefreshTask?.cancel()
         familyRefreshTask = Task {
-            // 15s 轮询：拿对方最新的 checkin_expire_at；UI 倒计时由 TimelineView 每秒刷新
+            // 静默 30s 轮询：仅在数据变化时触发 UI 刷新；倒计时由各家人卡片的 TimelineView 每秒滚动
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
                 if Task.isCancelled { break }
-                await loadFamilyListAsync()
+                await loadFamilyListAsync(showLoading: false)
             }
         }
+    }
+
+    /// 比较两份家人列表是否一致（仅基于会影响 UI 的字段）
+    private func sameFamilyList(_ a: [FamilyMember], _ b: [FamilyMember]) -> Bool {
+        guard a.count == b.count else { return false }
+        for (lhs, rhs) in zip(a, b) {
+            if lhs.id != rhs.id { return false }
+            if lhs.relationId != rhs.relationId { return false }
+            if lhs.name != rhs.name { return false }
+            if lhs.phone != rhs.phone { return false }
+            if lhs.relationship != rhs.relationship { return false }
+            if lhs.status != rhs.status { return false }
+            if lhs.lastCheckInDate != rhs.lastCheckInDate { return false }
+            if lhs.nextCheckInDeadline != rhs.nextCheckInDeadline { return false }
+        }
+        return true
+    }
+
+    private func samePendingRequestList(_ a: [FamilyPendingRequest], _ b: [FamilyPendingRequest]) -> Bool {
+        guard a.count == b.count else { return false }
+        for (lhs, rhs) in zip(a, b) {
+            if lhs.id != rhs.id { return false }
+            if lhs.status != rhs.status { return false }
+            if lhs.needsMyApproval != rhs.needsMyApproval { return false }
+            if lhs.displayName != rhs.displayName { return false }
+        }
+        return true
     }
 
     private func stopFamilyPolling() {
