@@ -88,30 +88,46 @@ class IAPManager: ObservableObject {
     
     // MARK: - 公开方法
     
+    /// App Store Connect → 订阅产品 ID（须与后台配置逐字一致，含大小写）
+    static let expectedSubscriptionProductIdentifiers: [String] = IAPProductType.allCases.map(\.rawValue)
+
     /// 加载可用商品
     func loadProducts() async {
         isLoading = true
         errorMessage = nil
         
         do {
-            // 获取商品信息
-            let productIds = IAPProductType.allCases.map { $0.rawValue }
-            let storeProducts = try await Product.products(for: Set(productIds))
-            
-            // 按顺序排列
+            let productIds = Self.expectedSubscriptionProductIdentifiers
+            let wanted = Set(productIds)
+            let storeProducts = try await Product.products(for: wanted)
+
+            print("📦 IAP 请求的 Product IDs: \(productIds.joined(separator: ", "))")
+            print("📦 App Store 返回 \(storeProducts.count) 个订阅商品 → \(storeProducts.map(\.id).sorted().joined(separator: ", "))")
+
+            let receivedIds = Set(storeProducts.map(\.id))
+            let missingIds = wanted.subtracting(receivedIds)
+            if !missingIds.isEmpty {
+                print("⚠️ IAP 下列 ID 未被 App Store 返回（通常为 ASC 未创建、ID 不符、或未满足协议）：\(missingIds.sorted().joined(separator: ", "))")
+            }
+
             var orderedProducts: [Product] = []
             for productId in productIds {
                 if let product = storeProducts.first(where: { $0.id == productId }) {
                     orderedProducts.append(product)
                 }
             }
-            
+
             products = orderedProducts
             isLoading = false
-            
-            print("✅ IAP 商品加载成功：\(products.count) 个")
-            for product in products {
-                print("   - \(product.id): \(product.displayPrice)")
+
+            if storeProducts.isEmpty {
+                errorMessage = Self.productsUnavailableDeveloperHint()
+                print("❌ IAP: Product.products(for:) 未返回任何商品，请核对 App Store Connect 与 Xcode Scheme（StoreKit 配置 / 沙盒账号）")
+            } else {
+                print("✅ IAP 商品加载成功：\(products.count) 个")
+                for product in products {
+                    print("   - \(product.id): \(product.displayPrice)")
+                }
             }
         } catch {
             isLoading = false
@@ -125,15 +141,28 @@ class IAPManager: ObservableObject {
     /// - Returns: 购买结果
     func purchase(_ productType: IAPProductType) async -> IAPPurchaseResult {
         guard let product = products.first(where: { $0.id == productType.rawValue }) else {
-            // 商品未加载，尝试重新加载
             await loadProducts()
             guard let product = products.first(where: { $0.id == productType.rawValue }) else {
-                return .failure(error: "商品不存在")
+                let hint = Self.storeProductUnavailableUserMessage(for: productType)
+                errorMessage = hint
+                return .failure(error: hint)
             }
             return await performPurchase(product)
         }
         
         return await performPurchase(product)
+    }
+
+    /// 当 `Product.products` 拿不到对应 ID 时的说明（Console 与 errorMessage 共用逻辑的一部分）
+    nonisolated private static func productsUnavailableDeveloperHint() -> String {
+        let ids = IAPProductType.allCases.map(\.rawValue).joined(separator: "、")
+        return "未加载到订阅商品。请在 App Store Connect 创建与代码一致的自动续期订阅 ID：\(ids)；签「付费 App」协议并完善银行税务；真机用沙盒 Apple ID；Xcode 可在 Scheme → Run → Options 选 StoreKit 配置文件调试。"
+    }
+
+    /// 用户弹窗用（略短）
+    nonisolated private static func storeProductUnavailableUserMessage(for type: IAPProductType) -> String {
+        let ids = IAPProductType.allCases.map(\.rawValue).joined(separator: "、")
+        return "未获取到订阅「\(type.rawValue)」（请求 ID：\(ids)）。请到 App Store Connect 核对产品 ID 与 App 一致、订阅可售且协议/银行已完成；本地可用 StoreKit 配置文件调试。"
     }
     
     /// 执行购买

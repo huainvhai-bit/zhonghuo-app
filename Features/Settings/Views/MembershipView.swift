@@ -59,6 +59,9 @@ struct MembershipView: View {
                     }
                 }
             }
+            .task {
+                await iapManager.loadProducts()
+            }
         }
         .stackNavigationStyle()
         .alert(L10n.string(.prompt), isPresented: $showingPurchaseAlert) {
