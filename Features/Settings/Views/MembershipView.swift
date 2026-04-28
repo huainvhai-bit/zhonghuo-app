@@ -323,9 +323,20 @@ struct MembershipView: View {
             case .success(let transactionId, let originalTransactionId, let expiryDate):
                 print("✅ IAP 购买成功: txId=\(transactionId), origTxId=\(originalTransactionId), expiry=\(expiryDate)")
                 
+                guard let receiptB64 = await iapManager.appStoreReceiptBase64ForServer(), !receiptB64.isEmpty else {
+                    purchaseMessage = L10n.text(
+                        "无法读取 App Store 收据，暂不能同步会员。请稍后再试，或使用「恢复购买」。",
+                        en: "Cannot read App Store receipt; membership cannot sync yet. Try again or use Restore Purchases.",
+                        ja: "App Store のレシートを読み取れません。しばらくしてから再度お試しください。または「購入を復元」を使用してください。",
+                        ko: "App Store 영수증을 읽을 수 없어 회원 상태를 동기화할 수 없습니다. 다시 시도하거나 구매 복원을 사용하세요."
+                    )
+                    showingPurchaseAlert = true
+                    return
+                }
+                
                 let activation = await activateMembershipOnServer(
                     type: selectedPlan,
-                    transactionId: transactionId,
+                    receiptBase64: receiptB64,
                     originalTransactionId: originalTransactionId,
                     expiryDate: expiryDate
                 )
@@ -355,12 +366,12 @@ struct MembershipView: View {
     /// 在服务器上激活会员
     /// - Parameters:
     ///   - type: 月卡/年卡
-    ///   - transactionId: 当前事务 ID
-    ///   - originalTransactionId: 原始订阅事务 ID，整条订阅链不变；服务器据此把订阅绑定到 App 账号
+    ///   - receiptBase64: App 统一收据 Base64（对应 Apple `verifyReceipt`），上架必需；勿仅传 transactionId。
+    ///   - originalTransactionId: Apple 原始订阅事务 ID（整条链不变）；服务器据此把订阅绑定到 App 账号
     /// - Returns: 服务端是否成功写入会员；失败时勿先本地开通，避免「秒成功又秒掉线」
     private func activateMembershipOnServer(
         type: String,
-        transactionId: String,
+        receiptBase64: String,
         originalTransactionId: String,
         expiryDate: Date
     ) async -> (success: Bool, userMessage: String) {
@@ -380,7 +391,7 @@ struct MembershipView: View {
             
             let variables: [String: Any] = [
                 "memberType": type,
-                "receipt": transactionId,
+                "receipt": receiptBase64,
                 "originalTransactionId": originalTransactionId
             ]
             
@@ -399,10 +410,10 @@ struct MembershipView: View {
                 print("⚠️ 会员激活服务器拒绝：\(message)")
                 await UserManager.shared.fetchUserData()
                 let hint = L10n.text(
-                    "（Sandbox/TestFlight：若后台未接 Apple 服务端校验，请在 app_config 开启 iap_allow_unverified=1）",
-                    en: " (Sandbox/TestFlight: enable iap_allow_unverified in app_config if server verification isn’t wired.)",
-                    ja: "（Sandbox/TestFlight：サーバ検証未接続なら app_config で iap_allow_unverified=1）",
-                    ko: " (Sandbox/TestFlight: 서버 검증 없으면 app_config 에서 iap_allow_unverified=1)"
+                    "（请确认后台已配置 App Store 共享密钥 apple_shared_secret，且关闭仅沙盒用的 iap_allow_unverified。）",
+                    en: " (Ensure apple_shared_secret is set and iap_allow_unverified is off for production.)",
+                    ja: "（本番では apple_shared_secret を設定し、iap_allow_unverified をオフにしてください。）",
+                    ko: " (운영 환경에서는 apple_shared_secret 설정 및 iap_allow_unverified 비활성화를 확인하세요.)"
                 )
                 let combined = message.isEmpty ? activationHintOnly() : "\(message)\n\(hint)"
                 return (false, combined)
@@ -421,10 +432,10 @@ struct MembershipView: View {
     
     private func activationHintOnly() -> String {
         L10n.text(
-            "订阅未在云端开通。TestFlight/沙盒仅传交易号时，后端需开启 iap_allow_unverified 或接入 App Store Server API 验证。",
-            en: "Subscription was not activated on the server. For TestFlight/sandbox with transaction IDs only, enable iap_allow_unverified or use App Store Server API.",
-            ja: "サーバー側で未開通。TestFlight/サンドボックスでは iap_allow_unverified か App Store Server API が必要です。",
-            ko: "서버에서 개통되지 않았습니다. TestFlight/샌드박스에서는 iap_allow_unverified 또는 App Store Server API가 필요합니다."
+            "订阅未在云端开通。请确认 App 已上传 Base64 收据、后端已配置共享密钥并调用 Apple verifyReceipt。",
+            en: "Subscription was not activated on the server. Ensure the app sends the Base64 receipt and the backend has the shared secret configured.",
+            ja: "サーバー側で未開通。Base64 レシートと共有シークレット（verifyReceipt）を確認してください。",
+            ko: "서버에서 개통되지 않았습니다. Base64 영수증과 공유 암호(verifyReceipt) 설정을 확인하세요."
         )
     }
 

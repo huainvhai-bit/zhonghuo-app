@@ -269,12 +269,38 @@ class IAPManager: ObservableObject {
             try await AppStore.sync()
             await checkSubscriptionStatus()
             isLoading = false
+            await syncSubscriptionReceiptWithBackendIfEligible()
             print("✅ 购买恢复成功")
         } catch {
             isLoading = false
             errorMessage = "恢复购买失败：\(error.localizedDescription)"
             print("❌ 恢复购买失败：\(error)")
         }
+    }
+
+    /// 若当前 Apple 帐号有有效订阅且用户已登录，将 Base64 收据提交后端激活（上架后与「即时购买」同一路径）
+    func syncSubscriptionReceiptWithBackendIfEligible() async {
+        let userId = KeychainManager.shared.getUserId() ?? ""
+        guard !userId.isEmpty else { return }
+
+        var bestTransaction: Transaction?
+        var bestExpiry: Date?
+
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+            guard productTypeMap[transaction.productID] != nil else { continue }
+
+            let expiryDate = calculateExpiryDate(for: transaction)
+            guard expiryDate > Date() else { continue }
+
+            if bestExpiry == nil || expiryDate > bestExpiry! {
+                bestExpiry = expiryDate
+                bestTransaction = transaction
+            }
+        }
+
+        guard let tx = bestTransaction else { return }
+        await verifyReceiptWithServer(tx)
     }
     
     /// 获取商品价格
@@ -342,9 +368,26 @@ class IAPManager: ObservableObject {
             UserDefaults.standard.set(data, forKey: "IAPTransaction")
             print("📦 交易信息已保存：\(transactionData)")
         }
-        
-        // 发送到服务器验证
-        await verifyReceiptWithServer(transaction)
+
+        // 云端开通由会员页在拿到 Base64 收据后调用 activateMembership，避免与 listeners 重复打点
+    }
+    
+    /// 读取用于后端 `verifyReceipt` 的统一收据（Base64）。生产环境必须使用；纯数字 transactionId 无法代替。
+    func appStoreReceiptBase64ForServer() async -> String? {
+        do {
+            try await AppStore.sync()
+        } catch {
+            print("⚠️ AppStore.sync：\(error.localizedDescription)")
+        }
+        guard let receiptURL = Bundle.main.appStoreReceiptURL else {
+            print("⚠️ 缺少 appStoreReceiptURL（常见于模拟器或未从商店安装的包）")
+            return nil
+        }
+        guard let data = try? Data(contentsOf: receiptURL), !data.isEmpty else {
+            print("⚠️ App Store 收据文件为空")
+            return nil
+        }
+        return data.base64EncodedString(options: [])
     }
     
     /// 将 Receipt 发送到服务器验证并激活会员
@@ -352,6 +395,11 @@ class IAPManager: ObservableObject {
         let userId = KeychainManager.shared.getUserId() ?? ""
         guard !userId.isEmpty else {
             print("⚠️ 用户未登录，跳过服务器验证")
+            return
+        }
+        
+        guard let receiptBase64 = await appStoreReceiptBase64ForServer(), !receiptBase64.isEmpty else {
+            print("⚠️ 无法读取 App Store 收据，跳过服务器校验（请先登录；真机商店包购买后一般会生成收据）")
             return
         }
         
@@ -381,7 +429,7 @@ class IAPManager: ObservableObject {
         
         let variables: [String: Any] = [
             "memberType": memberType,
-            "receipt": String(transaction.id),
+            "receipt": receiptBase64,
             "originalTransactionId": String(transaction.originalID)
         ]
         
