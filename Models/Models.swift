@@ -65,6 +65,88 @@ struct ServerCheckInResponse: Codable {
     }
 }
 
+// MARK: - 本地持久化日期（capsules.json / wills / assets）
+
+/// `JSONEncoder` 默认将 `Date` 编码为 **`timeIntervalSinceReferenceDate`**（以 2001-01-01 为基点）。
+/// 旧解码逻辑误用 **`Date(timeIntervalSince1970:)`**，会与「参照时间戳 Double」不匹配，磁盘重载后会显示成 **1994～1997 年前后**。
+/// - 解码数字时分流：毫秒 / UNIX 秒 / Apple 参照秒。
+/// - 编码时统一写成 `yyyy-MM-dd HH:mm:ss` 字符串，与后端、`batchSync` 一致，消除歧义。
+enum PersistedJSONDate {
+    static let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        return f
+    }()
+
+    static func date(fromDecodedString string: String) -> Date {
+        if let d = formatter.date(from: string) { return d }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: string) { return d }
+        iso.formatOptions = [.withInternetDateTime]
+        return iso.date(from: string) ?? Date()
+    }
+
+    static func optionalDate(fromDecodedString string: String) -> Date? {
+        if let d = formatter.date(from: string) { return d }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: string) { return d }
+        iso.formatOptions = [.withInternetDateTime]
+        return iso.date(from: string)
+    }
+
+    static func decodeDate(fromFlexibleNumber value: Double) -> Date {
+        if value >= 1_000_000_000_000 { return Date(timeIntervalSince1970: value / 1000.0) }
+        if value >= 1_000_000_000 { return Date(timeIntervalSince1970: value) }
+        return Date(timeIntervalSinceReferenceDate: value)
+    }
+
+    static func decodeDate(fromFlexibleInteger value: Int) -> Date {
+        decodeDate(fromFlexibleNumber: Double(value))
+    }
+
+    static func decodeOptionalFlexibleDate<Key: CodingKey>(
+        _ container: KeyedDecodingContainer<Key>,
+        forKey key: Key
+    ) throws -> Date? {
+        guard container.contains(key) else { return nil }
+        if try container.decodeNil(forKey: key) { return nil }
+        if let s = try? container.decode(String.self, forKey: key), !s.isEmpty {
+            return optionalDate(fromDecodedString: s)
+        }
+        if let d = try? container.decode(Double.self, forKey: key) {
+            return decodeDate(fromFlexibleNumber: d)
+        }
+        if let i = try? container.decode(Int.self, forKey: key) {
+            return decodeDate(fromFlexibleInteger: i)
+        }
+        return nil
+    }
+
+    /// 必填字段：解码失败最后用 `fallback`。
+    static func decodeFlexibleRequiredDate<Key: CodingKey>(
+        _ container: KeyedDecodingContainer<Key>,
+        forKey key: Key,
+        fallback: Date = Date()
+    ) throws -> Date {
+        guard container.contains(key) else { return fallback }
+        if try container.decodeNil(forKey: key) { return fallback }
+        if let s = try? container.decode(String.self, forKey: key), !s.isEmpty {
+            return date(fromDecodedString: s)
+        }
+        if let d = try? container.decode(Double.self, forKey: key) {
+            return decodeDate(fromFlexibleNumber: d)
+        }
+        if let i = try? container.decode(Int.self, forKey: key) {
+            return decodeDate(fromFlexibleInteger: i)
+        }
+        return fallback
+    }
+}
+
 // MARK: - 时光胶囊
 struct TimeCapsule: Identifiable, Codable {
     var id: String
@@ -127,29 +209,9 @@ struct TimeCapsule: Identifiable, Codable {
         mediaURL = try container.decodeIfPresent(String.self, forKey: .mediaURL) ?? ""
         mediaServerURL = try container.decodeIfPresent(String.self, forKey: .mediaServerURL) ?? ""
         mediaDuration = try container.decodeIfPresent(Double.self, forKey: .mediaDuration) ?? 0
-        
-        // 处理日期格式：支持字符串 "yyyy-MM-dd HH:mm:ss" 或数字（Unix时间戳）
-        // 使用 do-catch 尝试多种类型，因为 decodeIfPresent 在类型不匹配时会抛异常
-        do {
-            let sendDateString = try container.decode(String.self, forKey: .sendDate)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            sendDate = formatter.date(from: sendDateString) ?? Date()
-        } catch {
-            // 可能 是数字类型，尝试作为时间戳解码
-            do {
-                let sendDateTimestamp = try container.decode(Double.self, forKey: .sendDate)
-                sendDate = Date(timeIntervalSince1970: sendDateTimestamp)
-            } catch {
-                do {
-                    let sendDateTimestamp = try container.decode(Int.self, forKey: .sendDate)
-                    sendDate = Date(timeIntervalSince1970: Double(sendDateTimestamp))
-                } catch {
-                    sendDate = Date()
-                }
-            }
-        }
-        
+
+        sendDate = try PersistedJSONDate.decodeFlexibleRequiredDate(container, forKey: .sendDate)
+
         // 处理 is_opened (0/1 或 true/false) -> Bool 转换
         do {
             let isOpenedInt = try container.decode(Int.self, forKey: .isSent)
@@ -162,51 +224,45 @@ struct TimeCapsule: Identifiable, Codable {
                 isSent = false
             }
         }
-        
-        // 处理 createdAt 日期格式（支持字符串或数字）
-        do {
-            let createdAtString = try container.decode(String.self, forKey: .createdAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            createdAt = formatter.date(from: createdAtString) ?? Date()
-        } catch {
-            do {
-                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
-                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-            } catch {
-                do {
-                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
-                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
-                } catch {
-                    createdAt = Date()
-                }
-            }
+
+        createdAt = try PersistedJSONDate.decodeFlexibleRequiredDate(container, forKey: .createdAt)
+
+        deletedAt = try PersistedJSONDate.decodeOptionalFlexibleDate(container, forKey: .deletedAt)
+
+        if let raw = try container.decodeIfPresent(String.self, forKey: .cloudBackupStatus),
+           let parsed = CloudBackupStatus(rawValue: raw) {
+            cloudBackupStatus = parsed
+        } else {
+            cloudBackupStatus = .pending
         }
-        
-        // 处理 deletedAt 日期格式（支持字符串或数字）
-        do {
-            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            deletedAt = formatter.date(from: deletedAtString)
-        } catch {
-            do {
-                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
-                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
-            } catch {
-                do {
-                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
-                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
-                } catch {
-                    deletedAt = nil
-                }
-            }
-        }
-        
-        cloudBackupStatus = .pending
-        cloudBackupAt = nil
+        cloudBackupAt = try PersistedJSONDate.decodeOptionalFlexibleDate(container, forKey: .cloudBackupAt)
     }
-    
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(title, forKey: .title)
+        try c.encode(content, forKey: .content)
+        try c.encode(type, forKey: .type)
+        try c.encode(mediaURL, forKey: .mediaURL)
+        try c.encode(mediaServerURL, forKey: .mediaServerURL)
+        try c.encode(mediaDuration, forKey: .mediaDuration)
+        try c.encode(PersistedJSONDate.formatter.string(from: sendDate), forKey: .sendDate)
+        try c.encode(isSent, forKey: .isSent)
+        try c.encode(PersistedJSONDate.formatter.string(from: createdAt), forKey: .createdAt)
+        if let deletedAt {
+            try c.encode(PersistedJSONDate.formatter.string(from: deletedAt), forKey: .deletedAt)
+        } else {
+            try c.encodeNil(forKey: .deletedAt)
+        }
+        try c.encode(cloudBackupStatus.rawValue, forKey: .cloudBackupStatus)
+        if let cloudBackupAt {
+            try c.encode(PersistedJSONDate.formatter.string(from: cloudBackupAt), forKey: .cloudBackupAt)
+        } else {
+            try c.encodeNil(forKey: .cloudBackupAt)
+        }
+    }
+
     enum CloudBackupStatus: String, Codable {
         case pending = "待备份"
         case uploading = "上传中"
@@ -383,44 +439,24 @@ struct WillModule: Identifiable, Codable {
             }
         }
         
-        // 处理 createdAt 日期格式（支持字符串或数字）
-        do {
-            let createdAtString = try container.decode(String.self, forKey: .createdAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            createdAt = formatter.date(from: createdAtString) ?? Date()
-        } catch {
-            do {
-                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
-                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-            } catch {
-                do {
-                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
-                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
-                } catch {
-                    createdAt = Date()
-                }
-            }
-        }
-        
-        // 处理 deletedAt 日期格式（支持字符串或数字）
-        do {
-            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            deletedAt = formatter.date(from: deletedAtString)
-        } catch {
-            do {
-                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
-                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
-            } catch {
-                do {
-                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
-                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
-                } catch {
-                    deletedAt = nil
-                }
-            }
+        createdAt = try PersistedJSONDate.decodeFlexibleRequiredDate(container, forKey: .createdAt)
+        deletedAt = try PersistedJSONDate.decodeOptionalFlexibleDate(container, forKey: .deletedAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(type, forKey: .type)
+        try c.encode(title, forKey: .title)
+        try c.encode(subtitle, forKey: .subtitle)
+        try c.encode(content, forKey: .content)
+        try c.encodeIfPresent(template, forKey: .template)
+        try c.encode(isCompleted, forKey: .isCompleted)
+        try c.encode(PersistedJSONDate.formatter.string(from: createdAt), forKey: .createdAt)
+        if let deletedAt {
+            try c.encode(PersistedJSONDate.formatter.string(from: deletedAt), forKey: .deletedAt)
+        } else {
+            try c.encodeNil(forKey: .deletedAt)
         }
     }
     
@@ -555,44 +591,24 @@ struct Asset: Identifiable, Codable {
             type = .bank
         }
         
-        // 处理 createdAt 日期格式（支持字符串或数字）
-        do {
-            let createdAtString = try container.decode(String.self, forKey: .createdAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            createdAt = formatter.date(from: createdAtString) ?? Date()
-        } catch {
-            do {
-                let createdAtTimestamp = try container.decode(Double.self, forKey: .createdAt)
-                createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-            } catch {
-                do {
-                    let createdAtTimestamp = try container.decode(Int.self, forKey: .createdAt)
-                    createdAt = Date(timeIntervalSince1970: Double(createdAtTimestamp))
-                } catch {
-                    createdAt = Date()
-                }
-            }
-        }
-        
-        // 处理 deletedAt 日期格式（支持字符串或数字）
-        do {
-            let deletedAtString = try container.decode(String.self, forKey: .deletedAt)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            deletedAt = formatter.date(from: deletedAtString)
-        } catch {
-            do {
-                let deletedAtTimestamp = try container.decode(Double.self, forKey: .deletedAt)
-                deletedAt = Date(timeIntervalSince1970: deletedAtTimestamp)
-            } catch {
-                do {
-                    let deletedAtTimestamp = try container.decode(Int.self, forKey: .deletedAt)
-                    deletedAt = Date(timeIntervalSince1970: Double(deletedAtTimestamp))
-                } catch {
-                    deletedAt = nil
-                }
-            }
+        createdAt = try PersistedJSONDate.decodeFlexibleRequiredDate(container, forKey: .createdAt)
+        deletedAt = try PersistedJSONDate.decodeOptionalFlexibleDate(container, forKey: .deletedAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(type, forKey: .type)
+        try c.encode(name, forKey: .name)
+        try c.encode(institution, forKey: .institution)
+        try c.encode(balance, forKey: .balance)
+        try c.encode(accountNumber, forKey: .accountNumber)
+        try c.encode(details, forKey: .details)
+        try c.encode(PersistedJSONDate.formatter.string(from: createdAt), forKey: .createdAt)
+        if let deletedAt {
+            try c.encode(PersistedJSONDate.formatter.string(from: deletedAt), forKey: .deletedAt)
+        } else {
+            try c.encodeNil(forKey: .deletedAt)
         }
     }
 }
