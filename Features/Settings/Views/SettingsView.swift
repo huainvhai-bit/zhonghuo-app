@@ -600,6 +600,7 @@ struct EditProfileModal: View {
     @State private var showingProfileError = false
     @State private var profileErrorMessage = ""
     @State private var isPhoneLocked = false
+    @State private var isSavingProfile = false
     
     // 默认头像列表
     private let maleAvatars = ["male_1", "male_2", "male_3", "male_4", "male_5"]
@@ -738,67 +739,12 @@ struct EditProfileModal: View {
                 
                 Section {
                     Button(action: {
-                        print("🔵 开始保存用户信息...")
-                        print("   userManager.isLoggedIn (保存前): \(userManager.isLoggedIn)")
-                        print("   currentUser: \(userManager.currentUser?.name ?? "nil")")
-                        
-                        if !name.isEmpty {
-                            if var user = userManager.currentUser {
-                                let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
-                                if !trimmedPhone.isEmpty && !isValidPhone(trimmedPhone) {
-                                    print("❌ 手机号格式不正确：\(trimmedPhone)")
-                                    profileErrorMessage = L10n.string(.phoneFormatError)
-                                    showingProfileError = true
-                                    return
-                                }
-                                let currentBoundPhone = !user.phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    : (KeychainManager.shared.getUserPhone() ?? "")
-                                if !currentBoundPhone.isEmpty {
-                                    if trimmedPhone != currentBoundPhone {
-                                        print("❌ 手机号已绑定，不可再次修改")
-                                        profileErrorMessage = L10n.string(.phoneBoundLocked)
-                                        showingProfileError = true
-                                        return
-                                    }
-                                } else if trimmedPhone.isEmpty {
-                                    print("❌ 首次绑定手机号不能为空")
-                                    profileErrorMessage = L10n.string(.firstBindPhoneRequired)
-                                    showingProfileError = true
-                                    return
-                                }
-                                user.name = name
-                                user.phone = currentBoundPhone.isEmpty ? trimmedPhone : currentBoundPhone
-                                user.ethnicity = ethnicity
-                                user.birthday = birthday
-                                user.idCard = idCard
-                                user.address = address
-                                user.gender = gender
-                                user.avatar = selectedAvatar
-                                
-                                // 先更新 currentUser，再保存
-                                userManager.currentUser = user
-                                let saveSuccess = userManager.saveUser(user)
-                                
-                                print("   saveUser 返回：\(saveSuccess)")
-                                print("   userManager.isLoggedIn (保存后): \(userManager.isLoggedIn)")
-                                
-                                if saveSuccess {
-                                    // 确保登录状态保持
-                                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                                    UserDefaults.standard.set(user.id, forKey: "userId")
-                                    print("✅ 用户信息已保存，登录状态保持")
-                                    dismiss()
-                                } else {
-                                    print("❌ 保存用户失败")
-                                }
-                            }
-                        }
+                        Task { await submitEditProfile() }
                     }) {
                     Text(L10n.string(.saveProfile))
                         .frame(maxWidth: .infinity)
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(name.isEmpty || isSavingProfile)
                 }
             }
             .navigationTitle(L10n.string(.editProfile))
@@ -837,6 +783,74 @@ struct EditProfileModal: View {
             }
         }
         .stackNavigationStyle()
+    }
+
+    @MainActor
+    private func submitEditProfile() async {
+        guard !name.isEmpty else { return }
+        guard var user = userManager.currentUser else { return }
+
+        let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedPhone.isEmpty && !isValidPhone(trimmedPhone) {
+            profileErrorMessage = L10n.string(.phoneFormatError)
+            showingProfileError = true
+            return
+        }
+
+        let keychainSaved = (KeychainManager.shared.getUserPhone() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let currentBoundPhone = !user.phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+            : keychainSaved
+
+        if !currentBoundPhone.isEmpty {
+            if trimmedPhone != currentBoundPhone {
+                profileErrorMessage = L10n.string(.phoneBoundLocked)
+                showingProfileError = true
+                return
+            }
+        } else if trimmedPhone.isEmpty {
+            profileErrorMessage = L10n.string(.firstBindPhoneRequired)
+            showingProfileError = true
+            return
+        }
+
+        user.name = name
+        user.phone = currentBoundPhone.isEmpty ? trimmedPhone : currentBoundPhone
+        user.ethnicity = ethnicity
+        user.birthday = birthday
+        user.idCard = idCard
+        user.address = address
+        user.gender = gender
+        user.avatar = selectedAvatar
+
+        userManager.currentUser = user
+        isSavingProfile = true
+        defer { isSavingProfile = false }
+
+        guard userManager.saveUser(user) else {
+            profileErrorMessage = L10n.text(
+                "资料未能保存到本机",
+                en: "Could not save profile on this device.",
+                ja: "端末への保存に失敗しました",
+                ko: "기기에 저장하지 못했습니다"
+            )
+            showingProfileError = true
+            return
+        }
+
+        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        UserDefaults.standard.set(user.id, forKey: "userId")
+
+        let finalPhone = user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !finalPhone.isEmpty {
+            if let syncErr = await userManager.syncProfilePhoneToServer(phone: finalPhone) {
+                profileErrorMessage = syncErr
+                showingProfileError = true
+                return
+            }
+        }
+
+        dismiss()
     }
 
     private func isValidPhone(_ phone: String) -> Bool {

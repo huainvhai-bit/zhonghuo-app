@@ -128,7 +128,7 @@ struct FamilyGuardView: View {
             }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {
-                    loadFamilyList()
+                    Task { await loadFamilyListAsync(showLoading: false) }
                 })
             }
             .sheet(isPresented: $showingShareQR) {
@@ -173,7 +173,7 @@ struct FamilyGuardView: View {
             .sheet(isPresented: $showingManualInput) {
                 ManualInputInviteCodeView(onBound: {
                     showingManualInput = false
-                    loadFamilyList()
+                    Task { await loadFamilyListAsync(showLoading: false) }
                 }, onCancel: {
                     showingManualInput = false
                 })
@@ -484,7 +484,7 @@ struct FamilyGuardView: View {
             } else {
                 ForEach(familyList) { member in
                     FamilyMemberCard(member: member, onDelete: {
-                        loadFamilyList()
+                        Task { await loadFamilyListAsync(showLoading: false) }
                     })
                 }
             }
@@ -565,22 +565,26 @@ struct FamilyGuardView: View {
     
     // MARK: - 方法
     
-    private func loadFamilyList() {
-        isLoading = true
-        Task {
-            await loadFamilyListAsync()
+    /// 后端 `members[].id` 为家人关系表主键；分享胶囊需传对方 **`users.id`**（与 `family_relations.related_user_id` 一致）
+    private static func relatedUserIdFromFamilyMemberPayload(_ member: [String: Any]) -> String {
+        for key in ["relatedUserId", "related_user_id"] {
+            guard let raw = member[key] as? String else { continue }
+            let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !t.isEmpty { return t }
         }
+        return ""
     }
-    
+
+    /// 加载家人列表：`showLoading: true` 时使用全屏 Progress；必须在结束时仍走完整函数返回路径以清空 `isLoading`，切勿在未传 `showLoading:true` 时抢先写 `isLoading = true`
     @MainActor
     private func loadFamilyListAsync(showLoading: Bool = false) async {
-        // 仅在首屏/手动刷新时显示加载占位，避免后台轮询导致 tab 反复闪烁
+        // 仅在首屏/显式要求时显示加载占位，避免后台轮询导致 tab 反复闪烁
         if showLoading {
             isLoading = true
         }
         defer {
             if showLoading {
-                DispatchQueue.main.async { self.isLoading = false }
+                isLoading = false
             }
         }
 
@@ -606,6 +610,7 @@ struct FamilyGuardView: View {
                     data {
                         members {
                             id
+                            relatedUserId
                             name
                             phone
                             relation
@@ -620,6 +625,22 @@ struct FamilyGuardView: View {
                             name
                             phone
                             relation
+                            status
+                            createdAt
+                        }
+                        pendingRequests {
+                            id
+                            invite_code
+                            inviter_id
+                            accepted_by
+                            inviterName
+                            inviterPhone
+                            inviterAccount
+                            acceptedByName
+                            acceptedByPhone
+                            acceptedByAccount
+                            needsMyApproval
+                            relation_type
                             status
                             createdAt
                         }
@@ -638,10 +659,15 @@ struct FamilyGuardView: View {
                 if let familyData = familyResult["data"] as? [String: Any] {
                     // 解析 members
                     if let members = familyData["members"] as? [[String: Any]] {
-                        let newFamilyList = members.compactMap { member in
-                            FamilyMember(
-                                id: member["id"] as? String ?? "",
-                                relationId: member["id"] as? String ?? "",
+                        let newFamilyList = members.compactMap { member -> FamilyMember? in
+                            let relationRowId = (member["id"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !relationRowId.isEmpty else { return nil }
+                            let peerUid = Self.relatedUserIdFromFamilyMemberPayload(member)
+                            // `id` 为关系行主键；分享胶囊等 API 需要对方用户 UUID（relatedUserId）
+                            let stableMemberId = peerUid.isEmpty ? relationRowId : peerUid
+                            return FamilyMember(
+                                id: stableMemberId,
+                                relationId: relationRowId,
                                 name: member["name"] as? String ?? "",
                                 phone: member["phone"] as? String ?? "",
                                 avatar: member["avatar"] as? String ?? "",
@@ -682,7 +708,10 @@ struct FamilyGuardView: View {
                             let acceptedByName = request["acceptedByName"] as? String ?? ""
                             let acceptedByPhone = request["acceptedByPhone"] as? String ?? ""
                             let acceptedByAccount = request["acceptedByAccount"] as? String ?? ""
-                            let needsMyApproval = (request["needsMyApproval"] as? Bool) ?? false
+                            let needsMyApproval = (request["needsMyApproval"] as? Bool)
+                                ?? ((request["needs_my_approval"] as? NSNumber)?.boolValue)
+                                ?? (request["needs_my_approval"] as? Bool)
+                                ?? false
                             let displayName = request["displayName"] as? String ?? (needsMyApproval ? acceptedByName : inviterName)
                             let displayPhone = request["displayPhone"] as? String ?? (needsMyApproval ? acceptedByPhone : inviterPhone)
                             let displayAccount = request["displayAccount"] as? String ?? (needsMyApproval ? acceptedByAccount : inviterAccount)
@@ -773,11 +802,19 @@ struct FamilyGuardView: View {
                 } else {
                     let message = inviteResult["message"] as? String ?? "未知错误"
                     print("❌ 邀请码生成失败：\(message)")
+                    inviteCode = ""
+                    qrImage = nil
+                    errorMessage = message
+                    showingError = true
                 }
             }
         } catch {
             print("❌ 生成邀请码失败：\(error)")
             print("❌ 错误详情：\(error.localizedDescription)")
+            inviteCode = ""
+            qrImage = nil
+            errorMessage = error.localizedDescription
+            showingError = true
         }
     }
     
@@ -1032,6 +1069,8 @@ struct FamilyGuardView: View {
     private func finalizePendingFamilyRequest(_ request: FamilyPendingRequest) async {
         print("🔵 点击确认绑定待确认家人申请：relationId=\(request.id), inviter=\(request.inviterId), acceptedBy=\(request.acceptedById)")
         confirmingRequestId = request.id
+        defer { confirmingRequestId = nil }
+
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: request.id)
             print("📡 待确认家人请求确认响应：\(result)")
@@ -1049,7 +1088,6 @@ struct FamilyGuardView: View {
             errorMessage = error.localizedDescription
             showingError = true
         }
-        confirmingRequestId = nil
     }
 }
 

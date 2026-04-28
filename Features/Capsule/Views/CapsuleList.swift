@@ -24,6 +24,7 @@ struct CapsuleList: View {
     @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的胶囊
     @State private var showingDeleteAlert = false  // ✅ 删除确认弹窗
     @State private var selectedCapsuleForDetail: TimeCapsule? = nil  // 待查看详情的胶囊
+    @State private var shareCapsuleAlertMessage: String? = nil
     
     var filteredCapsules: [TimeCapsule] {
         dataManager.getFilteredCapsules(type: selectedFilter)
@@ -206,6 +207,10 @@ struct CapsuleList: View {
                                     self.selectedCapsuleForShare = nil
                                     self.showingUpgradeForShare = true
                                 }
+                            } else {
+                                await MainActor.run {
+                                    shareCapsuleAlertMessage = errorMsg
+                                }
                             }
                         }
                     }
@@ -214,6 +219,19 @@ struct CapsuleList: View {
                     selectedCapsuleForShare = nil
                 }
             )
+        }
+        .alert(
+            L10n.text("分享胶囊", en: "Share capsule", ja: "カプセルを共有", ko: "캡슐 공유"),
+            isPresented: Binding(
+                get: { shareCapsuleAlertMessage != nil },
+                set: { if !$0 { shareCapsuleAlertMessage = nil } }
+            )
+        ) {
+            Button(L10n.text("好的", en: "OK", ja: "OK", ko: "확인"), role: .cancel) {
+                shareCapsuleAlertMessage = nil
+            }
+        } message: {
+            Text(shareCapsuleAlertMessage ?? "")
         }
         .sheet(item: $selectedCapsuleForEdit, onDismiss: {
             selectedCapsuleForEdit = nil

@@ -1152,6 +1152,7 @@ class DataManager: ObservableObject {
             shareCapsule(capsuleId: $capsuleId, receiverIds: $receiverIds) {
                 success
                 shareCount
+                message
             }
         }
         """
@@ -1163,8 +1164,22 @@ class DataManager: ObservableObject {
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         if let data = result["data"] as? [String: Any],
-           let shareResult = data["shareCapsule"] as? [String: Any],
-           let success = shareResult["success"] as? Bool, success {
+           let shareResult = data["shareCapsule"] as? [String: Any] {
+            let success = shareResult["success"] as? Bool ?? false
+            let shareCount = shareResult["shareCount"] as? Int ?? 0
+            let backendMessage = (shareResult["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            guard success && shareCount > 0 else {
+                let fallback = L10n.text(
+                    "未能将胶囊分享给所选家人，请确认对方已是已接受的家人绑定",
+                    en: "Could not share with the selected family. Make sure they have accepted the family link.",
+                    ja: "選択した家族に共有できませんでした。家族連携が承認済みかご確認ください。",
+                    ko: "선택한 가족에게 공유할 수 없습니다. 가족 연결이 수락되었는지 확인하세요."
+                )
+                let text = (backendMessage?.isEmpty == false) ? backendMessage! : fallback
+                throw NSError(domain: "ShareCapsule", code: shareCount, userInfo: [NSLocalizedDescriptionKey: text])
+            }
+            
             await MainActor.run {
                 if let index = self.capsules.firstIndex(where: { $0.id == capsuleId }) {
                     self.capsules[index].isSent = true
@@ -1816,6 +1831,7 @@ class DataManager: ObservableObject {
                 data {
                     members {
                         id
+                        relatedUserId
                         name
                         phone
                         role
@@ -1825,6 +1841,7 @@ class DataManager: ObservableObject {
                     }
                     invited {
                         id
+                        relatedUserId
                         name
                         phone
                         status
@@ -1851,20 +1868,22 @@ class DataManager: ObservableObject {
     func refreshFamilyMembers() async throws -> [FamilyInfo] {
         let records = try await fetchFamilyMembers()
         let cached = records.compactMap { record -> FamilyInfo? in
-            let id = record["id"] as? String ?? UUID().uuidString
+            let rowId = record["id"] as? String ?? UUID().uuidString
             let relationType = record["relationType"] as? String
                 ?? record["relation"] as? String
                 ?? "family"
-            let relatedUserId = record["relatedUserId"] as? String
-                ?? record["user_id"] as? String
-                ?? record["id"] as? String
-                ?? id
+            let peerId = (record["relatedUserId"] as? String ?? record["related_user_id"] as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            // 与对方用户 ID：`shareCapsule` 校验的是 family_relations 中的 related_user_id，严禁把关系行 id 当作 receiver
+            guard !peerId.isEmpty else {
+                return nil
+            }
             let relatedUserLastCheckInDate = Self.parseBackendDate(record["relatedUserLastCheckInDate"] as? String)
 
             return FamilyInfo(
-                id: id,
+                id: rowId,
                 relationType: relationType,
-                relatedUserId: relatedUserId,
+                relatedUserId: peerId,
                 relatedUserName: record["relatedUserName"] as? String ?? record["name"] as? String,
                 relatedUserPhone: record["relatedUserPhone"] as? String ?? record["phone"] as? String,
                 relatedUserLastCheckInDate: relatedUserLastCheckInDate

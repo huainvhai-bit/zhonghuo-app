@@ -1362,6 +1362,53 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return false
         }
     }
+
+    /// 将手机号同步到服务端 `users.phone`（无短信验证码，依赖当前 JWT）
+    /// - Returns: `nil` 表示成功或未需要同步（空号）；否则为可向用户展示的错误文案
+    func syncProfilePhoneToServer(phone: String) async -> String? {
+        let trimmed = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard KeychainManager.shared.getToken() != nil else {
+            return "未登录，无法同步手机号到服务器（本地已保存）"
+        }
+        let mutation = """
+        mutation($phone: String!) {
+            updateProfilePhone(phone: $phone) {
+                success
+                message
+                phone
+            }
+        }
+        """
+        do {
+            let raw = try await GraphQLClient.shared.query(mutation, variables: ["phone": trimmed])
+            guard let data = raw["data"] as? [String: Any],
+                  let payload = data["updateProfilePhone"] as? [String: Any],
+                  let success = payload["success"] as? Bool,
+                  success else {
+                return "服务器未确认保存手机号"
+            }
+            return nil
+        } catch {
+            let desc: String
+            if let g = error as? GraphQLError, case .serverError(let msg) = g {
+                desc = Self.friendlyGraphQLMessage(msg)
+            } else {
+                desc = error.localizedDescription
+            }
+            return desc
+        }
+    }
+
+    private static func friendlyGraphQLMessage(_ raw: String) -> String {
+        if raw.hasPrefix("PROFILE_PHONE:") {
+            return String(raw.dropFirst("PROFILE_PHONE:".count))
+        }
+        if raw.hasPrefix("PHONE_EXISTS:") {
+            return String(raw.dropFirst("PHONE_EXISTS:".count))
+        }
+        return raw
+    }
     
     private func isValidPhone(_ phone: String) -> Bool {
         let pattern = "^1[3-9]\\d{9}$"

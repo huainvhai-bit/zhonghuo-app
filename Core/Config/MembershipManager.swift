@@ -183,7 +183,13 @@ class MembershipManager: ObservableObject {
             self.maxTextCapsules = memberMaxTextCapsules > 0 ? memberMaxTextCapsules : (isPremium ? Limits.premiumMaxTextCapsules : Limits.freeMaxTextCapsules)
             self.maxAudioCapsules = memberMaxAudioCapsules > 0 ? memberMaxAudioCapsules : (isPremium ? Limits.premiumMaxAudioCapsules : Limits.freeMaxAudioCapsules)
             self.maxVideoCapsules = memberMaxVideoCapsules > 0 ? memberMaxVideoCapsules : (isPremium ? Limits.premiumMaxVideoCapsules : Limits.freeMaxVideoCapsules)
-            self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : (isPremium ? Limits.premiumMaxVideoMinutes : Limits.freeMaxVideoMinutes)
+            // 会员录制时长以服务端「会员默认」为下限，避免库里旧值（如 3）低于产品承诺的会员分钟数
+            if isPremium {
+                let persisted = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : serverLimits.premiumMaxVideoMinutes
+                self.maxVideoMinutes = max(persisted, serverLimits.premiumMaxVideoMinutes)
+            } else {
+                self.maxVideoMinutes = memberMaxVideoMinutes > 0 ? memberMaxVideoMinutes : serverLimits.freeMaxVideoMinutes
+            }
             self.maxMediaCapsules = isPremium ? Limits.premiumMaxMediaCapsules : Limits.freeMaxMediaCapsules
             self.aiAssistEnabled = aiAssistEnabled && isPremium  // 仅会员且服务器启用时开启
         }
