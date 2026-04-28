@@ -372,22 +372,72 @@ class IAPManager: ObservableObject {
         // 云端开通由会员页在拿到 Base64 收据后调用 activateMembership，避免与 listeners 重复打点
     }
     
-    /// 读取用于后端 `verifyReceipt` 的统一收据（Base64）。生产环境必须使用；纯数字 transactionId 无法代替。
+    /// 读取用于后端 `verifyReceipt` 的统一收据（Base64）。沙盒/TestFlight 下收据常晚于 `transaction.finish` 落盘，故带重试与 SK1 刷新。
     func appStoreReceiptBase64ForServer() async -> String? {
-        do {
-            try await AppStore.sync()
-        } catch {
-            print("⚠️ AppStore.sync：\(error.localizedDescription)")
+        let nanos: [UInt64] = [0, 250_000_000, 500_000_000, 800_000_000, 1_200_000_000, 1_800_000_000]
+        for (attempt, delay) in nanos.enumerated() {
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: delay)
+            }
+            do {
+                try await AppStore.sync()
+            } catch {
+                print("⚠️ AppStore.sync：\(error.localizedDescription)")
+            }
+            if let data = Self.readUnifiedReceiptData(), !data.isEmpty {
+                return data.base64EncodedString(options: [])
+            }
+            // 中期与最后再尝试旧式「拉收据」接口（对沙盒空文件常有效）
+            if attempt == 2 || attempt == 4 {
+                do {
+                    try await Self.refreshReceiptUsingSKReceiptRefreshRequest()
+                    if let data = Self.readUnifiedReceiptData(), !data.isEmpty {
+                        return data.base64EncodedString(options: [])
+                    }
+                } catch {
+                    print("⚠️ SKReceiptRefreshRequest：\(error.localizedDescription)")
+                }
+            }
         }
-        guard let receiptURL = Bundle.main.appStoreReceiptURL else {
-            print("⚠️ 缺少 appStoreReceiptURL（常见于模拟器或未从商店安装的包）")
+        if Bundle.main.appStoreReceiptURL == nil {
+            print("⚠️ 缺少 appStoreReceiptURL（模拟器、未含收据的安装包、或仅 Xcode StoreKit 本地配置时常见）")
+        } else {
+            print("⚠️ App Store 收据仍为空：请用真机 + 沙盒账号或 TestFlight，避免仅依赖 Scheme 内 StoreKit 配置文件（可能无统一收据文件）")
+        }
+        return nil
+    }
+
+    /// 同步读取统一收据原始数据（主线程读文件即可）
+    private static func readUnifiedReceiptData() -> Data? {
+        guard let url = Bundle.main.appStoreReceiptURL else { return nil }
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+            #if DEBUG
+            print("🧾 receipt path=\(url.path) exists=\(exists) bytes=0")
+            #endif
             return nil
         }
-        guard let data = try? Data(contentsOf: receiptURL), !data.isEmpty else {
-            print("⚠️ App Store 收据文件为空")
-            return nil
+        #if DEBUG
+        print("🧾 receipt OK bytes=\(data.count)")
+        #endif
+        return data
+    }
+
+    /// 使用 StoreKit 1 的刷新请求拉取/更新 `applicationReceipt`（与 StoreKit 2 购买兼容）
+    private static func refreshReceiptUsingSKReceiptRefreshRequest() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            var runner: SK1ReceiptRefreshRunner?
+            runner = SK1ReceiptRefreshRunner { result in
+                runner = nil
+                switch result {
+                case .success:
+                    continuation.resume(returning: ())
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+            runner?.start()
         }
-        return data.base64EncodedString(options: [])
     }
     
     /// 将 Receipt 发送到服务器验证并激活会员
@@ -504,6 +554,31 @@ class IAPManager: ObservableObject {
             return nil
         }
         return Date(timeIntervalSince1970: expiryTimestamp)
+    }
+}
+
+// MARK: - SK1 收据刷新（沙盒/TestFlight 下统一收据常需显式拉取）
+
+private final class SK1ReceiptRefreshRunner: NSObject, SKRequestDelegate {
+    private let onComplete: (Result<Void, Error>) -> Void
+    private let request = SKReceiptRefreshRequest()
+
+    init(onComplete: @escaping (Result<Void, Error>) -> Void) {
+        self.onComplete = onComplete
+        super.init()
+        request.delegate = self
+    }
+
+    func start() {
+        request.start()
+    }
+
+    func requestDidFinish(_ request: SKRequest) {
+        onComplete(.success(()))
+    }
+
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        onComplete(.failure(error))
     }
 }
 

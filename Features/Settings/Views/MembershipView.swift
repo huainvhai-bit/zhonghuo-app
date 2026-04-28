@@ -325,10 +325,10 @@ struct MembershipView: View {
                 
                 guard let receiptB64 = await iapManager.appStoreReceiptBase64ForServer(), !receiptB64.isEmpty else {
                     purchaseMessage = L10n.text(
-                        "无法读取 App Store 收据，暂不能同步会员。请稍后再试，或使用「恢复购买」。",
-                        en: "Cannot read App Store receipt; membership cannot sync yet. Try again or use Restore Purchases.",
-                        ja: "App Store のレシートを読み取れません。しばらくしてから再度お試しください。または「購入を復元」を使用してください。",
-                        ko: "App Store 영수증을 읽을 수 없어 회원 상태를 동기화할 수 없습니다. 다시 시도하거나 구매 복원을 사용하세요."
+                        "暂时读不到统一收据（沙盒常见于收据晚于付款落盘）。请稍后点「恢复购买」重试；若仅用 Xcode 的 StoreKit 本地配置文件，可能没有收据文件，请改用真机 TestFlight 或商店包。",
+                        en: "Could not read the unified receipt yet (common in sandbox). Try Restore Purchases in a moment; if you only use the Xcode StoreKit Configuration file there may be no receipt—use TestFlight/device instead.",
+                        ja: "まだ統一レシートを読めません（サンドボックスでは遅延しがち）。しばらくして「購入を復元」を試してください。Xcode の StoreKit 構成だけではレシートが無い場合があります。",
+                        ko: "아직 통합 영수증을 읽지 못했습니다(샌드박스에서 지연되는 경우가 많음). 잠시 후 구매 복원을 시도하세요. Xcode StoreKit 구성만 쓰면 영수증이 없을 수 있습니다."
                     )
                     showingPurchaseAlert = true
                     return
