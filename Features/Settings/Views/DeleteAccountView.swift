@@ -14,7 +14,6 @@ struct DeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var languageManager = AppLanguageManager.shared
     @ObservedObject private var userManager = UserManager.shared
-    @ObservedObject private var dataManager = DataManager.shared
 
     /// 与 ResetPasswordView 保持一致的密保题库，确保用户看到的选项一一对应
     private static var securityQuestions: [String] {
@@ -239,21 +238,10 @@ struct DeleteAccountView: View {
     }
 
     /// 注销成功后清掉所有本地缓存并退出登录
-    /// - 先清 DataManager 内存缓存（胶囊 / 遗嘱 / 资产 / 家人 / 系统配置等），避免下一个账号在同一设备登录时看到上一个账号的残留数据
-    /// - 再调 UserManager.logout() 走标准登出流程：删除当前 user_*.json + 清 Keychain Token + 广播 UserDidLogout
+    /// - 再调 UserManager.logout()：解除沙箱、清内存、删 user_*.json、清 Token、广播 UserDidLogout
     /// - 最后取消所有本地通知（签到提醒、家人超时提醒等）
     @MainActor
     private func finishAndLogout() {
-        dataManager.capsules.removeAll()
-        dataManager.receivedCapsules.removeAll()
-        dataManager.deletedCapsules.removeAll()
-        dataManager.willModules.removeAll()
-        dataManager.deletedWillModules.removeAll()
-        dataManager.assets.removeAll()
-        dataManager.deletedAssets.removeAll()
-        dataManager.familyMembers.removeAll()
-        dataManager.checklistItems.removeAll()
-
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
 

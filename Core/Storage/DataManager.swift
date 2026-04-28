@@ -249,7 +249,33 @@ class DataManager: ObservableObject {
     private var documentsPath: String {
         fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
     }
-    
+
+    /// 每台设备上按用户隔离沙箱的根目录：`Documents/zhonghuo_per_user/<userId>/`
+    private let perUserDataFolderName = "zhonghuo_per_user"
+
+    /// 当前本地 JSON / TimeCapsules 已绑定到的用户 ID（与 Keychain / currentUser 一致）
+    private(set) var activePersistenceUserId: String?
+
+    private func documentsRootURL() -> URL {
+        fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+
+    func userDataDirectory(forUserId userId: String) -> URL {
+        let safe = userId.replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "\\", with: "_")
+        return documentsRootURL()
+            .appendingPathComponent(perUserDataFolderName, isDirectory: true)
+            .appendingPathComponent(safe, isDirectory: true)
+    }
+
+    private func urlForActiveUserJSON(_ fileName: String) -> URL? {
+        guard let uid = activePersistenceUserId, !uid.isEmpty else { return nil }
+        let dir = userDataDirectory(forUserId: uid)
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir.appendingPathComponent(fileName)
+    }
+
     init() {
         self.settings = UserSettings(
             name: "用户",
@@ -268,7 +294,6 @@ class DataManager: ObservableObject {
         }
         
         self.lastCheckInDate = self.settings.lastCheckInDate
-        loadAllData()
     }
     
     // MARK: - 网络检查
@@ -360,6 +385,94 @@ class DataManager: ObservableObject {
         // 🔄 启动时静默补传本地已有但尚未上传到云端的媒体
         resumePendingCapsuleMediaUploads()
     }
+
+    /// 将旧版位于 Documents 根目录的 JSON / TimeCapsules 迁入当前用户沙箱（仅当用户目录尚无对应文件时）
+    private func migrateLegacyFlatFilesIntoUserScope(forUserId userId: String) {
+        let docs = documentsRootURL()
+        let destRoot = userDataDirectory(forUserId: userId)
+        try? fileManager.createDirectory(at: destRoot, withIntermediateDirectories: true)
+
+        let files = [
+            "capsules.json", "willModules.json", "assets.json",
+            "deleted_capsules.json", "deleted_wills.json", "deleted_assets.json", "checklist.json"
+        ]
+        for name in files {
+            let src = docs.appendingPathComponent(name)
+            let dst = destRoot.appendingPathComponent(name)
+            guard fileManager.fileExists(atPath: src.path) else { continue }
+            if fileManager.fileExists(atPath: dst.path) {
+                try? fileManager.removeItem(at: src)
+                continue
+            }
+            do {
+                try fileManager.moveItem(at: src, to: dst)
+                print("✅ DataManager: 已迁移 \(name) → 用户 \(userId) 目录")
+            } catch {
+                print("⚠️ DataManager: 迁移 \(name) 失败：\(error.localizedDescription)")
+            }
+        }
+
+        let legacyMedia = docs.appendingPathComponent("TimeCapsules", isDirectory: true)
+        let dstMedia = destRoot.appendingPathComponent("TimeCapsules", isDirectory: true)
+        guard fileManager.fileExists(atPath: legacyMedia.path) else { return }
+        if !fileManager.fileExists(atPath: dstMedia.path) {
+            do {
+                try fileManager.moveItem(at: legacyMedia, to: dstMedia)
+                print("✅ DataManager: 已迁移 TimeCapsules 媒体目录 → 用户 \(userId)")
+            } catch {
+                print("⚠️ DataManager: 迁移 TimeCapsules 失败：\(error.localizedDescription)")
+            }
+        } else {
+            try? fileManager.removeItem(at: legacyMedia)
+        }
+    }
+
+    /// 登录成功或切换到已登录会话时：按用户 ID 重新加载磁盘上的胶囊 / 遗嘱 / 资产（与上个账号内存隔离）
+    func reloadPersistedCollections(forUserId userId: String) {
+        guard !userId.isEmpty else { return }
+        if activePersistenceUserId == userId {
+            return
+        }
+
+        pendingMediaUploadTasks.values.forEach { $0.cancel() }
+        pendingMediaUploadTasks.removeAll()
+
+        capsules = []
+        willModules = []
+        assets = []
+        checklistItems = []
+        deletedCapsules = []
+        deletedWillModules = []
+        deletedAssets = []
+        receivedCapsules = []
+        familyMembers = []
+
+        migrateLegacyFlatFilesIntoUserScope(forUserId: userId)
+
+        activePersistenceUserId = userId
+        loadAllData()
+    }
+
+    /// 退出登录（或会话失效）时清空内存并解除沙箱绑定，避免下一账号看到上一账号数据
+    func clearSessionUserData() {
+        pendingMediaUploadTasks.values.forEach { $0.cancel() }
+        pendingMediaUploadTasks.removeAll()
+
+        activePersistenceUserId = nil
+        capsules = []
+        willModules = []
+        assets = []
+        checklistItems = []
+        deletedCapsules = []
+        deletedWillModules = []
+        deletedAssets = []
+        receivedCapsules = []
+        familyMembers = []
+        currentUser = nil
+
+        CacheManager.shared.clearAll()
+        OfflineEditorManager.shared.clearPersistedQueueForAccountSwitch()
+    }
     
     // MARK: - 文件操作
     
@@ -381,7 +494,9 @@ class DataManager: ObservableObject {
     
     // 其他数据加载方法...
     func loadCapsulesFromFile() -> [TimeCapsule] {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json")
+        guard let path = urlForActiveUserJSON("capsules.json") else {
+            return []
+        }
         print("📂 尝试加载胶囊文件：\(path.path)")
         
         guard fileManager.fileExists(atPath: path.path) else {
@@ -401,7 +516,9 @@ class DataManager: ObservableObject {
     }
     
     func loadWillModulesFromFile() -> [WillModule] {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("willModules.json")
+        guard let path = urlForActiveUserJSON("willModules.json") else {
+            return getDefaultWillModules()
+        }
         if let data = try? Data(contentsOf: path) {
             return (try? JSONDecoder().decode([WillModule].self, from: data)) ?? []
         }
@@ -410,10 +527,11 @@ class DataManager: ObservableObject {
     }
     
     func saveWillModulesToFile() {
+        guard let path = urlForActiveUserJSON("willModules.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(willModules) {
-            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("willModules.json"))
+            try? data.write(to: path)
         }
     }
     
@@ -441,7 +559,9 @@ class DataManager: ObservableObject {
     }
     
     func loadAssetsFromFile() -> [Asset] {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("assets.json")
+        guard let path = urlForActiveUserJSON("assets.json") else {
+            return getDefaultAssets()
+        }
         if let data = try? Data(contentsOf: path) {
             return (try? JSONDecoder().decode([Asset].self, from: data)) ?? []
         }
@@ -475,15 +595,16 @@ class DataManager: ObservableObject {
     }
     
     func saveAssetsToFile() {
+        guard let path = urlForActiveUserJSON("assets.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(assets) {
-            try? data.write(to: fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("assets.json"))
+            try? data.write(to: path)
         }
     }
     
     func saveCapsulesToFile() {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("capsules.json")
+        guard let path = urlForActiveUserJSON("capsules.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         do {
@@ -499,7 +620,7 @@ class DataManager: ObservableObject {
     
     /// 保存已删除的胶囊
     func saveDeletedCapsulesToFile() {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_capsules.json")
+        guard let path = urlForActiveUserJSON("deleted_capsules.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(deletedCapsules) {
@@ -510,7 +631,7 @@ class DataManager: ObservableObject {
     
     /// 保存已删除的遗嘱
     func saveDeletedWillModulesToFile() {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_wills.json")
+        guard let path = urlForActiveUserJSON("deleted_wills.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(deletedWillModules) {
@@ -521,7 +642,7 @@ class DataManager: ObservableObject {
     
     /// 保存已删除的资产
     func saveDeletedAssetsToFile() {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_assets.json")
+        guard let path = urlForActiveUserJSON("deleted_assets.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(deletedAssets) {
@@ -532,25 +653,22 @@ class DataManager: ObservableObject {
     
     /// 加载已删除的数据（App 启动时调用）
     func loadDeletedItemsFromFile() {
-        // 加载已删除胶囊
-        let deletedCapsulesPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_capsules.json")
-        if let data = try? Data(contentsOf: deletedCapsulesPath),
+        if let path = urlForActiveUserJSON("deleted_capsules.json"),
+           let data = try? Data(contentsOf: path),
            let loaded: [TimeCapsule] = try? JSONDecoder().decode([TimeCapsule].self, from: data) {
             deletedCapsules = loaded
             print("✅ 已删除胶囊加载成功：\(deletedCapsules.count) 个待同步")
         }
         
-        // 加载已删除遗嘱
-        let deletedWillsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_wills.json")
-        if let data = try? Data(contentsOf: deletedWillsPath),
+        if let path = urlForActiveUserJSON("deleted_wills.json"),
+           let data = try? Data(contentsOf: path),
            let loaded: [WillModule] = try? JSONDecoder().decode([WillModule].self, from: data) {
             deletedWillModules = loaded
             print("✅ 已删除遗嘱加载成功：\(deletedWillModules.count) 个待同步")
         }
         
-        // 加载已删除资产
-        let deletedAssetsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("deleted_assets.json")
-        if let data = try? Data(contentsOf: deletedAssetsPath),
+        if let path = urlForActiveUserJSON("deleted_assets.json"),
+           let data = try? Data(contentsOf: path),
            let loaded: [Asset] = try? JSONDecoder().decode([Asset].self, from: data) {
             deletedAssets = loaded
             print("✅ 已删除资产加载成功：\(deletedAssets.count) 个待同步")
@@ -583,7 +701,9 @@ class DataManager: ObservableObject {
     
     
     func loadChecklistItemsFromFile() -> [ChecklistItem] {
-        let path = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("checklist.json")
+        guard let path = urlForActiveUserJSON("checklist.json") else {
+            return []
+        }
         if let data = try? Data(contentsOf: path) {
             return (try? JSONDecoder().decode([ChecklistItem].self, from: data)) ?? []
         }
@@ -1226,15 +1346,22 @@ class DataManager: ObservableObject {
             return url
         }
         
+        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        
         if rawPath.hasPrefix("/") {
             if rawPath.contains("Documents") {
                 return URL(fileURLWithPath: rawPath)
             }
-            let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
             return documentsPath.appendingPathComponent(String(rawPath.dropFirst()))
         }
         
-        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        if let uid = activePersistenceUserId ?? KeychainManager.shared.getUserId() {
+            let scoped = userDataDirectory(forUserId: uid).appendingPathComponent(rawPath)
+            if fileManager.fileExists(atPath: scoped.path) {
+                return scoped
+            }
+        }
+        
         return documentsPath.appendingPathComponent(rawPath)
     }
     
@@ -2437,46 +2564,44 @@ class DataManager: ObservableObject {
         Logger.shared.i("数据下载完成")
     }
 
-    /// 持久化媒体文件（确保文件保存在 Documents 目录）
+    /// 持久化媒体文件到当前账号沙箱目录 `zhonghuo_per_user/<id>/TimeCapsules/`
     func persistMediaFile(_ tempURL: URL) async -> URL? {
         print("📁 持久化媒体文件：\(tempURL.path)")
         
-        // 检查源文件是否存在
         guard FileManager.default.fileExists(atPath: tempURL.path) else {
             print("❌ 源文件不存在：\(tempURL.path)")
             return nil
         }
         
-        // 使用稳定的文档目录路径
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let capsulesFolder = documents.appendingPathComponent("TimeCapsules")
+        guard let uid = activePersistenceUserId ?? KeychainManager.shared.getUserId(), !uid.isEmpty else {
+            print("⚠️ 持久化失败：尚未绑定登录用户上下文")
+            return nil
+        }
         
-        // 创建胶囊文件夹（如果不存在）
+        let userRoot = userDataDirectory(forUserId: uid)
+        let capsulesFolder = userRoot.appendingPathComponent("TimeCapsules", isDirectory: true)
+        
         if !FileManager.default.fileExists(atPath: capsulesFolder.path) {
             do {
                 try FileManager.default.createDirectory(at: capsulesFolder, withIntermediateDirectories: true, attributes: nil)
-                print("📁 创建胶囊文件夹：\(capsulesFolder.path)")
+                print("📁 创建胶囊媒体目录：\(capsulesFolder.path)")
             } catch {
                 print("❌ 创建文件夹失败：\(error)")
                 return nil
             }
         }
         
-        // 生成新的文件名（避免冲突）- pathExtension 不带点，需要手动添加
         let filename = "capsule_" + UUID().uuidString + "." + tempURL.pathExtension
         let permanentURL = capsulesFolder.appendingPathComponent(filename)
         
         do {
-            // 如果目标文件已存在，先删除
             if FileManager.default.fileExists(atPath: permanentURL.path) {
                 try FileManager.default.removeItem(at: permanentURL)
                 print("🗑️ 删除旧文件：\(permanentURL.path)")
             }
             
-            // 复制文件到持久化目录
             try FileManager.default.copyItem(at: tempURL, to: permanentURL)
             
-            // 验证文件
             let attributes = try? FileManager.default.attributesOfItem(atPath: permanentURL.path)
             let fileSize = attributes?[.size] as? Int ?? 0
             let isReadable = FileManager.default.isReadableFile(atPath: permanentURL.path)

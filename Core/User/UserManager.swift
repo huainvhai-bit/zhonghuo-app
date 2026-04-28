@@ -876,6 +876,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @MainActor
     func logout() {
         print("🔴 UserManager.logout() 被调用")
+
+        // 先解除本地数据沙箱绑定并清空内存，避免下一账号看到上一账号的胶囊/遗嘱等
+        DataManager.shared.clearSessionUserData()
+        
         self.currentUser = nil
         self.isLoggedIn = false
         self.lastCheckInDate = nil
@@ -1015,6 +1019,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 self.lastCheckInDate = user.lastCheckInDate
                 isUserLoaded = true
             }
+        }
+
+        // 已从本地恢复用户或仅凭 Keychain token 也可用 userId — 绑定按账号隔离的 DataManager 沙箱目录
+        if let uid = currentUser?.id ?? KeychainManager.shared.getUserId(), !uid.isEmpty {
+            DataManager.shared.reloadPersistedCollections(forUserId: uid)
         }
     }
     
@@ -1268,6 +1277,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     isFetchingUserData = false
                     isUserLoaded = true
                     print("✅ fetchUserData 完成：isUserLoaded=\(isUserLoaded), currentUser=\(self.currentUser?.name ?? "nil")")
+
+                    if let cu = self.currentUser {
+                        DataManager.shared.reloadPersistedCollections(forUserId: cu.id)
+                    }
                 }
                 
                 // 保存本地缓存

@@ -155,6 +155,8 @@ class AuthManager: ObservableObject {
     
     /// 退出登录
     func logout() {
+        DataManager.shared.clearSessionUserData()
+
         // 清除 Token
         KeychainManager.shared.deleteToken()
         KeychainManager.shared.deleteUserId()

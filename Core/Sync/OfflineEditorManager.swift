@@ -237,6 +237,13 @@ class OfflineEditorManager: ObservableObject {
 // MARK: - App 生命周期集成
 
 extension OfflineEditorManager {
+    /// 账号切换或登出时清空内存队列与离线队列文件，避免混入下一账号
+    func clearPersistedQueueForAccountSwitch() {
+        pendingChanges.removeAll()
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        try? FileManager.default.removeItem(at: caches.appendingPathComponent("offline_edits.json"))
+    }
+
     /// App 启动时恢复离线编辑
     func initialize() {
         print("🔵 OfflineEditorManager: 初始化...")
