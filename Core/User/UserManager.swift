@@ -1290,6 +1290,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 if let currentUser = self.currentUser {
                     _ = saveUser(currentUser)
                 }
+
+                // 发送方删除胶囊后，接收端列表依赖服务端清理 capsule_shares；此处刷新「收到的胶囊」
+                await DataManager.shared.loadReceivedCapsules()
                 
             } else {
                 // 🔍 详细错误日志

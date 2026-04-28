@@ -48,6 +48,12 @@ struct ZhonghuoApp: App {
                 
                 // ✅ 检查会员是否过期（基于本地缓存）
                 MembershipManager.shared.checkExpiration()
+
+                // 家人删除共享胶囊后，接收方需拉取 receivedCapsules 才能从列表消失
+                Task { @MainActor in
+                    guard UserManager.shared.isLoggedIn else { return }
+                    await DataManager.shared.loadReceivedCapsules()
+                }
             }
         }
     }
