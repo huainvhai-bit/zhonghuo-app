@@ -221,7 +221,7 @@ class RealTimeSyncManager: ObservableObject {
         while !syncQueue.isEmpty {
             let task = syncQueue.removeFirst()
             pendingSyncCount = syncQueue.count
-            do { try await executeSyncTask(task) } catch { Logger.shared.e("同步失败：\(task.type)") }
+            await executeSyncTask(task)
         }
         
         isSyncing = false
@@ -230,10 +230,12 @@ class RealTimeSyncManager: ObservableObject {
         syncStatus = .success
     }
     
-    private func executeSyncTask(_ task: SyncTask) async throws {
+    private func executeSyncTask(_ task: SyncTask) async {
         switch task.type {
-        case .full: try await syncAllData()
-        default: break
+        case .full:
+            await syncAllData()
+        default:
+            break
         }
     }
     
@@ -246,7 +248,7 @@ class RealTimeSyncManager: ObservableObject {
         return Date().timeIntervalSince(lastSync) > syncInterval
     }
     
-    func syncAllData() async throws {
+    func syncAllData() async {
         guard shouldSync() else {
             Logger.shared.d("跳过全量同步（5 分钟内已同步）")
             return
