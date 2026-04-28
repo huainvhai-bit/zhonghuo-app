@@ -13,7 +13,11 @@ import UIKit
 final class ContentViewModel: ObservableObject {
     enum ValidateTokenResult {
         case success
+        /// 令牌无效或会话过期（非风控封号）
         case unauthorized
+        /// 风控：封号 / 封 IP（后端 ACCOUNT_BANNED / IP_BANNED_*）
+        case policyViolation(String)
+
         case networkError
         case serverError
     }
@@ -24,6 +28,8 @@ final class ContentViewModel: ObservableObject {
     @Published var isCheckingAuth = true
     @Published var showingLogoutAlert = false
     @Published var logoutReason = ""
+    @Published var showingPolicyViolationAlert = false
+    @Published var policyViolationMessage = ""
     @Published var showingUpdateAlert = false
     @Published var updateVersion = ""
     @Published var updateUrl = ""
@@ -111,6 +117,18 @@ final class ContentViewModel: ObservableObject {
         isCheckingAuth = false
     }
 
+    /// 封号 / IP 风控：清空会话并弹出说明（服务端前缀 ACCOUNT_BANNED / IP_BANNED_*）
+    func handlePolicyViolation(_ reason: String) {
+        policyViolationMessage = reason.isEmpty
+            ? BackendSecurityPolicy.userFacingMessage(for: "ACCOUNT_BANNED:")
+            : reason
+        showingPolicyViolationAlert = true
+        userManager.logout()
+        hasPersistentSession = false
+        isCheckingAuth = false
+        forceLogout = true
+    }
+
     func handleOpenFamilyGuard() {
         showingFamilyGuard = true
     }
@@ -136,11 +154,19 @@ final class ContentViewModel: ObservableObject {
 
         if hasToken {
             let validationResult = await validateToken()
-            if validationResult == .unauthorized {
+            switch validationResult {
+            case .policyViolation(let reason):
+                handlePolicyViolation(reason)
+                return
+            case .unauthorized:
                 userManager.logout()
                 hasPersistentSession = false
                 isCheckingAuth = false
                 return
+            case .networkError, .serverError:
+                break
+            case .success:
+                break
             }
 
             forceLogout = false
@@ -208,12 +234,22 @@ final class ContentViewModel: ObservableObject {
                             return .success
                         }
                     }
-                    
+
+                    // 容错：整块 JSON / 报错文本里识别风控前缀
+                    if let responseString = String(data: data, encoding: .utf8),
+                       let raw = extractFirstBannedMessage(from: responseString) {
+                        return .policyViolation(BackendSecurityPolicy.userFacingMessage(for: raw))
+                    }
                     if let responseString = String(data: data, encoding: .utf8),
                               responseString.contains("未授权") || responseString.contains("账号不存在") || responseString.contains("登录已过期") {
                         return .unauthorized
                     } else if let errors = json["errors"] as? [[String: Any]] {
                         print("❌ validateToken: GraphQL errors: \(errors)")
+                        for dict in errors {
+                            if let m = dict["message"] as? String, BackendSecurityPolicy.isRestrictedServerMessage(m) {
+                                return .policyViolation(BackendSecurityPolicy.userFacingMessage(for: m))
+                            }
+                        }
                         let errorText = errors.compactMap { $0["message"] as? String }.joined(separator: " | ")
                         if errorText.contains("未授权") || errorText.contains("账号不存在") || errorText.contains("登录已过期") {
                             return .unauthorized
@@ -252,6 +288,15 @@ final class ContentViewModel: ObservableObject {
             NotificationCenter.default.addObserver(forName: NSNotification.Name("ForceLogout"), object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
                     self?.handleForceLogout()
+                }
+            }
+        )
+
+        observers.append(
+            NotificationCenter.default.addObserver(forName: BackendSecurityPolicy.violationNotificationName, object: nil, queue: .main) { [weak self] note in
+                Task { @MainActor in
+                    let raw = note.userInfo?["message"] as? String ?? ""
+                    self?.handlePolicyViolation(raw)
                 }
             }
         )
@@ -325,5 +370,19 @@ final class ContentViewModel: ObservableObject {
             return true
         }
         return isVersionNewer(v1, than: v2)
+    }
+
+    /// 从整块 HTTP 正文中截取首条风控报错（容错 JSON 结构异常时有文本线索）
+    private func extractFirstBannedMessage(from responseString: String) -> String? {
+        for pref in ["ACCOUNT_BANNED:", "IP_BANNED_LOGIN:", "IP_BANNED_REGISTER:"] {
+            guard let range = responseString.range(of: pref) else { continue }
+            let rest = responseString[range.lowerBound...]
+            let firstLine = rest.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? String(rest)
+            let trimmed = firstLine.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ",\"")))
+            if BackendSecurityPolicy.isRestrictedServerMessage(trimmed) {
+                return trimmed
+            }
+        }
+        return nil
     }
 }

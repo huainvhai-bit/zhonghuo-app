@@ -1068,6 +1068,7 @@ class GraphQLClient {
         
         if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
             let message = errors[0]["message"] as? String ?? "GraphQL 错误"
+            BackendSecurityPolicy.postViolationIfNeeded(message)
             throw GraphQLError.serverError(message)
         }
         

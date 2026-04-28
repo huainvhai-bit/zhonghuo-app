@@ -227,7 +227,7 @@ struct RegisterView: View {
             let message = errors[0]["message"] as? String ?? "GraphQL Error"
             throw NSError(domain: message, code: -1)
         }
-        
+
         return json
     }
     
@@ -303,6 +303,8 @@ struct RegisterView: View {
             // ✅ 优先使用错误码进行精确匹配
             if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn’t have a default value") || errorMsg.contains("doesn't have a default value") {
                 self.errorMessage = errorMsg
+            } else if errorMsg.contains("ACCOUNT_BANNED:") || errorMsg.contains("IP_BANNED_LOGIN:") || errorMsg.contains("IP_BANNED_REGISTER:") {
+                self.errorMessage = BackendSecurityPolicy.userFacingMessage(for: errorMsg)
             } else if errorMsg.contains("PHONE_EXISTS:") {
                 self.errorMessage = L10n.text("该手机号已注册，请直接登录", en: "This phone number is already registered. Please sign in.", ja: "この電話番号はすでに登録されています。ログインしてください。", ko: "이미 등록된 전화번호입니다. 로그인하세요.")
             } else if errorMsg.contains("ACCOUNT_EXISTS:") {

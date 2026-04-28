@@ -49,6 +49,15 @@ struct ContentView: View {
                 ko: "새 버전 \(viewModel.updateVersion)을 찾았습니다. 지금 업데이트하시겠습니까?"
             ))
         }
+        .alert(L10n.text("提示", en: "Notice", ja: "お知らせ", ko: "알림"), isPresented: $viewModel.showingPolicyViolationAlert) {
+            Button(L10n.string(.confirm), role: .cancel) {
+                viewModel.showingPolicyViolationAlert = false
+            }
+        } message: {
+            Text(viewModel.policyViolationMessage.isEmpty
+                 ? BackendSecurityPolicy.userFacingMessage(for: "ACCOUNT_BANNED:")
+                 : viewModel.policyViolationMessage)
+        }
         .onAppear {
             viewModel.start()
             // 📝 设置全局错误处理器

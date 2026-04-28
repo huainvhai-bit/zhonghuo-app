@@ -14,6 +14,7 @@
 		07519F3E3E04D1ED331B7AED /* BindFamilyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 436489E7FE94F62B8228B7A8 /* BindFamilyView.swift */; };
 		07F5DDC5289569F0ADBF391A /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B0497DD862983E6B262E93 /* ContentViewModel.swift */; };
 		086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA4936695B433690FA0934 /* AccountValidator.swift */; };
+		E8B1F2D34C5A6B78901234562 /* BackendSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B1F2D34C5A6B78901234561 /* BackendSecurityPolicy.swift */; };
 		0FC881C140F43BA6C28C8345 /* ChunkedUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8FEB7A240DC0DE6FCC6D23 /* ChunkedUploadManager.swift */; };
 		11E8EE7E2FEDB055A60ABC35 /* AppStabilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5C49ABCA0366F276279596 /* AppStabilityManager.swift */; };
 		1CA14A357D5C77C95FECAC5B /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857B4271672E01AA4D3F21D9 /* ErrorHandler.swift */; };
@@ -106,6 +107,7 @@
 		14215F0679497741F049B173 /* CapsuleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleListViewModel.swift; sourceTree = "<group>"; };
 		277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		27CA4936695B433690FA0934 /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountValidator.swift; sourceTree = "<group>"; };
+		E8B1F2D34C5A6B78901234561 /* BackendSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSecurityPolicy.swift; sourceTree = "<group>"; };
 		2DEE4DD2B8ECBC15062589F9 /* LegalDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalDisclosureView.swift; sourceTree = "<group>"; };
 		3080794CC0F56600ACFE733F /* ResetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordView.swift; sourceTree = "<group>"; };
 		B11E0B7E2D4C4A5F9A1B2C3D /* ChineseDateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChineseDateFormatter.swift; sourceTree = "<group>"; };
@@ -417,6 +419,7 @@
 			isa = PBXGroup;
 			children = (
 				27CA4936695B433690FA0934 /* AccountValidator.swift */,
+				E8B1F2D34C5A6B78901234561 /* BackendSecurityPolicy.swift */,
 				7F6C3B7B4D1E42A7B9B38A11 /* AppCaptchaService.swift */,
 				9C9E85D94B85937FA29E4E35 /* AuthManager.swift */,
 				5CEAAD22296028C798FD8858 /* KeychainManager.swift */,
@@ -654,6 +657,7 @@
 				7A47FF470C8E55236C9671D8 /* AboutSettingsView.swift in Sources */,
 				D708212BF8031921655237D1 /* AccessibilityEnhancer.swift in Sources */,
 				086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */,
+				E8B1F2D34C5A6B78901234562 /* BackendSecurityPolicy.swift in Sources */,
 				26EF7A4CB6DB0AC519B025A4 /* AppConfig.swift in Sources */,
 				97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */,
 				72EEB6DE4A659021D60DFCA1 /* AppError.swift in Sources */,

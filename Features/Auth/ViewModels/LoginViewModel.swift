@@ -233,6 +233,8 @@ final class LoginViewModel: ObservableObject {
     private func mappedAuthMessage(from rawMessage: String, context: String) -> String {
         if rawMessage.contains("SQLSTATE") || rawMessage.contains("Unknown column") || rawMessage.contains("doesn't have a default value") || rawMessage.contains("cannot be null") {
             return rawMessage
+        } else if rawMessage.contains("ACCOUNT_BANNED:") || rawMessage.contains("IP_BANNED_LOGIN:") || rawMessage.contains("IP_BANNED_REGISTER:") {
+            return BackendSecurityPolicy.userFacingMessage(for: rawMessage)
         } else if rawMessage.contains("ACCOUNT_NOT_FOUND:") {
             return "账号不存在，请先注册"
         } else if rawMessage.contains("PASSWORD_ERROR:") {

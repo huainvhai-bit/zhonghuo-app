@@ -181,6 +181,8 @@ struct ResetPasswordView: View {
         DispatchQueue.main.async {
             if errorMsg.contains("SQLSTATE") || errorMsg.contains("Unknown column") || errorMsg.contains("doesn't have a default value") || errorMsg.contains("cannot be null") {
                 self.errorMessage = errorMsg
+            } else if errorMsg.contains("ACCOUNT_BANNED:") || errorMsg.contains("IP_BANNED_LOGIN:") || errorMsg.contains("IP_BANNED_REGISTER:") {
+                self.errorMessage = BackendSecurityPolicy.userFacingMessage(for: errorMsg)
             } else if errorMsg.contains("ACCOUNT_NOT_FOUND:") || errorMsg.contains("不存在") {
                 self.errorMessage = L10n.text("账号不存在，请先注册", en: "Account not found. Please register first.", ja: "アカウントが見つかりません。先に登録してください。", ko: "계정을 찾을 수 없습니다. 먼저 등록하세요.")
             } else if errorMsg.contains("密保") || errorMsg.contains("答案") {
