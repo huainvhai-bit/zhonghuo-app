@@ -169,6 +169,8 @@ extension PushNotificationManager {
                 Logger.shared.w("PushNotificationManager: 推送被拒绝，请在设置中启用")
             case .notDetermined:
                 Logger.shared.d("PushNotificationManager: 等待用户授权")
+            case .ephemeral:
+                Logger.shared.d("PushNotificationManager: 临时推送授权")
             @unknown default:
                 break
             }

@@ -970,7 +970,7 @@ class MediaRecorder: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
             do {
-                try self.configureCameraSession(captureSession, videoOutput: videoOutput, useFrontCamera: useFrontCamera)
+                try MediaRecorder.configureCameraSession(captureSession, videoOutput: videoOutput, useFrontCamera: useFrontCamera)
             } catch {
                 DispatchQueue.main.async {
                     self.clearCameraState()
@@ -1001,7 +1001,8 @@ class MediaRecorder: NSObject, ObservableObject {
         case unableToAddInputs
     }
 
-    private func configureCameraSession(_ session: AVCaptureSession, videoOutput: AVCaptureMovieFileOutput, useFrontCamera: Bool) throws {
+    /// 仅操作传入的 AVCapture 对象（无 `@MainActor` 状态），供 `sessionQueue` 同步调用。
+    nonisolated private static func configureCameraSession(_ session: AVCaptureSession, videoOutput: AVCaptureMovieFileOutput, useFrontCamera: Bool) throws {
         session.beginConfiguration()
         defer {
             session.commitConfiguration()
@@ -1039,32 +1040,28 @@ class MediaRecorder: NSObject, ObservableObject {
             print("⚠️ captureSession 未初始化")
             return
         }
-        
+        guard let currentVideoOutput = videoOutput else {
+            print("⚠️ videoOutput 未初始化")
+            return
+        }
+
         // ✅ 如果正在录制，不允许切换（录制过程中不能切换摄像头）
-        if videoOutput?.isRecording == true {
+        if currentVideoOutput.isRecording == true {
             print("⚠️ 正在录制中，不允许切换摄像头，请先停止录制")
             return
         }
         
         // ✅ 在后台队列中切换摄像头，避免阻塞主线程
-        sessionQueue.async { [weak self] in
+        sessionQueue.async { [weak self, captureSession, currentVideoOutput] in
             guard let self = self else { return }
-            guard let videoOutput = self.videoOutput else {
-                print("⚠️ videoOutput 未初始化，无法切换摄像头")
-                DispatchQueue.main.async {
-                    self.isConfiguringCamera = false
-                    self.isCameraReady = false
-                }
-                return
-            }
-            
+
             do {
                 if captureSession.isRunning {
                     captureSession.stopRunning()
                 }
 
                 captureSession.inputs.forEach { captureSession.removeInput($0) }
-                try self.configureCameraSession(captureSession, videoOutput: videoOutput, useFrontCamera: useFront)
+                try MediaRecorder.configureCameraSession(captureSession, videoOutput: currentVideoOutput, useFrontCamera: useFront)
             } catch {
                 print("❌ 切换摄像头输入失败：\(error)")
                 DispatchQueue.main.async {

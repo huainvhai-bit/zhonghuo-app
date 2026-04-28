@@ -201,43 +201,41 @@ class iCloudBackupManager: ObservableObject {
     
     // MARK: - 查询 iCloud 数据
     
-    /// 查询时光胶囊
+    /// 查询时光胶囊（使用 `CKQueryOperation`，替代已弃用的 `perform(_:inZoneWith:completionHandler:)`）
     func queryCapsules() {
         let query = CKQuery(recordType: "Capsule", predicate: NSPredicate(value: true))
-        
-        // 修复：使用正确的 zone ID 初始化
         let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
-        privateCloudDatabase.perform(query, inZoneWith: zoneID) { records, error in
+        let operation = CKQueryOperation(query: query)
+        operation.zoneID = zoneID
+
+        operation.queryCompletionBlock = { _, error in
             if let error = error {
                 print("❌ iCloudBackupManager: 查询胶囊失败：\(error.localizedDescription)")
                 return
             }
-            
-            guard let records = records else { return }
-            
-            print("✅ iCloudBackupManager: 查询到 \(records.count) 个胶囊")
-            // ✅ 合并远程胶囊到本地
-            // 注：实际数据同步通过 GraphQL API 实现，iCloud 作为备份
+            print("✅ iCloudBackupManager: 胶囊 CK 查询已完成")
+            // ✅ 合并远程胶囊到本地——实际业务以 GraphQL 为准，iCloud 仅作备份探查。
         }
+
+        privateCloudDatabase.add(operation)
     }
     
-    /// 查询遗嘱
+    /// 查询遗嘱（同上）
     func queryWills() {
         let query = CKQuery(recordType: "Will", predicate: NSPredicate(value: true))
-        
         let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
-        privateCloudDatabase.perform(query, inZoneWith: zoneID) { records, error in
+        let operation = CKQueryOperation(query: query)
+        operation.zoneID = zoneID
+
+        operation.queryCompletionBlock = { _, error in
             if let error = error {
                 print("❌ iCloudBackupManager: 查询遗嘱失败：\(error.localizedDescription)")
                 return
             }
-            
-            guard let records = records else { return }
-            
-            print("✅ iCloudBackupManager: 查询到 \(records.count) 个遗嘱")
-            // ✅ 合并远程遗嘱到本地
-            // 注：实际数据同步通过 GraphQL API 实现，iCloud 作为备份
+            print("✅ iCloudBackupManager: 遗嘱 CK 查询已完成")
         }
+
+        privateCloudDatabase.add(operation)
     }
 }
 

@@ -110,7 +110,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.distanceFilter = AppConfig.locationDistanceFilter
         locationManager.activityType = .otherNavigation  // 自动优化定位策略
         
-        locationAuthStatus = CLLocationManager.authorizationStatus()
+        locationAuthStatus = locationManager.authorizationStatus
     }
     
     // MARK: - 定位权限管理
@@ -123,7 +123,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// - Returns: 是否成功获取权限
     @discardableResult
     func checkAndRequestLocationPermission(forceRequest: Bool = false) -> Bool {
-        let status = CLLocationManager.authorizationStatus()
+        let status = locationManager.authorizationStatus
         
         switch status {
         case .notDetermined:
@@ -205,7 +205,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         print("   - locationAuthStatus: \(locationAuthStatus)")
         print("   - API URL: \(DataManager.apiURL)")
         
-        guard let user = currentUser else {
+        guard currentUser != nil else {
             print("❌ uploadLocation 失败：currentUser 为 nil")
             return
         }
@@ -559,7 +559,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         // ✅ P0 修复 #3: 仅使用 Keychain 存储 Token（安全存储）
         // 从 Keychain 读取 Token 并保存用户信息
-        if let token = KeychainManager.shared.getToken() {
+        if KeychainManager.shared.getToken() != nil {
             KeychainManager.shared.saveUserId(user.id)
             if let account = user.loginAccount, !account.isEmpty {
                 KeychainManager.shared.saveUserAccount(account)
@@ -582,6 +582,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 自动签到（每次打开 App 自动重置倒计时）
     @MainActor
+    @discardableResult
     func performAutoSignIn() -> Bool {
         if currentUser == nil {
             loadUser()
@@ -1131,15 +1132,15 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let userId = userDict["id"] as? String ?? ""
                 let name = userDict["name"] as? String ?? "用户"
                 let phone = userDict["phone"] as? String ?? ""
-                let avatarUrl = userDict["avatarUrl"] as? String ?? ""
-                let gender = userDict["gender"] as? Int ?? 0
-                let birthday = userDict["birthday"] as? String ?? ""
+                _ = userDict["avatarUrl"] as? String
+                _ = userDict["gender"] as? Int
+                _ = userDict["birthday"] as? String
                 let lastLoginAt = userDict["lastLoginAt"] as? String ?? ""
                 let lastLoginIp = userDict["lastLoginIp"] as? String ?? ""
                 let lastCheckInDate = userDict["lastCheckInDate"] as? String ?? ""
                 let checkinCount = userDict["checkinCount"] as? Int ?? 0
                 let createdAt = userDict["createdAt"] as? String ?? ""
-                let updatedAt = userDict["updatedAt"] as? String ?? ""
+                _ = userDict["updatedAt"] as? String
                 
                 // 解析会员信息
                 let isPremium = userDict["isPremium"] as? Bool ?? false
@@ -1157,20 +1158,21 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     return false
                 }()
 
-                // 解析会员过期时间
-                var memberExpireAt: Date? = nil
-                if let expireStr = memberExpireAtString, !expireStr.isEmpty {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    memberExpireAt = formatter.date(from: expireStr)
-                }
+                let memberExpireResolved: Date? = {
+                    if let expireStr = memberExpireAtString, !expireStr.isEmpty {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                        return formatter.date(from: expireStr)
+                    }
+                    return nil
+                }()
                 
                 // ✅ 更新会员状态（会自动检查过期）
                 await MainActor.run {
                     MembershipManager.shared.updateFromServer(
                         isPremium: isPremium,
                         memberType: memberType,
-                        memberExpireAt: memberExpireAt,
+                        memberExpireAt: memberExpireResolved,
                         memberMaxCapsules: memberMaxCapsules,
                         memberMaxTextCapsules: memberMaxTextCapsules,
                         memberMaxAudioCapsules: memberMaxAudioCapsules,
@@ -1207,19 +1209,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     print("❌ userDict[\"stats\"] 实际类型：\(type(of: userDict["stats"]))")
                 }
                 
-                
-                // 日期格式化
-                let dateFormatter = ISO8601DateFormatter()
-                dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                let capsulesSnapshot = capsulesCount
+                let willsSnapshot = willModulesCount
+                let familySnapshot = familyCount
                 
                 await MainActor.run {
-                    // ✅ Swift 6 并发安全：在 MainActor 内使用局部变量副本
-                    let localCapsulesCount = capsulesCount
-                    let localWillModulesCount = willModulesCount
-                    let localFamilyCount = familyCount
-                    let localAssetsCount = assetsCount
-                    
                     print("🔍 fetchUserData: 准备设置 currentUser")
+
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
                     print("   - 当前 currentUser: \(self.currentUser?.name ?? "nil")")
                     print("   - userId: \(userId)")
                     print("   - name: \(name)")
@@ -1228,12 +1227,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     if var currentUser = self.currentUser {
                         // 更新已存在的用户
                         currentUser.loginAccount = userDict["account"] as? String ?? currentUser.loginAccount
-                        currentUser.capsulesCount = localCapsulesCount
-                        currentUser.willModulesCount = localWillModulesCount
-                        currentUser.familyCount = localFamilyCount
+                        currentUser.capsulesCount = capsulesSnapshot
+                        currentUser.willModulesCount = willsSnapshot
+                        currentUser.familyCount = familySnapshot
                         currentUser.checkinCount = checkinCount
-                        currentUser.lastCheckInDate = dateFormatter.date(from: lastCheckInDate) ?? currentUser.lastCheckInDate
-                        currentUser.lastLoginAt = dateFormatter.date(from: lastLoginAt) ?? currentUser.lastLoginAt
+                        currentUser.lastCheckInDate = isoFormatter.date(from: lastCheckInDate) ?? currentUser.lastCheckInDate
+                        currentUser.lastLoginAt = isoFormatter.date(from: lastLoginAt) ?? currentUser.lastLoginAt
                         currentUser.lastLoginIp = lastLoginIp.isEmpty ? currentUser.lastLoginIp : lastLoginIp
                         self.currentUser = currentUser
                         
@@ -1244,21 +1243,21 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                             name: name,
                             loginAccount: userDict["account"] as? String,
                             phone: phone,
-                            createdAt: dateFormatter.date(from: createdAt) ?? Date(),
+                            createdAt: isoFormatter.date(from: createdAt) ?? Date(),
                             checkInInterval: .twoDays,  // 默认值
                             notificationsEnabled: true,
                             cloudSyncEnabled: true,
-                            lastCheckInDate: dateFormatter.date(from: lastCheckInDate),
-                            lastLoginAt: dateFormatter.date(from: lastLoginAt),
+                            lastCheckInDate: isoFormatter.date(from: lastCheckInDate),
+                            lastLoginAt: isoFormatter.date(from: lastLoginAt),
                             lastLoginIp: lastLoginIp,
                             checkinCount: checkinCount,
                             ethnicity: nil,
                             birthday: nil,
                             idCard: nil,
                             address: nil,
-                            capsulesCount: localCapsulesCount,
-                            willModulesCount: localWillModulesCount,
-                            familyCount: localFamilyCount
+                            capsulesCount: capsulesSnapshot,
+                            willModulesCount: willsSnapshot,
+                            familyCount: familySnapshot
                         )
                         self.currentUser = user
                         self.isLoggedIn = true
@@ -1275,7 +1274,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 
                 // 保存本地缓存
                 if let currentUser = self.currentUser {
-                    saveUser(currentUser)
+                    _ = saveUser(currentUser)
                 }
                 
             } else {

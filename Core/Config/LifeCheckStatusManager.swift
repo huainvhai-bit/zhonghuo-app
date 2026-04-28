@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
 // MARK: - 通知配置
 
@@ -463,13 +463,12 @@ class LifeCheckStatusManager: ObservableObject {
     /// 取消所有 `family_overdue_*` 标识符的待发推送，再依据每个家人的下次签到截止时间重新排程
     func scheduleFamilyOverdueNotifications(_ members: [FamilyMember]) {
         let silentMode = UserDefaults.standard.bool(forKey: "silentModeEnabled")
-        let center = UNUserNotificationCenter.current()
-        center.getPendingNotificationRequests { [weak self] requests in
+        UNUserNotificationCenter.current().getPendingNotificationRequests { [weak self] requests in
             let toCancel = requests
                 .filter { $0.identifier.hasPrefix("family_overdue_") }
                 .map { $0.identifier }
             if !toCancel.isEmpty {
-                center.removePendingNotificationRequests(withIdentifiers: toCancel)
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: toCancel)
             }
             if silentMode {
                 print("🤫 静默模式开启，已清空家人超时推送")

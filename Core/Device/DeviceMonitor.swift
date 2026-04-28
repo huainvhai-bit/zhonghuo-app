@@ -110,6 +110,8 @@ class DeviceMonitor: ObservableObject {
     /// 充电状态颜色
     var batteryStateColor: Color {
         switch batteryState {
+        case .unknown:
+            return .gray.opacity(0.2)
         case .charging, .full:
             return .green.opacity(0.2)
         case .unplugged:
@@ -133,7 +135,10 @@ class DeviceMonitor: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.batteryStatusDidChange()
+            Task { @MainActor [weak self] in
+                self?.updateBatteryInfo()
+                print("🔋 电量数值变化")
+            }
         }
         notificationTokens.append(token1)
         
@@ -142,7 +147,10 @@ class DeviceMonitor: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.batteryStatusDidChange()
+            Task { @MainActor [weak self] in
+                self?.updateBatteryInfo()
+                print("🔋 电池充电状态变化")
+            }
         }
         notificationTokens.append(token2)
         
@@ -151,11 +159,11 @@ class DeviceMonitor: ObservableObject {
     }
     
     deinit {
-        // ✅ 修复：在 deinit 中直接访问，不需要 @MainActor
         updateTimer?.invalidate()
         updateTimer = nil
-        device.isBatteryMonitoringEnabled = false
-        // 🔴 正确移除所有观察者
+        DispatchQueue.main.async {
+            UIDevice.current.isBatteryMonitoringEnabled = false
+        }
         notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
         notificationTokens.removeAll()
     }
@@ -273,15 +281,7 @@ class DeviceMonitor: ObservableObject {
         }
     }
     
-    // MARK: - 通知处理
-    
-    // 🔴 已改用闭包方式处理通知，此方法保留兼容性
-    @objc private func batteryStatusDidChange() {
-        Task { @MainActor in
-            updateBatteryInfo()
-            print("🔋 电池状态变化")
-        }
-    }
+    // MARK: - 通知处理（旧 selector 链路已迁至 Notification 闭包 + MainActor）
     
     // MARK: - 设备信息上传
     

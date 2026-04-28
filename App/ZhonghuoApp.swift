@@ -322,7 +322,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     // MARK: - 定位权限检测
     private func checkLocationPermission() {
-        let status = CLLocationManager.authorizationStatus()
+        let status = locationManager.authorizationStatus
         Logger.shared.d("🔵 定位权限检测：\(status.rawValue)")
         
         switch status {

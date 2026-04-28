@@ -113,8 +113,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        let title = module.title
-        title.draw(at: CGPoint(x: pdfMargin, y: currentY))
+        module.title.draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: titleAttributes)
         currentY += 30
         
         // 模块内容
@@ -173,7 +172,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        "资产信息".draw(at: CGPoint(x: pdfMargin, y: currentY))
+        "资产信息".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: titleAttributes)
         currentY += 30
         
         if assets.isEmpty {
@@ -181,7 +180,7 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 14),
                 .foregroundColor: UIColor.gray
             ]
-            "暂无资产记录".draw(at: CGPoint(x: pdfMargin, y: currentY))
+            "暂无资产记录".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: emptyAttributes)
             currentY += 25
         } else {
             for asset in assets {
@@ -190,7 +189,7 @@ class PDFGenerator {
                     .font: UIFont.systemFont(ofSize: 14),
                     .foregroundColor: UIColor.black
                 ]
-                assetStr.draw(at: CGPoint(x: pdfMargin, y: currentY))
+                assetStr.draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: assetAttributes)
                 currentY += 22
             }
         }
@@ -216,7 +215,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        "媒体胶囊下载地址".draw(at: CGPoint(x: pdfMargin, y: currentY))
+        "媒体胶囊下载地址".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: titleAttributes)
         currentY += 30
         
         // 子标题说明
@@ -224,7 +223,7 @@ class PDFGenerator {
             .font: UIFont.systemFont(ofSize: 12),
             .foregroundColor: UIColor.gray
         ]
-        "以下胶囊的媒体文件可在服务器、阿里云 OSS 或腾讯云 COS 上访问：".draw(at: CGPoint(x: pdfMargin, y: currentY))
+        "以下胶囊的媒体文件可在服务器、阿里云 OSS 或腾讯云 COS 上访问：".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: subtitleAttributes)
         currentY += 20
         
         if capsules.isEmpty {
@@ -232,7 +231,7 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 14),
                 .foregroundColor: UIColor.gray
             ]
-            "暂无媒体胶囊".draw(at: CGPoint(x: pdfMargin, y: currentY))
+            "暂无媒体胶囊".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: emptyAttributes)
             currentY += 25
         } else {
             for capsule in capsules {
