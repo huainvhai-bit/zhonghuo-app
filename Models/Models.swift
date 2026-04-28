@@ -862,7 +862,22 @@ struct SystemConfig: Codable {
     
     // MARK: - 客服配置
     var customerServicePhone: String = "400-123-4567"
-    var customerServiceEmail: String = "support@zhonghuo.cn"
+    /// 对外展示邮箱，由服务端 `getConfig.customerServiceEmail` 提供；未配置时为空字符串
+    var customerServiceEmail: String = ""
+}
+
+extension SystemConfig {
+    /// 运营在后台配置的对外邮箱（去首尾空白）
+    var trimmedCustomerServiceEmail: String {
+        customerServiceEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 「关于」mailto 链接；后端未填写时不可用
+    var customerServiceMailURL: URL? {
+        let e = trimmedCustomerServiceEmail
+        guard !e.isEmpty else { return nil }
+        return URL(string: "mailto:\(e)")
+    }
 }
 
 // MARK: - 配置 API 响应

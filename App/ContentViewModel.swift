@@ -72,6 +72,7 @@ final class ContentViewModel: ObservableObject {
 
             Task {
                 await checkLoginStatus()
+                await ForceUpdateGate.shared.refreshFromRemote()
                 if userManager.isLoggedIn {
                     userManager.performAutoSignIn()
                 }
@@ -80,15 +81,17 @@ final class ContentViewModel: ObservableObject {
     }
 
     func openPendingUpdateIfNeeded() {
+        if ForceUpdateGate.shared.blocksInteraction {
+            return
+        }
         let showing = UserDefaults.standard.bool(forKey: "showingUpdateAlert")
         guard showing, !showingUpdateAlert else { return }
 
         updateVersion = UserDefaults.standard.string(forKey: "pendingUpdateVersion") ?? ""
         updateUrl = UserDefaults.standard.string(forKey: "pendingUpdateUrl") ?? ""
-        let forceVersion = UserDefaults.standard.string(forKey: "pendingForceUpdateVersion") ?? ""
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        // 强更仅用全屏挡板；此处弹窗始终为可选更新（可点「稍后」）
+        isForceUpdate = false
 
-        isForceUpdate = isVersionNewerOrEqual(forceVersion, than: currentVersion)
         showingUpdateAlert = true
         UserDefaults.standard.set(false, forKey: "showingUpdateAlert")
     }
@@ -140,6 +143,7 @@ final class ContentViewModel: ObservableObject {
     func checkMaintenanceMode() async {
         await dataManager.loadSystemConfig()
         let config = dataManager.systemConfig
+        ForceUpdateGate.shared.refresh(from: config)
         if config.appMaintenanceMode {
             isMaintenanceMode = true
             maintenanceMessage = config.appMaintenanceMessage
@@ -345,31 +349,6 @@ final class ContentViewModel: ObservableObject {
 
     private func syncPersistentSessionState() {
         hasPersistentSession = KeychainManager.shared.getToken() != nil
-    }
-
-    private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
-        let v1Components = v1.split(separator: ".").compactMap { Int($0) }
-        let v2Components = v2.split(separator: ".").compactMap { Int($0) }
-
-        for i in 0..<max(v1Components.count, v2Components.count) {
-            let v1Part = i < v1Components.count ? v1Components[i] : 0
-            let v2Part = i < v2Components.count ? v2Components[i] : 0
-
-            if v1Part > v2Part {
-                return true
-            } else if v1Part < v2Part {
-                return false
-            }
-        }
-
-        return false
-    }
-
-    private func isVersionNewerOrEqual(_ v1: String, than v2: String) -> Bool {
-        if v1 == v2 {
-            return true
-        }
-        return isVersionNewer(v1, than: v2)
     }
 
     /// 从整块 HTTP 正文中截取首条风控报错（容错 JSON 结构异常时有文本线索）

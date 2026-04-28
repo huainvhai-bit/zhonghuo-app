@@ -427,16 +427,33 @@ struct SettingsView: View {
                 }
                 .buttonStyle(PlainButtonStyle())  // 移除按钮默认样式
             } else {
-                HStack {
-                    Image(systemName: "checkmark.seal.fill")
-                    Text(L10n.string(.membershipValid))
+                Button(action: { showingMembershipView = true }) {
+                    HStack(alignment: .center, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.seal.fill")
+                                Text(L10n.string(.membershipValid))
+                            }
+                            if let sub = membershipExpirySubtitle() {
+                                Text(sub)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.92))
+                            }
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.green.opacity(0.8))
+                    .cornerRadius(20)
                 }
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.green.opacity(0.8))
-                .cornerRadius(20)
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(20)
@@ -520,7 +537,32 @@ struct SettingsView: View {
             return L10n.string(.notSet)
         }
     }
-    
+
+    /// 「会员有效」徽章第二行文案：到期日或终身说明
+    private func membershipExpirySubtitle() -> String? {
+        guard membershipManager.isPremium else { return nil }
+        if membershipManager.memberType == "lifetime" {
+            return L10n.text(
+                "永久有效",
+                en: "Lifetime access",
+                ja: "永久有効",
+                ko: "평생 이용"
+            )
+        }
+        guard let expireAt = membershipManager.memberExpireAt else { return nil }
+        let df = DateFormatter()
+        df.locale = Locale(identifier: languageManager.language.localeIdentifier)
+        df.dateStyle = .long
+        df.timeStyle = .none
+        let localizedDate = df.string(from: expireAt)
+        return L10n.text(
+            "至 \(expireAt.chineseDateString())",
+            en: "Until \(localizedDate)",
+            ja: "\(localizedDate)まで",
+            ko: "\(localizedDate)까지"
+        )
+    }
+
     struct ServerResponse: Codable {
         let success: Bool
         let message: String?
@@ -931,15 +973,6 @@ struct ServerConfigModal: View {
             }
         }
     }
-    
-    // MARK: - 辅助方法
-    
-    /// 格式化更新时间
-    private func formatUpdateTime(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
 }
 
 // MARK: - 视图生命周期
@@ -985,12 +1018,8 @@ extension SettingsView {
                     if let url = URL(string: "https://zhonghuo.zhonghuo.xyz") {
                         Link(L10n.string(.officialSite), destination: url)
                     }
-                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/privacy") {
-                        Link(L10n.string(.privacyPolicy), destination: url)
-                    }
-                    if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/terms") {
-                        Link(L10n.string(.termsOfService), destination: url)
-                    }
+                    Link(L10n.string(.privacyPolicy), destination: OfficialDocumentLinks.privacy)
+                    Link(L10n.string(.termsOfService), destination: OfficialDocumentLinks.terms)
                     
                     // ⚖️ 法律声明
                     NavigationLink(destination: LegalDisclosureView()) {
@@ -1004,11 +1033,28 @@ extension SettingsView {
                     }
                 }
                 Section(header: Text(L10n.string(.contactUs))) {
-                    HStack {
-                        Text(L10n.string(.contactEmail))
-                        Spacer()
-                        Text(dataManager.systemConfig.customerServiceEmail)
-                            .foregroundColor(.secondary)
+                    if let mailURL = dataManager.systemConfig.customerServiceMailURL {
+                        let emailText = dataManager.systemConfig.trimmedCustomerServiceEmail
+                        Link(destination: mailURL) {
+                            HStack {
+                                Text(L10n.string(.contactEmail))
+                                Spacer()
+                                Text(emailText)
+                                    .foregroundColor(Color(hex: "6366F1"))
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    } else {
+                        Text(L10n.text(
+                            "联系邮箱可在运营后台「系统设置 → App 对外联系方式」配置。",
+                            en: "Support email can be set in the admin panel under App contact settings.",
+                            ja: "お問い合わせメールは管理画面の「システム設定」から設定できます。",
+                            ko: "문의 메일은 관리자의 시스템 설정에서 지정할 수 있습니다."
+                        ))
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                     }
                 }
             }
@@ -1019,7 +1065,7 @@ extension SettingsView {
         .navigationTitle(L10n.string(.about))
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            // 进入关于页时拉一次最新的系统配置（含客服邮箱、电话、版本号等）
+            // 进入关于页时拉一次最新的系统配置（含版本号等）
             await dataManager.loadSystemConfig()
         }
         .alert(L10n.string(.checkUpdate), isPresented: $viewModel.showingUpdateAlert) {

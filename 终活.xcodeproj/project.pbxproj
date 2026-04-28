@@ -13,6 +13,8 @@
 		D4A1E2C36F8B79140A5D11B0 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1E2C36F8B79140A5D11B1 /* DeleteAccountView.swift */; };
 		07519F3E3E04D1ED331B7AED /* BindFamilyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 436489E7FE94F62B8228B7A8 /* BindFamilyView.swift */; };
 		07F5DDC5289569F0ADBF391A /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B0497DD862983E6B262E93 /* ContentViewModel.swift */; };
+		F501A1AA00000201AA00000101 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F501A1AA00000201AA00000100 /* AppVersion.swift */; };
+		F502A2AA00000302BB00000202 /* ForceUpdateGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F502A2AA00000302BB00000200 /* ForceUpdateGate.swift */; };
 		086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA4936695B433690FA0934 /* AccountValidator.swift */; };
 		E8B1F2D34C5A6B78901234562 /* BackendSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B1F2D34C5A6B78901234561 /* BackendSecurityPolicy.swift */; };
 		0FC881C140F43BA6C28C8345 /* ChunkedUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8FEB7A240DC0DE6FCC6D23 /* ChunkedUploadManager.swift */; };
@@ -108,6 +110,8 @@
 		277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		27CA4936695B433690FA0934 /* AccountValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountValidator.swift; sourceTree = "<group>"; };
 		E8B1F2D34C5A6B78901234561 /* BackendSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSecurityPolicy.swift; sourceTree = "<group>"; };
+		F501A1AA00000201AA00000100 /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
+		F502A2AA00000302BB00000200 /* ForceUpdateGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdateGate.swift; sourceTree = "<group>"; };
 		2DEE4DD2B8ECBC15062589F9 /* LegalDisclosureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalDisclosureView.swift; sourceTree = "<group>"; };
 		3080794CC0F56600ACFE733F /* ResetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordView.swift; sourceTree = "<group>"; };
 		B11E0B7E2D4C4A5F9A1B2C3D /* ChineseDateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChineseDateFormatter.swift; sourceTree = "<group>"; };
@@ -269,6 +273,7 @@
 		C11E0B7E2D4C4A5F9A1B2C3D /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				F501A1AA00000201AA00000100 /* AppVersion.swift */,
 				B11E0B7E2D4C4A5F9A1B2C3D /* ChineseDateFormatter.swift */,
 			);
 			path = Utilities;
@@ -373,6 +378,7 @@
 				045761D3B73D998072BF9E1F /* IAPManager.swift */,
 				9C22DB29E86DC4E95955D529 /* LifeCheckStatusManager.swift */,
 				051C6FD692B960CEEC90118B /* MembershipManager.swift */,
+				F502A2AA00000302BB00000200 /* ForceUpdateGate.swift */,
 				D3CF9D97A822B0E9C4682DD1 /* VersionCheckManager.swift */,
 			);
 			path = Config;
@@ -659,6 +665,7 @@
 				086B2363BC39F8B64FAE9AF7 /* AccountValidator.swift in Sources */,
 				E8B1F2D34C5A6B78901234562 /* BackendSecurityPolicy.swift in Sources */,
 				26EF7A4CB6DB0AC519B025A4 /* AppConfig.swift in Sources */,
+				F501A1AA00000201AA00000101 /* AppVersion.swift in Sources */,
 				97A1B8D08F9239BF06CE2228 /* AppDelegate.swift in Sources */,
 				72EEB6DE4A659021D60DFCA1 /* AppError.swift in Sources */,
 				11E8EE7E2FEDB055A60ABC35 /* AppStabilityManager.swift in Sources */,
@@ -699,6 +706,7 @@
 				E48CF9DB3E36A413E7A27748 /* LoginView.swift in Sources */,
 				20E418CF4BE81EB62C9B26B8 /* LoginViewModel.swift in Sources */,
 				7DDC2EC8DF9500930CD03EF9 /* MembershipManager.swift in Sources */,
+				F502A2AA00000302BB00000202 /* ForceUpdateGate.swift in Sources */,
 				83A2BED9D3A609ED4B0DFBA4 /* MembershipView.swift in Sources */,
 				99A231DBA64F0A248FA87EF6 /* MemoryManager.swift in Sources */,
 				EA61EE224B460FE8D4E2909C /* Models.swift in Sources */,

@@ -427,17 +427,13 @@ struct MembershipView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 16) {
-                if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/privacy") {
-                    Link(L10n.string(.privacyPolicy), destination: url)
-                        .font(.system(size: 12))
-                }
+                Link(L10n.string(.privacyPolicy), destination: OfficialDocumentLinks.privacy)
+                    .font(.system(size: 12))
                 Text("|")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                if let url = URL(string: "https://zhonghuo.zhonghuo.xyz/terms") {
-                    Link(L10n.string(.termsOfService), destination: url)
-                        .font(.system(size: 12))
-                }
+                Link(L10n.string(.termsOfService), destination: OfficialDocumentLinks.terms)
+                    .font(.system(size: 12))
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }

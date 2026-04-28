@@ -42,8 +42,47 @@ final class SettingsViewModel: ObservableObject {
 
     func checkUpdate() async {
         await dataManager.loadSystemConfig()
-        latestVersion = dataManager.systemConfig.latestVersion
-        updateUrl = dataManager.systemConfig.updateUrl
+        let config = dataManager.systemConfig
+        ForceUpdateGate.shared.refresh(from: config)
+
+        latestVersion = AppVersion.normalize(config.latestVersion)
+        updateUrl = config.updateUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let current = AppVersion.marketing
+
+        if ForceUpdateGate.shared.blocksInteraction {
+            errorMessage = L10n.text(
+                "当前版本已低于运营最低要求，请先从应用商店更新应用。",
+                en: "Your version is below the minimum required. Please update from the App Store first.",
+                ja: "現在のバージョンは運用の最低要件を下回っています。先に App Store からアップデートしてください。",
+                ko: "현재 버전이 운영 최소 요구보다 낮습니다. 먼저 App Store에서 업데이트해 주세요."
+            )
+            showingError = true
+            return
+        }
+
+        guard !latestVersion.isEmpty else {
+            errorMessage = L10n.text(
+                "无法获取服务器版本信息，请稍后重试。",
+                en: "Could not read the latest version. Please try again later.",
+                ja: "サーバーのバージョン情報が取得できません。しばらくしてからお試しください。",
+                ko: "서버 버전 정보를 가져오지 못했습니다. 잠시 후 다시 시도하세요."
+            )
+            showingError = true
+            return
+        }
+
+        if AppVersion.versionsEqual(current, latestVersion) || AppVersion.isNewer(current, than: latestVersion) {
+            errorMessage = L10n.text(
+                "当前已是最新版本",
+                en: "You're on the latest version.",
+                ja: "お使いのバージョンは最新です。",
+                ko: "이미 최신 버전입니다."
+            )
+            showingError = true
+            return
+        }
+
         showingUpdateAlert = true
     }
 

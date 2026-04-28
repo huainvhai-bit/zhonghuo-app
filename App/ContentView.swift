@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
     @ObservedObject private var languageManager = AppLanguageManager.shared
+    @ObservedObject private var forceUpdateGate = ForceUpdateGate.shared
     private let dataManager = DataManager.shared
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
     @AppStorage("customServerURL") private var customServerURL = ""
@@ -73,6 +75,16 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.showingFamilyGuard) {
             FamilyGuardView()
         }
+        .overlay {
+            if forceUpdateGate.blocksInteraction && !viewModel.isMaintenanceMode {
+                ForceUpdateBlockingOverlay(
+                    currentVersion: AppVersion.marketing,
+                    minimumVersion: forceUpdateGate.minimumSupportedVersionDisplay,
+                    latestVersion: forceUpdateGate.latestVersionDisplay,
+                    updateUrlString: forceUpdateGate.updateUrl
+                )
+            }
+        }
     }
     
     private var mainTabView: some View {
@@ -124,6 +136,91 @@ struct ContentView: View {
             .tag(4)
         }
         .tint(Color(hex: "6366F1"))
+    }
+}
+
+// 强制更新：不可关闭、不可穿透，直到升级到满足最低版本要求
+private struct ForceUpdateBlockingOverlay: View {
+    let currentVersion: String
+    let minimumVersion: String
+    let latestVersion: String
+    let updateUrlString: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(Color(hex: "6366F1"))
+
+                Text(L10n.text(
+                    "需要更新应用",
+                    en: "Update required",
+                    ja: "アップデートが必要です",
+                    ko: "업데이트 필요"
+                ))
+                .font(.system(size: 20, weight: .bold))
+                .multilineTextAlignment(.center)
+
+                Text(L10n.text(
+                    "当前版本（v\(currentVersion)）已低于运营要求的最低版本，请更新后再使用。",
+                    en: "Your version (v\(currentVersion)) is below the minimum required. Please update to continue.",
+                    ja: "現在のバージョン（v\(currentVersion)）は運用の最低要件を下回っています。アップデート後にご利用ください。",
+                    ko: "현재 버전(v\(currentVersion))은 운영 최소 요구 버전보다 낮습니다. 업데이트 후 이용해 주세요."
+                ))
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+                if !minimumVersion.isEmpty {
+                    Text(L10n.text(
+                        "最低要求版本：v\(minimumVersion)",
+                        en: "Minimum required: v\(minimumVersion)",
+                        ja: "最低バージョン：v\(minimumVersion)",
+                        ko: "최소 요구 버전: v\(minimumVersion)"
+                    ))
+                    .font(.system(size: 13, weight: .medium))
+                }
+
+                if !latestVersion.isEmpty {
+                    Text(L10n.text(
+                        "最新版本：v\(latestVersion)",
+                        en: "Latest: v\(latestVersion)",
+                        ja: "最新バージョン：v\(latestVersion)",
+                        ko: "최신 버전: v\(latestVersion)"
+                    ))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
+
+                Button(action: openUpdateUrl) {
+                    Text(L10n.string(.updateNow))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "6366F1"))
+                        .cornerRadius(12)
+                }
+                .padding(.top, 4)
+            }
+            .padding(24)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color(.systemBackground))
+            )
+            .padding(.horizontal, 24)
+        }
+        .allowsHitTesting(true)
+    }
+
+    private func openUpdateUrl() {
+        let s = updateUrlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty, let url = URL(string: s) else { return }
+        UIApplication.shared.open(url)
     }
 }
 
@@ -217,32 +314,4 @@ struct LoadingView: View {
 
 #Preview {
     ContentView()
-}
-
-// MARK: - 版本比较辅助函数
-extension ContentView {
-    private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
-        let v1Components = v1.split(separator: ".").compactMap { Int($0) }
-        let v2Components = v2.split(separator: ".").compactMap { Int($0) }
-        
-        for i in 0..<max(v1Components.count, v2Components.count) {
-            let v1Part = i < v1Components.count ? v1Components[i] : 0
-            let v2Part = i < v2Components.count ? v2Components[i] : 0
-            
-            if v1Part > v2Part {
-                return true
-            } else if v1Part < v2Part {
-                return false
-            }
-        }
-        
-        return false
-    }
-    
-    private func isVersionNewerOrEqual(_ v1: String, than v2: String) -> Bool {
-        if v1 == v2 {
-            return true
-        }
-        return isVersionNewer(v1, than: v2)
-    }
 }

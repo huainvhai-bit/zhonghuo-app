@@ -2314,7 +2314,8 @@ class DataManager: ObservableObject {
                 
                 // 客服配置
                 let customerServicePhone = configData["customerServicePhone"] as? String ?? "400-123-4567"
-                let customerServiceEmail = configData["customerServiceEmail"] as? String ?? "support@zhonghuo.cn"
+                let rawEmail = configData["customerServiceEmail"] as? String ?? ""
+                let customerServiceEmail = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines)
                 
                 // 更新系统配置
                 systemConfig = SystemConfig(

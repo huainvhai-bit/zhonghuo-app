@@ -62,59 +62,33 @@ struct ZhonghuoApp: App {
             Logger.shared.w("API URL 未设置，跳过维护/版本检查")
             return
         }
-        
-        do {
-            // 加载系统配置（包含维护模式和版本信息）
-            await DataManager.shared.loadSystemConfig()
-            
-            let config = DataManager.shared.systemConfig
-            
-            
-            // 版本检查
-            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-            
-            Logger.shared.d("版本检查：当前=\(currentVersion), 最新=\(config.latestVersion)")
-            
-            // 判断是否需要更新
-            if isVersionNewer(config.latestVersion, than: currentVersion) {
-                let forceUpdate = isVersionNewerOrEqual(config.forceUpdateVersion, than: currentVersion)
-                
-                Logger.shared.i("发现新版本：\(config.latestVersion), 强制更新=\(forceUpdate)")
-                
-                // 存储更新信息到 UserDefaults，供 ContentView 读取
-                UserDefaults.standard.set(config.latestVersion, forKey: "pendingUpdateVersion")
-                UserDefaults.standard.set(config.forceUpdateVersion, forKey: "pendingForceUpdateVersion")
-                UserDefaults.standard.set(config.updateUrl, forKey: "pendingUpdateUrl")
-                UserDefaults.standard.set(true, forKey: "showingUpdateAlert")
-            }
+
+        // 加载系统配置（包含维护模式和版本信息）
+        await DataManager.shared.loadSystemConfig()
+
+        let config = DataManager.shared.systemConfig
+        ForceUpdateGate.shared.refresh(from: config)
+
+        let currentVersion = AppVersion.marketing
+        let latest = AppVersion.normalize(config.latestVersion)
+
+        Logger.shared.d("版本检查：当前=\(currentVersion), 最新=\(latest)")
+
+        // 强制更新门控由 ForceUpdateGate 处理；此处仅排队「可选更新」弹窗（不与强更挡板叠加）
+        guard !ForceUpdateGate.shared.blocksInteraction else {
+            UserDefaults.standard.set(false, forKey: "showingUpdateAlert")
+            return
         }
-    }
-    
-    /// 比较版本号（v1 > v2 返回 true）
-    private func isVersionNewer(_ v1: String, than v2: String) -> Bool {
-        let v1Components = v1.split(separator: ".").compactMap { Int($0) }
-        let v2Components = v2.split(separator: ".").compactMap { Int($0) }
-        
-        for i in 0..<max(v1Components.count, v2Components.count) {
-            let v1Part = i < v1Components.count ? v1Components[i] : 0
-            let v2Part = i < v2Components.count ? v2Components[i] : 0
-            
-            if v1Part > v2Part {
-                return true
-            } else if v1Part < v2Part {
-                return false
-            }
+
+        guard !latest.isEmpty, AppVersion.isNewer(latest, than: currentVersion) else {
+            return
         }
-        
-        return false
-    }
-    
-    /// 比较版本号（v1 >= v2 返回 true）
-    private func isVersionNewerOrEqual(_ v1: String, than v2: String) -> Bool {
-        if v1 == v2 {
-            return true
-        }
-        return isVersionNewer(v1, than: v2)
+
+        Logger.shared.i("发现新版本（可选更新）：\(latest)")
+
+        UserDefaults.standard.set(latest, forKey: "pendingUpdateVersion")
+        UserDefaults.standard.set(config.updateUrl, forKey: "pendingUpdateUrl")
+        UserDefaults.standard.set(true, forKey: "showingUpdateAlert")
     }
     
     /// 等待网络（可配置超时）
