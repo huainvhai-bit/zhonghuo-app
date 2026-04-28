@@ -262,22 +262,106 @@ struct DeleteAccountView: View {
     }
 
     private func mapError(_ error: Error) -> String {
-        let message = error.localizedDescription
-        if message.contains("密保问题") {
-            return L10n.text("密保问题不匹配", en: "Security question does not match.", ja: "秘密の質問が一致しません。", ko: "보안 질문이 일치하지 않습니다.")
+        let raw = graphqlBusinessMessage(for: error)
+
+        func matchesCode(_ code: String) -> Bool {
+            raw.hasPrefix("\(code):") || raw.contains("\(code):")
         }
-        if message.contains("密保答案") || message.contains("答案") {
-            return L10n.text("密保答案错误", en: "Security answer is incorrect.", ja: "秘密の答えが正しくありません。", ko: "보안 답변이 올바르지 않습니다.")
+
+        // 后端业务码（CODE:可读文案）；与 graphql.php 「含冒号为业务错误」对齐。
+        if matchesCode("SECURITY_QA_WRONG") {
+            return L10n.text(
+                "密保问题或答案填写错误",
+                en: "The security question or answer is incorrect.",
+                ja: "秘密の質問または答えが正しくありません。",
+                ko: "보안 질문 또는 답변이 올바르지 않습니다."
+            )
         }
-        if message.contains("未授权") || message.contains("登录") {
-            return L10n.text("登录已失效，请重新登录后再试", en: "Your session has expired. Please sign in again.", ja: "セッションが切れました。再度ログインしてください。", ko: "세션이 만료되었습니다. 다시 로그인해주세요.")
+        if matchesCode("DELETE_ACCOUNT_LOCKED") {
+            if let suffix = graphqlPayloadAfterFirstColon(raw), !suffix.isEmpty {
+                return suffix
+            }
+            return L10n.text(
+                "因注销验证已连续错误三次，请在 24 小时后再尝试注销账号。",
+                en: "You have answered incorrectly too many times. Please try deleting your account again after 24 hours.",
+                ja: "本人確認が連続で誤っているため、アカウント削除は24時間後に再度お試しください。",
+                ko: "확인이 연속으로 틀려 계정 삭제는 24시간 후 다시 시도해주세요."
+            )
         }
-        if message.contains("network") || message.contains("Network") || message.contains("网络") || message.contains("timed out") {
-            return L10n.text("网络连接失败，请检查网络后重试", en: "Network error. Please check your connection and try again.", ja: "ネットワーク接続に失敗しました。接続を確認してください。", ko: "네트워크 오류입니다. 연결을 확인하고 다시 시도하세요.")
+        if matchesCode("DELETE_ACCOUNT_ERR") || matchesCode("DELETE_ACCOUNT_FAIL") {
+            if let suffix = graphqlPayloadAfterFirstColon(raw), !suffix.isEmpty {
+                return suffix
+            }
         }
-        if !message.isEmpty {
-            return message
+        if matchesCode("UNAUTHORIZED_DELETE") {
+            if let suffix = graphqlPayloadAfterFirstColon(raw), !suffix.isEmpty {
+                return suffix
+            }
+            return L10n.text(
+                "登录已失效，请重新登录后再试",
+                en: "Your session has expired. Please sign in again.",
+                ja: "セッションが切れました。再度ログインしてください。",
+                ko: "세션이 만료되었습니다. 다시 로그인해주세요."
+            )
         }
-        return L10n.text("注销失败，请稍后重试", en: "Failed to delete account. Please try again later.", ja: "アカウントの削除に失敗しました。後でもう一度お試しください。", ko: "계정 삭제에 실패했습니다. 잠시 후 다시 시도하세요.")
+
+        if raw.contains("密保问题不匹配") || raw.contains("密保答案错误") {
+            return L10n.text(
+                "密保问题或答案填写错误",
+                en: "The security question or answer is incorrect.",
+                ja: "秘密の質問または答えが正しくありません。",
+                ko: "보안 질문 또는 답변이 올바르지 않습니다."
+            )
+        }
+        if raw.contains("未授权") || raw.contains("登录") {
+            return L10n.text(
+                "登录已失效，请重新登录后再试",
+                en: "Your session has expired. Please sign in again.",
+                ja: "セッションが切れました。再度ログインしてください。",
+                ko: "세션이 만료되었습니다. 다시 로그인해주세요."
+            )
+        }
+
+        let display: String
+        if raw.contains(":") {
+            let rest = graphqlPayloadAfterFirstColon(raw)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? raw
+            display = rest.isEmpty ? raw : rest
+        } else {
+            display = raw
+        }
+        let trimmed = display.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed == "服务器内部错误" || trimmed.isEmpty {
+            return L10n.text(
+                "注销失败，请稍后重试",
+                en: "Failed to delete account. Please try again later.",
+                ja: "アカウントの削除に失敗しました。後でもう一度お試しください。",
+                ko: "계정 삭제에 실패했습니다. 잠시 후 다시 시도하세요."
+            )
+        }
+        if trimmed.lowercased().contains("network") || trimmed.contains("网络") || trimmed.lowercased().contains("timed out") {
+            return L10n.text(
+                "网络连接失败，请检查网络后重试",
+                en: "Network error. Please check your connection and try again.",
+                ja: "ネットワーク接続に失敗しました。接続を確認してください。",
+                ko: "네트워크 오류입니다. 연결을 확인하고 다시 시도하세요."
+            )
+        }
+        return trimmed
+    }
+
+    /// GraphQL JSON `errors[0].message` 可能带 CODE:中文 前缀；NSError 也常把同源字符串塞进 localizedDescription。
+    private func graphqlBusinessMessage(for error: Error) -> String {
+        var s = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixesToStrip = ["服务器错误：", "服务器錯誤：", "Server error: ", "GraphQL Error: "]
+        for p in prefixesToStrip where s.hasPrefix(p) {
+            s = String(s.dropFirst(p.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return s
+    }
+
+    /// 取第一条 `前缀:后缀`（业务码冒号后为可读文案）。
+    private func graphqlPayloadAfterFirstColon(_ message: String) -> String? {
+        guard let r = message.range(of: ":") else { return nil }
+        return String(message[r.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
