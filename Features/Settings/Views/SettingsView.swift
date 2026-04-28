@@ -396,6 +396,9 @@ struct SettingsView: View {
                             .font(.system(size: 11))
                             .foregroundColor(.white.opacity(0.7))
                     }
+                    Label(displayLoginAccount, systemImage: "person.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.88))
                 }
                 
                 Spacer()
@@ -515,6 +518,17 @@ struct SettingsView: View {
         return L10n.string(.unboundPhone)
     }
 
+    /// 登录账号（服务端 `account`）；无则回退 Keychain 存的账号
+    private var displayLoginAccount: String {
+        if let a = userManager.currentUser?.loginAccount?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
+            return a
+        }
+        if let a = KeychainManager.shared.getUserAccount()?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
+            return a
+        }
+        return "\u{2014}"
+    }
+
     private var displayUserId: String {
         if let userId = userManager.currentUser?.id, !userId.isEmpty {
             return String(userId.prefix(8))
@@ -594,6 +608,17 @@ struct EditProfileModal: View {
     private var currentAvatars: [String] {
         gender == .male ? maleAvatars : femaleAvatars
     }
+
+    /// 与「我的」卡片一致：当前登录账号（只读展示）
+    private var displayLoginAccount: String {
+        if let a = userManager.currentUser?.loginAccount?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
+            return a
+        }
+        if let a = KeychainManager.shared.getUserAccount()?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
+            return a
+        }
+        return "\u{2014}"
+    }
     
     var body: some View {
         NavigationView {
@@ -653,6 +678,14 @@ struct EditProfileModal: View {
                     }
                 }
                 
+                Section(header: Text(L10n.string(.profileLoginAccount))) {
+                    HStack {
+                        Text(displayLoginAccount)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }
+
                 Section(header: Text(L10n.string(.name))) {
                     TextField(L10n.string(.name), text: $name)
                 }

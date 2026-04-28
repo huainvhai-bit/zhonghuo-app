@@ -337,6 +337,8 @@ enum AppText: String, CaseIterable {
     case avatar
     case name
     case phone
+    /// 个人资料中「登录账号」只读标签（与「手机号」并列）
+    case profileLoginAccount
     case identityInfo
     case serverAddress
     case testConnection
@@ -620,6 +622,7 @@ enum L10n {
             "avatar": "头像",
             "name": "姓名",
             "phone": "手机号",
+            "profileLoginAccount": "登录账号",
             "identityInfo": "身份信息",
             "serverAddress": "服务器地址",
             "testConnection": "测试连接",
@@ -885,6 +888,7 @@ enum L10n {
             "avatar": "Avatar",
             "name": "Name",
             "phone": "Phone",
+            "profileLoginAccount": "Login account",
             "identityInfo": "Identity Info",
             "serverAddress": "Server URL",
             "testConnection": "Test Connection",
@@ -1150,6 +1154,7 @@ enum L10n {
             "avatar": "アバター",
             "name": "名前",
             "phone": "電話番号",
+            "profileLoginAccount": "ログインID",
             "identityInfo": "身分情報",
             "serverAddress": "サーバーアドレス",
             "testConnection": "接続をテスト",
@@ -1415,6 +1420,7 @@ enum L10n {
             "avatar": "아바타",
             "name": "이름",
             "phone": "휴대폰 번호",
+            "profileLoginAccount": "로그인 계정",
             "identityInfo": "신원 정보",
             "serverAddress": "서버 주소",
             "testConnection": "연결 테스트",
