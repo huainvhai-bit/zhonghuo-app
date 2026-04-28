@@ -349,7 +349,7 @@ class IAPManager: ObservableObject {
     
     /// 将 Receipt 发送到服务器验证并激活会员
     private func verifyReceiptWithServer(_ transaction: Transaction) async {
-        let userId = UserDefaults.standard.string(forKey: "userId") ?? ""
+        let userId = KeychainManager.shared.getUserId() ?? ""
         guard !userId.isEmpty else {
             print("⚠️ 用户未登录，跳过服务器验证")
             return
@@ -385,7 +385,8 @@ class IAPManager: ObservableObject {
             "originalTransactionId": String(transaction.originalID)
         ]
         
-        let apiURL = AppConfig.defaultAPIURL
+        let rawAPIURL = DataManager.apiURL.isEmpty ? AppConfig.defaultAPIURL : DataManager.apiURL
+        let apiURL = NetworkUtils.normalizeBaseURL(rawAPIURL)
         guard let url = URL(string: "\(apiURL)/api/graphql.php") else {
             print("❌ 无效的 API URL")
             return

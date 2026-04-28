@@ -107,16 +107,16 @@ class TokenManager {
 func refreshTokenAPI(_ refreshToken: String) async throws -> TokenRefreshResult {
     print("🔵 refreshTokenAPI 开始...")
     
-    // 从 UserDefaults 读取 serverURL
-    let baseURL = NetworkUtils.normalizeBaseURL(UserDefaults.standard.string(forKey: "serverURL") ?? "zhonghuo.zhonghuo.xyz")
+    let rawBaseURL = UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL
+    let baseURL = NetworkUtils.normalizeBaseURL(rawBaseURL.isEmpty ? AppConfig.defaultAPIURL : rawBaseURL)
     guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
         throw APIError.invalidURL
     }
     
     // 构建 GraphQL 查询
     let query = """
-    mutation {
-        refreshToken(refreshToken: "\\(refreshToken)") {
+    mutation RefreshToken($refreshToken: String!) {
+        refreshToken(refreshToken: $refreshToken) {
             token
             refreshToken
             expiresIn
@@ -135,7 +135,10 @@ func refreshTokenAPI(_ refreshToken: String) async throws -> TokenRefreshResult 
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
     
-    let body: [String: Any] = ["query": query]
+    let body: [String: Any] = [
+        "query": query,
+        "variables": ["refreshToken": refreshToken]
+    ]
     request.httpBody = try JSONSerialization.data(withJSONObject: body)
     
     // 发送请求
@@ -156,6 +159,7 @@ func refreshTokenAPI(_ refreshToken: String) async throws -> TokenRefreshResult 
     // 解析结果
     if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
         let message = errors[0]["message"] as? String ?? "GraphQL 错误"
+        BackendSecurityPolicy.postViolationIfNeeded(message)
         throw GraphQLError.serverError(message)
     }
     

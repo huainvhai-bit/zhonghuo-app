@@ -1052,11 +1052,14 @@ import Foundation
 class GraphQLClient {
     static let shared = GraphQLClient()
     
-    private let baseURL: String
     private var token: String?
+    private var baseURL: String {
+        let rawURL = UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL
+        let fallbackURL = rawURL.isEmpty ? AppConfig.defaultAPIURL : rawURL
+        return NetworkUtils.normalizeBaseURL(fallbackURL)
+    }
     
     init() {
-        self.baseURL = UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL
         self.token = KeychainManager.shared.getToken()
     }
     
@@ -1458,18 +1461,19 @@ extension APIManager {
         
         // GraphQL 查询
         let query = """
-        mutation {
-            refreshToken(refreshToken: "\\(refreshToken)") {
+        mutation RefreshToken($refreshToken: String!) {
+            refreshToken(refreshToken: $refreshToken) {
                 token
                 refreshToken
                 expiresIn
             }
         }
         """
+        let variables: [String: Any] = ["refreshToken": refreshToken]
         
         do {
             // 执行查询
-            let result = try await APIClient.shared.query(query)
+            let result = try await APIClient.shared.query(query, variables: variables)
             
             // 解析结果
             if let data = result["data"] as? [String: Any],

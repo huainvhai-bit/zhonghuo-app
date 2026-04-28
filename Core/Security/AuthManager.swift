@@ -31,8 +31,8 @@ class AuthManager: ObservableObject {
         
         do {
             let query = """
-            mutation {
-                login(identifier: "\(identifier)", password: "\(password)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)") {
+            mutation Login($identifier: String!, $password: String!, $captcha: String!, $captchaPurpose: String!) {
+                login(identifier: $identifier, password: $password, captcha: $captcha, captchaPurpose: $captchaPurpose) {
                     token
                     user {
                         id
@@ -43,9 +43,15 @@ class AuthManager: ObservableObject {
                 }
             }
             """
+            let variables: [String: Any] = [
+                "identifier": identifier,
+                "password": password,
+                "captcha": captcha,
+                "captchaPurpose": captchaPurpose
+            ]
             
             let client = APIClient.shared
-            let response = try await client.query(query)
+            let response = try await client.query(query, variables: variables)
             
             guard let data = response["data"] as? [String: Any],
                   let loginData = data["login"] as? [String: Any],
@@ -99,15 +105,9 @@ class AuthManager: ObservableObject {
         errorMessage = nil
         
         do {
-            let phoneField: String
-            if let phone, !phone.isEmpty {
-                phoneField = "\"\(phone)\""
-            } else {
-                phoneField = "null"
-            }
             let query = """
-            mutation {
-                register(account: "\(account)", phone: \(phoneField), password: "\(password)", name: "\(name)", captcha: "\(captcha)", captchaPurpose: "\(captchaPurpose)", securityQuestion: "\(securityQuestion)", securityAnswer: "\(securityAnswer)") {
+            mutation Register($account: String!, $phone: String, $password: String!, $name: String!, $captcha: String!, $captchaPurpose: String!, $securityQuestion: String!, $securityAnswer: String!) {
+                register(account: $account, phone: $phone, password: $password, name: $name, captcha: $captcha, captchaPurpose: $captchaPurpose, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                     token
                     user {
                         id
@@ -118,9 +118,20 @@ class AuthManager: ObservableObject {
                 }
             }
             """
+            let phoneValue: Any = (phone?.isEmpty == false) ? phone! : NSNull()
+            let variables: [String: Any] = [
+                "account": account,
+                "phone": phoneValue,
+                "password": password,
+                "name": name,
+                "captcha": captcha,
+                "captchaPurpose": captchaPurpose,
+                "securityQuestion": securityQuestion,
+                "securityAnswer": securityAnswer
+            ]
             
             let client = APIClient.shared
-            let response = try await client.query(query)
+            let response = try await client.query(query, variables: variables)
             
             guard let data = response["data"] as? [String: Any],
                   let registerData = data["register"] as? [String: Any],

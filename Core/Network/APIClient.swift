@@ -15,13 +15,19 @@ import Foundation
 class APIClient {
     static let shared = APIClient()
     
-    private let baseURL: String
+    private let configuredBaseURL: String
     private let maxRetries = 2  // 最大重试次数
+
+    private var currentBaseURL: String {
+        let rawURL = configuredBaseURL.isEmpty
+            ? (UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL)
+            : configuredBaseURL
+        let fallbackURL = rawURL.isEmpty ? AppConfig.defaultAPIURL : rawURL
+        return NetworkUtils.normalizeBaseURL(fallbackURL)
+    }
     
     init(baseURL: String = "") {
-        // ✅ 修复：确保 baseURL 不为空
-        let effectiveBaseURL = baseURL.isEmpty ? (UserDefaults.standard.string(forKey: "serverURL") ?? DataManager.apiURL) : baseURL
-        self.baseURL = effectiveBaseURL.isEmpty ? AppConfig.defaultAPIURL : effectiveBaseURL
+        self.configuredBaseURL = baseURL
     }
     
     /// 执行 GraphQL 查询（带重试机制）
@@ -46,7 +52,7 @@ class APIClient {
     
     /// 执行 GraphQL 查询（内部方法）
     private func executeQuery(_ query: String, variables: [String: Any]?) async throws -> [String: Any] {
-        guard let url = URL(string: "\(baseURL)/api/graphql.php") else {
+        guard let url = URL(string: "\(currentBaseURL)/api/graphql.php") else {
             throw GraphQLError.invalidURL
         }
         
@@ -104,6 +110,7 @@ class APIClient {
         
         if let errors = json["errors"] as? [[String: Any]], !errors.isEmpty {
             let message = errors[0]["message"] as? String ?? "GraphQL 错误"
+            BackendSecurityPolicy.postViolationIfNeeded(message)
             Logger.shared.e("GraphQL 错误：\(message)")
             throw GraphQLError.serverError(message)
         }
@@ -113,7 +120,7 @@ class APIClient {
     
     /// 执行 REST API 调用
     func restRequest(method: String, path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
-        guard let url = URL(string: "\(baseURL)\(path)") else {
+        guard let url = URL(string: "\(currentBaseURL)\(path)") else {
             throw APIError.invalidURL
         }
         

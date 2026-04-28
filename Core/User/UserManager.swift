@@ -866,6 +866,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let errors = json["errors"] as? [[String: Any]] {
                     print("❌ GraphQL errors: \(errors)")
+                    if let message = errors.first?["message"] as? String {
+                        BackendSecurityPolicy.postViolationIfNeeded(message)
+                    }
                 }
             }
         } catch {
@@ -1300,6 +1303,9 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let errors = json["errors"] as? [[String: Any]] {
                     print("❌ GraphQL errors: \(errors)")
+                    if let message = errors.first?["message"] as? String {
+                        BackendSecurityPolicy.postViolationIfNeeded(message)
+                    }
                 }
                 print("⚠️ 服务器返回失败，使用本地缓存")
                 
