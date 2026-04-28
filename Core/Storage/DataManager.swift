@@ -1770,7 +1770,7 @@ class DataManager: ObservableObject {
             return date
         }
 
-        var iso = ISO8601DateFormatter()
+        let iso = ISO8601DateFormatter()
         if let d = iso.date(from: value) { return d }
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return iso.date(from: value)
@@ -2203,11 +2203,10 @@ class DataManager: ObservableObject {
     ///   - fileURL: 本地文件 URL
     ///   - type: 胶囊类型
     /// - Returns: 服务器上的文件 URL
-    func uploadMediaChunked(_ fileURL: URL, type: TimeCapsule.CapsuleType) async -> String? {
+    func uploadMediaChunked(_ fileURL: URL, type _: TimeCapsule.CapsuleType) async -> String? {
         print("📦 ====== uploadMediaChunked 开始（断点续传）======")
         
         do {
-            let typeString = type == .audio ? "audio" : "video"
             let url = try await ChunkedUploadManager.shared.uploadFile(fileURL: fileURL, type: "capsule")
             print("✅ 断点续传上传成功：\(url)")
             return url
@@ -2411,35 +2410,31 @@ class DataManager: ObservableObject {
     func downloadAllData() async {
         Logger.shared.i("开始从云端下载数据...")
         
-        do {
-            // ✅ 已实现完整的数据下载逻辑
-            // 1. 同步胶囊数据
-            if let capsulesResult = await batchSyncCapsules() {
-                Logger.shared.i("胶囊同步完成：\(capsulesResult.total) 个，\(capsulesResult.created) 新增，\(capsulesResult.updated) 更新")
-            } else {
-                Logger.shared.w("胶囊同步失败")
-            }
-            
-            // 2. 同步遗嘱数据
-            if let willsResult = await batchSyncWills() {
-                Logger.shared.i("遗嘱同步完成：\(willsResult.total) 个，\(willsResult.created) 新增，\(willsResult.updated) 更新")
-            } else {
-                Logger.shared.w("遗嘱同步失败")
-            }
-            
-            // 3. 同步资产数据
-            if let assetsResult = await batchSyncAssets() {
-                Logger.shared.i("资产同步完成：\(assetsResult.total) 个，\(assetsResult.created) 新增，\(assetsResult.updated) 更新")
-            } else {
-                Logger.shared.w("资产同步失败")
-            }
-
-            await loadReceivedCapsules()
-            
-            Logger.shared.i("数据下载完成")
-        } catch {
-            Logger.shared.e("下载数据失败：\(error)")
+        // ✅ 已实现完整的数据下载逻辑
+        // 1. 同步胶囊数据
+        if let capsulesResult = await batchSyncCapsules() {
+            Logger.shared.i("胶囊同步完成：\(capsulesResult.total) 个，\(capsulesResult.created) 新增，\(capsulesResult.updated) 更新")
+        } else {
+            Logger.shared.w("胶囊同步失败")
         }
+
+        // 2. 同步遗嘱数据
+        if let willsResult = await batchSyncWills() {
+            Logger.shared.i("遗嘱同步完成：\(willsResult.total) 个，\(willsResult.created) 新增，\(willsResult.updated) 更新")
+        } else {
+            Logger.shared.w("遗嘱同步失败")
+        }
+
+        // 3. 同步资产数据
+        if let assetsResult = await batchSyncAssets() {
+            Logger.shared.i("资产同步完成：\(assetsResult.total) 个，\(assetsResult.created) 新增，\(assetsResult.updated) 更新")
+        } else {
+            Logger.shared.w("资产同步失败")
+        }
+
+        await loadReceivedCapsules()
+
+        Logger.shared.i("数据下载完成")
     }
 
     /// 持久化媒体文件（确保文件保存在 Documents 目录）

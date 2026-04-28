@@ -939,9 +939,9 @@ extension WillInput {
         var dict: [String: Any] = [
             "id": id,
             "type": type,
-            "title": title,
-            "content": content
+            "title": title
         ]
+        if let content = content { dict["content"] = content }
         if let deletedAt = deletedAt { dict["deletedAt"] = deletedAt }
         return dict
     }

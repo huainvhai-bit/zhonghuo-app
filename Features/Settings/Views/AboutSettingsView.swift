@@ -76,7 +76,7 @@ struct AboutSettingsView: View {
                             }
                         }
                     }
-                    Link(L10n.string(.privacyPolicy), destination: OfficialDocumentLinks.privacy) {
+                    Link(destination: OfficialDocumentLinks.privacy) {
                         HStack {
                             Text(L10n.string(.privacyPolicy))
                                 .foregroundColor(.primary)
@@ -85,7 +85,7 @@ struct AboutSettingsView: View {
                                 .foregroundColor(.gray.opacity(0.5))
                         }
                     }
-                    Link(L10n.string(.termsOfService), destination: OfficialDocumentLinks.terms) {
+                    Link(destination: OfficialDocumentLinks.terms) {
                         HStack {
                             Text(L10n.string(.termsOfService))
                                 .foregroundColor(.primary)
