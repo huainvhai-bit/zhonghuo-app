@@ -36,6 +36,7 @@ struct HomeStatusView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 16) {
                         checkInCard
+                        HomeAnnouncementBar(text: dataManager.systemConfig.homeAnnouncementText)
                         statusCard
                         progressCard
                         capsulePreview

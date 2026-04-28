@@ -2421,6 +2421,7 @@ class DataManager: ObservableObject {
                     premiumAiAssist
                     customerServicePhone
                     customerServiceEmail
+                    homeAnnouncementText
                 }
             }
             """
@@ -2477,6 +2478,11 @@ class DataManager: ObservableObject {
                 let customerServicePhone = configData["customerServicePhone"] as? String ?? "400-123-4567"
                 let rawEmail = configData["customerServiceEmail"] as? String ?? ""
                 let customerServiceEmail = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                let defaultAnnouncement = "欢迎使用终活，多一点爱就多一点温暖。"
+                let rawAnnounce = (configData["homeAnnouncementText"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let homeAnnouncementText = rawAnnounce.isEmpty ? defaultAnnouncement : rawAnnounce
                 
                 // 更新系统配置
                 systemConfig = SystemConfig(
@@ -2513,7 +2519,8 @@ class DataManager: ObservableObject {
                     premiumDataExport: premiumDataExport,
                     premiumAiAssist: premiumAiAssist,
                     customerServicePhone: customerServicePhone,
-                    customerServiceEmail: customerServiceEmail
+                    customerServiceEmail: customerServiceEmail,
+                    homeAnnouncementText: homeAnnouncementText
                 )
                 
                 // ✅ 应用会员限制

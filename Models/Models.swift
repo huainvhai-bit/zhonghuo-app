@@ -916,6 +916,9 @@ struct SystemConfig: Codable {
     var customerServicePhone: String = "400-123-4567"
     /// 对外展示邮箱，由服务端 `getConfig.customerServiceEmail` 提供；未配置时为空字符串
     var customerServiceEmail: String = ""
+
+    /// App 首页横幅公告（`getConfig.homeAnnouncementText`）；空串时 UI 使用默认欢迎语
+    var homeAnnouncementText: String = "欢迎使用终活，多一点爱就多一点温暖。"
 }
 
 extension SystemConfig {
