@@ -198,39 +198,32 @@ class IAPManager: ObservableObject {
     func checkSubscriptionStatus() async {
         isLoading = true
         
-        do {
-            // 获取所有活跃订阅
-            var hasActiveSubscription = false
-            var latestExpiryDate: Date?
-            
-            for await result in Transaction.currentEntitlements {
-                if case .verified(let transaction) = result {
-                    // 检查是否是我们的商品
-                    if productTypeMap[transaction.productID] != nil {
-                        let expiryDate = calculateExpiryDate(for: transaction)
-                        
-                        if expiryDate > Date() {
-                            hasActiveSubscription = true
-                            if latestExpiryDate == nil || expiryDate > latestExpiryDate! {
-                                latestExpiryDate = expiryDate
-                            }
-                            purchasedProductIds.insert(transaction.productID)
+        var hasActiveSubscription = false
+        var latestExpiryDate: Date?
+        
+        for await result in Transaction.currentEntitlements {
+            if case .verified(let transaction) = result {
+                // 检查是否是我们的商品
+                if productTypeMap[transaction.productID] != nil {
+                    let expiryDate = calculateExpiryDate(for: transaction)
+                    
+                    if expiryDate > Date() {
+                        hasActiveSubscription = true
+                        if latestExpiryDate == nil || expiryDate > latestExpiryDate! {
+                            latestExpiryDate = expiryDate
                         }
+                        purchasedProductIds.insert(transaction.productID)
                     }
                 }
             }
-            
-            isSubscribed = hasActiveSubscription
-            isLoading = false
-            
-            print("📋 订阅状态检查：\(hasActiveSubscription ? "已订阅" : "未订阅")")
-            if let expiry = latestExpiryDate {
-                print("   到期日：\(expiry)")
-            }
-            
-        } catch {
-            isLoading = false
-            print("❌ 订阅状态检查失败：\(error)")
+        }
+        
+        isSubscribed = hasActiveSubscription
+        isLoading = false
+        
+        print("📋 订阅状态检查：\(hasActiveSubscription ? "已订阅" : "未订阅")")
+        if let expiry = latestExpiryDate {
+            print("   到期日：\(expiry)")
         }
     }
     
