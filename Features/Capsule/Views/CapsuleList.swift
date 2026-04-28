@@ -192,25 +192,19 @@ struct CapsuleList: View {
                 },
                 onShare: { [self] selectedMembers in
                     let receiverIds = selectedMembers.map { $0.relatedUserId }
-                    Task {
-                        do {
-                            let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
-                            print("✅ 胶囊分享成功：\(result)")
-                            await MainActor.run {
-                                self.selectedCapsuleForShare = nil
-                            }
-                        } catch {
-                            let errorMsg = error.localizedDescription
-                            print("❌ 胶囊分享失败：\(errorMsg)")
+                    do {
+                        let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
+                        print("✅ 胶囊分享成功：\(result)")
+                        await MainActor.run { self.selectedCapsuleForShare = nil }
+                    } catch {
+                        let errorMsg = error.localizedDescription
+                        print("❌ 胶囊分享失败：\(errorMsg)")
+                        await MainActor.run {
                             if errorMsg.contains("会员") || errorMsg.contains("premium") {
-                                await MainActor.run {
-                                    self.selectedCapsuleForShare = nil
-                                    self.showingUpgradeForShare = true
-                                }
+                                self.selectedCapsuleForShare = nil
+                                self.showingUpgradeForShare = true
                             } else {
-                                await MainActor.run {
-                                    shareCapsuleAlertMessage = errorMsg
-                                }
+                                shareCapsuleAlertMessage = errorMsg
                             }
                         }
                     }
@@ -596,15 +590,18 @@ struct ShareCapsuleSheet: View {
     let capsule: TimeCapsule
     let familyMembers: [FamilyInfo]
     let onAddFamily: () -> Void
-    let onShare: ([FamilyInfo]) -> Void
+    let onShare: ([FamilyInfo]) async -> Void
     let onCancel: () -> Void
     
     @State private var selectedMembers: Set<String> = []  // 选中的家人 ID
     @State private var isAllSelected = false
+    @State private var isSending = false
+    @State private var linearSendProgress: Double = 0
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
+            ZStack {
+                VStack(spacing: 20) {
                 // 胶囊信息
                 HStack(spacing: 12) {
                     Image(systemName: capsule.type.icon)
@@ -696,26 +693,72 @@ struct ShareCapsuleSheet: View {
                 VStack(spacing: 12) {
                     Button(action: {
                         let selected = familyMembers.filter { selectedMembers.contains($0.relatedUserId) }
-                        onShare(selected)
+                        guard !selected.isEmpty else { return }
+                        Task { @MainActor in
+                            isSending = true
+                            linearSendProgress = 0.05
+                            let ticker = Task { @MainActor in
+                                while !Task.isCancelled {
+                                    try? await Task.sleep(nanoseconds: 140_000_000)
+                                    if linearSendProgress < 0.92 {
+                                        linearSendProgress = min(linearSendProgress + 0.05, 0.92)
+                                    }
+                                }
+                            }
+                            await onShare(selected)
+                            ticker.cancel()
+                            linearSendProgress = 1.0
+                            try? await Task.sleep(nanoseconds: 280_000_000)
+                            isSending = false
+                            linearSendProgress = 0
+                        }
                     }) {
                         Text(L10n.text("发送给家人", en: "Send to family", ja: "家族に送信", ko: "가족에게 보내기"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(selectedMembers.isEmpty ? Color.gray : Color(hex: "6366F1"))
+                            .background((selectedMembers.isEmpty || isSending) ? Color.gray : Color(hex: "6366F1"))
                             .cornerRadius(12)
                     }
-                    .disabled(selectedMembers.isEmpty)
+                    .disabled(selectedMembers.isEmpty || isSending)
                     
                     Button(action: onCancel) {
                         Text(L10n.string(.cancel))
                             .font(.system(size: 16))
                             .foregroundColor(.secondary)
                     }
+                    .disabled(isSending)
                 }
             }
             .padding()
+
+            if isSending {
+                Color.black.opacity(0.38)
+                    .ignoresSafeArea()
+                VStack(spacing: 18) {
+                    ProgressView(value: linearSendProgress, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .tint(Color(hex: "6366F1"))
+                        .frame(height: 6)
+                        .padding(.horizontal, 8)
+                    HStack(spacing: 12) {
+                        ProgressView()
+                            .tint(Color(hex: "6366F1"))
+                        Text(L10n.text("正在发送给家人…", en: "Sending to family…", ja: "家族に送信中…", ko: "가족에게 보내는 중…"))
+                            .font(.system(size: 15, weight: .medium))
+                    }
+                    Text(L10n.text("请勿关闭此界面", en: "Please keep this sheet open.", ja: "この画面を閉じないでください", ko: "이 화면을 닫지 마세요"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(26)
+                .frame(maxWidth: 320)
+                .background(Color(.systemBackground))
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.18), radius: 20)
+            }
+            }
             .navigationTitle(L10n.text("分享胶囊", en: "Share Capsule", ja: "カプセルを共有", ko: "캡슐 공유"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -723,6 +766,7 @@ struct ShareCapsuleSheet: View {
                     Button(L10n.string(.cancel)) {
                         onCancel()
                     }
+                    .disabled(isSending)
                 }
             }
         }

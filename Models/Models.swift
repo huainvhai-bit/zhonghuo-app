@@ -369,6 +369,58 @@ struct ReceivedCapsule: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, capsuleId, title, type, content, mediaUrl, mediaServerUrl, openAt, isOpened, sentAt, senderId, senderName, senderPhone, createdAt
     }
+
+    /// 从 GraphQL/JSON 字典解析（兼容布尔为 0/1、NSNumber、缺失 sentAt 等，避免解码失败导致「收到的胶囊」列表恒为空）
+    init?(dictionary dict: [String: Any]) {
+        guard let id = dict["id"] as? String, !id.isEmpty,
+              let capsuleId = dict["capsuleId"] as? String ?? dict["capsule_id"] as? String, !capsuleId.isEmpty
+        else { return nil }
+
+        let title = dict["title"] as? String ?? ""
+        let type = dict["type"] as? String ?? "text"
+        func optionalString(_ v: Any?) -> String? {
+            if v is NSNull || v == nil { return nil }
+            if let s = v as? String { return s }
+            if let n = v as? NSNumber { return n.stringValue }
+            return String(describing: v!)
+        }
+        let content = optionalString(dict["content"])
+        let mediaUrl = optionalString(dict["mediaUrl"] ?? dict["media_url"])
+        let mediaServerUrl = optionalString(dict["mediaServerUrl"] ?? dict["media_server_url"])
+        let openAt = optionalString(dict["openAt"] ?? dict["open_at"])
+
+        let isOpened: Bool
+        if let b = dict["isOpened"] as? Bool {
+            isOpened = b
+        } else if let i = dict["isOpened"] as? Int {
+            isOpened = i != 0
+        } else if let n = dict["isOpened"] as? NSNumber {
+            isOpened = n.boolValue
+        } else {
+            isOpened = false
+        }
+
+        let sentAt = optionalString(dict["sentAt"] ?? dict["sent_at"]) ?? ""
+        let senderId = dict["senderId"] as? String ?? dict["sender_id"] as? String ?? ""
+        let senderName = dict["senderName"] as? String ?? dict["sender_name"] as? String ?? ""
+        let senderPhone = optionalString(dict["senderPhone"] ?? dict["sender_phone"])
+        let createdAt = optionalString(dict["createdAt"] ?? dict["created_at"]) ?? sentAt
+
+        self.id = id
+        self.capsuleId = capsuleId
+        self.title = title
+        self.type = type
+        self.content = content
+        self.mediaUrl = mediaUrl
+        self.mediaServerUrl = mediaServerUrl
+        self.openAt = openAt
+        self.isOpened = isOpened
+        self.sentAt = sentAt
+        self.senderId = senderId
+        self.senderName = senderName
+        self.senderPhone = senderPhone
+        self.createdAt = createdAt
+    }
 }
 
 // MARK: - 遗嘱模块

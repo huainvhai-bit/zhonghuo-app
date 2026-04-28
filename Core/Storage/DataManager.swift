@@ -1145,6 +1145,24 @@ class DataManager: ObservableObject {
     
     // MARK: - 胶囊分享
     
+    /// GraphQL mutation 返回值里 success/count 常为 NSNumber「0/1」，不能只用 `as? Bool`
+    private static func coerceGraphQLSuccess(_ value: Any?) -> Bool {
+        switch value {
+        case let b as Bool: return b
+        case let i as Int: return i != 0
+        case let n as NSNumber: return n.boolValue
+        default: return false
+        }
+    }
+
+    private static func coerceGraphQLInt(_ value: Any?) -> Int {
+        switch value {
+        case let i as Int: return i
+        case let n as NSNumber: return n.intValue
+        default: return 0
+        }
+    }
+    
     /// 分享胶囊给家人
     func shareCapsule(capsuleId: String, receiverIds: [String]) async throws -> [String: Any] {
         let mutation = """
@@ -1165,8 +1183,8 @@ class DataManager: ObservableObject {
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         if let data = result["data"] as? [String: Any],
            let shareResult = data["shareCapsule"] as? [String: Any] {
-            let success = shareResult["success"] as? Bool ?? false
-            let shareCount = shareResult["shareCount"] as? Int ?? 0
+            let success = Self.coerceGraphQLSuccess(shareResult["success"])
+            let shareCount = Self.coerceGraphQLInt(shareResult["shareCount"])
             let backendMessage = (shareResult["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
             
             guard success && shareCount > 0 else {
@@ -1221,14 +1239,12 @@ class DataManager: ObservableObject {
             let result = try await GraphQLClient.shared.query(query, variables: [:])
             if let data = result["data"] as? [String: Any],
                let capsules = data["receivedCapsules"] as? [[String: Any]] {
+                let parsed = capsules.compactMap { ReceivedCapsule(dictionary: $0) }
+                if parsed.count != capsules.count {
+                    print("⚠️ receivedCapsules 部分条目解析失败：总数 \(capsules.count)，成功 \(parsed.count)")
+                }
                 await MainActor.run {
-                    self.receivedCapsules = capsules.compactMap { dict in
-                        guard let jsonData = try? JSONSerialization.data(withJSONObject: dict),
-                              let capsule = try? JSONDecoder().decode(ReceivedCapsule.self, from: jsonData) else {
-                            return nil
-                        }
-                        return capsule
-                    }
+                    self.receivedCapsules = parsed
                 }
                 print("✅ 收到胶囊加载成功：\(self.receivedCapsules.count) 个")
             }
