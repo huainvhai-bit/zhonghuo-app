@@ -82,7 +82,7 @@ struct UserFriendlyError: LocalizedError {
 /// Error 扩展 - 转换为用户友好错误
 extension Error {
     var userFriendly: UserFriendlyError {
-        if let urlError = self as? URLError {
+        if self is URLError {
             return .networkError(self)
         }
         if let apiError = self as? APIError {

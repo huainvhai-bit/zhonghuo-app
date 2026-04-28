@@ -165,7 +165,6 @@ class ChunkedUploadManager: ObservableObject {
             }
             
             // 上传分片（带重试）
-            var uploaded = false
             for attempt in 1...maxRetries {
                 do {
                     try await uploadChunk(
@@ -173,7 +172,6 @@ class ChunkedUploadManager: ObservableObject {
                         chunkIndex: chunkIndex,
                         chunkData: chunkData
                     )
-                    uploaded = true
                     break
                 } catch {
                     print("⚠️ 分片 \(chunkIndex + 1) 上传失败（第 \(attempt)/\(maxRetries) 次尝试）：\(error)")

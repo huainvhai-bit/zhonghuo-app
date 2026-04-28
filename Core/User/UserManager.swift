@@ -1188,7 +1188,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 var capsulesCount = 0
                 var willModulesCount = 0
                 var familyCount = 0
-                var assetsCount = 0
                 
                 // 🔍 调试：打印 userDict 的所有 key
                 print("🔍 userDict 包含的 keys: \(userDict.keys.sorted())")
@@ -1203,7 +1202,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     capsulesCount = stats["capsulesCount"] as? Int ?? 0
                     willModulesCount = stats["willModulesCount"] as? Int ?? 0
                     familyCount = stats["familyCount"] as? Int ?? 0
-                    assetsCount = stats["assetsCount"] as? Int ?? 0
                 } else {
                     print("❌ stats 不存在于 userDict 中！或者类型转换失败")
                     print("❌ userDict[\"stats\"] 实际类型：\(type(of: userDict["stats"]))")

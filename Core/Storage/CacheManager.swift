@@ -149,6 +149,12 @@ class CacheManager {
 /// 首页状态数据
 struct HomeStatus: Codable, Identifiable {
     let id = UUID()
+
+    enum CodingKeys: String, CodingKey {
+        case userName, lastCheckIn, checkInCount, capsulesCount, willModulesCount
+        case familyCount, assetsCount, lastSyncTime
+    }
+
     let userName: String
     let lastCheckIn: Date?
     let checkInCount: Int

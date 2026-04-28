@@ -208,13 +208,14 @@ class iCloudBackupManager: ObservableObject {
         let operation = CKQueryOperation(query: query)
         operation.zoneID = zoneID
 
-        operation.queryCompletionBlock = { _, error in
-            if let error = error {
+        operation.queryResultBlock = { result in
+            switch result {
+            case .failure(let error):
                 print("❌ iCloudBackupManager: 查询胶囊失败：\(error.localizedDescription)")
-                return
+            case .success(let cursor):
+                print("✅ iCloudBackupManager: 胶囊 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
+                // ✅ 若有 cursor，可用其再建 `CKQueryOperation` 拉取剩余页；合并逻辑以 GraphQL 为准。
             }
-            print("✅ iCloudBackupManager: 胶囊 CK 查询已完成")
-            // ✅ 合并远程胶囊到本地——实际业务以 GraphQL 为准，iCloud 仅作备份探查。
         }
 
         privateCloudDatabase.add(operation)
@@ -227,12 +228,13 @@ class iCloudBackupManager: ObservableObject {
         let operation = CKQueryOperation(query: query)
         operation.zoneID = zoneID
 
-        operation.queryCompletionBlock = { _, error in
-            if let error = error {
+        operation.queryResultBlock = { result in
+            switch result {
+            case .failure(let error):
                 print("❌ iCloudBackupManager: 查询遗嘱失败：\(error.localizedDescription)")
-                return
+            case .success(let cursor):
+                print("✅ iCloudBackupManager: 遗嘱 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
             }
-            print("✅ iCloudBackupManager: 遗嘱 CK 查询已完成")
         }
 
         privateCloudDatabase.add(operation)
