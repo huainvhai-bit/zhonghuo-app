@@ -223,37 +223,42 @@ class IAPManager: ObservableObject {
         }
     }
     
-    /// 检查当前订阅状态
+    /// 检查当前订阅状态并写入 MembershipManager（与系统「订阅管理」、恢复购买链路一致）
     func checkSubscriptionStatus() async {
         isLoading = true
-        
-        var hasActiveSubscription = false
-        var latestExpiryDate: Date?
-        
+        defer { isLoading = false }
+
+        var bestTransaction: Transaction?
+        var bestExpiry: Date?
+
         for await result in Transaction.currentEntitlements {
-            if case .verified(let transaction) = result {
-                // 检查是否是我们的商品
-                if productTypeMap[transaction.productID] != nil {
-                    let expiryDate = calculateExpiryDate(for: transaction)
-                    
-                    if expiryDate > Date() {
-                        hasActiveSubscription = true
-                        if latestExpiryDate == nil || expiryDate > latestExpiryDate! {
-                            latestExpiryDate = expiryDate
-                        }
-                        purchasedProductIds.insert(transaction.productID)
-                    }
-                }
+            guard case .verified(let transaction) = result else { continue }
+            guard productTypeMap[transaction.productID] != nil else { continue }
+
+            let expiryDate = calculateExpiryDate(for: transaction)
+            guard expiryDate > Date() else { continue }
+
+            if bestExpiry == nil || expiryDate > bestExpiry! {
+                bestExpiry = expiryDate
+                bestTransaction = transaction
             }
+            purchasedProductIds.insert(transaction.productID)
         }
-        
-        isSubscribed = hasActiveSubscription
-        isLoading = false
-        
-        print("📋 订阅状态检查：\(hasActiveSubscription ? "已订阅" : "未订阅")")
-        if let expiry = latestExpiryDate {
-            print("   到期日：\(expiry)")
+
+        if let tx = bestTransaction, let exp = bestExpiry {
+            isSubscribed = true
+            MembershipManager.shared.applySubscriptionFromAppleStore(productId: tx.productID, expiresAt: exp)
+            print("📋 StoreKit 有效订阅：\(tx.productID)，到期 \(exp)")
+        } else {
+            isSubscribed = false
+            print("📋 StoreKit：当前无有效订阅权益（已过期或已取消且到期）")
         }
+    }
+
+    /// 从 App Store 拉取最新订阅状态并镜像到会员页（用户关闭「管理订阅」页后调用）
+    func refreshMirroredMembershipFromStore() async {
+        try? await AppStore.sync()
+        await checkSubscriptionStatus()
     }
     
     /// 恢复购买
@@ -284,18 +289,18 @@ class IAPManager: ObservableObject {
         return Task.detached { [weak self] in
             for await result in Transaction.updates {
                 guard let self = self else { break }
-                
-                if case .verified(let transaction) = result {
-                    // 处理更新的交易
-                    let expiryDate = await self.calculateExpiryDate(for: transaction)
-                    
-                    if expiryDate > Date() {
-                        await MainActor.run {
-                            self.purchasedProductIds.insert(transaction.productID)
-                            self.isSubscribed = true
-                        }
-                    }
-                    
+                guard case .verified(let transaction) = result else { continue }
+                let productId = transaction.productID
+                let handled = await MainActor.run { () -> Bool in
+                    guard self.productTypeMap[productId] != nil else { return false }
+                    let exp = self.calculateExpiryDate(for: transaction)
+                    guard exp > Date() else { return false }
+                    self.purchasedProductIds.insert(productId)
+                    self.isSubscribed = true
+                    MembershipManager.shared.applySubscriptionFromAppleStore(productId: productId, expiresAt: exp)
+                    return true
+                }
+                if handled {
                     await transaction.finish()
                 }
             }
@@ -312,20 +317,16 @@ class IAPManager: ObservableObject {
         }
     }
     
-    /// 计算过期日期
+    /// 订阅到期时间：优先使用 Apple 提供的 `expirationDate`（含用户改档、促销、宽限期后的真实到期）
     private func calculateExpiryDate(for transaction: Transaction) -> Date {
-        // 获取原始订阅日期
+        if let systemExpiry = transaction.expirationDate {
+            return systemExpiry
+        }
         let purchaseDate = transaction.purchaseDate
-        
-        // 获取订阅时长
-        let productType = productTypeMap[transaction.productID] ?? .monthly
-        let duration = productType.subscriptionDuration
-        
-        // 计算过期日期
+        let productKind = productTypeMap[transaction.productID] ?? .monthly
+        let duration = productKind.subscriptionDuration
         let calendar = Calendar.current
-        let expiryDate = calendar.date(byAdding: duration.calendarComponent, value: duration.value, to: purchaseDate) ?? purchaseDate
-        
-        return expiryDate
+        return calendar.date(byAdding: duration.calendarComponent, value: duration.value, to: purchaseDate) ?? purchaseDate
     }
     
     /// 保存交易信息（用于服务器验证）

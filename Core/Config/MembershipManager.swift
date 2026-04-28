@@ -193,6 +193,31 @@ class MembershipManager: ObservableObject {
         
         print("📋 会员状态更新：isPremium=\(self.isPremium), type=\(self.memberType ?? "nil"), expireAt=\(self.memberExpireAt?.description ?? "nil"), aiAssist=\(self.aiAssistEnabled)")
     }
+
+    /// 与 `updateFromServer` 互补：用户在系统「订阅管理」中升降级/切换方案后，由 StoreKit `Transaction` 刷新本地展示与到期时间。
+    @MainActor
+    func applySubscriptionFromAppleStore(productId: String, expiresAt: Date) {
+        isPremium = true
+        switch productId {
+        case "zhonghuo.month1":
+            memberType = "monthly"
+        case "zhonghuo.year1":
+            memberType = "yearly"
+        default:
+            break
+        }
+        memberExpireAt = expiresAt
+        maxCapsules = serverLimits.premiumMaxCapsules
+        maxTextCapsules = serverLimits.premiumMaxTextCapsules
+        maxAudioCapsules = serverLimits.premiumMaxAudioCapsules
+        maxVideoCapsules = serverLimits.premiumMaxVideoCapsules
+        maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
+        maxMediaCapsules = serverLimits.premiumMaxMediaCapsules
+        aiAssistEnabled = true
+        lastCheckedAt = Date()
+        saveToCache()
+        print("📱 会员展示已从 StoreKit 同步：productId=\(productId), type=\(memberType ?? "nil"), 到期=\(expiresAt)")
+    }
     
     /// ✅ 手动降级会员（当服务器通知过期时调用）
     func deactivateMembership() {

@@ -61,6 +61,11 @@ struct MembershipView: View {
             }
             .task {
                 await iapManager.loadProducts()
+                await iapManager.refreshMirroredMembershipFromStore()
+                syncSelectedPlanFromMembership()
+            }
+            .onChange(of: membership.memberType) { _ in
+                syncSelectedPlanFromMembership()
             }
         }
         .stackNavigationStyle()
@@ -71,6 +76,19 @@ struct MembershipView: View {
         }
     }
     
+    /// 对齐「选择方案」高亮与用户当前订阅（含从系统订阅管理返回后）
+    private func syncSelectedPlanFromMembership() {
+        guard membership.isPremium else { return }
+        switch membership.memberType {
+        case "monthly":
+            selectedPlan = "monthly"
+        case "yearly":
+            selectedPlan = "yearly"
+        default:
+            break
+        }
+    }
+
     // MARK: - 头部
     private var headerSection: some View {
         VStack(spacing: 12) {
@@ -470,21 +488,20 @@ struct MembershipView: View {
     }
 
     private func openManageSubscriptions() {
-        Task {
-            // iOS 15+ 直接拉起 App 内系统订阅管理 sheet；失败时回退到打开订阅管理 URL
+        Task { @MainActor in
             if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: scene)
-                    return
                 } catch {
                     print("⚠️ showManageSubscriptions 失败: \(error)")
+                    if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                        UIApplication.shared.open(url)
+                    }
                 }
             }
-            if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                await MainActor.run {
-                    UIApplication.shared.open(url)
-                }
-            }
+            await UserManager.shared.fetchUserData()
+            await IAPManager.shared.refreshMirroredMembershipFromStore()
+            syncSelectedPlanFromMembership()
         }
     }
 }
