@@ -317,16 +317,15 @@ class IAPManager: ObservableObject {
         }
     }
     
-    /// 订阅到期时间：优先使用 Apple 提供的 `expirationDate`（含用户改档、促销、宽限期后的真实到期）
+    /// 订阅到期时间：仅使用 Apple 提供的 `expirationDate`（含改档、促销、宽限期后的真实到期）。无系统日期时不再用「购买日 + 月/年」推断，避免与 StoreKit 状态不一致。
     private func calculateExpiryDate(for transaction: Transaction) -> Date {
         if let systemExpiry = transaction.expirationDate {
             return systemExpiry
         }
-        let purchaseDate = transaction.purchaseDate
-        let productKind = productTypeMap[transaction.productID] ?? .monthly
-        let duration = productKind.subscriptionDuration
-        let calendar = Calendar.current
-        return calendar.date(byAdding: duration.calendarComponent, value: duration.value, to: purchaseDate) ?? purchaseDate
+        #if DEBUG
+        print("⚠️ IAP: transaction.expirationDate 为空，仅作占位回退（请确认商品为自动续期订阅）")
+        #endif
+        return transaction.purchaseDate
     }
     
     /// 保存交易信息（用于服务器验证）

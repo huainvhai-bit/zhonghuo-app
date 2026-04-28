@@ -488,20 +488,26 @@ class MembershipManager: ObservableObject {
     }
     
     // MARK: - 激活会员
-    func activatePremium(type: String = "yearly") {
+    /// - Parameter appleSubscriptionExpiresAt: App Store 返回的订阅到期时间；应始终从购买/交易结果传入，避免用「今天 +1 月/年」与系统真实周期不一致或产生叠加感。
+    func activatePremium(type: String = "yearly", appleSubscriptionExpiresAt: Date? = nil) {
         isPremium = true
         memberType = type
         
+        if let appleExpires = appleSubscriptionExpiresAt {
+            memberExpireAt = appleExpires
+        } else {
+            switch type {
+            case "monthly":
+                memberExpireAt = Calendar.current.date(byAdding: .month, value: 1, to: Date())
+            case "yearly":
+                memberExpireAt = Calendar.current.date(byAdding: .year, value: 1, to: Date())
+            default:
+                break
+            }
+        }
+        
         switch type {
-        case "monthly":
-            memberExpireAt = Calendar.current.date(byAdding: .month, value: 1, to: Date())
-            maxCapsules = serverLimits.premiumMaxCapsules
-            maxTextCapsules = serverLimits.premiumMaxTextCapsules
-            maxAudioCapsules = serverLimits.premiumMaxAudioCapsules
-            maxVideoCapsules = serverLimits.premiumMaxVideoCapsules
-            maxVideoMinutes = serverLimits.premiumMaxVideoMinutes
-        case "yearly":
-            memberExpireAt = Calendar.current.date(byAdding: .year, value: 1, to: Date())
+        case "monthly", "yearly":
             maxCapsules = serverLimits.premiumMaxCapsules
             maxTextCapsules = serverLimits.premiumMaxTextCapsules
             maxAudioCapsules = serverLimits.premiumMaxAudioCapsules
@@ -515,9 +521,11 @@ class MembershipManager: ObservableObject {
         aiAssistEnabled = true  // 开通会员时自动启用 AI 辅助
         saveToCache()
         
-        // ✅ 同步到服务器
-        Task {
-            await syncMembershipToServer(type: type)
+        // IAP 成功路径由调用方携带收据走 activateMembership；此处仅保留无系统日期的兼容/测试分支
+        if appleSubscriptionExpiresAt == nil {
+            Task {
+                await syncMembershipToServer(type: type)
+            }
         }
     }
     

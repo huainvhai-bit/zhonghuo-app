@@ -15,8 +15,8 @@ final class ContentViewModel: ObservableObject {
         case success
         /// 令牌无效或会话过期（非风控封号）
         case unauthorized
-        /// 风控：封号 / 封 IP（后端 ACCOUNT_BANNED / IP_BANNED_*）
-        case policyViolation(String)
+        /// 封号 / 封 IP 或会话被顶替：需清空登录并弹出说明（标题见 `ForcedLogoutAlertKind`）
+        case forcedLogout(kind: BackendSecurityPolicy.ForcedLogoutAlertKind, message: String)
 
         case networkError
         case serverError
@@ -29,7 +29,10 @@ final class ContentViewModel: ObservableObject {
     @Published var showingLogoutAlert = false
     @Published var logoutReason = ""
     @Published var showingPolicyViolationAlert = false
+    /// 弹框正文（封号 / 风控 / 其他设备顶替）
     @Published var policyViolationMessage = ""
+    /// 与 `policyViolationMessage` 配套的标题（封号类 vs 已在其他设备登录）
+    @Published var forcedLogoutAlertKind: BackendSecurityPolicy.ForcedLogoutAlertKind = .policyRestriction
     @Published var showingUpdateAlert = false
     @Published var updateVersion = ""
     @Published var updateUrl = ""
@@ -120,8 +123,9 @@ final class ContentViewModel: ObservableObject {
         isCheckingAuth = false
     }
 
-    /// 封号 / IP 风控：清空会话并弹出说明（服务端前缀 ACCOUNT_BANNED / IP_BANNED_*）
-    func handlePolicyViolation(_ reason: String) {
+    /// 封号 / IP 风控 / 会话被顶替：清空会话并弹框说明
+    func handlePolicyViolation(_ reason: String, kind: BackendSecurityPolicy.ForcedLogoutAlertKind = .policyRestriction) {
+        forcedLogoutAlertKind = kind
         policyViolationMessage = reason.isEmpty
             ? BackendSecurityPolicy.userFacingMessage(for: "ACCOUNT_BANNED:")
             : reason
@@ -159,8 +163,8 @@ final class ContentViewModel: ObservableObject {
         if hasToken {
             let validationResult = await validateToken()
             switch validationResult {
-            case .policyViolation(let reason):
-                handlePolicyViolation(reason)
+            case .forcedLogout(let kind, let message):
+                handlePolicyViolation(message, kind: kind)
                 return
             case .unauthorized:
                 userManager.logout()
@@ -242,16 +246,20 @@ final class ContentViewModel: ObservableObject {
                     // 容错：整块 JSON / 报错文本里识别风控前缀
                     if let responseString = String(data: data, encoding: .utf8),
                        let raw = extractFirstBannedMessage(from: responseString) {
-                        return .policyViolation(BackendSecurityPolicy.userFacingMessage(for: raw))
+                        return .forcedLogout(
+                            kind: BackendSecurityPolicy.ForcedLogoutAlertKind(rawServerMessage: raw),
+                            message: BackendSecurityPolicy.userFacingMessage(for: raw)
+                        )
                     }
                     if let responseString = String(data: data, encoding: .utf8),
                               responseString.contains("未授权") || responseString.contains("账号不存在") || responseString.contains("登录已过期") {
                         return .unauthorized
-                    } else if let errors = json["errors"] as? [[String: Any]] {
+                    } else                     if let errors = json["errors"] as? [[String: Any]] {
                         print("❌ validateToken: GraphQL errors: \(errors)")
                         for dict in errors {
-                            if let m = dict["message"] as? String, BackendSecurityPolicy.isRestrictedServerMessage(m) {
-                                return .policyViolation(BackendSecurityPolicy.userFacingMessage(for: m))
+                            if let m = dict["message"] as? String, BackendSecurityPolicy.requiresForcedLogoutBanner(m) {
+                                let kind = BackendSecurityPolicy.ForcedLogoutAlertKind(rawServerMessage: m)
+                                return .forcedLogout(kind: kind, message: BackendSecurityPolicy.userFacingMessage(for: m))
                             }
                         }
                         let errorText = errors.compactMap { $0["message"] as? String }.joined(separator: " | ")
@@ -299,8 +307,11 @@ final class ContentViewModel: ObservableObject {
         observers.append(
             NotificationCenter.default.addObserver(forName: BackendSecurityPolicy.violationNotificationName, object: nil, queue: .main) { [weak self] note in
                 Task { @MainActor in
-                    let raw = note.userInfo?["message"] as? String ?? ""
-                    self?.handlePolicyViolation(raw)
+                    let rawMsg = note.userInfo?["message"] as? String ?? ""
+                    let kindValue = note.userInfo?[BackendSecurityPolicy.forcedLogoutKindUserInfoKey] as? String
+                    let kind = BackendSecurityPolicy.ForcedLogoutAlertKind(rawValue: kindValue ?? "")
+                        ?? .policyRestriction
+                    self?.handlePolicyViolation(rawMsg, kind: kind)
                 }
             }
         )
@@ -353,12 +364,13 @@ final class ContentViewModel: ObservableObject {
 
     /// 从整块 HTTP 正文中截取首条风控报错（容错 JSON 结构异常时有文本线索）
     private func extractFirstBannedMessage(from responseString: String) -> String? {
-        for pref in ["ACCOUNT_BANNED:", "IP_BANNED_LOGIN:", "IP_BANNED_REGISTER:"] {
+        for pref in ["ACCOUNT_BANNED:", "IP_BANNED_LOGIN:", "IP_BANNED_REGISTER:", BackendSecurityPolicy.sessionSupersededPrefix] {
             guard let range = responseString.range(of: pref) else { continue }
             let rest = responseString[range.lowerBound...]
             let firstLine = rest.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? String(rest)
             let trimmed = firstLine.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ",\"")))
-            if BackendSecurityPolicy.isRestrictedServerMessage(trimmed) {
+            if BackendSecurityPolicy.isRestrictedServerMessage(trimmed)
+                || trimmed.contains(BackendSecurityPolicy.sessionSupersededPrefix) {
                 return trimmed
             }
         }

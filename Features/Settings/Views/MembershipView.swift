@@ -361,8 +361,8 @@ struct MembershipView: View {
         originalTransactionId: String,
         expiryDate: Date
     ) async {
-        // 1. 先在本地激活
-        membership.activatePremium(type: type)
+        // 1. 本地激活：到期时间使用 StoreKit 的 expirationDate（经 IAP 计算），不用「今天 +1 月/年」
+        membership.activatePremium(type: type, appleSubscriptionExpiresAt: expiryDate)
         
         // 2. 同步到服务器
         do {
@@ -465,22 +465,34 @@ struct MembershipView: View {
         Task {
             isRestoring = true
             await iapManager.restorePurchases()
-            // 拉一次服务器最新会员状态，把恢复出的订阅同步到当前 App 账号
+            // 会员归属以服务端为准（originalTransactionId 单账号绑定）；避免仅用 Apple  entitlement 误判「已为当前账号恢复」
             await UserManager.shared.fetchUserData()
             isRestoring = false
-            if iapManager.isSubscribed {
+
+            let hasAppleSubscription = iapManager.isSubscribed
+            let serverPremium = membership.isPremium
+
+            if serverPremium {
                 purchaseMessage = L10n.text(
-                    "已为当前账号恢复有效订阅。",
-                    en: "Active subscription restored for the current account.",
-                    ja: "現在のアカウントに有効なサブスクリプションを復元しました。",
-                    ko: "현재 계정에 활성 구독이 복원되었습니다."
+                    "已为当前 App 账号恢复会员状态（与云端一致）。",
+                    en: "Membership for this app account matches the cloud and your subscription.",
+                    ja: "このアプリのアカウントとクラウドの会員状態が一致しました。",
+                    ko: "현재 앱 계정 회원 상태가 클라우드 및 구독과 일치합니다."
+                )
+            } else if hasAppleSubscription {
+                // Apple ID 下有有效订阅，但当前登录的 App 账号在服务端未开通：多为订阅已绑定其他 App 账号
+                purchaseMessage = L10n.text(
+                    "检测到本 Apple 账户有订阅，但当前 App 账号未取得会员权限。若为同一手机号/账号在其他设备开过会员，请登录该 App 账号；若需要帮助请联系客服。",
+                    en: "This Apple ID has an active subscription, but the current app account is not entitled. Sign in with the app account that purchased the subscription, or contact support.",
+                    ja: "この Apple アカウントには有効なサブスクリプションがありますが、現在のアプリアカウントには会員権限がありません。購入に使ったアプリアカウントでサインインするか、サポートへご連絡ください。",
+                    ko: "이 Apple ID에는 활성 구독이 있지만 현재 앱 계정에는 멤버십이 없습니다. 구독 구매 시 사용한 앱 계정으로 로그인하거나 고객 지원으로 문의하세요."
                 )
             } else {
                 purchaseMessage = L10n.text(
-                    "未发现可恢复的订阅。如有疑问，请联系客服或登录原 App 账号。",
-                    en: "No restorable subscription was found. Please contact support or sign in with the original account if needed.",
-                    ja: "復元可能なサブスクリプションが見つかりません。必要に応じてカスタマーサポートに連絡するか、元のアカウントでサインインしてください。",
-                    ko: "복원 가능한 구독을 찾을 수 없습니다. 필요한 경우 고객지원에 문의하거나 원본 계정으로 로그인하세요."
+                    "未发现可恢复的订阅。如有疑问，请联系客服或登录购买会员时所使用的 App 账号。",
+                    en: "No restorable subscription was found for this Apple ID. Sign in with the app account used when you subscribed, or contact support.",
+                    ja: "この Apple ID で復元できるサブスクリプションは見つかりませんでした。購入時のアプリアカウントでサインインするかサポートまでご連絡ください。",
+                    ko: "이 Apple ID로 복원할 구독을 찾을 수 없습니다. 구매 시 사용한 앱 계정으로 로그인하거나 고객 지원을 이용하세요."
                 )
             }
             showingPurchaseAlert = true
