@@ -225,8 +225,11 @@ class MembershipManager: ObservableObject {
         memberType = nil
         memberExpireAt = nil
         maxCapsules = serverLimits.freeMaxCapsules
-        maxVideoMinutes = serverLimits.freeMaxVideoMinutes
+        maxTextCapsules = serverLimits.freeMaxTextCapsules
+        maxAudioCapsules = serverLimits.freeMaxAudioCapsules
+        maxVideoCapsules = serverLimits.freeMaxVideoCapsules
         maxMediaCapsules = serverLimits.freeMaxMediaCapsules
+        maxVideoMinutes = serverLimits.freeMaxVideoMinutes
         aiAssistEnabled = false  // 关闭AI辅助
         saveToCache()
     }

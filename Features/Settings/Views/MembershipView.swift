@@ -507,7 +507,9 @@ struct MembershipView: View {
                 } catch {
                     print("⚠️ showManageSubscriptions 失败: \(error)")
                     if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                        UIApplication.shared.open(url)
+                        await MainActor.run {
+                            UIApplication.shared.open(url)
+                        }
                     }
                 }
             }
