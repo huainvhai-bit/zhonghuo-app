@@ -321,18 +321,20 @@ struct MembershipView: View {
             
             switch result {
             case .success(let transactionId, let originalTransactionId, let expiryDate):
-                // 购买成功，激活会员
                 print("✅ IAP 购买成功: txId=\(transactionId), origTxId=\(originalTransactionId), expiry=\(expiryDate)")
                 
-                // 调用服务器激活会员（带上 originalTransactionId 用于跨设备绑定）
-                await activateMembershipOnServer(
+                let activation = await activateMembershipOnServer(
                     type: selectedPlan,
                     transactionId: transactionId,
                     originalTransactionId: originalTransactionId,
                     expiryDate: expiryDate
                 )
                 
-                purchaseMessage = L10n.text("\(selectedPlanName)开通成功！", en: "\(selectedPlanName) subscription activated!", ja: "\(selectedPlanName)の開通に成功しました！", ko: "\(selectedPlanName) 시작에 성공했습니다!")
+                if activation.success {
+                    purchaseMessage = L10n.text("\(selectedPlanName)开通成功！", en: "\(selectedPlanName) subscription activated!", ja: "\(selectedPlanName)の開通に成功しました！", ko: "\(selectedPlanName) 시작에 성공했습니다!")
+                } else {
+                    purchaseMessage = activation.userMessage
+                }
                 showingPurchaseAlert = true
                 
             case .pending:
@@ -355,16 +357,14 @@ struct MembershipView: View {
     ///   - type: 月卡/年卡
     ///   - transactionId: 当前事务 ID
     ///   - originalTransactionId: 原始订阅事务 ID，整条订阅链不变；服务器据此把订阅绑定到 App 账号
+    /// - Returns: 服务端是否成功写入会员；失败时勿先本地开通，避免「秒成功又秒掉线」
     private func activateMembershipOnServer(
         type: String,
         transactionId: String,
         originalTransactionId: String,
         expiryDate: Date
-    ) async {
-        // 1. 本地激活：到期时间使用 StoreKit 的 expirationDate（经 IAP 计算），不用「今天 +1 月/年」
-        membership.activatePremium(type: type, appleSubscriptionExpiresAt: expiryDate)
+    ) async -> (success: Bool, userMessage: String) {
         
-        // 2. 同步到服务器
         do {
             let mutation = """
             mutation($memberType: String!, $receipt: String!, $originalTransactionId: String) {
@@ -388,17 +388,44 @@ struct MembershipView: View {
             
             if let data = result["data"] as? [String: Any],
                let activation = data["activateMembership"] as? [String: Any],
-               let success = activation["success"] as? Bool, success {
-                print("✅ 会员激活已同步到服务器")
-            } else {
-                let message = ((result["data"] as? [String: Any])?["activateMembership"] as? [String: Any])?["message"] as? String
-                    ?? (result["errors"] as? [[String: Any]])?.first?["message"] as? String
-                    ?? "未知错误"
-                print("⚠️ 会员激活同步失败：\(message)")
+               let success = activation["success"] as? Bool {
+                if success {
+                    membership.activatePremium(type: type, appleSubscriptionExpiresAt: expiryDate)
+                    await UserManager.shared.fetchUserData()
+                    print("✅ 会员激活已同步到服务器")
+                    return (true, "")
+                }
+                let message = activation["message"] as? String ?? ""
+                print("⚠️ 会员激活服务器拒绝：\(message)")
+                await UserManager.shared.fetchUserData()
+                let hint = L10n.text(
+                    "（Sandbox/TestFlight：若后台未接 Apple 服务端校验，请在 app_config 开启 iap_allow_unverified=1）",
+                    en: " (Sandbox/TestFlight: enable iap_allow_unverified in app_config if server verification isn’t wired.)",
+                    ja: "（Sandbox/TestFlight：サーバ検証未接続なら app_config で iap_allow_unverified=1）",
+                    ko: " (Sandbox/TestFlight: 서버 검증 없으면 app_config 에서 iap_allow_unverified=1)"
+                )
+                let combined = message.isEmpty ? activationHintOnly() : "\(message)\n\(hint)"
+                return (false, combined)
             }
+            
+            let fallback = (result["errors"] as? [[String: Any]])?.first?["message"] as? String ?? "未知错误"
+            print("⚠️ 会员激活响应异常：\(fallback)")
+            await UserManager.shared.fetchUserData()
+            return (false, fallback)
         } catch {
             print("❌ 会员激活同步异常：\(error)")
+            await UserManager.shared.fetchUserData()
+            return (false, error.localizedDescription)
         }
+    }
+    
+    private func activationHintOnly() -> String {
+        L10n.text(
+            "订阅未在云端开通。TestFlight/沙盒仅传交易号时，后端需开启 iap_allow_unverified 或接入 App Store Server API 验证。",
+            en: "Subscription was not activated on the server. For TestFlight/sandbox with transaction IDs only, enable iap_allow_unverified or use App Store Server API.",
+            ja: "サーバー側で未開通。TestFlight/サンドボックスでは iap_allow_unverified か App Store Server API が必要です。",
+            ko: "서버에서 개통되지 않았습니다. TestFlight/샌드박스에서는 iap_allow_unverified 또는 App Store Server API가 필요합니다."
+        )
     }
 
     // MARK: - 恢复购买 / 管理订阅
