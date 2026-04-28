@@ -191,8 +191,8 @@ struct MembershipView: View {
                 FeatureTableRow(
                     icon: "capsule.fill",
                     title: L10n.string(.tabCapsule),
-                    free: L10n.text("5 个", en: "5", ja: "5個", ko: "5개"),
-                    premium: L10n.text("20 个", en: "20", ja: "20個", ko: "20개"),
+                    free: L10n.text("6 个（每类 2 个）", en: "6 (2 each type)", ja: "6個（各タイプ2個）", ko: "6개(유형별 2개)"),
+                    premium: L10n.text("30 个（每类 10 个）", en: "30 (10 each type)", ja: "30個（各タイプ10個）", ko: "30개(유형별 10개)"),
                     isLast: false
                 )
                 
@@ -211,8 +211,8 @@ struct MembershipView: View {
                 FeatureTableRow(
                     icon: "doc.text.fill",
                     title: L10n.string(.myWills),
-                    free: L10n.text("3 个模块", en: "3 modules", ja: "3モジュール", ko: "3개 모듈"),
-                    premium: L10n.text("无限", en: "Unlimited", ja: "無制限", ko: "무제한"),
+                    free: L10n.text("5 个默认模板", en: "5 default templates", ja: "5個の標準テンプレート", ko: "기본 템플릿 5개"),
+                    premium: L10n.text("可自定义，不限数量", en: "Custom, unlimited", ja: "カスタム可能・無制限", ko: "사용자 지정, 무제한"),
                     isLast: false
                 )
                 

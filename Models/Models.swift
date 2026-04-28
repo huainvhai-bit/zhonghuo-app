@@ -1297,17 +1297,17 @@ extension GraphQLClient {
     }
     
     /// 重置密码
-    func resetPassword(phone: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> [String: Any] {
+    func resetPassword(identifier: String, newPassword: String, securityQuestion: String, securityAnswer: String) async throws -> [String: Any] {
         let mutation = """
-        mutation($phone: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
-            resetPassword(phone: $phone, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
+        mutation($identifier: String!, $newPassword: String!, $securityQuestion: String!, $securityAnswer: String!) {
+            resetPassword(identifier: $identifier, newPassword: $newPassword, securityQuestion: $securityQuestion, securityAnswer: $securityAnswer) {
                 success
                 message
             }
         }
         """
         let variables: [String: Any] = [
-            "phone": phone,
+            "identifier": identifier,
             "newPassword": newPassword,
             "securityQuestion": securityQuestion,
             "securityAnswer": securityAnswer
