@@ -1070,6 +1070,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 memberMaxVideoCapsules
                 memberMaxVideoMinutes
                 aiAssistEnabled
+                isFamilyMode
                 stats {
                     capsulesCount
                     willModulesCount
@@ -1150,7 +1151,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let memberMaxVideoCapsules = userDict["memberMaxVideoCapsules"] as? Int ?? 2
                 let memberMaxVideoMinutes = userDict["memberMaxVideoMinutes"] as? Int ?? 2
                 let aiAssistEnabled = userDict["aiAssistEnabled"] as? Bool ?? false
-                
+                let isFamilyModeFromServer: Bool = {
+                    if let b = userDict["isFamilyMode"] as? Bool { return b }
+                    if let i = userDict["isFamilyMode"] as? Int { return i != 0 }
+                    return false
+                }()
+
                 // 解析会员过期时间
                 var memberExpireAt: Date? = nil
                 if let expireStr = memberExpireAtString, !expireStr.isEmpty {
@@ -1172,8 +1178,10 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         memberMaxVideoMinutes: memberMaxVideoMinutes,
                         aiAssistEnabled: aiAssistEnabled
                     )
+                    // 与后端 users.is_family_mode 一致（默认关）；设置页的「家人守护」开关同源
+                    UserDefaults.standard.set(isFamilyModeFromServer, forKey: "isFamilyMode")
                 }
-                
+
                 // 解析统计信息
                 var capsulesCount = 0
                 var willModulesCount = 0

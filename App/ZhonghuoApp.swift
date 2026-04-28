@@ -306,6 +306,9 @@ class RealTimeSyncManager: ObservableObject {
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // 家人守护开关：未写入过 UserDefaults 时默认为关闭（与后端 users.is_family_mode 默认 0 一致）
+        UserDefaults.standard.register(defaults: ["isFamilyMode": false])
+
         // 同步设置默认 API URL（在后台任务注册前）
         // 使用 NetworkUtils 自动转换为正确的协议（本地 IP 强制使用 HTTP）
         let defaultURL = "zhonghuo.zhonghuo.xyz"
