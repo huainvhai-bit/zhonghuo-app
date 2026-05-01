@@ -9,7 +9,7 @@ import SwiftUI
 
 struct WillAssetsView: View {
     @ObservedObject var dataManager = DataManager.shared
-    @State private var selectedTab = 0 // 0=遗嘱，1=资产
+    @State private var selectedTab = 0 // 0=重要事项，1=资产
     @State private var didInitialLoad = false
     @State private var showingAddAssetModal = false
     @State private var showingTemplateModal = false
@@ -119,10 +119,10 @@ struct WillAssetsView: View {
             }
             .sheet(isPresented: $showingUpgradeForWill) {
                     UpgradePromptView(
-                    feature: L10n.text("新增嘱托", en: "Add will", ja: "遺言を追加", ko: "유언 추가"),
-                    statusText: L10n.text("当前仅可使用默认嘱托模板", en: "Only default will templates are available", ja: "既定のテンプレートのみ利用できます", ko: "기본 유언 템플릿만 사용할 수 있습니다"),
+                    feature: L10n.text("新增事项", en: "Add note", ja: "項目を追加", ko: "항목 추가"),
+                    statusText: L10n.text("当前仅可使用默认事项模板", en: "Only default note templates are available", ja: "既定のテンプレートのみ利用できます", ko: "기본 템플릿만 사용할 수 있습니다"),
                     currentLimit: L10n.text("免费版可使用 5 个默认模板", en: "Free plan includes 5 default templates", ja: "無料プランでは 5 つの既定テンプレートを利用できます", ko: "무료 플랜은 기본 템플릿 5개를 제공합니다"),
-                    targetLimit: L10n.text("会员版可自定义嘱托且数量不限", en: "Premium can create unlimited custom wills", ja: "会員プランではカスタム遺言を無制限に作成できます", ko: "멤버십에서는 사용자 지정 유언을 무제한으로 만들 수 있습니다"),
+                    targetLimit: L10n.text("会员版可自定义事项且数量不限", en: "Premium can create unlimited custom notes", ja: "会員プランではカスタム項目を無制限に作成できます", ko: "멤버십에서는 사용자 지정 항목을 무제한으로 만들 수 있습니다"),
                     onUpgrade: {
                         showingUpgradeForWill = false
                         showingMembershipView = true
@@ -171,13 +171,13 @@ struct WillAssetsView: View {
         .cornerRadius(12)
     }
     
-    // MARK: - 遗嘱内容
+    // MARK: - 重要事项内容
     private var willContent: some View {
         VStack(spacing: 16) {
             // 进度卡片
             progressCard
             
-            // 遗嘱模块列表
+            // 重要事项列表
             ForEach(dataManager.willModules) { module in
                 WillModuleRow(module: module, onTap: {
                     editingModule = module
@@ -186,7 +186,7 @@ struct WillAssetsView: View {
                 })
             }
             
-            // 新增嘱托按钮
+            // 新增事项按钮
             Button(action: {
                 // 创建新的空白模块（使用 otherInstructions 类型）
                 if !MembershipManager.shared.canCreateCustomWill() {
@@ -196,8 +196,8 @@ struct WillAssetsView: View {
                     let newModule = WillModule(
                     id: UUID().uuidString,
                     type: .otherInstructions,
-                    title: L10n.text("自定义嘱托", en: "Custom will", ja: "カスタム遺言", ko: "사용자 유언"),
-                    subtitle: L10n.text("添加您想交代的事", en: "Add what you want to explain", ja: "伝えたいことを追加してください", ko: "전하고 싶은 내용을 추가하세요"),
+                    title: L10n.text("自定义事项", en: "Custom note", ja: "カスタム項目", ko: "사용자 항목"),
+                    subtitle: L10n.text("添加您想记录的重要内容", en: "Add what you want to record", ja: "記録したい内容を追加してください", ko: "기록하고 싶은 내용을 추가하세요"),
                     content: "",
                     isCompleted: false
                 )
@@ -215,11 +215,11 @@ struct WillAssetsView: View {
                 .cornerRadius(12)
             }
             
-            // 法律提示
+            // 说明提示
             infoCard(
-                icon: "⚖️",
-                title: L10n.text("关于遗嘱的法律说明", en: "Legal note on wills", ja: "遺言に関する法的説明", ko: "유언에 대한 법적 안내"),
-                desc: L10n.text("本遗嘱为自书遗嘱，需亲笔签名并注明日期才具法律效力。建议有 2 名以上见证人在场，或前往公证处办理公证。", en: "This will is a handwritten will. It must be signed and dated to be legally valid. We recommend having at least two witnesses or using a notary office.", ja: "この遺言は自筆証書遺言です。法的効力を持つには自筆署名と日付が必要です。2名以上の証人立会い、または公証役場での公証を推奨します。", ko: "이 유언은 자필 유언입니다. 법적 효력을 가지려면 자필 서명과 날짜 기재가 필요합니다. 2명 이상의 증인 또는 공증을 권장합니다.")
+                icon: "📝",
+                title: L10n.text("重要事项说明", en: "Important note", ja: "重要事項の説明", ko: "중요 사항 안내"),
+                desc: L10n.text("这里用于个人整理和家庭沟通参考，不构成法律意见或法律文书。内容不会自动发送，只有您主动分享后家人才可查看。", en: "This area is for personal organization and family communication only. It is not legal advice or a legal document. Content is not sent automatically and is only visible after you manually share it.", ja: "ここは個人整理と家族共有の参考用です。法的助言や法的文書ではありません。内容は自動送信されず、手動共有後のみ家族が確認できます。", ko: "개인 정리와 가족 소통 참고용입니다. 법률 자문이나 법적 문서가 아닙니다. 내용은 자동 전송되지 않으며 직접 공유한 후에만 가족이 볼 수 있습니다.")
             )
             
             // 操作按钮
@@ -247,7 +247,7 @@ struct WillAssetsView: View {
             infoCard(
                 icon: "🔒",
                 title: L10n.text("安全提示", en: "Safety note", ja: "安全上の注意", ko: "안전 안내"),
-                desc: L10n.text("仅记录资产信息用于身后事务处理，不存储密码和完整账号。建议记录账号后 4 位以便识别。", en: "We only store asset information for posthumous handling. Passwords and full account numbers are not stored. We recommend recording the last 4 digits of an account for identification.", ja: "資産情報のみを保存し、パスワードや完全なアカウント番号は保存しません。識別のためにアカウント末尾4桁の記録を推奨します。", ko: "사후 처리용으로 자산 정보만 기록하며, 비밀번호와 전체 계정 번호는 저장하지 않습니다. 식별을 위해 계정 마지막 4자리를 기록하는 것을 권장합니다.")
+                desc: L10n.text("仅记录资产线索用于个人整理和家庭沟通参考，不存储密码和完整账号。建议记录账号后 4 位以便识别。", en: "Only asset references are stored for personal organization and family communication. Passwords and full account numbers are not stored. We recommend recording the last 4 digits of an account for identification.", ja: "個人整理と家族共有の参考として資産情報のみを保存し、パスワードや完全なアカウント番号は保存しません。識別のために末尾4桁の記録を推奨します。", ko: "개인 정리와 가족 소통 참고용으로 자산 정보만 기록하며, 비밀번호와 전체 계정 번호는 저장하지 않습니다. 식별을 위해 마지막 4자리를 기록하는 것을 권장합니다.")
             )
             
             // 资产列表

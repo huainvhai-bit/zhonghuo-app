@@ -2479,7 +2479,7 @@ class DataManager: ObservableObject {
                 let rawEmail = configData["customerServiceEmail"] as? String ?? ""
                 let customerServiceEmail = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines)
 
-                let defaultAnnouncement = "欢迎使用终活，多一点爱就多一点温暖。"
+                let defaultAnnouncement = "欢迎使用安心记，重要时光安心记录。"
                 let rawAnnounce = (configData["homeAnnouncementText"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 let homeAnnouncementText = rawAnnounce.isEmpty ? defaultAnnouncement : rawAnnounce

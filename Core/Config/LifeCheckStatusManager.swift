@@ -21,7 +21,7 @@ struct NotificationConfig: Codable {
     /// 重复提醒间隔（小时）- 每 2 小时提醒一次
     var reminderInterval: Int = 2
     
-    /// 超时后推送间隔（小时）- 超时后每 1 小时推送一次
+    /// 签到提醒间隔（小时）- 到期后继续提醒用户本人打开 App 更新状态
     var overduePushInterval: Int = 1
     
 }
@@ -166,7 +166,7 @@ class LifeCheckStatusManager: ObservableObject {
             let minutes = Int((hoursRemaining - Double(hours)) * 60)
             return "\(hours)小时\(minutes)分"
         } else {
-            return "已超时"
+            return "待更新"
         }
     }
     
@@ -174,7 +174,7 @@ class LifeCheckStatusManager: ObservableObject {
         if isSafe {
             return "一切安好，记得定期签到哦"
         } else {
-            return "您已超时未签到，请尽快确认安全"
+            return "签到记录已到提醒时间，请打开 App 更新状态"
         }
     }
     
@@ -203,23 +203,12 @@ class LifeCheckStatusManager: ObservableObject {
         }
     }
     
-    // MARK: - 通知监护人
-    
-    /// 在需要时通知监护人
+    // MARK: - 本机提醒
+
+    /// 仅保留本机提醒，不向联系人发送通知或报警。
     func notifyGuardianIfNeeded() {
         if !isSafe {
-            // 计算超时时长
-            let hoursOverdue = -hoursRemaining
-            
-            // 超时后立即通知监护人
-            if hoursOverdue > 0 {
-                print("⚠️ 用户已超时\(Int(hoursOverdue))小时未签到，需要通知监护人")
-                
-                // 异步通知监护人
-                Task {
-                    await notifyGuardians()
-                }
-            }
+            print("ℹ️ 签到记录已到提醒时间，仅通过本机通知提醒用户本人")
         }
     }
     
@@ -383,7 +372,7 @@ class LifeCheckStatusManager: ObservableObject {
         }
     }
     
-    /// 设置超时通知（倒计时结束后）
+    /// 设置到期后的本机提醒（仅提醒用户本人）
     private func scheduleOverdueNotifications(after deadline: Date) {
         let overduePushIntervalHours = DataManager.shared.systemConfig.overduePushIntervalHours
         let intervalSeconds = overduePushIntervalHours * 3600
@@ -391,7 +380,7 @@ class LifeCheckStatusManager: ObservableObject {
         var notificationCount = 1
         let now = Date()
         
-        // 设置 5 个超时通知
+        // 设置 5 个本机签到提醒，不向家人或联系人发送通知。
         while notificationCount <= 5 {
             if currentTime <= now {
                 currentTime.addTimeInterval(TimeInterval(intervalSeconds))
@@ -403,8 +392,8 @@ class LifeCheckStatusManager: ObservableObject {
             
             scheduleNotification(
                 identifier: "checkin_overdue_\(notificationCount)",
-                title: "⚠️ 已超时",
-                body: "您已超过签到时间 \(hoursOverdue) 小时，请打开 App 确认安全",
+                title: "签到记录待更新",
+                body: "您的签到记录已到提醒时间 \(hoursOverdue) 小时，请打开 App 更新状态",
                 fireDate: currentTime,
                 repeats: false
             )
@@ -454,15 +443,11 @@ class LifeCheckStatusManager: ObservableObject {
         print("🗑️ 已取消所有签到提醒")
     }
 
-    // MARK: - 家人超时未签到 推送
+    // MARK: - 家人状态共享提醒
 
-    /// 取消并重排所有"家人超时未签到"本地推送
-    /// 调用时机：
-    ///   1. 家人 tab 拉取到最新的 family 列表（含对方的 checkin_expire_at / is_family_mode）
-    ///   2. App 回前台 / 切换到家人 tab
-    /// 取消所有 `family_overdue_*` 标识符的待发推送，再依据每个家人的下次签到截止时间重新排程
+    /// 不再为家人的签到状态排程本地通知。
+    /// 家人关系仅用于双方确认后的最近签到时间共享，不做失联判断、报警或异常推送。
     func scheduleFamilyOverdueNotifications(_ members: [FamilyMember]) {
-        let silentMode = UserDefaults.standard.bool(forKey: "silentModeEnabled")
         UNUserNotificationCenter.current().getPendingNotificationRequests { [weak self] requests in
             let toCancel = requests
                 .filter { $0.identifier.hasPrefix("family_overdue_") }
@@ -470,54 +455,14 @@ class LifeCheckStatusManager: ObservableObject {
             if !toCancel.isEmpty {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: toCancel)
             }
-            if silentMode {
-                print("🤫 静默模式开启，已清空家人超时推送")
-                return
-            }
-            Task { @MainActor [weak self] in
-                self?.rescheduleFamilyOverdueInternal(members)
-            }
+            print("ℹ️ 家人状态仅在 App 内展示，已取消家人状态到期本地通知（家人数 \(members.count)）")
         }
-    }
-
-    private func rescheduleFamilyOverdueInternal(_ members: [FamilyMember]) {
-        // 超时间隔（小时）取后端配置；最小兜底 15 分钟，避免误配置导致风暴
-        let intervalHours = DataManager.shared.systemConfig.overduePushIntervalHours
-        let intervalSeconds = max(15.0 * 60.0, intervalHours * 3600.0)
-        let now = Date()
-        let maxPushPerMember = 10
-        var scheduled = 0
-
-        for member in members {
-            // 对方处于"家人守护"模式时不再推送（对方本就不需要签到）
-            guard !member.isFamilyMode else { continue }
-            guard let deadline = member.nextCheckInDeadline else { continue }
-            guard !member.relationId.isEmpty else { continue }
-            // 状态非"已绑定"的家人不发推送（pending/rejected 等）
-            guard member.status == .accepted else { continue }
-
-            for index in 0..<maxPushPerMember {
-                let fireDate = deadline.addingTimeInterval(TimeInterval(index) * intervalSeconds)
-                if fireDate <= now { continue }
-                let identifier = "family_overdue_\(member.relationId)_\(index)"
-                let displayName = member.name.isEmpty ? "您的家人" : member.name
-                scheduleNotification(
-                    identifier: identifier,
-                    title: "⚠️ 家人超时未签到",
-                    body: "\(displayName)超时未签到，请及时留意家人情况",
-                    fireDate: fireDate,
-                    repeats: false
-                )
-                scheduled += 1
-            }
-        }
-        print("🔔 已排程家人超时推送：\(scheduled) 条（家人数 \(members.count)）")
     }
     
     /// 通知所有监护人
     func notifyGuardians() async {
         // 见证人和紧急联系人功能已移除
-        print("📞 监护人通知功能已禁用")
+        print("📞 联系人通知功能未启用：本应用不会自动报警或通知家人")
     }
 }
 

@@ -45,7 +45,7 @@ struct CapsuleEditView: View {
                 VStack(spacing: 16) {
                     // 类型卡片（编辑模式只显示当前类型，不允许修改）
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(L10n.text("胶囊类型", en: "Capsule Type", ja: "カプセル種類", ko: "캡슐 유형"))
+                        Text(L10n.text("留言类型", en: "Message Type", ja: "メッセージ種類", ko: "메시지 유형"))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.secondary)
                         
@@ -228,7 +228,7 @@ struct CapsuleEditView: View {
                 }
             }
         }
-        .navigationTitle(existingCapsule == nil ? L10n.text("新增胶囊", en: "New Capsule", ja: "新しいカプセル", ko: "새 캡슐") : L10n.string(.editCapsule))
+        .navigationTitle(existingCapsule == nil ? L10n.text("新增留言", en: "New Message", ja: "新しいメッセージ", ko: "새 메시지") : L10n.string(.editCapsule))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // ✅ 取消按钮（左上角）
@@ -368,33 +368,33 @@ struct CapsuleEditView: View {
 
         switch type {
         case .text:
-            upgradePromptFeature = L10n.text("文字胶囊", en: "Text capsules", ja: "テキストカプセル", ko: "텍스트 캡슐")
+            upgradePromptFeature = L10n.text("文字留言", en: "Text messages", ja: "テキストメッセージ", ko: "텍스트 메시지")
             upgradePromptMessage = L10n.text(
-                "文字胶囊已达上限",
+                "文字留言已达上限",
                 en: "Text capsules have reached the limit",
                 ja: "テキストカプセルの上限に達しました",
                 ko: "텍스트 캡슐 한도에 도달했습니다"
             )
         case .audio, .voice:
-            upgradePromptFeature = L10n.text("录音胶囊", en: "Audio capsules", ja: "音声カプセル", ko: "음성 캡슐")
+            upgradePromptFeature = L10n.text("录音留言", en: "Audio messages", ja: "音声メッセージ", ko: "음성 메시지")
             upgradePromptMessage = L10n.text(
-                "录音胶囊已达上限",
+                "录音留言已达上限",
                 en: "Audio capsules have reached the limit",
                 ja: "音声カプセルの上限に達しました",
                 ko: "음성 캡슐 한도에 도달했습니다"
             )
         case .video:
-            upgradePromptFeature = L10n.text("视频胶囊", en: "Video capsules", ja: "動画カプセル", ko: "동영상 캡슐")
+            upgradePromptFeature = L10n.text("视频留言", en: "Video messages", ja: "動画メッセージ", ko: "동영상 메시지")
             upgradePromptMessage = L10n.text(
-                "视频胶囊已达上限",
+                "视频留言已达上限",
                 en: "Video capsules have reached the limit",
                 ja: "動画カプセルの上限に達しました",
                 ko: "동영상 캡슐 한도에 도달했습니다"
             )
         case .image, .sticker:
-            upgradePromptFeature = L10n.text("时光胶囊", en: "Capsules", ja: "カプセル", ko: "캡슐")
+            upgradePromptFeature = L10n.text("时光留言", en: "Messages", ja: "メッセージ", ko: "메시지")
             upgradePromptMessage = L10n.text(
-                "时光胶囊已达上限",
+                "时光留言已达上限",
                 en: "Capsules have reached the limit",
                 ja: "カプセルの上限に達しました",
                 ko: "캡슐 한도에 도달했습니다"

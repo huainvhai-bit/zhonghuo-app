@@ -36,7 +36,7 @@ struct ReceivedCapsuleListView: View {
                     }
                 }
             }
-            .navigationTitle(L10n.text("我收到的胶囊", en: "Received Capsules", ja: "受け取ったカプセル", ko: "받은 캡슐"))
+            .navigationTitle(L10n.text("我收到的留言", en: "Received Messages", ja: "受け取ったメッセージ", ko: "받은 메시지"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -44,7 +44,7 @@ struct ReceivedCapsuleListView: View {
                         Image(systemName: "envelope.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(Color(hex: "6366F1"))
-                        Text(L10n.text("我收到的胶囊", en: "Received Capsules", ja: "受け取ったカプセル", ko: "받은 캡슐"))
+                        Text(L10n.text("我收到的留言", en: "Received Messages", ja: "受け取ったメッセージ", ko: "받은 메시지"))
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.primary)
                     }
@@ -71,10 +71,10 @@ struct ReceivedCapsuleListView: View {
             Image(systemName: "tray")
                 .font(.system(size: 60))
                 .foregroundColor(.gray.opacity(0.5))
-            Text(L10n.text("暂无收到的胶囊", en: "No received capsules yet", ja: "まだ受け取ったカプセルはありません", ko: "아직 받은 캡슐이 없습니다"))
+            Text(L10n.text("暂无收到的留言", en: "No received messages yet", ja: "まだ受け取ったメッセージはありません", ko: "아직 받은 메시지가 없습니다"))
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text(L10n.text("家人分享胶囊后，您将在这里看到", en: "Capsules shared by family will appear here.", ja: "家族が共有したカプセルはここに表示されます。", ko: "가족이 공유한 캡슐이 여기에 표시됩니다."))
+            Text(L10n.text("家人手动发送留言后，您将在这里看到", en: "Messages manually sent by family will appear here.", ja: "家族が手動送信したメッセージはここに表示されます。", ko: "가족이 직접 보낸 메시지가 여기에 표시됩니다."))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

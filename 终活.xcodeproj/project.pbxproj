@@ -819,7 +819,7 @@
 					"-lresolv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhonghuo.app;
-				PRODUCT_NAME = "终活";
+				PRODUCT_NAME = "安心记";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -899,7 +899,7 @@
 					"-lresolv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhonghuo.app;
-				PRODUCT_NAME = "终活";
+				PRODUCT_NAME = "安心记";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_COMPILATION_MODE = wholemodule;

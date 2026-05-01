@@ -63,8 +63,8 @@ struct CapsuleList: View {
                             }) {
                                 HStack {
                                     Text("+")
-                                    Text(L10n.text("添加胶囊", en: "Add Capsule", ja: "カプセルを追加", ko: "캡슐 추가"))
-                                        .accessibilityLabel(L10n.text("添加新的时光胶囊", en: "Add a new time capsule", ja: "新しいタイムカプセルを追加", ko: "새 타임 캡슐 추가"))
+                                    Text(L10n.text("添加留言", en: "Add Message", ja: "メッセージを追加", ko: "메시지 추가"))
+                                        .accessibilityLabel(L10n.text("添加新的时光留言", en: "Add a new message", ja: "新しいメッセージを追加", ko: "새 메시지 추가"))
                                 }
                                 .font(.system(size: 16, weight: .semibold))
                                 .frame(maxWidth: .infinity)
@@ -80,7 +80,7 @@ struct CapsuleList: View {
                     .padding(.vertical, 14)
                 }
             }
-            .navigationTitle(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
+            .navigationTitle(L10n.text("时光留言", en: "Time Message", ja: "タイムメッセージ", ko: "타임 메시지"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -88,7 +88,7 @@ struct CapsuleList: View {
                         Image(systemName: "capsule.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        Text(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
+                        Text(L10n.text("时光留言", en: "Time Message", ja: "タイムメッセージ", ko: "타임 메시지"))
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -137,10 +137,10 @@ struct CapsuleList: View {
                             .font(.system(size: 48))
                             .foregroundColor(Color(hex: "6366F1"))
                         
-                        Text(L10n.text("胶囊分享是会员功能", en: "Capsule sharing is a premium feature", ja: "カプセル共有は会員機能です", ko: "캡슐 공유는 멤버십 기능입니다"))
+                        Text(L10n.text("留言共享是会员功能", en: "Message sharing is a premium feature", ja: "メッセージ共有は会員機能です", ko: "메시지 공유는 멤버십 기능입니다"))
                             .font(.system(size: 20, weight: .bold))
                         
-                        Text(L10n.text("升级到会员版，即可将时光胶囊分享给家人，让他们及时收到您的祝福", en: "Upgrade to premium to share capsules with your family and let them receive your message in time.", ja: "会員プランにアップグレードすると、タイムカプセルを家族と共有でき、タイムリーにメッセージを届けられます。", ko: "멤버십으로 업그레이드하면 타임 캡슐을 가족과 공유해 제때 메시지를 전달할 수 있습니다."))
+                        Text(L10n.text("升级到会员版后，可将已创建的留言手动分享给家人", en: "Upgrade to premium to manually share messages with your family.", ja: "会員プランでは作成済みメッセージを手動で家族に共有できます。", ko: "멤버십에서는 작성한 메시지를 가족에게 직접 공유할 수 있습니다."))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -215,7 +215,7 @@ struct CapsuleList: View {
             )
         }
         .alert(
-            L10n.text("分享胶囊", en: "Share capsule", ja: "カプセルを共有", ko: "캡슐 공유"),
+            L10n.text("分享留言", en: "Share message", ja: "メッセージを共有", ko: "메시지 공유"),
             isPresented: Binding(
                 get: { shareCapsuleAlertMessage != nil },
                 set: { if !$0 { shareCapsuleAlertMessage = nil } }
@@ -255,7 +255,7 @@ struct CapsuleList: View {
                 capsuleToDelete = nil
             }
         } message: {
-            Text(L10n.text("确定要删除这个胶囊吗？此操作不可撤销。", en: "Delete this capsule? This cannot be undone.", ja: "このカプセルを削除しますか？この操作は元に戻せません。", ko: "이 캡슐을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."))
+            Text(L10n.text("确定要删除这个留言吗？此操作不可撤销。", en: "Delete this message? This cannot be undone.", ja: "このメッセージを削除しますか？この操作は元に戻せません。", ko: "이 메시지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."))
         }
         .refreshable {
             await viewModel.refresh()
@@ -286,7 +286,7 @@ struct CapsuleList: View {
                     HStack(spacing: 8) {
                         Image(systemName: "capsule.fill")
                             .font(.system(size: 20))
-                    Text(L10n.text("时光胶囊", en: "Time Capsule", ja: "タイムカプセル", ko: "타임 캡슐"))
+                    Text(L10n.text("时光留言", en: "Time Message", ja: "タイムメッセージ", ko: "타임 메시지"))
                             .font(.system(size: 20, weight: .bold))
                     }
                     .foregroundColor(.white)
@@ -303,7 +303,7 @@ struct CapsuleList: View {
                     Text("\(dataManager.capsules.count)")
                         .font(.system(size: 36, weight: .bold))
                         .foregroundColor(.white)
-                    Text(L10n.text("个胶囊", en: "capsules", ja: "個のカプセル", ko: "개의 캡슐"))
+                    Text(L10n.text("条留言", en: "messages", ja: "件のメッセージ", ko: "개의 메시지"))
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.85))
                 }
@@ -317,13 +317,13 @@ struct CapsuleList: View {
                     .background(Color.white.opacity(0.3))
                     .frame(height: 30)
                 
-                StatBox(value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "待发送", icon: "clock.fill", bgColor: .white.opacity(0.2))
+                StatBox(value: "\(dataManager.capsules.filter { !$0.isSent }.count)", label: "草稿", icon: "clock.fill", bgColor: .white.opacity(0.2))
                 
                 Divider()
                     .background(Color.white.opacity(0.3))
                     .frame(height: 30)
                 
-                StatBox(value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已发送", icon: "checkmark.circle.fill", bgColor: .white.opacity(0.2))
+                StatBox(value: "\(dataManager.capsules.filter { $0.isSent }.count)", label: "已手动发送", icon: "checkmark.circle.fill", bgColor: .white.opacity(0.2))
             }
             .padding(.vertical, 12)
             .background(Color.white.opacity(0.15))
@@ -400,17 +400,17 @@ struct CapsuleList: View {
                 .font(.system(size: 48))
                 .foregroundColor(Color(hex: "6366F1").opacity(0.5))
             
-            Text(LocalizedStringKey("还没有时光胶囊"))
+            Text(LocalizedStringKey("还没有时光留言"))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.secondary)
             
-            Text(LocalizedStringKey("点击右上角 ➕ 创建第一个胶囊"))
+            Text(LocalizedStringKey("点击右上角 ➕ 创建第一条留言"))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
             
             NavigationLink(destination: CapsuleEditView(dataManager: dataManager)) {
-                Text(L10n.text("创建胶囊", en: "Create capsule", ja: "カプセルを作成", ko: "캡슐 만들기"))
-                    .accessibilityLabel(L10n.text("创建新的时光胶囊", en: "Create a new time capsule", ja: "新しいタイムカプセルを作成", ko: "새 타임 캡슐 만들기"))
+                Text(L10n.text("创建留言", en: "Create message", ja: "メッセージを作成", ko: "메시지 만들기"))
+                    .accessibilityLabel(L10n.text("创建新的时光留言", en: "Create a new time message", ja: "新しいタイムメッセージを作成", ko: "새 타임 메시지 만들기"))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 24)
@@ -506,7 +506,7 @@ struct CapsuleCard: View {
                     HStack(spacing: 4) {
                         Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
                             .font(.system(size: 10))
-                        Text(capsule.isSent ? "已发送" : "待发送")
+                        Text(capsule.isSent ? "已手动发送" : "草稿")
                             .font(.system(size: 11))
                     }
                     .foregroundColor(capsule.isSent ? .green : .orange)
@@ -655,7 +655,7 @@ struct ShareCapsuleSheet: View {
                         Text(L10n.text("暂无已绑定的家人", en: "No family bound yet", ja: "まだ家族が連携されていません", ko: "아직 연결된 가족이 없습니다"))
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        Text(L10n.text("请先在「家人守护」中添加家人", en: "Please add family members in Family", ja: "まず「家族」から家族を追加してください", ko: "먼저 가족 보호에서 가족을 추가하세요"))
+                        Text(L10n.text("请先在「家人共享」中添加家人", en: "Please add family members in Family Sharing", ja: "まず「家族共有」から家族を追加してください", ko: "먼저 가족 공유에서 가족을 추가하세요"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Button(action: onAddFamily) {
@@ -713,7 +713,7 @@ struct ShareCapsuleSheet: View {
                             linearSendProgress = 0
                         }
                     }) {
-                        Text(L10n.text("发送给家人", en: "Send to family", ja: "家族に送信", ko: "가족에게 보내기"))
+                        Text(L10n.text("手动发送给家人", en: "Manually send to family", ja: "家族に手動送信", ko: "가족에게 직접 보내기"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -745,7 +745,7 @@ struct ShareCapsuleSheet: View {
                     HStack(spacing: 12) {
                         ProgressView()
                             .tint(Color(hex: "6366F1"))
-                        Text(L10n.text("正在发送给家人…", en: "Sending to family…", ja: "家族に送信中…", ko: "가족에게 보내는 중…"))
+                        Text(L10n.text("正在手动发送给家人…", en: "Manually sending to family…", ja: "家族に手動送信中…", ko: "가족에게 직접 보내는 중…"))
                             .font(.system(size: 15, weight: .medium))
                     }
                     Text(L10n.text("请勿关闭此界面", en: "Please keep this sheet open.", ja: "この画面を閉じないでください", ko: "이 화면을 닫지 마세요"))
@@ -759,7 +759,7 @@ struct ShareCapsuleSheet: View {
                 .shadow(color: .black.opacity(0.18), radius: 20)
             }
             }
-            .navigationTitle(L10n.text("分享胶囊", en: "Share Capsule", ja: "カプセルを共有", ko: "캡슐 공유"))
+            .navigationTitle(L10n.text("分享留言", en: "Share Message", ja: "メッセージを共有", ko: "메시지 공유"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -867,7 +867,7 @@ struct CapsuleRow: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        "\(date.chineseDateString()) \(capsule.isSent ? "已发送" : "发送")"
+        "\(date.chineseDateString()) \(capsule.isSent ? "已手动发送" : "草稿")"
     }
 }
 
@@ -983,7 +983,7 @@ struct SwipeableCapsuleCard: View {
                     HStack(spacing: 4) {
                         Image(systemName: capsule.isSent ? "checkmark.circle.fill" : "clock.fill")
                             .font(.system(size: 10))
-                        Text(capsule.isSent ? "已发送" : "待发送")
+                        Text(capsule.isSent ? "已手动发送" : "草稿")
                             .font(.system(size: 11))
                     }
                     .foregroundColor(capsule.isSent ? .green : .orange)
@@ -1085,7 +1085,7 @@ struct SwipeableCapsuleCard: View {
     }
     
     private func formatSendDate(_ date: Date) -> String {
-        "\(date.chineseDateString()) \(capsule.isSent ? "已发送" : "发送")"
+        "\(date.chineseDateString()) \(capsule.isSent ? "已手动发送" : "草稿")"
     }
 }
 

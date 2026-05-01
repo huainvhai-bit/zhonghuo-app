@@ -324,7 +324,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         setupCheckInNotifications()
         Logger.shared.i("后台任务已启用")
         
-        Logger.shared.i("终活 App 启动完成")
+        Logger.shared.i("安心记 App 启动完成")
         return true
     }
     

@@ -2,7 +2,7 @@
 //  PDFGenerator.swift
 //  终活
 //
-//  遗嘱 PDF 导出功能
+//  重要事项 PDF 导出功能
 //  ✅ P2 修复 #5: 添加自动分页逻辑
 //  ✅ P2 修复 #8: 魔法数字定义为常量
 //
@@ -19,7 +19,7 @@ class PDFGenerator {
     private static let pdfPageBreakThreshold: CGFloat = AppConfig.pdfPageBreakThreshold
     private static let pdfFooterY: CGFloat = 800
     
-    /// 导出遗嘱模块为 PDF
+    /// 导出重要事项模块为 PDF
     // ✅ P2 修复 #5: 添加自动分页逻辑
     static func exportWillModulesToPDF(modules: [WillModule], assets: [Asset], capsules: [TimeCapsule]) -> Data? {
         let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pdfPageWidth, height: pdfPageHeight))
@@ -28,7 +28,7 @@ class PDFGenerator {
             ctx.beginPage()
             
             // 标题
-            let title = "终活 - 遗嘱文档"
+            let title = "安心记 - 重要事项记录"
             let titleAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 24),
                 .foregroundColor: UIColor.black
@@ -49,7 +49,7 @@ class PDFGenerator {
             
             var currentY: CGFloat = 130
             
-            // 遗嘱模块内容
+            // 重要事项内容
             for module in modules where module.isCompleted {
                 // ✅ P2 修复 #5: 检查是否需要分页
                 currentY = checkPageBreak(ctx: ctx, currentY: currentY, moduleHeight: estimateModuleHeight(module))
@@ -60,7 +60,7 @@ class PDFGenerator {
             currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 100)
             currentY = drawAssetSection(ctx: ctx, assets: assets, startY: currentY + 30)
             
-            // 媒体胶囊下载地址（无论存储在哪里，都导出真实下载地址）
+            // 手动发送的留言下载地址（无论存储在哪里，都导出真实下载地址）
             if !capsules.isEmpty {
                 currentY = checkPageBreak(ctx: ctx, currentY: currentY, sectionHeight: 150)
                 currentY = drawMediaCapsulesSection(ctx: ctx, capsules: capsules, startY: currentY + 30)
@@ -206,7 +206,7 @@ class PDFGenerator {
         path.stroke()
     }
     
-    /// 绘制媒体胶囊下载地址 section
+    /// 绘制手动发送的留言下载地址 section
     private static func drawMediaCapsulesSection(ctx: UIGraphicsPDFRendererContext, capsules: [TimeCapsule], startY: CGFloat) -> CGFloat {
         var currentY = startY
         
@@ -215,7 +215,7 @@ class PDFGenerator {
             .font: UIFont.boldSystemFont(ofSize: 18),
             .foregroundColor: UIColor(hex: "AF52DE")
         ]
-        "媒体胶囊下载地址".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: titleAttributes)
+        "手动发送的留言地址".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: titleAttributes)
         currentY += 30
         
         // 子标题说明
@@ -223,7 +223,7 @@ class PDFGenerator {
             .font: UIFont.systemFont(ofSize: 12),
             .foregroundColor: UIColor.gray
         ]
-        "以下胶囊的媒体文件可在服务器、阿里云 OSS 或腾讯云 COS 上访问：".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: subtitleAttributes)
+        "以下为您主动发送后保存的媒体文件访问地址：".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: subtitleAttributes)
         currentY += 20
         
         if capsules.isEmpty {
@@ -231,7 +231,7 @@ class PDFGenerator {
                 .font: UIFont.systemFont(ofSize: 14),
                 .foregroundColor: UIColor.gray
             ]
-            "暂无媒体胶囊".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: emptyAttributes)
+            "暂无媒体留言".draw(at: CGPoint(x: pdfMargin, y: currentY), withAttributes: emptyAttributes)
             currentY += 25
         } else {
             for capsule in capsules {
@@ -241,7 +241,7 @@ class PDFGenerator {
                     currentY = 50
                 }
                 
-                // 胶囊标题和类型
+                // 留言标题和类型
                 let capsuleTitle = "• \(capsule.title)（\(capsule.type.rawValue)）"
                 let capsuleTitleAttributes: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: 14, weight: .medium),
@@ -268,7 +268,7 @@ class PDFGenerator {
         return currentY
     }
     
-    /// 获取胶囊的真实下载地址
+    /// 获取媒体留言的真实下载地址
     /// 无论媒体文件保存在服务器、阿里云OSS还是腾讯云COS，都返回真实可访问的下载地址
     private static func getMediaDownloadURL(capsule: TimeCapsule) -> String {
         // 优先使用服务器媒体URL
@@ -296,7 +296,7 @@ class PDFGenerator {
             .foregroundColor: UIColor.lightGray
         ]
         
-        let footerText = "本文件由终活 App 生成 • 仅供个人参考"
+        let footerText = "本文件由安心记 App 生成 • 仅供个人整理参考"
         let footerSize = footerText.size(withAttributes: footerAttributes)
         footerText.draw(at: CGPoint(x: (pdfPageWidth - footerSize.width) / 2, y: pdfFooterY))
     }

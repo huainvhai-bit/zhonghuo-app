@@ -423,7 +423,7 @@ struct ReceivedCapsule: Identifiable, Codable {
     }
 }
 
-// MARK: - 遗嘱模块
+// MARK: - 重要事项模块
 struct WillModule: Identifiable, Codable {
     var id: String
     var type: WillType
@@ -513,11 +513,35 @@ struct WillModule: Identifiable, Codable {
     }
     
     enum WillType: String, Codable, CaseIterable {
-        case property = "财产分配"
-        case heirs = "继承人指定"
+        case property = "资产记录"
+        case heirs = "家庭成员"
         case specialItems = "特殊物品"
-        case funeral = "丧葬意愿"
-        case otherInstructions = "其他嘱托"
+        case funeral = "个人偏好"
+        case otherInstructions = "其他事项"
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            switch value {
+            case "资产记录", "财产分配":
+                self = .property
+            case "家庭成员", "继承人指定":
+                self = .heirs
+            case "特殊物品":
+                self = .specialItems
+            case "个人偏好", "丧葬意愿":
+                self = .funeral
+            case "其他事项", "其他嘱托":
+                self = .otherInstructions
+            default:
+                self = .otherInstructions
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(rawValue)
+        }
         
         var icon: String {
             switch self {
@@ -531,11 +555,11 @@ struct WillModule: Identifiable, Codable {
         
         var subtitle: String {
             switch self {
-            case .property: return "房产、存款、投资等"
-            case .heirs: return "指定遗产继承人"
+            case .property: return "房产、存款、投资等记录"
+            case .heirs: return "家庭成员和联系人信息"
             case .specialItems: return "有纪念意义的物品"
-            case .funeral: return "葬礼安排偏好"
-            case .otherInstructions: return "其他想交代的事"
+            case .funeral: return "个人偏好和家庭沟通参考"
+            case .otherInstructions: return "其他想记录的事"
             }
         }
         
@@ -918,7 +942,7 @@ struct SystemConfig: Codable {
     var customerServiceEmail: String = ""
 
     /// App 首页横幅公告（`getConfig.homeAnnouncementText`）；空串时 UI 使用默认欢迎语
-    var homeAnnouncementText: String = "欢迎使用终活，多一点爱就多一点温暖。"
+    var homeAnnouncementText: String = "欢迎使用安心记，重要时光安心记录。"
 }
 
 extension SystemConfig {

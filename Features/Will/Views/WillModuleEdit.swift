@@ -2,7 +2,7 @@
 //  WillModuleEdit.swift
 //  终活
 //
-//  遗嘱模块编辑 + 模板
+//  重要事项编辑 + 模板
 //
 
 import SwiftUI
@@ -11,349 +11,341 @@ import SwiftUI
 private struct CachedTemplates {
     static var propertyTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("标准财产分配", en: "Standard Asset Distribution", ja: "標準財産分配", ko: "표준 재산 분배"),
+            L10n.text("资产记录模板", en: "Asset Notes Template", ja: "資産メモテンプレート", ko: "자산 기록 템플릿"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+            本人 [姓名]，现记录名下资产信息如下，供个人整理和家庭沟通参考：
             
             一、房产
-            位于 [地址] 的房产（房产证号：[号码]），由 [继承人姓名] 继承，占 100% 份额。
+            位于 [地址] 的房产（房产证号：[号码]），备注：[填写说明]。
             
             二、银行存款
-            名下所有银行账户存款，由 [继承人姓名] 继承。
+            银行账户信息：[填写银行、账号后四位、备注]。
             
-            三、其他财产
-            包括但不限于股票、基金、保险、车辆等，均由 [继承人姓名] 继承。
+            三、其他资产
+            包括但不限于股票、基金、保险、车辆等：[填写说明]。
             
-            四、遗嘱执行人
-            指定 [姓名] 为本遗嘱的执行人。
+            四、联系人
+            如需家人协助核对，可联系：[姓名/联系方式]。
             """, en: """
-            I, [Name], ID No. [Number], distribute my assets as follows:
+            I, [Name], record my asset information for personal organization and family communication:
 
             1. Real estate
-            The property at [Address] (Property No. [Number]) shall be inherited by [Heir Name] in full.
+            Property at [Address] (certificate no. [Number]), notes: [Notes].
 
             2. Bank deposits
-            All bank account deposits shall be inherited by [Heir Name].
+            Bank account information: [Bank, last four digits, notes].
 
             3. Other assets
-            Including but not limited to stocks, funds, insurance, and vehicles, shall be inherited by [Heir Name].
+            Stocks, funds, insurance, vehicles, etc.: [Notes].
 
-            4. Executor
-            Appoint [Name] as the executor of this will.
+            4. Contact
+            For family reference, contact: [Name / Contact].
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下のとおり財産を分配します。
+            私、[氏名] は、個人整理と家族共有の参考として資産情報を記録します。
 
             1. 不動産
-            [住所] の不動産（登記番号：[番号]）は [相続人名] に相続させます。
+            [住所 / 登録番号 / メモ]
 
             2. 預金
-            すべての銀行預金を [相続人名] に相続させます。
+            [銀行名 / 口座下4桁 / メモ]
 
             3. その他の資産
-            株式、投資信託、保険、車両などを含むその他資産を [相続人名] に相続させます。
+            [株式、投資信託、保険、車両などのメモ]
 
-            4. 遺言執行者
-            [氏名] を本遺言の執行者に指定します。
+            4. 連絡先
+            家族が確認する際の連絡先：[氏名 / 連絡先]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래와 같이 재산을 분배합니다.
+            본인 [이름]은 개인 정리와 가족 공유 참고용으로 자산 정보를 기록합니다.
 
             1. 부동산
-            [주소]의 부동산(등기번호: [번호])은 [상속인]이 전부 상속합니다.
+            [주소 / 등기번호 / 메모]
 
             2. 예금
-            모든 은행 계좌 예금은 [상속인]이 상속합니다.
+            [은행명 / 계좌 끝 4자리 / 메모]
 
-            3. 기타 재산
-            주식, 펀드, 보험, 차량 등을 포함한 기타 재산은 [상속인]이 상속합니다.
+            3. 기타 자산
+            [주식, 펀드, 보험, 차량 등 메모]
 
-            4. 유언 집행자
-            [이름]을 이 유언의 집행자로 지정합니다.
+            4. 연락처
+            가족이 확인할 때 참고할 연락처: [이름 / 연락처]
             """)
         ),
         (
-            L10n.text("按比例分配", en: "Proportional Distribution", ja: "割合分配", ko: "비율 분배"),
+            L10n.text("资产备注模板", en: "Asset Notes", ja: "資産メモ", ko: "자산 메모"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+            本人 [姓名]，现将名下资产按类别整理如下：
             
             一、房产
-            位于 [地址] 的房产，由 [继承人 A] 继承 [50]% 份额，[继承人 B] 继承 [50]% 份额。
+            [地址/证号/备注]
             
             二、银行存款
-            名下所有银行存款，按以下比例分配：
-            - [继承人 A]：[50]%
-            - [继承人 B]：[50]%
+            [银行名称/账号后四位/备注]
             
-            三、遗嘱执行人
-            指定 [姓名] 为本遗嘱的执行人。
+            三、投资与保险
+            [平台或机构/账号后四位/备注]
             """, en: """
-            I, [Name], ID No. [Number], distribute my assets as follows:
+            I, [Name], organize my assets by category:
 
             1. Real estate
-            The property at [Address] shall be inherited 50% by [Heir A] and 50% by [Heir B].
+            [Address / certificate no. / notes]
 
             2. Bank deposits
-            All bank deposits shall be distributed as follows:
-            - [Heir A]: 50%
-            - [Heir B]: 50%
+            [Bank / last four digits / notes]
 
-            3. Executor
-            Appoint [Name] as the executor of this will.
+            3. Investments and insurance
+            [Platform or institution / last four digits / notes]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下のとおり財産を分配します。
+            私、[氏名] は、資産をカテゴリ別に整理します。
 
             1. 不動産
-            [住所] の不動産は、[相続人A] に50%、[相続人B] に50% 相続させます。
+            [住所 / 登録番号 / メモ]
 
             2. 預金
-            すべての銀行預金を以下の割合で分配します。
-            - [相続人A]：50%
-            - [相続人B]：50%
+            [銀行名 / 口座下4桁 / メモ]
 
-            3. 遺言執行者
-            [氏名] を本遺言の執行者に指定します。
+            3. 投資と保険
+            [サービス名または機関 / メモ]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래와 같이 재산을 분배합니다.
+            본인 [이름]은 자산을 종류별로 정리합니다.
 
             1. 부동산
-            [주소]의 부동산은 [상속인 A]에게 50%, [상속인 B]에게 50% 상속합니다.
+            [주소 / 등기번호 / 메모]
 
             2. 예금
-            모든 은행 예금은 아래와 같이 분배합니다.
-            - [상속인 A]: 50%
-            - [상속인 B]: 50%
+            [은행명 / 계좌 끝 4자리 / 메모]
 
-            3. 유언 집행자
-            [이름]을 이 유언의 집행자로 지정합니다.
+            3. 투자와 보험
+            [서비스 또는 기관 / 메모]
             """)
         )
     ] }
     
     static var heirsTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("继承人指定", en: "Heir Designation", ja: "相続人指定", ko: "상속인 지정"),
+            L10n.text("家庭成员记录", en: "Family Contacts", ja: "家族連絡先", ko: "가족 연락처"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将继承人指定如下：
+            本人 [姓名]，现记录家庭成员和重要联系人信息如下：
             
-            一、第一顺序继承人
+            一、家庭成员
             配偶：[姓名]，身份证号：[号码]
             子女：[姓名]，身份证号：[号码]
             父母：[姓名]，身份证号：[号码]
             
-            二、继承份额
-            上述继承人平均分配本人全部遗产。
+            二、联系方式
+            电话/地址/其他备注：[填写说明]
             
-            三、遗嘱执行人
-            指定 [姓名] 为本遗嘱的执行人。
+            三、沟通备注
+            [填写希望家人了解的事项]
             """, en: """
-            I, [Name], ID No. [Number], designate the following heirs:
+            I, [Name], record family members and important contacts:
 
-            1. First-order heirs
+            1. Family members
             Spouse: [Name], ID No. [Number]
             Children: [Name], ID No. [Number]
             Parents: [Name], ID No. [Number]
 
-            2. Inheritance share
-            The above heirs shall share all of my estate equally.
+            2. Contact info
+            Phone / address / notes: [Notes]
 
-            3. Executor
-            Appoint [Name] as the executor of this will.
+            3. Communication notes
+            [Notes for family]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下の相続人を指定します。
+            私、[氏名] は、家族と重要な連絡先を記録します。
 
-            1. 第1順位相続人
-            配偶者：[氏名]、身分証番号：[番号]
-            子：[氏名]、身分証番号：[番号]
-            父母：[氏名]、身分証番号：[番号]
+            1. 家族
+            配偶者：[氏名 / 連絡先]
+            子：[氏名 / 連絡先]
+            父母：[氏名 / 連絡先]
 
-            2. 相続割合
-            上記相続人で遺産を均等に分配します。
+            2. 連絡方法
+            電話 / 住所 / その他メモ：[メモ]
 
-            3. 遺言執行者
-            [氏名] を本遺言の執行者に指定します。
+            3. 家族への共有メモ
+            [家族に伝えたい内容]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래 상속인을 지정합니다.
+            본인 [이름]은 가족과 중요한 연락처를 기록합니다.
 
-            1. 1순위 상속인
-            배우자: [이름], 주민등록번호 [번호]
-            자녀: [이름], 주민등록번호 [번호]
-            부모: [이름], 주민등록번호 [번호]
+            1. 가족
+            배우자: [이름 / 연락처]
+            자녀: [이름 / 연락처]
+            부모: [이름 / 연락처]
 
-            2. 상속 비율
-            위 상속인들이 모든 유산을 균등 분배합니다.
+            2. 연락 방법
+            전화 / 주소 / 기타 메모: [메모]
 
-            3. 유언 집행자
-            [이름]을 이 유언의 집행자로 지정합니다.
+            3. 가족 공유 메모
+            [가족에게 남기고 싶은 내용]
             """)
         )
     ] }
     
     static var specialItemsTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("特殊物品分配", en: "Special Item Distribution", ja: "特別品の分配", ko: "특별 물품 분배"),
+            L10n.text("特殊物品记录", en: "Special Item Notes", ja: "特別品メモ", ko: "특별 물품 기록"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将特殊物品分配如下：
+            本人 [姓名]，现记录特殊物品信息如下：
             
             一、首饰
-            [物品描述] 由 [姓名] 继承。
+            [物品描述/存放位置/备注]
             
             二、收藏品
-            [物品描述] 由 [姓名] 继承。
+            [物品描述/存放位置/备注]
             
             三、纪念品
-            [物品描述] 由 [姓名] 继承。
+            [物品描述/存放位置/备注]
             """, en: """
-            I, [Name], ID No. [Number], distribute special items as follows:
+            I, [Name], record special item information:
 
             1. Jewelry
-            [Item description] shall be inherited by [Name].
+            [Description / storage location / notes]
 
             2. Collectibles
-            [Item description] shall be inherited by [Name].
+            [Description / storage location / notes]
 
             3. Memorabilia
-            [Item description] shall be inherited by [Name].
+            [Description / storage location / notes]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下の特別品を分配します。
+            私、[氏名] は、特別な品物を記録します。
 
             1. 宝飾品
-            [品目の説明] は [氏名] に相続させます。
+            [説明 / 保管場所 / メモ]
 
             2. コレクション
-            [品目の説明] は [氏名] に相続させます。
+            [説明 / 保管場所 / メモ]
 
             3. 記念品
-            [品目の説明] は [氏名] に相続させます。
+            [説明 / 保管場所 / メモ]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래 특별 물품을 분배합니다.
+            본인 [이름]은 특별 물품 정보를 기록합니다.
 
             1. 장신구
-            [물품 설명]은 [이름]이 상속합니다.
+            [설명 / 보관 위치 / 메모]
 
             2. 수집품
-            [물품 설명]은 [이름]이 상속합니다.
+            [설명 / 보관 위치 / 메모]
 
             3. 기념품
-            [물품 설명]은 [이름]이 상속합니다.
+            [설명 / 보관 위치 / 메모]
             """)
         )
     ] }
     
     static var funeralTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("简约葬礼", en: "Simple Funeral", ja: "簡素な葬儀", ko: "간소한 장례"),
+            L10n.text("个人偏好记录", en: "Personal Preferences", ja: "個人設定メモ", ko: "개인 선호 기록"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将后事安排如下：
+            本人 [姓名]，现记录个人偏好如下，供家庭沟通参考：
             
-            一、葬礼形式
-            希望举行简约的告别仪式，不铺张浪费。
+            一、生活偏好
+            [请填写您希望家人了解的生活习惯或偏好]
             
-            二、骨灰处理
-            骨灰 [撒海/树葬/存放]，不留墓碑。
+            二、家庭沟通
+            [请填写希望家人沟通时注意的事项]
             
-            三、其他要求
-            不举行追悼会，不通知亲友。
+            三、其他备注
+            [其他想记录的内容]
             """, en: """
-            I, [Name], ID No. [Number], arrange the following funeral wishes:
+            I, [Name], record personal preferences for family communication:
 
-            1. Ceremony
-            I prefer a simple farewell ceremony without extravagance.
+            1. Daily preferences
+            [Habits or preferences for family reference]
 
-            2. Ash handling
-            Ashes should be [scattered at sea / tree buried / stored], with no tombstone.
+            2. Family communication
+            [Notes for family communication]
 
-            3. Other wishes
-            No memorial service and no notification to friends or relatives.
+            3. Other notes
+            [Other content]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下の葬儀の希望を残します。
+            私、[氏名] は、家族共有の参考として個人設定を記録します。
 
-            1. 葬儀形式
-            簡素なお別れの儀式を希望し、華美にしないでください。
+            1. 生活上の好み
+            [家族に知ってほしい習慣や好み]
 
-            2. 遺灰の扱い
-            遺灰は [海洋散骨 / 樹木葬 / 保管] とし、墓石は設けません。
+            2. 家族とのコミュニケーション
+            [家族とのやり取りで大切にしたいこと]
 
-            3. その他
-            追悼式は行わず、親族や友人への連絡も不要です。
+            3. その他メモ
+            [その他の内容]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래와 같은 장례 희망을 남깁니다.
+            본인 [이름]은 가족 공유 참고용으로 개인 선호를 기록합니다.
 
-            1. 장례 방식
-            화려하지 않은 간소한 고별식을 원합니다.
+            1. 생활 선호
+            [가족이 알아두면 좋은 습관이나 선호]
 
-            2. 유골 처리
-            유골은 [바다에 뿌림 / 수목장 / 보관]하며 묘비는 두지 않습니다.
+            2. 가족 소통
+            [가족과 소통할 때 참고할 내용]
 
-            3. 기타 요청
-            추모식은 진행하지 않으며 친지에게 알리지 않습니다.
+            3. 기타 메모
+            [기타 내용]
             """)
         ),
         (
-            L10n.text("传统葬礼", en: "Traditional Funeral", ja: "伝統的な葬儀", ko: "전통 장례"),
+            L10n.text("家庭沟通备注", en: "Family Notes", ja: "家族共有メモ", ko: "가족 공유 메모"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将后事安排如下：
+            本人 [姓名]，现记录希望家人了解的事项：
             
-            一、葬礼形式
-            希望举行传统的告别仪式，地点在 [殡仪馆名称]。
+            一、重要联系人
+            [姓名/联系方式/关系]
             
-            二、骨灰处理
-            骨灰安葬于 [墓园名称]。
+            二、家庭事项
+            [需要家人了解或协助的事项]
             
-            三、丧葬费用
-            丧葬费用预计 [金额] 元。
+            三、其他备注
+            [其他说明]
             """, en: """
-            I, [Name], ID No. [Number], arrange the following funeral wishes:
+            I, [Name], record notes for family:
 
-            1. Ceremony
-            I prefer a traditional farewell ceremony at [Funeral Home Name].
+            1. Important contacts
+            [Name / contact / relationship]
 
-            2. Ash handling
-            Ashes should be interred at [Cemetery Name].
+            2. Family matters
+            [Matters family should know or help with]
 
-            3. Funeral expenses
-            Estimated funeral cost: [Amount].
+            3. Other notes
+            [Other notes]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、以下の葬儀の希望を残します。
+            私、[氏名] は、家族に共有したい内容を記録します。
 
-            1. 葬儀形式
-            [斎場名] にて伝統的なお別れの儀式を希望します。
+            1. 重要な連絡先
+            [氏名 / 連絡先 / 関係]
 
-            2. 遺灰の扱い
-            遺灰は [墓園名] に埋葬してください。
+            2. 家族の事項
+            [家族に知ってほしい、または協力してほしい内容]
 
-            3. 葬儀費用
-            葬儀費用の見積もりは [金額] 元です。
+            3. その他メモ
+            [その他]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래와 같은 장례 희망을 남깁니다.
+            본인 [이름]은 가족에게 공유하고 싶은 내용을 기록합니다.
 
-            1. 장례 방식
-            [장례식장명]에서 전통적인 고별식을 원합니다.
+            1. 중요한 연락처
+            [이름 / 연락처 / 관계]
 
-            2. 유골 처리
-            유골은 [묘지명]에 안장해 주세요.
+            2. 가족 관련 사항
+            [가족이 알아야 하거나 도와주면 좋은 내용]
 
-            3. 장례 비용
-            예상 장례 비용은 [금액] 위안입니다.
+            3. 기타 메모
+            [기타]
             """)
         )
     ] }
     
     static var otherInstructionsTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("其他嘱托", en: "Other Instructions", ja: "その他の遺言", ko: "기타 유언"),
+            L10n.text("其他事项", en: "Other Notes", ja: "その他メモ", ko: "기타 메모"),
             L10n.text("""
-            本人 [姓名]，身份证号 [号码]，现将其他嘱托如下：
+            本人 [姓名]，现记录其他事项如下：
             
-            [请在此处填写您的嘱托内容]
+            [请在此处填写您想记录的内容]
             """, en: """
-            I, [Name], ID No. [Number], leave the following instructions:
+            I, [Name], record the following notes:
 
-            [Please fill in your instructions here]
+            [Please fill in your notes here]
             """, ja: """
-            私、[氏名]、身分証番号 [番号] は、その他の遺言を以下のとおり残します。
+            私、[氏名] は、その他の内容を記録します。
 
-            [ここにご希望を入力してください]
+            [ここに内容を入力してください]
             """, ko: """
-            본인 [이름], 주민등록번호 [번호]는 아래와 같은 기타 유언을 남깁니다.
+            본인 [이름]은 기타 내용을 기록합니다.
 
             [여기에 내용을 입력하세요]
             """)
@@ -361,7 +353,7 @@ private struct CachedTemplates {
     ] }
 }
 
-// MARK: - 编辑遗嘱模块弹窗
+// MARK: - 编辑重要事项弹窗
 struct EditWillModuleModal: View {
     @ObservedObject var dataManager: DataManager
     @Environment(\.dismiss) var dismiss
@@ -456,15 +448,15 @@ struct EditWillModuleModal: View {
     private func localizedModuleTitle(_ type: WillModule.WillType) -> String {
         switch type {
         case .property:
-            return L10n.text("财产分配", en: "Asset Distribution", ja: "財産分配", ko: "재산 분배")
+            return L10n.text("资产记录", en: "Asset Notes", ja: "資産メモ", ko: "자산 기록")
         case .heirs:
-            return L10n.text("继承人指定", en: "Heir Designation", ja: "相続人指定", ko: "상속인 지정")
+            return L10n.text("家庭成员", en: "Family Contacts", ja: "家族連絡先", ko: "가족 연락처")
         case .specialItems:
             return L10n.text("特殊物品", en: "Special Items", ja: "特別品", ko: "특별 물품")
         case .funeral:
-            return L10n.text("丧葬意愿", en: "Funeral Wishes", ja: "葬儀の希望", ko: "장례 희망")
+            return L10n.text("个人偏好", en: "Personal Preferences", ja: "個人設定", ko: "개인 선호")
         case .otherInstructions:
-            return L10n.text("其他嘱托", en: "Other Instructions", ja: "その他の遺言", ko: "기타 유언")
+            return L10n.text("其他事项", en: "Other Notes", ja: "その他メモ", ko: "기타 메모")
         }
     }
 }
@@ -478,57 +470,53 @@ struct TemplateModal: View {
     
     let templates: [(title: String, content: String)] = [
         (
-            title: "标准财产分配",
+            title: "资产记录模板",
             content: """
-            本人 [姓名]，身份证号 [号码]，现将名下财产做如下分配：
+            本人 [姓名]，现将名下资产信息整理如下：
             
             一、房产
-            位于 [地址] 的房产（房产证号：[号码]），由 [继承人姓名] 继承，占 100% 份额。
+            [地址/证号/备注]
             
             二、银行存款
-            名下所有银行账户存款，由 [继承人姓名] 继承。
+            [银行名称/账号后四位/备注]
             
-            三、其他财产
-            包括但不限于股票、基金、保险、车辆等，均由 [继承人姓名] 继承。
+            三、其他资产
+            [股票、基金、保险、车辆等备注]
             
-            四、遗嘱执行人
-            指定 [姓名] 为本遗嘱的执行人。
-            
-            立遗嘱人：[签名]
+            记录人：[签名]
             日期：[年] 年 [月] 月 [日] 日
             """
         ),
         (
-            title: "简单遗嘱",
+            title: "家庭沟通备注",
             content: """
-            本人 [姓名]，身份证号 [号码]，神志清醒，具有完全民事行为能力。
+            本人 [姓名]，现记录希望家人了解的事项：
             
-            现将本人名下全部财产（包括但不限于房产、存款、股票、基金、保险等）留给 [继承人姓名]（身份证号：[号码]）个人所有，不属于其夫妻共同财产。
+            一、重要联系人
+            [姓名/联系方式/关系]
             
-            本遗嘱为本人真实意思表示，如有其他遗嘱与本遗嘱冲突，以本遗嘱为准。
+            二、家庭事项
+            [需要家人了解或协助的事项]
             
-            立遗嘱人：[签名]
+            记录人：[签名]
             日期：[年] 年 [月] 月 [日] 日
             """
         ),
         (
-            title: "丧葬意愿",
+            title: "个人偏好",
             content: """
-            关于本人的丧葬事宜，希望家人遵循以下意愿：
+            本人 [姓名]，现记录个人偏好如下，供家庭沟通参考：
             
-            一、丧事从简
-            不举行大型追悼会，仅邀请至亲好友参加告别仪式。
+            一、生活偏好
+            [请填写您希望家人了解的生活习惯或偏好]
             
-            二、火化
-            遗体火化后，骨灰 [撒入大海/安葬于 XX 墓园/其他]。
+            二、家庭沟通
+            [请填写希望家人沟通时注意的事项]
             
-            三、费用
-            丧葬费用从本人名下存款中支出。
-            
-            四、其他
+            三、其他
             [其他具体要求]
             
-            立遗嘱人：[签名]
+            记录人：[签名]
             日期：[年] 年 [月] 月 [日] 日
             """
         )

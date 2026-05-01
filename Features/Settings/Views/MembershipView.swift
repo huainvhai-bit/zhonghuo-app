@@ -200,7 +200,7 @@ struct MembershipView: View {
                 
                 FeatureTableRow(
                     icon: "mic.fill",
-                    title: L10n.text("语音/视频胶囊", en: "Audio / Video Capsules", ja: "音声 / 動画カプセル", ko: "음성 / 비디오 캡슐"),
+                    title: L10n.text("语音/视频留言", en: "Audio / Video Messages", ja: "音声 / 動画メッセージ", ko: "음성 / 비디오 메시지"),
                     free: L10n.text("2个/各2分钟", en: "2 / 2 min each", ja: "2個 / 各2分", ko: "2개 / 각 2분"),
                     premium: L10n.text("10个/各5分钟", en: "10 / 5 min each", ja: "10個 / 各5分", ko: "10개 / 각 5분"),
                     isLast: false

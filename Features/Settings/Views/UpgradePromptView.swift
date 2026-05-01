@@ -101,7 +101,7 @@ struct CapsuleLimitPromptView: View {
     var body: some View {
         UpgradePromptView(
             feature: L10n.string(.tabCapsule),
-            statusText: "当前时光胶囊数量已达上限",
+            statusText: "当前时光留言数量已达上限",
             currentLimit: "\(currentCount)/\(maxCount)",
             targetLimit: "20个",
             onUpgrade: onUpgrade,
@@ -118,8 +118,8 @@ struct MediaCapsuleLimitPromptView: View {
     
     var body: some View {
         UpgradePromptView(
-            feature: "语音/视频胶囊",
-            statusText: "当前媒体胶囊数量已达上限",
+            feature: "语音/视频留言",
+            statusText: "当前媒体留言数量已达上限",
             currentLimit: "\(currentCount)/2",
             targetLimit: "10个（各5分钟）",
             onUpgrade: onUpgrade,

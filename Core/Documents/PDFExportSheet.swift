@@ -13,7 +13,7 @@ struct PDFExportSheet: View {
     @Binding var isPresented: Bool
     let modules: [WillModule]
     let assets: [Asset]
-    let capsules: [TimeCapsule]  // 时光胶囊（用于导出下载地址）
+    let capsules: [TimeCapsule]  // 手动发送的留言（用于导出下载地址）
     let onSuccess: () -> Void
     
     @State private var isExporting = false
@@ -37,11 +37,11 @@ struct PDFExportSheet: View {
                 
                 // 标题
                 VStack(spacing: 8) {
-                    Text("导出嘱托文档")
+                    Text("导出重要事项")
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("生成 PDF 文件，可打印或分享给律师")
+                    Text("生成 PDF 文件，仅用于个人整理和家庭沟通参考")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -56,9 +56,9 @@ struct PDFExportSheet: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        ContentRow(icon: "doc.text.fill", text: "已完成的遗嘱模块", count: modules.filter { $0.isCompleted }.count)
+                        ContentRow(icon: "doc.text.fill", text: "已完成的重要事项", count: modules.filter { $0.isCompleted }.count)
                         ContentRow(icon: "yensign.circle.fill", text: "资产记录", count: assets.count)
-                        ContentRow(icon: "capsule.fill", text: "媒体胶囊地址", count: capsules.count)
+                        ContentRow(icon: "capsule.fill", text: "手动发送的留言地址", count: capsules.count)
                     }
                     .padding(16)
                     .background(Color(hex: "F2F2F7"))
@@ -117,7 +117,7 @@ struct PDFExportSheet: View {
                 isPresented: $exportSuccess,
                 document: exportedFileURL.map { PDFDocument(url: $0) } ?? PDFDocument(),
                 contentType: .pdf,
-                defaultFilename: "终活 - 嘱托文档_\(formatDate(Date())).pdf"
+                defaultFilename: "安心记_重要事项_\(formatDate(Date())).pdf"
             ) { result in
                 isExporting = false
                 switch result {
@@ -145,7 +145,7 @@ struct PDFExportSheet: View {
         
         // 保存到临时文件
         let tempDir = FileManager.default.temporaryDirectory
-        let filename = "终活_嘱托文档_\(Date().chineseFileNameString()).pdf"
+        let filename = "安心记_重要事项_\(Date().chineseFileNameString()).pdf"
         let fileURL = tempDir.appendingPathComponent(filename)
         
         do {

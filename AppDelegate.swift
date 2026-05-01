@@ -3,7 +3,7 @@
 //  终活
 //
 //  APNs 消息推送管理器
-//  功能：推送倒计时提醒、胶囊开启提醒、遗嘱提醒
+//  功能：本机签到提醒、留言提醒、重要事项提醒
 //
 
 import Foundation
@@ -62,7 +62,7 @@ class PushNotificationManager: ObservableObject {
             if let error = error {
                 Logger.shared.e("PushNotificationManager: 添加通知失败：\(error.localizedDescription)")
             } else {
-                Logger.shared.i("PushNotificationManager: 倒计时通知已添加")
+                Logger.shared.i("PushNotificationManager: 签到提醒通知已添加")
             }
         }
     }
@@ -78,8 +78,8 @@ class PushNotificationManager: ObservableObject {
         guard timeUntilOpen > 300 else { return } // 5 分钟内不提醒
         
         let content = UNMutableNotificationContent()
-        content.title = "⏳ 时间胶囊即将开启"
-        content.body = "「\(capsule.title)」将在 \(formatTimeRemaining(timeUntilOpen)) 后开启"
+        content.title = "留言提醒"
+        content.body = "「\(capsule.title)」将在 \(formatTimeRemaining(timeUntilOpen)) 后可查看"
         content.sound = .default
         content.categoryIdentifier = "capsule_open"
         
@@ -93,11 +93,11 @@ class PushNotificationManager: ObservableObject {
         }
     }
     
-    /// 创建遗嘱提醒
+    /// 创建重要事项提醒
     func scheduleWillReminderNotification(will: WillModule) {
         let content = UNMutableNotificationContent()
-        content.title = "📄 遗嘱提醒"
-        content.body = "您有未完成的遗嘱「\(will.type)」，请尽快补充"
+        content.title = "重要事项提醒"
+        content.body = "您有未完成的事项「\(will.type)」，可继续补充"
         content.sound = .default
         content.categoryIdentifier = "will_reminder"
         
@@ -107,7 +107,7 @@ class PushNotificationManager: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                Logger.shared.e("PushNotificationManager: 遗嘱通知失败：\(error.localizedDescription)")
+                Logger.shared.e("PushNotificationManager: 重要事项通知失败：\(error.localizedDescription)")
             }
         }
     }
