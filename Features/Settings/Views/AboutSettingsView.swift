@@ -15,6 +15,7 @@ struct AboutSettingsView: View {
     @State private var showingStatusAlert = false
     @State private var statusAlertMessage = ""
     @State private var checkingUpdate = false
+    @State private var presentedLegalDocument: LegalDocumentType?
     @ObservedObject private var dataManager = DataManager.shared
 
     private var appVersion: String {
@@ -76,7 +77,9 @@ struct AboutSettingsView: View {
                             }
                         }
                     }
-                    Link(destination: OfficialDocumentLinks.privacy) {
+                    Button {
+                        presentedLegalDocument = .privacy
+                    } label: {
                         HStack {
                             Text(L10n.string(.privacyPolicy))
                                 .foregroundColor(.primary)
@@ -85,7 +88,10 @@ struct AboutSettingsView: View {
                                 .foregroundColor(.gray.opacity(0.5))
                         }
                     }
-                    Link(destination: OfficialDocumentLinks.terms) {
+                    .buttonStyle(.plain)
+                    Button {
+                        presentedLegalDocument = .terms
+                    } label: {
                         HStack {
                             Text(L10n.string(.termsOfService))
                                 .foregroundColor(.primary)
@@ -94,6 +100,7 @@ struct AboutSettingsView: View {
                                 .foregroundColor(.gray.opacity(0.5))
                         }
                     }
+                    .buttonStyle(.plain)
 
                     if let mailURL = dataManager.systemConfig.customerServiceMailURL {
                         let emailText = dataManager.systemConfig.trimmedCustomerServiceEmail
@@ -140,6 +147,9 @@ struct AboutSettingsView: View {
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .sheet(item: $presentedLegalDocument) { document in
+            EmbeddedLegalDocumentView(type: document)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {

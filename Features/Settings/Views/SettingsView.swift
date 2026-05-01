@@ -62,6 +62,7 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showingEditProfile = false
     @State private var showingMembershipView = false  // 👑 会员页面
+    @State private var presentedLegalDocument: LegalDocumentType?
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
@@ -94,6 +95,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingMembershipView) {
                 MembershipView()
+            }
+            .sheet(item: $presentedLegalDocument) { document in
+                EmbeddedLegalDocumentView(type: document)
             }
             .alert(L10n.string(.locationPermission), isPresented: $viewModel.showingLocationAlert) {
                 Button(L10n.string(.later), role: .cancel) {}
@@ -1065,8 +1069,28 @@ extension SettingsView {
                     if let url = URL(string: "https://zhonghuo.zhonghuo.xyz") {
                         Link(L10n.string(.officialSite), destination: url)
                     }
-                    Link(L10n.string(.privacyPolicy), destination: OfficialDocumentLinks.privacy)
-                    Link(L10n.string(.termsOfService), destination: OfficialDocumentLinks.terms)
+                    Button {
+                        presentedLegalDocument = .privacy
+                    } label: {
+                        HStack {
+                            Text(L10n.string(.privacyPolicy))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    Button {
+                        presentedLegalDocument = .terms
+                    } label: {
+                        HStack {
+                            Text(L10n.string(.termsOfService))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                     
                     // ⚖️ 法律声明
                     NavigationLink(destination: LegalDisclosureView()) {

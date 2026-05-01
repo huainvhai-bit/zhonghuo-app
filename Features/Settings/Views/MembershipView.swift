@@ -17,6 +17,7 @@ struct MembershipView: View {
     @State private var purchaseMessage = ""
     @State private var isPurchasing = false
     @State private var isRestoring = false
+    @State private var presentedLegalDocument: LegalDocumentType?
     
     var body: some View {
         NavigationView {
@@ -69,6 +70,9 @@ struct MembershipView: View {
             }
         }
         .stackNavigationStyle()
+        .sheet(item: $presentedLegalDocument) { document in
+            EmbeddedLegalDocumentView(type: document)
+        }
         .alert(L10n.string(.prompt), isPresented: $showingPurchaseAlert) {
             Button(L10n.string(.confirm)) {}
         } message: {
@@ -486,13 +490,24 @@ struct MembershipView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 16) {
-                Link(L10n.string(.privacyPolicy), destination: OfficialDocumentLinks.privacy)
-                    .font(.system(size: 12))
+                Button {
+                    presentedLegalDocument = .privacy
+                } label: {
+                    Text(L10n.string(.privacyPolicy))
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.plain)
+
                 Text("|")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                Link(L10n.string(.termsOfService), destination: OfficialDocumentLinks.terms)
-                    .font(.system(size: 12))
+                Button {
+                    presentedLegalDocument = .terms
+                } label: {
+                    Text(L10n.string(.termsOfService))
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
