@@ -1,4 +1,4 @@
-name: 终活
+name: 安心记
 options:
   bundleIdPrefix: com.zhonghuo
   deploymentTarget:
@@ -7,7 +7,7 @@ options:
   groupSortPosition: top
   fileNaming: oghub
   generateEmptyDirectories: true
-  postGenCommand: cd .. && rm -rf DerivedData/终活-*
+  postGenCommand: cd .. && rm -rf DerivedData/安心记-*
 settings:
   base:
     PRODUCT_NAME: 安心记

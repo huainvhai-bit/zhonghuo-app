@@ -37,7 +37,7 @@ struct SettingsDetailView: View {
                     }
                 }
                 
-                // 👨‍👩‍👧 家人守护模式
+                // 👨‍👩‍👧 家人共享设置
                 Section(header: Text(L10n.string(.familyGuard))) {
                 Toggle(isOn: $isFamilyMode) {
                     SettingsRow(icon: "person.2.fill", iconColor: .green, title: L10n.string(.familyGuard), subtitle: L10n.string(.autoCheckIn))
@@ -50,9 +50,9 @@ struct SettingsDetailView: View {
                         CountdownTimerManager.shared.start { }
                     }
                     NotificationCenter.default.post(name: NSNotification.Name("FamilyModeChanged"), object: nil)
-                    // 重新排程本人签到提醒：开启家人守护后会清空，关闭后会按当前签到记录重建
-                    LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "家人守护模式切换")
-                    // 同步到后端：让关联家人能在家人 tab 看到"家人守护中"，不再收到我的超时推送
+                    // 重新排程本人签到提醒：开启共享后会清空，关闭后会按当前签到记录重建
+                    LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "家人共享设置切换")
+                    // 同步到后端：让关联家人能在家人 tab 看到共享状态
                     Task {
                         await DataManager.shared.setFamilyMode(enabled: newValue)
                     }
@@ -229,7 +229,7 @@ struct SettingsDetailView: View {
         Task {
             do {
                 if let result = await dataManager.batchSyncCapsules() {
-                    restoreMessage = "成功从云端恢复 \(result.total) 个胶囊"
+                    restoreMessage = "成功从云端恢复 \(result.total) 条留言"
                 } else {
                     restoreMessage = "云端恢复失败，请检查网络连接"
                 }
