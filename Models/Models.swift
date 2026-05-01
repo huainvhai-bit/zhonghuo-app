@@ -942,7 +942,7 @@ struct SystemConfig: Codable {
     var customerServiceEmail: String = ""
 
     /// App 首页横幅公告（`getConfig.homeAnnouncementText`）；空串时 UI 使用默认欢迎语
-    var homeAnnouncementText: String = "欢迎使用安心记，重要时光安心记录。"
+    var homeAnnouncementText: String = "欢迎使用终活，重要时光安心记录。"
 }
 
 extension SystemConfig {

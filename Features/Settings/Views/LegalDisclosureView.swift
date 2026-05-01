@@ -1,6 +1,6 @@
 //
 //  LegalDisclosureView.swift
-//  安心记
+//  终活
 //
 //  重要事项说明
 //
@@ -27,7 +27,7 @@ struct LegalDisclosureView: View {
                     infoSection(
                         title: L10n.text("功能定位", en: "Purpose", ja: "機能の位置づけ", ko: "기능 목적"),
                         content: L10n.text("""
-                        安心记用于帮助用户记录个人重要事项、资产线索和家庭留言。
+                        终活用于帮助用户记录个人重要事项、资产线索和家庭留言。
 
                         App 不会根据未签到、未操作、定位状态或其他条件自动发送任何内容，也不会自动报警、自动通知家人或判断用户是否失联。
                         """, en: """

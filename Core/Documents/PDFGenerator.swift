@@ -28,7 +28,7 @@ class PDFGenerator {
             ctx.beginPage()
             
             // 标题
-            let title = "安心记 - 重要事项记录"
+            let title = "终活 - 重要事项记录"
             let titleAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 24),
                 .foregroundColor: UIColor.black
@@ -296,7 +296,7 @@ class PDFGenerator {
             .foregroundColor: UIColor.lightGray
         ]
         
-        let footerText = "本文件由安心记 App 生成 • 仅供个人整理参考"
+        let footerText = "本文件由终活 App 生成 • 仅供个人整理参考"
         let footerSize = footerText.size(withAttributes: footerAttributes)
         footerText.draw(at: CGPoint(x: (pdfPageWidth - footerSize.width) / 2, y: pdfFooterY))
     }

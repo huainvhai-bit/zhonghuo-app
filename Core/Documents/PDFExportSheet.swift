@@ -117,7 +117,7 @@ struct PDFExportSheet: View {
                 isPresented: $exportSuccess,
                 document: exportedFileURL.map { PDFDocument(url: $0) } ?? PDFDocument(),
                 contentType: .pdf,
-                defaultFilename: "安心记_重要事项_\(formatDate(Date())).pdf"
+                defaultFilename: "终活_重要事项_\(formatDate(Date())).pdf"
             ) { result in
                 isExporting = false
                 switch result {
@@ -145,7 +145,7 @@ struct PDFExportSheet: View {
         
         // 保存到临时文件
         let tempDir = FileManager.default.temporaryDirectory
-        let filename = "安心记_重要事项_\(Date().chineseFileNameString()).pdf"
+        let filename = "终活_重要事项_\(Date().chineseFileNameString()).pdf"
         let fileURL = tempDir.appendingPathComponent(filename)
         
         do {

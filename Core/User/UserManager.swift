@@ -212,7 +212,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         
         guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
             print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
-            print("💡 请在 设置 → 隐私 → 定位服务 中允许安心记 App 使用定位")
+            print("💡 请在 设置 → 隐私 → 定位服务 中允许终活 App 使用定位")
             return
         }
         

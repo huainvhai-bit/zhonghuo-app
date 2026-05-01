@@ -401,7 +401,7 @@ enum L10n {
 
     private static let translations: [String: [String: String]] = [
         "chinese": [
-            "appName": "安心记",
+            "appName": "终活",
             "appTagline": "记录重要时光，和家人安心共享",
             "loginTitle": "登录账号",
             "loginSubtitle": "账号或手机号 + 密码/验证码 登录",
@@ -491,7 +491,7 @@ enum L10n {
             "onboardingFamilyGuard": "家人共享",
             "onboardingFamilyGuardDesc": "双方确认绑定后，可互相查看最近一次签到时间，用于日常关心与陪伴。",
             "onboardingCompanion": "温暖陪伴",
-            "onboardingCompanionDesc": "安心记帮助您记录重要时光和家庭事项，让关心更清楚、更有温度。",
+            "onboardingCompanionDesc": "终活帮助您记录重要时光和家庭事项，让关心更清楚、更有温度。",
             "nextPage": "下一页",
             "skip": "跳过",
             "startUsing": "开始使用",
@@ -552,7 +552,7 @@ enum L10n {
             "bindNow": "立即绑定",
             "bindSuccess": "绑定成功",
             "bindFailed": "绑定失败",
-            "homeWithYou": "安心记与您相伴",
+            "homeWithYou": "终活与您相伴",
             "familyProtected": "您已开启家人共享",
             "familyCheckStatus": "查看家人的最近签到记录",
             "autoCheckIn": "打开 App 即可自动签到",
@@ -571,7 +571,7 @@ enum L10n {
             "leaveBlankAuto": "留空表示自动从后端获取，深度绑定当前服务器地址",
             "testSuccess": "成功",
             "testFailed": "失败",
-            "appCopyright": "© 2026 安心记 App. All rights reserved.",
+            "appCopyright": "© 2026 终活 App. All rights reserved.",
             "maleGender": "男",
             "femaleGender": "女",
             "monitorNormalTitle": "监测正常",

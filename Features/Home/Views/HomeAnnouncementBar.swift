@@ -12,7 +12,7 @@ import SwiftUI
 struct HomeAnnouncementBar: View {
     let text: String
 
-    private static let defaultText = "欢迎使用安心记，重要时光安心记录。"
+    private static let defaultText = "欢迎使用终活，重要时光安心记录。"
 
     /// 两段文字之间的间隔（与循环周期 segment 对齐）
     private let segmentGap: CGFloat = 40
