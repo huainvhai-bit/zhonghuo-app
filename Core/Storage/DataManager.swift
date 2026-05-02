@@ -7,7 +7,7 @@
 //
 //  核心职责：
 //  - API 配置管理（动态获取服务器地址）
-//  - 用户数据管理（胶囊、遗嘱、资产等）
+//  - 用户数据管理（留言、重要事项、资产等）
 //  - 系统配置管理
 //  - 数据持久化（本地 JSON 文件）
 //  - 前后端数据同步
@@ -49,18 +49,18 @@ class DataManager: ObservableObject {
     // MARK: - 用户数据
     @Published var currentUser: User?
     @Published var capsules: [TimeCapsule] = []
-    @Published var receivedCapsules: [ReceivedCapsule] = []  // ✅ 我收到的胶囊
-    @Published var deletedCapsules: [TimeCapsule] = []  // 🔥 跟踪已删除的胶囊（用于同步删除到服务器）
+    @Published var receivedCapsules: [ReceivedCapsule] = []  // ✅ 我收到的留言
+    @Published var deletedCapsules: [TimeCapsule] = []  // 🔥 跟踪已删除的留言（用于同步删除到服务器）
     @Published var willModules: [WillModule] = []
-    @Published var deletedWillModules: [WillModule] = []  // 🔥 跟踪已删除的遗嘱（用于同步删除到服务器）
+    @Published var deletedWillModules: [WillModule] = []  // 🔥 跟踪已删除的重要事项（用于同步删除到服务器）
     @Published var assets: [Asset] = []
     @Published var deletedAssets: [Asset] = []  // 🔥 跟踪已删除的资产（用于同步删除到服务器）
-    @Published var familyMembers: [FamilyInfo] = []  // ✅ 家人成员
+    @Published var familyMembers: [FamilyInfo] = []  // ✅ 添加成员
     @Published var checklistItems: [ChecklistItem] = []
     @Published var settings: UserSettings
     @Published var systemConfig: SystemConfig = SystemConfig()  // 系统配置
     
-    // MARK: - 胶囊媒体后台上传队列
+    // MARK: - 留言媒体后台上传队列
     private var pendingMediaUploadTasks: [String: Task<Void, Never>] = [:]
     
     // MARK: - API 配置管理
@@ -382,8 +382,6 @@ class DataManager: ObservableObject {
         // 🔥 加载已删除的 items（用于同步删除到服务器）
         loadDeletedItemsFromFile()
         
-        // 🔄 启动时静默补传本地已有但尚未上传到云端的媒体
-        resumePendingCapsuleMediaUploads()
     }
 
     /// 将旧版位于 Documents 根目录的 JSON / TimeCapsules 迁入当前用户沙箱（仅当用户目录尚无对应文件时）
@@ -427,7 +425,7 @@ class DataManager: ObservableObject {
         }
     }
 
-    /// 登录成功或切换到已登录会话时：按用户 ID 重新加载磁盘上的胶囊 / 遗嘱 / 资产（与上个账号内存隔离）
+    /// 登录成功或切换到已登录会话时：按用户 ID 重新加载磁盘上的留言 / 重要事项 / 资产（与上个账号内存隔离）
     func reloadPersistedCollections(forUserId userId: String) {
         guard !userId.isEmpty else { return }
         if activePersistenceUserId == userId {
@@ -497,20 +495,20 @@ class DataManager: ObservableObject {
         guard let path = urlForActiveUserJSON("capsules.json") else {
             return []
         }
-        print("📂 尝试加载胶囊文件：\(path.path)")
+        print("📂 尝试加载留言文件：\(path.path)")
         
         guard fileManager.fileExists(atPath: path.path) else {
-            print("⚠️ 胶囊文件不存在")
+            print("⚠️ 留言文件不存在")
             return []
         }
         
         do {
             let data = try Data(contentsOf: path)
             let capsules = try JSONDecoder().decode([TimeCapsule].self, from: data)
-            print("✅ 胶囊文件加载成功：\(capsules.count) 个")
+            print("✅ 留言文件加载成功：\(capsules.count) 个")
             return capsules
         } catch {
-            print("❌ 胶囊文件加载失败：\(error)")
+            print("❌ 留言文件加载失败：\(error)")
             return []
         }
     }
@@ -535,7 +533,7 @@ class DataManager: ObservableObject {
         }
     }
     
-    /// 获取默认遗嘱模板
+    /// 获取默认重要事项模板
     func getDefaultWillModules() -> [WillModule] {
         return WillModule.WillType.allCases.map { willType in
             WillModule(
@@ -549,12 +547,12 @@ class DataManager: ObservableObject {
         }
     }
     
-    /// 初始化默认遗嘱模板（如果为空）
+    /// 初始化默认重要事项模板（如果为空）
     func initializeDefaultWillModules() {
         if willModules.isEmpty {
             willModules = getDefaultWillModules()
             saveWillModulesToFile()
-            print("✅ 已初始化默认遗嘱模板")
+            print("✅ 已初始化默认重要事项模板")
         }
     }
     
@@ -610,33 +608,33 @@ class DataManager: ObservableObject {
         do {
             let data = try encoder.encode(capsules)
             try data.write(to: path)
-            print("✅ 胶囊已保存到文件：\(path.path), 数量：\(capsules.count)")
+            print("✅ 留言已保存到文件：\(path.path), 数量：\(capsules.count)")
         } catch {
-            print("❌ 胶囊保存失败：\(error), 路径：\(path.path)")
+            print("❌ 留言保存失败：\(error), 路径：\(path.path)")
         }
     }
     
     // MARK: - 已删除数据持久化（用于崩溃后恢复删除同步）
     
-    /// 保存已删除的胶囊
+    /// 保存已删除的留言
     func saveDeletedCapsulesToFile() {
         guard let path = urlForActiveUserJSON("deleted_capsules.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(deletedCapsules) {
             try? data.write(to: path)
-            print("✅ 已删除胶囊已保存：\(deletedCapsules.count) 个")
+            print("✅ 已删除留言已保存：\(deletedCapsules.count) 个")
         }
     }
-    
-    /// 保存已删除的遗嘱
+
+    /// 保存已删除的重要事项
     func saveDeletedWillModulesToFile() {
         guard let path = urlForActiveUserJSON("deleted_wills.json") else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(deletedWillModules) {
             try? data.write(to: path)
-            print("✅ 已删除遗嘱已保存：\(deletedWillModules.count) 个")
+            print("✅ 已删除重要事项已保存：\(deletedWillModules.count) 个")
         }
     }
     
@@ -657,14 +655,14 @@ class DataManager: ObservableObject {
            let data = try? Data(contentsOf: path),
            let loaded: [TimeCapsule] = try? JSONDecoder().decode([TimeCapsule].self, from: data) {
             deletedCapsules = loaded
-            print("✅ 已删除胶囊加载成功：\(deletedCapsules.count) 个待同步")
+            print("✅ 已删除留言加载成功：\(deletedCapsules.count) 个待同步")
         }
         
         if let path = urlForActiveUserJSON("deleted_wills.json"),
            let data = try? Data(contentsOf: path),
            let loaded: [WillModule] = try? JSONDecoder().decode([WillModule].self, from: data) {
             deletedWillModules = loaded
-            print("✅ 已删除遗嘱加载成功：\(deletedWillModules.count) 个待同步")
+            print("✅ 已删除重要事项加载成功：\(deletedWillModules.count) 个待同步")
         }
         
         if let path = urlForActiveUserJSON("deleted_assets.json"),
@@ -674,22 +672,16 @@ class DataManager: ObservableObject {
             print("✅ 已删除资产加载成功：\(deletedAssets.count) 个待同步")
         }
         
-        // 🔥 如果有待删除的数据，启动同步
-        if !deletedCapsules.isEmpty || !deletedWillModules.isEmpty || !deletedAssets.isEmpty {
-            print("🚀 检测到待同步的已删除数据，开始同步...")
-            Task {
-                await syncAllDeletedItems()
-            }
-        }
+        // 删除项仅保留在本地，避免加载时自动上传
     }
     
     /// 同步所有已删除的数据到服务器
     func syncAllDeletedItems() async {
-        // 先同步删除的胶囊
+        // 先同步删除的留言
         if !deletedCapsules.isEmpty {
             await syncDeletedCapsules()
         }
-        // 再同步删除的遗嘱
+        // 再同步删除的重要事项
         if !deletedWillModules.isEmpty {
             await syncDeletedWillModules()
         }
@@ -869,10 +861,7 @@ class DataManager: ObservableObject {
         // 发送数据变更通知
         NotificationCenter.default.post(name: NSNotification.Name("AssetChanged"), object: nil)
         
-        // 异步同步删除到服务器
-        Task {
-            await syncDeletedAssets()
-        }
+        // 仅保留本地删除，避免自动同步
     }
     
     func deleteAssets(at offsets: IndexSet) {
@@ -891,10 +880,7 @@ class DataManager: ObservableObject {
         // 发送数据变更通知
         NotificationCenter.default.post(name: NSNotification.Name("AssetChanged"), object: nil)
         
-        // 异步同步删除到服务器
-        Task {
-            await syncDeletedAssets()
-        }
+        // 仅保留本地删除，避免自动同步
     }
     
     /// 同步已删除的资产到服务器
@@ -980,24 +966,17 @@ class DataManager: ObservableObject {
             willModules.append(module)
         }
         saveWillModulesToFile()
-        print("📜 遗嘱模块已保存到本地，准备同步到服务器...")
+        print("📜 重要事项模块已保存到本地")
         print("📊 当前 willModules.count: \(willModules.count)")
         print("📊 当前模块内容：\(module.title) - 完成：\(module.isCompleted)")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
         UserManager.shared.updateWillModulesCount(willModules.count)
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知（刷新本地列表）
         NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
         
-        // 异步同步到服务器
-        Task {
-            if let result = await batchSyncWills() {
-                print("✅ 遗嘱同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
-            } else {
-                print("⚠️ 遗嘱同步失败（可能无网络或未登录）")
-            }
-        }
+        // 仅保留本地更新，避免编辑时自动同步到服务器
     }
     
     func deleteWillModule(_ module: WillModule) {
@@ -1012,25 +991,22 @@ class DataManager: ObservableObject {
         // 从当前列表移除
         willModules.removeAll { $0.id == module.id }
         saveWillModulesToFile()
-        print("📜 遗嘱模块已标记删除，准备同步到服务器...")
+        print("📜 重要事项模块已标记删除")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示）
         UserManager.shared.updateWillModulesCount(willModules.count)
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知（刷新本地列表）
         NotificationCenter.default.post(name: NSNotification.Name("WillChanged"), object: nil)
         
-        // 异步同步删除到服务器
-        Task {
-            await syncDeletedWillModules()
-        }
+        // 仅保留本地删除，避免自动同步
     }
     
-    /// 同步已删除的遗嘱到服务器
+    /// 同步已删除的重要事项到服务器
     private func syncDeletedWillModules() async {
         guard !deletedWillModules.isEmpty else { return }
         
-        print("📜 同步已删除遗嘱到服务器：共 \(deletedWillModules.count) 个")
+        print("📜 同步已删除重要事项到服务器：共 \(deletedWillModules.count) 个")
         
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1052,11 +1028,11 @@ class DataManager: ObservableObject {
             if let batchData = result["data"] as? [String: Any],
                let syncResult = batchData["batchSyncWills"] as? [String: Any],
                let deleted = syncResult["deleted"] as? Int {
-                print("✅ 已删除遗嘱同步成功：\(deleted) 个")
+                print("✅ 已删除重要事项同步成功：\(deleted) 个")
                 deletedWillModules.removeAll()
             }
         } catch {
-            print("❌ 已删除遗嘱同步失败：\(error)")
+            print("❌ 已删除重要事项同步失败：\(error)")
         }
     }
     
@@ -1072,7 +1048,7 @@ class DataManager: ObservableObject {
         return Double(completed) / Double(assets.count)
     }
     
-    // MARK: - 时光胶囊管理
+    // MARK: - 留言管理
     func getFilteredCapsules(type: TimeCapsule.CapsuleType? = nil) -> [TimeCapsule] {
         if let type = type {
             return capsules.filter { $0.type == type }
@@ -1085,7 +1061,7 @@ class DataManager: ObservableObject {
         var deletedCapsule = capsule
         deletedCapsule.deletedAt = Date()
         
-        // 将胶囊添加到已删除列表（用于同步删除到服务器）
+        // 将留言添加到已删除列表（用于同步删除到服务器）
         deletedCapsules.append(deletedCapsule)
         saveDeletedCapsulesToFile()  // 🔥 持久化已删除列表
         
@@ -1096,20 +1072,15 @@ class DataManager: ObservableObject {
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示新数量）
         UserManager.shared.updateCapsulesCount(capsules.count)
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知（保留本地刷新）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
-        
-        // 异步同步删除到服务器（传递 deletedAt 标记）
-        Task {
-            await syncDeletedCapsules()
-        }
     }
     
-    /// 同步已删除的胶囊到服务器
+    /// 同步已删除的留言到服务器
     private func syncDeletedCapsules() async {
         guard !deletedCapsules.isEmpty else { return }
         
-        print("📦 同步已删除胶囊到服务器：共 \(deletedCapsules.count) 个")
+        print("📦 同步已删除留言到服务器：共 \(deletedCapsules.count) 个")
         
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -1134,16 +1105,16 @@ class DataManager: ObservableObject {
             if let batchData = result["data"] as? [String: Any],
                let syncResult = batchData["batchSyncCapsules"] as? [String: Any],
                let deleted = syncResult["deleted"] as? Int {
-                print("✅ 已删除胶囊同步成功：\(deleted) 个")
+                print("✅ 已删除留言同步成功：\(deleted) 个")
                 // 清空已删除列表（同步成功）
                 deletedCapsules.removeAll()
             }
         } catch {
-            print("❌ 已删除胶囊同步失败：\(error)")
+            print("❌ 已删除留言同步失败：\(error)")
         }
     }
     
-    // MARK: - 胶囊分享
+    // MARK: - 留言发送
     
     /// GraphQL mutation 返回值里 success/count 常为 NSNumber「0/1」，不能只用 `as? Bool`
     private static func coerceGraphQLSuccess(_ value: Any?) -> Bool {
@@ -1163,8 +1134,10 @@ class DataManager: ObservableObject {
         }
     }
     
-    /// 分享胶囊给家人
+    /// 发送留言给添加用户
     func shareCapsule(capsuleId: String, receiverIds: [String]) async throws -> [String: Any] {
+        try await syncCapsuleForSharing(capsuleId: capsuleId)
+
         let mutation = """
         mutation($capsuleId: String!, $receiverIds: [String!]!) {
             shareCapsule(capsuleId: $capsuleId, receiverIds: $receiverIds) {
@@ -1189,10 +1162,10 @@ class DataManager: ObservableObject {
             
             guard success && shareCount > 0 else {
                 let fallback = L10n.text(
-                    "未能将胶囊分享给所选家人，请确认对方已是已接受的家人绑定",
-                    en: "Could not share with the selected family. Make sure they have accepted the family link.",
-                    ja: "選択した家族に共有できませんでした。家族連携が承認済みかご確認ください。",
-                    ko: "선택한 가족에게 공유할 수 없습니다. 가족 연결이 수락되었는지 확인하세요."
+                    "未能将留言发送给所选添加用户，请确认对方已是已接受的添加绑定",
+                    en: "Could not send to the selected added users. Make sure they have accepted the add binding.",
+                    ja: "選択した追加ユーザーに送信できませんでした。追加関係が承認済みかご確認ください。",
+                    ko: "선택한 추가 사용자에게 전송할 수 없습니다. 추가 연결이 수락되었는지 확인하세요."
                 )
                 let text = (backendMessage?.isEmpty == false) ? backendMessage! : fallback
                 throw NSError(domain: "ShareCapsule", code: shareCount, userInfo: [NSLocalizedDescriptionKey: text])
@@ -1211,8 +1184,36 @@ class DataManager: ObservableObject {
         }
         throw APIError.networkError
     }
+
+    /// 仅在用户主动点击发送时，同步单条留言到服务器
+    private func syncCapsuleForSharing(capsuleId: String) async throws {
+        guard let index = capsules.firstIndex(where: { $0.id == capsuleId }) else {
+            throw NSError(domain: "Capsule not found", code: -1, userInfo: [NSLocalizedDescriptionKey: "留言不存在"])
+        }
+
+        var capsule = capsules[index]
+
+        if (capsule.type == .audio || capsule.type == .voice || capsule.type == .video),
+           capsule.mediaServerURL.isEmpty,
+           !capsule.mediaURL.isEmpty {
+            let localURL = resolveLocalMediaURL(from: capsule.mediaURL)
+            if let uploadedURL = await uploadMediaToServer(localURL, type: capsule.type) {
+                capsules[index].mediaServerURL = uploadedURL
+                capsules[index].cloudBackupStatus = .backedUp
+                capsules[index].cloudBackupAt = Date()
+                capsule = capsules[index]
+                saveCapsulesToFile()
+            }
+        }
+
+        if let result = await batchSyncCapsules([capsule]) {
+            print("✅ 主动发送前留言同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+        } else {
+            print("⚠️ 主动发送前留言同步失败")
+        }
+    }
     
-    /// 加载我收到的胶囊
+    /// 加载我收到的留言
     func loadReceivedCapsules() async {
         let query = """
         query {
@@ -1246,69 +1247,69 @@ class DataManager: ObservableObject {
                 await MainActor.run {
                     self.receivedCapsules = parsed
                 }
-                print("✅ 收到胶囊加载成功：\(self.receivedCapsules.count) 个")
+                print("✅ 收到留言加载成功：\(self.receivedCapsules.count) 个")
             }
         } catch {
-            print("❌ 收到胶囊加载失败：\(error)")
+            print("❌ 收到留言加载失败：\(error)")
         }
     }
     
-    func addCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = true) {
-        // ✅ 防止重复添加：如果已存在相同 ID 的胶囊，则跳过
+    func addCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = false) {
+        // ✅ 防止重复添加：如果已存在相同 ID 的留言，则跳过
         if capsules.contains(where: { $0.id == capsule.id }) {
-            print("⚠️ 胶囊 \(capsule.id) 已存在，跳过添加")
+            print("⚠️ 留言 \(capsule.id) 已存在，跳过添加")
             return
         }
         print("📦 addCapsule: 添加前数量=\(capsules.count)")
         capsules.append(capsule)
         print("📦 addCapsule: 添加后数量=\(capsules.count)")
         saveCapsulesToFile()
-        print("📦 胶囊已添加到本地，准备同步到服务器...")
+        print("📦 留言已添加到本地")
         
         // 🔥 更新 UserManager 的统计信息（让 SettingsView 立即显示新数量）
         UserManager.shared.updateCapsulesCount(capsules.count)
         
-        // 发送数据变更通知（触发实时同步）
+        // 发送数据变更通知（刷新本地列表）
         NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
         
         // 异步同步到服务器
         if syncImmediately {
             Task(priority: .background) {
                 if let result = await batchSyncCapsules() {
-                    print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                    print("✅ 留言同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                 } else {
-                    print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+                    print("⚠️ 留言同步失败（可能无网络或未登录）")
                 }
             }
         }
     }
     
-    func updateCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = true) {
+    func updateCapsule(_ capsule: TimeCapsule, syncImmediately: Bool = false) {
         if let index = capsules.firstIndex(where: { $0.id == capsule.id }) {
             capsules[index] = capsule
             saveCapsulesToFile()
-            print("📦 胶囊已更新到本地，准备同步到服务器...")
+            print("📦 留言已更新到本地")
             
-            // 发送数据变更通知（触发实时同步）
+            // 发送数据变更通知（刷新本地列表）
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
             
             // 异步同步到服务器
             if syncImmediately {
                 Task(priority: .background) {
                     if let result = await batchSyncCapsules() {
-                        print("✅ 胶囊同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                        print("✅ 留言同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
                     } else {
-                        print("⚠️ 胶囊同步失败（可能无网络或未登录）")
+                        print("⚠️ 留言同步失败（可能无网络或未登录）")
                     }
                 }
             }
         }
     }
 
-    /// 让单个胶囊的媒体在后台静默补传
+    /// 让单条留言的媒体在后台静默补传
     func queueCapsuleMediaUpload(capsuleID: String, fileURL: URL, type: TimeCapsule.CapsuleType) {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            print("⚠️ 胶囊媒体文件不存在，跳过补传：\(fileURL.path)")
+            print("⚠️ 留言媒体文件不存在，跳过补传：\(fileURL.path)")
             return
         }
         
@@ -1330,7 +1331,7 @@ class DataManager: ObservableObject {
         }
     }
 
-    /// 启动时补传所有待上传的胶囊媒体
+    /// 启动时补传所有待上传的留言媒体
     func resumePendingCapsuleMediaUploads() {
         guard !capsules.isEmpty else { return }
         
@@ -1357,9 +1358,9 @@ class DataManager: ObservableObject {
         
         Task(priority: .background) {
             if let result = await batchSyncCapsules() {
-                print("✅ 胶囊补传后同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
+                print("✅ 留言补传后同步成功：总计 \(result.total) 个，创建 \(result.created) 个，更新 \(result.updated) 个")
             } else {
-                print("⚠️ 胶囊补传后同步失败（可能无网络或未登录）")
+                print("⚠️ 留言补传后同步失败（可能无网络或未登录）")
             }
         }
     }
@@ -1462,9 +1463,9 @@ class DataManager: ObservableObject {
         return false
     }
 
-    /// 同步"家人守护"开关到服务端
-    /// 开启后：1) 自己不再签到；2) 关联家人在家人 tab 中看到我的卡片显示"家人守护中"；
-    /// 3) 关联家人不会再收到我"家人超时未签到"的本地推送
+    /// 同步"关闭签到"开关到服务端
+    /// 开启后：1) 自己不再签到；2) 添加用户在添加 tab 中看到我的卡片显示状态；
+    /// 3) 添加用户不会再收到我超时未签到的本地推送
     @discardableResult
     func setFamilyMode(enabled: Bool) async -> Bool {
         guard !DataManager.apiURL.isEmpty else { return false }
@@ -1482,11 +1483,11 @@ class DataManager: ObservableObject {
             if let data = result["data"] as? [String: Any],
                let modeData = data["setFamilyMode"] as? [String: Any],
                let success = modeData["success"] as? Bool, success {
-                print("✅ 家人守护模式同步成功：\(enabled)")
+                print("✅ 关闭签到模式同步成功：\(enabled)")
                 return true
             }
         } catch {
-            print("❌ 家人守护模式同步失败：\(error)")
+            print("❌ 关闭签到模式同步失败：\(error)")
         }
         return false
     }
@@ -1497,7 +1498,7 @@ class DataManager: ObservableObject {
     /// 服务端校验通过后会在事务内删除该账号在所有业务表中的数据，并最终删除 users 行。
     ///
     /// 调用方在拿到 `success == true` 后，应当立即在本地执行 `UserManager.shared.logout()`
-    /// 并清掉本地的胶囊/遗嘱/资产等持久化数据，避免下一个账号在同一台设备上看到残留数据。
+    /// 并清掉本地的留言/重要事项/资产等持久化数据，避免下一个账号在同一台设备上看到残留数据。
     @discardableResult
     func deleteAccount(securityQuestion: String, securityAnswer: String) async throws -> (success: Bool, message: String) {
         guard !DataManager.apiURL.isEmpty else {
@@ -1537,24 +1538,26 @@ class DataManager: ObservableObject {
         return (true, message)
     }
 
-    /// 批量同步胶囊到服务器
+    /// 批量同步留言到服务器
     /// ✅ 修复：标记为 @MainActor，确保所有 @Published 属性更新在主线程执行
     @MainActor
-    func batchSyncCapsules() async -> (total: Int, created: Int, updated: Int)? {
-        print("📦 开始同步胶囊：共 \(capsules.count) 个")
-        guard !capsules.isEmpty else { return (0, 0, 0) }
+    func batchSyncCapsules(_ capsulesToSync: [TimeCapsule]? = nil) async -> (total: Int, created: Int, updated: Int)? {
+        let targetCapsules = capsulesToSync ?? capsules
+        print("📦 开始同步留言：共 \(targetCapsules.count) 个")
+        guard !targetCapsules.isEmpty else { return (0, 0, 0) }
         
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         
         // 🔥 标记为上传中（✅ 现在在 @MainActor 中执行，安全）
+        let targetIds = Set(targetCapsules.map { $0.id })
         for i in 0..<capsules.count {
-            if capsules[i].cloudBackupStatus == .pending {
+            if targetIds.contains(capsules[i].id), capsules[i].cloudBackupStatus == .pending {
                 capsules[i].cloudBackupStatus = .uploading
             }
         }
         
-        let inputs = capsules.map { capsule in
+        let inputs = targetCapsules.map { capsule in
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             
@@ -1593,11 +1596,11 @@ class DataManager: ObservableObject {
             let total = syncResult?["total"] as? Int ?? 0
             let created = syncResult?["created"] as? Int ?? 0
             let updated = syncResult?["updated"] as? Int ?? 0
-            print("✅ 胶囊同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            print("✅ 留言同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             // 🔥 同步成功后标记为已备份（✅ 已在 @MainActor 中，无需额外 Task）
             for i in 0..<capsules.count {
-                if capsules[i].cloudBackupStatus == .uploading {
+                if targetIds.contains(capsules[i].id), capsules[i].cloudBackupStatus == .uploading {
                     capsules[i].cloudBackupStatus = .backedUp
                     capsules[i].cloudBackupAt = Date()
                 }
@@ -1605,11 +1608,11 @@ class DataManager: ObservableObject {
             
             return (total, created, updated)
         } catch {
-            print("❌ 胶囊同步失败：\(error)")
+            print("❌ 留言同步失败：\(error)")
             
             // 🔥 同步失败标记为失败（✅ 已在 @MainActor 中，无需额外 Task）
             for i in 0..<capsules.count {
-                if capsules[i].cloudBackupStatus == .uploading {
+                if targetIds.contains(capsules[i].id), capsules[i].cloudBackupStatus == .uploading {
                     capsules[i].cloudBackupStatus = .failed
                 }
             }
@@ -1619,7 +1622,12 @@ class DataManager: ObservableObject {
     }
     
     func batchSyncWills() async -> (total: Int, created: Int, updated: Int)? {
-        print("📜 开始同步遗嘱：共 \(willModules.count) 个")
+        guard AppConfig.allowsWillDataSync else {
+            print("📜 送审版：跳过重要事项同步")
+            return (0, 0, 0)
+        }
+
+        print("📜 开始同步重要事项：共 \(willModules.count) 个")
         guard !willModules.isEmpty else { return (0, 0, 0) }
         
         let formatter = ISO8601DateFormatter()
@@ -1645,11 +1653,11 @@ class DataManager: ObservableObject {
             let total = syncResult?["total"] as? Int ?? 0
             let created = syncResult?["created"] as? Int ?? 0
             let updated = syncResult?["updated"] as? Int ?? 0
-            print("✅ 遗嘱同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
+            print("✅ 重要事项同步成功：\(total) 总数, \(created) 新增, \(updated) 更新")
             
             return (total, created, updated)
         } catch {
-            print("❌ 遗嘱同步失败：\(error)")
+            print("❌ 重要事项同步失败：\(error)")
             return nil
         }
     }
@@ -1689,9 +1697,9 @@ class DataManager: ObservableObject {
         }
     }
     
-    // MARK: - 家人守护 API
+    // MARK: - 添加关系 API
     
-    /// 邀请家人
+    /// 邀请添加用户
     func inviteFamily(phone: String) async throws -> [String: Any] {
         let mutation = """
         mutation($phone: String!) {
@@ -1713,7 +1721,7 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 接受家人邀请
+    /// 接受添加邀请
     func acceptFamilyInvite(relationId: String) async throws -> [String: Any] {
         let mutation = """
         mutation($relationId: String!) {
@@ -1737,7 +1745,7 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 拒绝家人邀请
+    /// 拒绝添加邀请
     func rejectFamilyInvite(relationId: String) async throws -> [String: Any] {
         let mutation = """
         mutation($relationId: String!) {
@@ -1758,7 +1766,7 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 移除家人
+    /// 移除添加关系
     func removeFamily(relationId: String) async throws -> [String: Any] {
         let mutation = """
         mutation($relationId: String!) {
@@ -1779,7 +1787,7 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 通过邀请码绑定家人
+    /// 通过邀请码绑定添加关系
     func bindFamilyByInviteCode(inviteCode: String) async throws -> [String: Any] {
         let mutation = """
         mutation($inviteCode: String!) {
@@ -1837,7 +1845,7 @@ class DataManager: ObservableObject {
         throw APIError.networkError
     }
     
-    /// 获取家人列表
+    /// 获取添加列表
     func fetchFamilyMembers() async throws -> [[String: Any]] {
         let query = """
         query {
@@ -1880,7 +1888,7 @@ class DataManager: ObservableObject {
         return []
     }
 
-    /// 刷新并缓存家人列表到共享状态
+    /// 刷新并缓存添加列表到本地状态
     func refreshFamilyMembers() async throws -> [FamilyInfo] {
         let records = try await fetchFamilyMembers()
         let cached = records.compactMap { record -> FamilyInfo? in
@@ -1910,7 +1918,7 @@ class DataManager: ObservableObject {
         return cached
     }
 
-    /// 直接用已解析的家人列表覆盖共享缓存
+    /// 直接用已解析的添加列表覆盖本地缓存
     func updateFamilyMembersCache(_ members: [FamilyInfo]) {
         familyMembers = members
     }
@@ -2152,7 +2160,7 @@ class DataManager: ObservableObject {
         
         if let data = result["data"] as? [String: Any],
            let exportData = data["downloadUserData"] as? [String: Any] {
-            print("✅ 数据导出成功：胶囊\(exportData["capsules"] ?? []) 遗嘱\(exportData["wills"] ?? [])")
+            print("✅ 数据导出成功：留言\(exportData["capsules"] ?? []) 重要事项\(exportData["wills"] ?? [])")
             return exportData
         }
         throw APIError.networkError
@@ -2171,7 +2179,7 @@ class DataManager: ObservableObject {
         // 1. 下载服务器数据
         let serverData = try await downloadUserData(type: "all")
         
-        // 2. 解析胶囊数据（仅在服务器有数据时）
+        // 2. 解析留言数据（仅在服务器有数据时）
         if let capsulesData = serverData["capsules"] as? [[String: Any]], !capsulesData.isEmpty {
             capsules.removeAll()
             for item in capsulesData {
@@ -2181,26 +2189,26 @@ class DataManager: ObservableObject {
                     
                     // ✅ 恢复数据时：如果服务器有媒体路径（mediaServerURL），
                     // ✅ 同时存入 mediaURL，这样恢复的数据也能播放
-                    // ✅ （本地录制上传的胶囊，mediaURL 保留本地路径；恢复的胶囊用服务器路径播放）
+                    // ✅ （本地录制上传的留言，mediaURL 保留本地路径；恢复的留言用服务器路径播放）
                     if !capsule.mediaServerURL.isEmpty && capsule.mediaURL.isEmpty {
                         capsule.mediaURL = capsule.mediaServerURL
-                        print("📱 恢复胶囊媒体地址：\(capsule.title) -> \(capsule.mediaURL)")
+                        print("📱 恢复留言媒体地址：\(capsule.title) -> \(capsule.mediaURL)")
                     }
                     
                     capsules.append(capsule)
                 } catch {
-                    print("⚠️ 解析胶囊失败：\(error)")
+                    print("⚠️ 解析留言失败：\(error)")
                 }
             }
-            print("✅ 从云端恢复胶囊：\(capsules.count) 个（本地备份：\(localBackup.count) 个）")
+            print("✅ 从云端恢复留言：\(capsules.count) 个（本地备份：\(localBackup.count) 个）")
             saveCapsulesToFile()
         } else {
-            print("⚠️ 服务器无胶囊数据，保留本地数据：\(localBackup.count) 个")
+            print("⚠️ 服务器无留言数据，保留本地数据：\(localBackup.count) 个")
             // 服务器没有数据，保留本地数据
             capsules = localBackup
         }
         
-        // 3. 解析遗嘱数据
+        // 3. 解析重要事项数据
         if let willsData = serverData["wills"] as? [[String: Any]] {
             willModules.removeAll()
             for item in willsData {
@@ -2209,10 +2217,10 @@ class DataManager: ObservableObject {
                     let will = try JSONDecoder().decode(WillModule.self, from: jsonData)
                     willModules.append(will)
                 } catch {
-                    print("⚠️ 解析遗嘱失败：\(error)")
+                    print("⚠️ 解析重要事项失败：\(error)")
                 }
             }
-            print("✅ 恢复遗嘱：\(willModules.count) 个")
+            print("✅ 恢复重要事项：\(willModules.count) 个")
         }
         
         print("☁️ ====== 云端恢复完成 ======")
@@ -2363,7 +2371,7 @@ class DataManager: ObservableObject {
     /// 上传媒体文件到服务器（断点续传）
     /// - Parameters:
     ///   - fileURL: 本地文件 URL
-    ///   - type: 胶囊类型
+    ///   - type: 留言类型
     /// - Returns: 服务器上的文件 URL
     func uploadMediaChunked(_ fileURL: URL, type _: TimeCapsule.CapsuleType) async -> String? {
         print("📦 ====== uploadMediaChunked 开始（断点续传）======")
@@ -2479,7 +2487,7 @@ class DataManager: ObservableObject {
                 let rawEmail = configData["customerServiceEmail"] as? String ?? ""
                 let customerServiceEmail = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines)
 
-                let defaultAnnouncement = "欢迎使用终活，重要时光安心记录。"
+                let defaultAnnouncement = "欢迎使用终活，记录重要时光。"
                 let rawAnnounce = (configData["homeAnnouncementText"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 let homeAnnouncementText = rawAnnounce.isEmpty ? defaultAnnouncement : rawAnnounce
@@ -2558,8 +2566,8 @@ class DataManager: ObservableObject {
                 print("   - 强制更新版本：\(forceUpdateVersion)")
                 print("   - 更新地址：\(updateUrl)")
                 print("   - 会员价格：月卡\(priceMonthly)/年卡\(priceYearly)")
-                print("   - 免费版限制：\(freeMaxCapsules)胶囊（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
-                print("   - 免费版遗嘱：\(freeMaxWillModules)/家庭\(freeMaxFamily)/云备份\(freeCloudBackup ? "是" : "否")")
+                print("   - 免费版限制：\(freeMaxCapsules)条留言（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
+                print("   - 免费版重要事项：\(freeMaxWillModules)/添加\(freeMaxFamily)/云备份\(freeCloudBackup ? "是" : "否")")
                 print("   - 客服电话：\(customerServicePhone)")
             } else {
                 print("⚠️ 系统配置加载失败：数据格式错误")
@@ -2578,23 +2586,10 @@ class DataManager: ObservableObject {
     @MainActor
     func downloadAllData() async {
         Logger.shared.i("开始从云端下载数据...")
-        
-        // ✅ 已实现完整的数据下载逻辑
-        // 1. 同步胶囊数据
-        if let capsulesResult = await batchSyncCapsules() {
-            Logger.shared.i("胶囊同步完成：\(capsulesResult.total) 个，\(capsulesResult.created) 新增，\(capsulesResult.updated) 更新")
-        } else {
-            Logger.shared.w("胶囊同步失败")
-        }
 
-        // 2. 同步遗嘱数据
-        if let willsResult = await batchSyncWills() {
-            Logger.shared.i("遗嘱同步完成：\(willsResult.total) 个，\(willsResult.created) 新增，\(willsResult.updated) 更新")
-        } else {
-            Logger.shared.w("遗嘱同步失败")
-        }
+        // 仅同步云端可见数据，不在启动时自动上传留言或重要事项
 
-        // 3. 同步资产数据
+        // 资产数据保持原有处理方式
         if let assetsResult = await batchSyncAssets() {
             Logger.shared.i("资产同步完成：\(assetsResult.total) 个，\(assetsResult.created) 新增，\(assetsResult.updated) 更新")
         } else {
@@ -2626,7 +2621,7 @@ class DataManager: ObservableObject {
         if !FileManager.default.fileExists(atPath: capsulesFolder.path) {
             do {
                 try FileManager.default.createDirectory(at: capsulesFolder, withIntermediateDirectories: true, attributes: nil)
-                print("📁 创建胶囊媒体目录：\(capsulesFolder.path)")
+                print("📁 创建留言媒体目录：\(capsulesFolder.path)")
             } catch {
                 print("❌ 创建文件夹失败：\(error)")
                 return nil
@@ -2672,10 +2667,10 @@ class DataManager: ObservableObject {
         // 重置用户状态
         // currentUser = nil
         
-        // 重置胶囊数据
+        // 重置留言数据
         // capsules = []
         
-        // 重置遗嘱模块
+        // 重置重要事项模块
         // willModules = []
         
         // 重置资产

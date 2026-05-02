@@ -36,7 +36,7 @@ class SyncConflictResolver {
         case custom              // 自定义逻辑
     }
     
-    /// 解决时光胶囊冲突
+    /// 解决留言冲突
     func resolveCapsuleConflict(
         local: TimeCapsule,
         remote: TimeCapsule,
@@ -65,7 +65,7 @@ class SyncConflictResolver {
         }
     }
     
-    /// 解决遗嘱模块冲突
+    /// 解决重要事项模块冲突
     func resolveWillConflict(
         local: WillModule,
         remote: WillModule,
@@ -120,7 +120,7 @@ class SyncConflictResolver {
     
     // MARK: - 批量同步冲突解决
     
-    /// 批量解决胶囊冲突
+    /// 批量解决留言冲突
     func resolveBatchCapsuleConflicts(localCapsules: [TimeCapsule], remoteCapsules: [RemoteCapsule]) -> [TimeCapsule] {
         var result = localCapsules
         
@@ -134,7 +134,7 @@ class SyncConflictResolver {
                     result[localIndex] = resolveCapsuleConflict(local: local, remote: remote.localModel)
                 }
             } else {
-                // 新增的远程胶囊
+                // 新增的远程留言
                 result.append(remote.localModel)
             }
         }
@@ -142,7 +142,7 @@ class SyncConflictResolver {
         return result
     }
     
-    /// 批量解决遗嘱冲突
+    /// 批量解决重要事项冲突
     func resolveBatchWillConflicts(localWills: [WillModule], remoteWills: [RemoteWill]) -> [WillModule] {
         var result = localWills
         
@@ -156,7 +156,7 @@ class SyncConflictResolver {
                     result[localIndex] = resolveWillConflict(local: local, remote: remote.localModel)
                 }
             } else {
-                // 新增的远程遗嘱
+                // 新增的远程重要事项
                 result.append(remote.localModel)
             }
         }
@@ -167,13 +167,13 @@ class SyncConflictResolver {
 
 // MARK: - 辅助数据模型
 
-/// 远程胶囊（用于冲突解决）
+/// 远程留言（用于冲突解决）
 struct RemoteCapsule: Identifiable {
     let id: String
     let localModel: TimeCapsule
 }
 
-/// 远程遗嘱（用于冲突解决）
+/// 远程重要事项（用于冲突解决）
 struct RemoteWill: Identifiable {
     let id: String
     let localModel: WillModule

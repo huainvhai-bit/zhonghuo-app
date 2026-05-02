@@ -2,7 +2,7 @@
 //  FamilyGuardView.swift
 //  终活
 //
-//  家人守护主页 - 优化版
+//  添加用户主页 - 优化版
 //
 
 import SwiftUI
@@ -27,7 +27,7 @@ struct FamilyGuardView: View {
     @State private var showingMembershipView = false
     @State private var inviteCode = ""
     @State private var qrImage: UIImage?
-    @State private var showingFamilyArchive = false  // 📚 家族档案
+    @State private var showingFamilyArchive = false  // 📚 添加档案
     @State private var showingInviteConfirmation = false
     @State private var pendingInvitePreview: FamilyInvitePreview?
     @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
@@ -55,7 +55,7 @@ struct FamilyGuardView: View {
                     // 空状态
                     emptyState
                 } else {
-                    // 家人列表
+                    // 添加列表
                     familyListView
                 }
             }
@@ -65,9 +65,9 @@ struct FamilyGuardView: View {
             .onAppear {
                 setupNavigationBar()
 
-                print("🔵 家人守护页面 onAppear")
+                print("🔵 添加用户页面 onAppear")
 
-                // 进入家人 tab 时拉一次最新的家人列表（含每个家人最新的"安全倒计时"），
+                // 进入添加 tab 时拉一次最新的添加列表（含每个添加用户最新的记录时间），
                 // 不再用后台 30s 轮询，避免 tab 频繁刷新；
                 // 首次进入显示 loading，再次进入静默刷新避免闪烁
                 let isFirstAppear = !didInitialLoad
@@ -95,7 +95,7 @@ struct FamilyGuardView: View {
                     }
                 }
                 
-                // 📚 家族档案按钮
+                // 📚 添加档案按钮
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingFamilyArchive = true }) {
                         Image(systemName: "folder.fill")
@@ -103,7 +103,7 @@ struct FamilyGuardView: View {
                 }
             }
             .confirmationDialog(
-                L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
+                L10n.text("确认添加", en: "Confirm add", ja: "追加を確認", ko: "추가 확인"),
                 isPresented: $showingInviteConfirmation,
                 titleVisibility: .visible
             ) {
@@ -116,10 +116,10 @@ struct FamilyGuardView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
-                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交添加申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit an add request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). It becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ追加申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 추가 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -228,7 +228,7 @@ struct FamilyGuardView: View {
             VStack(spacing: 20) {
                 // 操作卡片区
                 VStack(spacing: 16) {
-                    // 1. 扫码关联家人
+                    // 1. 扫码添加
                     actionCard(
                         icon: "qrcode.viewfinder",
                         iconColor: Color(hex: "6366F1"),
@@ -242,7 +242,7 @@ struct FamilyGuardView: View {
                         }
                     }
                     
-                    // 2. 分享我的二维码
+                    // 2. 显示我的二维码
                     actionCard(
                         icon: "qrcode",
                         iconColor: Color(hex: "AF52DE"),
@@ -276,7 +276,7 @@ struct FamilyGuardView: View {
         }
     }
     
-    // MARK: - 空家人卡片
+    // MARK: - 空添加卡片
     private var emptyFamilyCard: some View {
         VStack(spacing: 16) {
             HStack {
@@ -314,13 +314,13 @@ struct FamilyGuardView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 家人列表视图
+    // MARK: - 添加列表视图
     private var familyListView: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // 操作卡片区
                 VStack(spacing: 16) {
-                    // 1. 扫码关联家人
+                    // 1. 扫码添加
                     actionCard(
                         icon: "qrcode.viewfinder",
                         iconColor: Color(hex: "6366F1"),
@@ -334,7 +334,7 @@ struct FamilyGuardView: View {
                         }
                     }
                     
-                    // 2. 分享我的二维码
+                    // 2. 显示我的二维码
                     actionCard(
                         icon: "qrcode",
                         iconColor: Color(hex: "AF52DE"),
@@ -361,7 +361,7 @@ struct FamilyGuardView: View {
                     }
                 }
                 
-                // 4. 已关联家人列表
+                // 4. 已添加用户列表
                 if !approvalFamilyRequests.isEmpty {
                     pendingRequestsSection
                 }
@@ -370,7 +370,7 @@ struct FamilyGuardView: View {
                     awaitingRequestsSection
                 }
 
-                // 5. 已关联家人列表
+                // 5. 已添加用户列表
                 familyListSection
             }
             .padding()
@@ -425,7 +425,7 @@ struct FamilyGuardView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 家人列表
+    // MARK: - 添加列表
     private var familyListSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -459,25 +459,25 @@ struct FamilyGuardView: View {
                         .foregroundColor(Color(hex: "6366F1"))
                         .padding(.leading, 4)
                 }
-                .accessibilityLabel(L10n.text("刷新家人列表",
-                                              en: "Refresh family list",
-                                              ja: "家族リストを更新",
-                                              ko: "가족 목록 새로고침"))
+                .accessibilityLabel(L10n.text("刷新添加列表",
+                                              en: "Refresh add list",
+                                              ja: "追加リストを更新",
+                                              ko: "추가 목록 새로고침"))
             }
 
             Text(L10n.text(
                 "如绑定后未显示确认请求，请点击右上角刷新；倒计时按对方账号的设置自动同步。",
-                en: "If a binding confirmation isn't shown after pairing, tap the refresh button. Countdowns sync to the other party's settings.",
-                ja: "連携後に確認リクエストが表示されない場合は更新ボタンを押してください。カウントダウンは相手側の設定に同期します。",
-                ko: "연결 후 확인 요청이 보이지 않으면 새로고침 버튼을 누르세요. 카운트다운은 상대방 설정에 따라 동기화됩니다."))
+                en: "If an add confirmation isn't shown after pairing, tap the refresh button. Countdowns sync to the other party's settings.",
+                ja: "追加後に確認リクエストが表示されない場合は更新ボタンを押してください。カウントダウンは相手側の設定に同期します。",
+                ko: "추가 후 확인 요청이 보이지 않으면 새로고침 버튼을 누르세요. 카운트다운은 상대방 설정에 따라 동기화됩니다."))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             if familyList.isEmpty {
                 Text(pendingFamilyRequests.isEmpty
-                     ? L10n.text("暂时还没有已绑定的家人", en: "No family members bound yet.", ja: "まだ家族は連携されていません。", ko: "아직 연결된 가족이 없습니다.")
-                     : L10n.text("已有家人申请在处理中，确认后会显示在这里", en: "There is a family request in progress. It will appear here after confirmation.", ja: "家族申請が進行中です。確認後にここへ表示されます。", ko: "가족 요청이 진행 중입니다. 확인 후 여기에 표시됩니다."))
+                     ? L10n.text("暂时还没有已添加的用户", en: "No added users yet.", ja: "まだ追加されたユーザーはいません。", ko: "아직 추가된 사용자가 없습니다.")
+                     : L10n.text("已有申请在处理中，确认后会显示在这里", en: "There is an add request in progress. It will appear here after confirmation.", ja: "追加申請が進行中です。確認後にここへ表示されます。", ko: "추가 요청이 진행 중입니다. 확인 후 여기에 표시됩니다."))
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .padding(.vertical, 8)
@@ -503,7 +503,7 @@ struct FamilyGuardView: View {
                     .font(.system(size: 20))
                     .foregroundColor(Color(hex: "F59E0B"))
 
-                Text(L10n.text("待我确认的家人申请", en: "Family requests waiting for my confirmation", ja: "私の確認待ちの家族申請", ko: "내 확인을 기다리는 가족 요청"))
+            Text(L10n.text("待我确认的添加申请", en: "Add requests waiting for my confirmation", ja: "私の確認待ちの追加申請", ko: "내 확인을 기다리는 추가 요청"))
                     .font(.system(size: 18, weight: .semibold))
 
                 Spacer()
@@ -565,7 +565,7 @@ struct FamilyGuardView: View {
     
     // MARK: - 方法
     
-    /// 后端 `members[].id` 为家人关系表主键；分享胶囊需传对方 **`users.id`**（与 `family_relations.related_user_id` 一致）
+    /// 后端 `members[].id` 为关系表主键；发送内容需传对方 **`users.id`**（与 `family_relations.related_user_id` 一致）
     private static func relatedUserIdFromFamilyMemberPayload(_ member: [String: Any]) -> String {
         for key in ["relatedUserId", "related_user_id"] {
             guard let raw = member[key] as? String else { continue }
@@ -575,7 +575,7 @@ struct FamilyGuardView: View {
         return ""
     }
 
-    /// 加载家人列表：`showLoading: true` 时使用全屏 Progress；必须在结束时仍走完整函数返回路径以清空 `isLoading`，切勿在未传 `showLoading:true` 时抢先写 `isLoading = true`
+    /// 加载添加列表：`showLoading: true` 时使用全屏 Progress；必须在结束时仍走完整函数返回路径以清空 `isLoading`，切勿在未传 `showLoading:true` 时抢先写 `isLoading = true`
     @MainActor
     private func loadFamilyListAsync(showLoading: Bool = false) async {
         // 仅在首屏/显式要求时显示加载占位，避免后台轮询导致 tab 反复闪烁
@@ -590,15 +590,15 @@ struct FamilyGuardView: View {
 
         let token = KeychainManager.shared.getToken() ?? ""
         guard !token.isEmpty else {
-            print("⚠️ 加载家人列表失败：Token 为空")
+            print("⚠️ 加载添加列表失败：Token 为空")
             return
         }
         guard !DataManager.apiURL.isEmpty else {
-            print("⚠️ 加载家人列表失败：API URL 为空")
+            print("⚠️ 加载添加列表失败：API URL 为空")
             return
         }
         
-        print("🔵 开始加载家人列表...")
+        print("🔵 开始加载添加列表...")
         
         do {
             // 使用 GraphQL family query
@@ -650,7 +650,7 @@ struct FamilyGuardView: View {
             """
             
             let result = try await GraphQLClient.shared.query(query)
-            print("📡 GraphQL 家人列表响应：\(result)")
+            print("📡 GraphQL 添加列表响应：\(result)")
             
             if let data = result["data"] as? [String: Any],
                let familyResult = data["family"] as? [String: Any],
@@ -663,7 +663,7 @@ struct FamilyGuardView: View {
                             let relationRowId = (member["id"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                             guard !relationRowId.isEmpty else { return nil }
                             let peerUid = Self.relatedUserIdFromFamilyMemberPayload(member)
-                            // `id` 为关系行主键；分享胶囊等 API 需要对方用户 UUID（relatedUserId）
+                            // `id` 为关系行主键；发送内容等 API 需要对方用户 UUID（relatedUserId）
                             let stableMemberId = peerUid.isEmpty ? relationRowId : peerUid
                             return FamilyMember(
                                 id: stableMemberId,
@@ -742,17 +742,17 @@ struct FamilyGuardView: View {
                         self.pendingFamilyRequests = parsedRequests
                     }
 
-                    print("✅ 家人列表加载成功：\(familyList.count) 人")
+                    print("✅ 添加列表加载成功：\(familyList.count) 人")
 
-                    // 家人列表更新后，按当前数据重排"家人超时未签到"本地推送
+                    // 添加列表更新后，按当前数据重排本地提醒
                     LifeCheckStatusManager.shared.scheduleFamilyOverdueNotifications(self.familyList)
                 }
             } else if let familyResult = (result["data"] as? [String: Any])?["family"] as? [String: Any] {
                 let message = familyResult["message"] as? String ?? L10n.string(.pleaseRetry)
-                print("❌ 家人列表加载失败：\(message)")
+                print("❌ 添加列表加载失败：\(message)")
             }
         } catch {
-            print("❌ 加载家人列表失败：\(error)")
+            print("❌ 加载添加列表失败：\(error)")
         }
     }
     
@@ -934,7 +934,7 @@ struct FamilyGuardView: View {
         return Date(timeIntervalSince1970: value > 1_000_000_000_000 ? value / 1000 : value)
     }
 
-    /// 解析对方是否处于"家人守护"模式（兼容 Bool / Int / String）
+    /// 解析对方是否处于添加提醒模式（兼容 Bool / Int / String）
     private func relatedUserIsFamilyMode(from member: [String: Any]) -> Bool {
         if let b = member["relatedUserIsFamilyMode"] as? Bool { return b }
         if let n = member["relatedUserIsFamilyMode"] as? NSNumber { return n.boolValue }
@@ -955,12 +955,12 @@ struct FamilyGuardView: View {
     }
 
     private func startFamilyPolling() {
-        // 已弃用：移除 30s 后台轮询，改为每次进入家人 tab / App 回前台时按需刷新一次。
+        // 已弃用：移除 30s 后台轮询，改为每次进入添加 tab / App 回前台时按需刷新一次。
         // 数据准确性由对方 App 在"安全倒计时重置"时主动上传保证；
-        // 单条家人卡片的倒计时滚动由 TimelineView 每秒推进，不依赖网络刷新。
+        // 单条添加卡片的倒计时滚动由 TimelineView 每秒推进，不依赖网络刷新。
     }
 
-    /// 比较两份家人列表是否一致（仅基于会影响 UI 的字段）
+    /// 比较两份添加列表是否一致（仅基于会影响 UI 的字段）
     private func sameFamilyList(_ a: [FamilyMember], _ b: [FamilyMember]) -> Bool {
         guard a.count == b.count else { return false }
         for (lhs, rhs) in zip(a, b) {
@@ -1018,7 +1018,7 @@ struct FamilyGuardView: View {
 
         do {
             let result = try await DataManager.shared.bindFamilyByInviteCode(inviteCode: inviteCode)
-            print("📡 GraphQL 绑定家人响应：\(result)")
+            print("📡 GraphQL 绑定响应：\(result)")
 
             let success = result["success"] as? Bool ?? false
             guard success else {
@@ -1047,7 +1047,7 @@ struct FamilyGuardView: View {
 
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: preview.id)
-            print("📡 家人关系确认响应：\(result)")
+            print("📡 添加关系确认响应：\(result)")
 
             let success = result["success"] as? Bool ?? false
             if success {
@@ -1067,17 +1067,17 @@ struct FamilyGuardView: View {
 
     @MainActor
     private func finalizePendingFamilyRequest(_ request: FamilyPendingRequest) async {
-        print("🔵 点击确认绑定待确认家人申请：relationId=\(request.id), inviter=\(request.inviterId), acceptedBy=\(request.acceptedById)")
+        print("🔵 点击确认待确认添加申请：relationId=\(request.id), inviter=\(request.inviterId), acceptedBy=\(request.acceptedById)")
         confirmingRequestId = request.id
         defer { confirmingRequestId = nil }
 
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: request.id)
-            print("📡 待确认家人请求确认响应：\(result)")
+            print("📡 待确认添加请求确认响应：\(result)")
 
             let success = result["success"] as? Bool ?? false
             if success {
-                print("✅ 待确认家人申请确认成功，刷新本地家人列表")
+                print("✅ 待确认添加申请确认成功，刷新本地添加列表")
                 _ = try? await DataManager.shared.refreshFamilyMembers()
                 await loadFamilyListAsync()
             } else {
@@ -1091,7 +1091,7 @@ struct FamilyGuardView: View {
     }
 }
 
-// MARK: - 分享二维码视图
+// MARK: - 二维码展示视图
 struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var inviteCode: String
@@ -1244,7 +1244,7 @@ extension FamilyGuardView {
     }
 }
 
-// MARK: - 家人卡片
+// MARK: - 添加卡片
 struct FamilyMemberCard: View {
     let member: FamilyMember
     let onDelete: () -> Void
@@ -1286,7 +1286,7 @@ struct FamilyMemberCard: View {
                         .foregroundColor(.secondary)
 
                     if member.isFamilyMode {
-                        // 对方已开启"家人守护"模式，自身不再签到——不再显示倒计时
+        // 对方已开启关闭签到模式，自身不再签到——不再显示倒计时
                         HStack(spacing: 4) {
                             Image(systemName: "person.2.fill")
                                 .font(.system(size: 12))
@@ -1423,17 +1423,17 @@ struct FamilyMemberCard: View {
                 
                 let variables: [String: Any] = ["relationId": member.relationId]
                 let result = try await GraphQLClient.shared.query(query, variables: variables)
-                print("📡 GraphQL 删除家人响应：\(result)")
+                print("📡 GraphQL 解除添加关系响应：\(result)")
                 
                 if let data = result["data"] as? [String: Any],
                    let removeFamily = data["removeFamily"] as? [String: Any] {
                     let success = removeFamily["success"] as? Bool ?? false
                     if success {
-                        print("✅ 删除家人成功")
+                        print("✅ 解除添加关系成功")
                         onDelete()
                     } else {
                         let message = removeFamily["message"] as? String ?? "删除失败"
-                        print("❌ 删除家人失败：\(message)")
+                        print("❌ 解除添加关系失败：\(message)")
                     }
                 }
             } catch {
@@ -1443,7 +1443,7 @@ struct FamilyMemberCard: View {
     }
 }
 
-// MARK: - 待确认家人卡片
+// MARK: - 待确认添加卡片
 struct FamilyPendingRequestCard: View {
     let request: FamilyPendingRequest
     let showsConfirmButton: Bool
@@ -1505,7 +1505,7 @@ struct FamilyPendingRequestCard: View {
 
             Text(L10n.text(
                 "申请会先进入待确认状态，等邀请人再次确认后才会正式建立关系。",
-                en: "The request will first stay pending. The relationship becomes official only after the inviter confirms again.",
+                        en: "The request will first stay pending. It becomes official only after the inviter confirms again.",
                 ja: "申請はまず確認待ちになります。招待者が再確認してから正式な関係になります。",
                 ko: "요청은 먼저 확인 대기 상태가 됩니다. 초대자가 다시 확인해야 정식 관계가 됩니다."
             ))
@@ -1527,7 +1527,7 @@ struct FamilyPendingRequestCard: View {
                                 .scaleEffect(0.85)
                             Text(L10n.text("确认中", en: "Confirming", ja: "確認中", ko: "확인 중"))
                         } else {
-                            Text(L10n.text("确认绑定", en: "Confirm binding", ja: "連携を確定", ko: "연결 확인"))
+                        Text(L10n.text("确认添加", en: "Confirm add", ja: "追加を確定", ko: "추가 확인"))
                         }
                     }
                     .font(.system(size: 15, weight: .semibold))
@@ -1628,7 +1628,7 @@ struct ManualInputInviteCodeView: View {
             Button(L10n.string(.confirm), role: .cancel) { }
         } message: { Text(errorMessage) }
         .confirmationDialog(
-            L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
+            L10n.text("确认添加", en: "Confirm add", ja: "追加を確認", ko: "추가 확인"),
             isPresented: $showingInviteConfirmation,
             titleVisibility: .visible
         ) {
@@ -1642,9 +1642,9 @@ struct ManualInputInviteCodeView: View {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
                         "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
-                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                        en: "You are about to submit an add request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The add becomes official only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ追加申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 추가 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }

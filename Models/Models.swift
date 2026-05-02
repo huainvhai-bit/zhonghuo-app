@@ -147,7 +147,7 @@ enum PersistedJSONDate {
     }
 }
 
-// MARK: - 时光胶囊
+// MARK: - 留言记录
 struct TimeCapsule: Identifiable, Codable {
     var id: String
     var title: String
@@ -340,7 +340,7 @@ struct TimeCapsule: Identifiable, Codable {
     }
 }
 
-// MARK: - 收到的时光胶囊
+// MARK: - 收到的留言记录
 struct ReceivedCapsule: Identifiable, Codable {
     let id: String
     let capsuleId: String
@@ -370,7 +370,7 @@ struct ReceivedCapsule: Identifiable, Codable {
         case id, capsuleId, title, type, content, mediaUrl, mediaServerUrl, openAt, isOpened, sentAt, senderId, senderName, senderPhone, createdAt
     }
 
-    /// 从 GraphQL/JSON 字典解析（兼容布尔为 0/1、NSNumber、缺失 sentAt 等，避免解码失败导致「收到的胶囊」列表恒为空）
+    /// 从 GraphQL/JSON 字典解析（兼容布尔为 0/1、NSNumber、缺失 sentAt 等，避免解码失败导致「收到的留言」列表恒为空）
     init?(dictionary dict: [String: Any]) {
         guard let id = dict["id"] as? String, !id.isEmpty,
               let capsuleId = dict["capsuleId"] as? String ?? dict["capsule_id"] as? String, !capsuleId.isEmpty
@@ -558,7 +558,7 @@ struct WillModule: Identifiable, Codable {
             case .property: return "房产、存款、投资等记录"
             case .heirs: return "家庭成员和联系人信息"
             case .specialItems: return "有纪念意义的物品"
-            case .funeral: return "个人偏好和家庭沟通参考"
+            case .funeral: return "个人偏好和信息参考"
             case .otherInstructions: return "其他想记录的事"
             }
         }
@@ -815,7 +815,7 @@ struct User: Codable, Identifiable {
     var moneyInheritor: String?
     var propertyInheritor: String?
     
-    // 遗嘱执行人
+    // 事项执行人
     var executorName: String?
     var executorContact: String?
     var digitalExecutor: String?
@@ -942,7 +942,7 @@ struct SystemConfig: Codable {
     var customerServiceEmail: String = ""
 
     /// App 首页横幅公告（`getConfig.homeAnnouncementText`）；空串时 UI 使用默认欢迎语
-    var homeAnnouncementText: String = "欢迎使用终活，重要时光安心记录。"
+    var homeAnnouncementText: String = "欢迎使用终活，记录重要时光。"
 }
 
 extension SystemConfig {

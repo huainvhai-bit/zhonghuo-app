@@ -146,27 +146,27 @@ class UserSession: ObservableObject {
     
     // MARK: - 统计信息更新
     
-    /// 更新胶囊数量
+    /// 更新留言数量
     func updateCapsulesCount(_ count: Int) {
         Task { @MainActor in
             self.currentUser?.capsulesCount = count
-            print("📊 胶囊数量已更新：\(count)")
+            print("📊 留言数量已更新：\(count)")
         }
     }
     
-    /// 更新遗嘱数量
+    /// 更新重要事项数量
     func updateWillModulesCount(_ count: Int) {
         Task { @MainActor in
             self.currentUser?.willModulesCount = count
-            print("📊 遗嘱数量已更新：\(count)")
+            print("📊 重要事项数量已更新：\(count)")
         }
     }
     
-    /// 更新家人数量
+    /// 更新添加数量
     func updateFamilyCount(_ count: Int) {
         Task { @MainActor in
             self.currentUser?.familyCount = count
-            print("📊 家人数量已更新：\(count)")
+            print("📊 添加数量已更新：\(count)")
         }
     }
     

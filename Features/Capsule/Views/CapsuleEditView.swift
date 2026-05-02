@@ -2,8 +2,8 @@
 //  Capsule/CapsuleEditView.swift
 //  终活
 //
-//  时光胶囊编辑视图
-//  职责：添加/编辑胶囊
+//  时光留言编辑视图
+//  职责：添加/编辑留言
 //
 
 import SwiftUI
@@ -189,14 +189,14 @@ struct CapsuleEditView: View {
             }
         }
         .onAppear {
-            // ✅ Bug 修复：编辑模式下加载已有胶囊数据
+            // ✅ Bug 修复：编辑模式下加载已有留言数据
             if let existingCapsule = existingCapsule {
                 title = existingCapsule.title
                 content = existingCapsule.content
                 selectedType = existingCapsule.type
                 sendDate = existingCapsule.sendDate
                 
-                // ✅ Bug 修复：加载已有胶囊的媒体文件
+                // ✅ Bug 修复：加载已有留言的媒体文件
                 if !existingCapsule.mediaURL.isEmpty {
                     var mediaPath = existingCapsule.mediaURL
                     
@@ -447,37 +447,27 @@ struct CapsuleEditView: View {
                 createdAt: existingCapsule?.createdAt ?? Date()  // ✅ 修复：编辑模式保持原创建时间
             )
             
-            print("🔵 保存胶囊：id=\(capsule.id), title=\(capsule.title), 编辑模式=\(existingCapsule != nil ? "是" : "否")")
+            print("🔵 保存留言：id=\(capsule.id), title=\(capsule.title), 编辑模式=\(existingCapsule != nil ? "是" : "否")")
             
             // ✅ Bug 修复：编辑模式更新，新增模式添加
             if existingCapsule != nil {
-                print("🔵 更新胶囊")
+                print("🔵 更新留言")
                 dataManager.updateCapsule(capsule, syncImmediately: false)
             } else {
-                print("🔵 添加胶囊")
+                print("🔵 添加留言")
                 dataManager.addCapsule(capsule, syncImmediately: false)
             }
             
-            // 📢 通知同步到服务器
+            // 📢 通知本地数据刷新
             NotificationCenter.default.post(name: NSNotification.Name("CapsuleChanged"), object: nil)
-            
-            // 📤 媒体文件在后台静默补传，不阻塞保存流程
-            if let localMediaURL, let localMediaType {
-                dataManager.queueCapsuleMediaUpload(capsuleID: capsule.id, fileURL: localMediaURL, type: localMediaType)
-            }
 
-            // 📤 胶囊元数据也在后台同步，避免卡住保存
-            Task(priority: .background) {
-                _ = await dataManager.batchSyncCapsules()
-            }
-            
             // ✅ 防止重复保存：保存完成后重置状态
             isSaving = false
             dismiss()
         }
     }
     
-    /// 根据胶囊类型返回图标名称
+    /// 根据留言类型返回图标名称
     private func iconForType(_ type: TimeCapsule.CapsuleType) -> String {
         switch type {
         case .text: return "doc.text.fill"
@@ -546,7 +536,7 @@ struct CapsuleMediaRecorderView: View {
     
     // 是否显示倒计时模式
     private var isCountdownMode: Bool {
-        // 只有媒体胶囊（语音/视频）才有时长限制
+        // 只有媒体留言（语音/视频）才有时长限制
         return selectedType != .text && maxRecordingSeconds > 0
     }
     

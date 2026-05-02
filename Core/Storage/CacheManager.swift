@@ -3,7 +3,7 @@
 //  终活
 //
 //  离线缓存管理器 (P1)
-//  功能：缓存首页状态、时光胶囊列表、遗嘱列表等常驻数据
+//  功能：缓存首页状态、留言列表、重要事项列表等常驻数据
 //  策略：App 启动自动预热 + 手动刷新 + 失效自动更新
 //
 
@@ -123,22 +123,22 @@ class CacheManager {
         return load(HomeStatus.self, for: .homeStatus)
     }
     
-    /// 保存时光胶囊列表
+    /// 保存留言列表
     func saveCapsules(_ capsules: [CapsuleInfo]) {
         save(capsules, for: .capsules)
     }
     
-    /// 读取时光胶囊列表缓存
+    /// 读取留言列表缓存
     func loadCapsules() -> [CapsuleInfo]? {
         return load([CapsuleInfo].self, for: .capsules)
     }
     
-    /// 保存遗嘱列表
+    /// 保存重要事项列表
     func saveWills(_ wills: [WillInfo]) {
         save(wills, for: .wills)
     }
     
-    /// 读取遗嘱列表缓存
+    /// 读取重要事项列表缓存
     func loadWills() -> [WillInfo]? {
         return load([WillInfo].self, for: .wills)
     }
@@ -165,7 +165,7 @@ struct HomeStatus: Codable, Identifiable {
     let lastSyncTime: Date
 }
 
-/// 时光胶囊信息（与后端同步）
+/// 留言信息（与后端同步）
 // WillInfo 和 FamilyInfo 定义已移至 Models.swift
 
 /// 资产信息

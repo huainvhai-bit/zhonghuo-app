@@ -2,7 +2,7 @@
 //  SettingsView.swift
 //  终活
 //
-//  设置页面 - 个人信息、家人守护、通知
+//  设置页面 - 个人信息、添加用户、通知
 //
 
 import SwiftUI
@@ -297,9 +297,10 @@ struct SettingsView: View {
     private var statsCard: some View {
         // ✅ 从本地 DataManager 获取数据（不依赖云端）
         let capsulesCount = DataManager.shared.capsules.count
-        let willsCount = DataManager.shared.willModules.count
-        let familyCount = DataManager.shared.familyMembers.count  // ✅ 家人
         let checkinCount = userManager.currentUser?.checkinCount ?? 0
+        let shouldShowSensitiveCounts = !AppConfig.isChinaReviewMode
+        let willsCount = shouldShowSensitiveCounts ? DataManager.shared.willModules.count : 0
+        let familyCount = shouldShowSensitiveCounts ? DataManager.shared.familyMembers.count : 0  // ✅ 添加用户
         
         VStack(spacing: 12) {
                     Text(L10n.string(.tabMe))
@@ -316,19 +317,23 @@ struct SettingsView: View {
                     label: L10n.string(.tabCapsule)
                 )
                 
-                StatItemView(
-                    icon: "doc.text.fill",
-                    color: Color(hex: "FF2D55"),
-                    count: willsCount,
-                    label: L10n.string(.tabWills)
-                )
-                
-                StatItemView(
-                    icon: "person.2.fill",
-                    color: Color(hex: "007AFF"),
-                    count: familyCount,
-                    label: L10n.string(.tabFamily)
-                )
+                if shouldShowSensitiveCounts {
+                    StatItemView(
+                        icon: "doc.text.fill",
+                        color: Color(hex: "FF2D55"),
+                        count: willsCount,
+                        label: L10n.string(.tabWills)
+                    )
+                }
+
+                if shouldShowSensitiveCounts {
+                    StatItemView(
+                        icon: "person.2.fill",
+                        color: Color(hex: "007AFF"),
+                        count: familyCount,
+                        label: L10n.string(.tabFamily)
+                    )
+                }
                 
                 StatItemView(
                     icon: "calendar.badge.checkmark",

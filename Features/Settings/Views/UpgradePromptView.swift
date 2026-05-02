@@ -91,7 +91,7 @@ struct UpgradePromptView: View {
     }
 }
 
-// MARK: - 胶囊数量限制提示
+// MARK: - 留言数量限制提示
 struct CapsuleLimitPromptView: View {
     let currentCount: Int
     let maxCount: Int
@@ -110,7 +110,7 @@ struct CapsuleLimitPromptView: View {
     }
 }
 
-// MARK: - 媒体胶囊限制提示
+// MARK: - 媒体留言限制提示
 struct MediaCapsuleLimitPromptView: View {
     let currentCount: Int
     let onUpgrade: () -> Void

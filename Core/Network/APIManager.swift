@@ -16,9 +16,9 @@ class APIManager {
     
     init() {}
     
-    // MARK: - 批量同步胶囊
+    // MARK: - 批量同步留言
     
-    /// 批量同步胶囊
+    /// 批量同步留言
     func batchSyncCapsules(_ inputs: [[String: Any]]) async throws -> [String: Any] {
         let mutation = """
         mutation($capsules: [TimeCapsuleInput!]!) {
@@ -34,9 +34,9 @@ class APIManager {
         return try await apiClient.query(mutation, variables: variables)
     }
     
-    // MARK: - 批量同步遗嘱
+    // MARK: - 批量同步重要事项
     
-    /// 批量同步遗嘱
+    /// 批量同步重要事项
     func batchSyncWills(_ inputs: [[String: Any]]) async throws -> [String: Any] {
         let mutation = """
         mutation($wills: [WillInput!]!) {
@@ -100,9 +100,9 @@ class APIManager {
         }
     }
     
-    // MARK: - 家人相关
+    // MARK: - 添加相关
     
-    /// 绑定家人
+    /// 绑定添加关系
     func bindFamilyMember(inviteCode: String) async throws -> [String: Any] {
         let mutation = """
         mutation($inviteCode: String!) {
@@ -139,7 +139,7 @@ class APIManager {
         return try await apiClient.query(mutation)
     }
     
-    /// 获取家人列表
+    /// 获取添加列表
     func getFamilyMembers() async throws -> [String: Any] {
         let query = """
         query {

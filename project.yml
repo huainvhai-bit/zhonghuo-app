@@ -70,12 +70,12 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        NSCameraUsageDescription: 终活需要使用摄像头扫描邀请码，以便双方确认后关联家人
-        NSLocationWhenInUseUsageDescription: 终活需要在您授权后记录位置信息，用于本人状态记录和共享展示
-        NSLocationAlwaysAndWhenInUseUsageDescription: 终活需要在您授权后记录位置信息，用于本人状态记录和共享展示
+        NSCameraUsageDescription: 本应用需要使用摄像头扫描邀请码，以便双方确认后添加用户
+        NSLocationWhenInUseUsageDescription: 本应用需要在您授权后记录位置信息，用于个人状态记录
+        NSLocationAlwaysAndWhenInUseUsageDescription: 本应用需要在您授权后记录位置信息，用于个人状态记录
         UIBackgroundModes:
           - location
-        NSUserNotificationUsageDescription: 终活需要发送本机通知提醒您更新签到记录
+        NSUserNotificationUsageDescription: 本应用需要发送本机通知提醒您更新签到记录
         UIUserNotificationSettings:
           UIUserNotificationType:
             - UIUserNotificationTypeAlert
@@ -85,10 +85,10 @@ targets:
         LSSupportsOpeningDocumentsInPlace: YES
         UIFileSharingEnabled: YES
         ITSAppUsesNonExemptEncryption: NO
-        NSPhotoLibraryUsageDescription: 终活需要访问相册以保存您的留言内容
-        NSMicrophoneUsageDescription: 终活需要访问麦克风以录制语音留言
-        NSMotionUsageDescription: 终活需要访问运动数据以展示本人设备状态
-        NSPhotoLibraryAddUsageDescription: 终活需要保存到相册以保存您的留言内容
+        NSPhotoLibraryUsageDescription: 本应用需要访问相册以保存您的留言内容
+        NSMicrophoneUsageDescription: 本应用需要访问麦克风以录制语音留言
+        NSMotionUsageDescription: 本应用需要访问运动数据以展示设备状态
+        NSPhotoLibraryAddUsageDescription: 本应用需要保存到相册以保存您的留言内容
         BGTaskSchedulerPermittedIdentifiers:
           - com.zhonghuo.app.refresh_notifications
         NSAppTransportSecurity:

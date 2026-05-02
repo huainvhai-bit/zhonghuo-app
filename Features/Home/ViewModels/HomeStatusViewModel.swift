@@ -25,13 +25,15 @@ final class HomeStatusViewModel: ObservableObject {
         }
         await dataManager.loadSystemConfig()
         await dataManager.loadReceivedCapsules()
-        _ = try? await dataManager.refreshFamilyMembers()
+        if AppConfig.showsFamilyFeatures {
+            _ = try? await dataManager.refreshFamilyMembers()
+        }
     }
 
     func handleAutoCheckIn() {
-        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        let isFamilyMode = !AppConfig.isChinaReviewMode && UserDefaults.standard.bool(forKey: "isFamilyMode")
         if isFamilyMode {
-            print("👨‍👩‍👧 家人模式：跳过自动签到")
+            print("👨‍👩‍👧 关闭签到模式：跳过自动签到")
             return
         }
 
@@ -81,7 +83,7 @@ final class HomeStatusViewModel: ObservableObject {
         if didSignIn {
             dataManager.lastCheckInDate = userManager.lastCheckInDate
             print("✅ 自动签到完成！倒计时已重置为 \(userManager.checkInInterval.rawValue) 小时")
-            print("📍 位置和数据已自动上传到服务器")
+            print("📍 本机状态已更新")
         } else {
             print("⏭️ 自动签到未执行：已被同轮激活去重或用户资料未就绪")
         }
@@ -123,38 +125,26 @@ final class HomeStatusViewModel: ObservableObject {
 
         print("📥 1. 从云端下载数据...")
         await dataManager.downloadAllData()
-        _ = try? await dataManager.refreshFamilyMembers()
-
-        print("📤 2. 上传本地新数据到云端...")
-        print("📍 上传位置信息...")
-        uploadLocation()
-
-        print("📦 同步胶囊数据...")
-        if let result = await dataManager.batchSyncCapsules() {
-            print("✅ 胶囊同步完成：\(result)")
+        if AppConfig.showsFamilyFeatures {
+            _ = try? await dataManager.refreshFamilyMembers()
         }
 
-        print("📝 同步遗嘱数据...")
-        if let result = await dataManager.batchSyncWills() {
-            print("✅ 遗嘱同步完成：\(result)")
-        }
-
-        print("🎉 所有数据同步完成！")
-        print("📊 本地和云端数据已保持一致")
+        print("🎉 初始数据加载完成！")
+        print("📊 已完成本地加载与按需同步")
         print("🔄 ====== 同步完成 ======")
     }
 
     private func getCheckInStatus() -> (isSafe: Bool, hoursRemaining: Double) {
-        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        let isFamilyMode = !AppConfig.isChinaReviewMode && UserDefaults.standard.bool(forKey: "isFamilyMode")
         if isFamilyMode {
-            // 👨‍👩‍👧 家人模式：显示家人的签到倒计时
+            // 👨‍👩‍👧 关闭签到模式：显示无需签到状态
             let hours = userManager.currentUser?.checkInInterval.hours ?? dataManager.settings.checkInInterval.hours
             let offlineThreshold = dataManager.systemConfig.offlineTimeoutHours
 
-            // 找到已绑定的家人成员
+            // 找到已添加的成员
             guard let familyMember = dataManager.familyMembers.first(where: { !$0.relatedUserId.isEmpty }),
                   let lastCheckIn = familyMember.relatedUserLastCheckInDate else {
-                // 没有家人数据时返回安全状态
+                // 没有添加数据时返回安全状态
                 return (true, Double(hours))
             }
 
@@ -190,12 +180,4 @@ final class HomeStatusViewModel: ObservableObject {
         }
     }
 
-    private func uploadLocation() {
-        guard UserManager.shared.currentUser != nil else {
-            print("⚠️ 位置上传失败：无用户数据")
-            return
-        }
-
-        UserManager.shared.uploadLocation()
-    }
 }

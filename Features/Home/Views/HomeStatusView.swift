@@ -21,10 +21,10 @@ struct HomeStatusView: View {
     @StateObject private var timerManager = CountdownTimerManager.shared
     @State private var navigateToWillAssets = false
     @State private var navigateToTimeCapsule = false
-    @State private var navigateToFamilyTab = false  // 跳转到家人守护 tab
-    @State private var navigateToReceivedCapsules = false  // 跳转到我收到的胶囊列表
-    @State private var navigateToCapsuleDetail = false  // 跳转胶囊详情
-    @State private var selectedReceivedCapsule: ReceivedCapsule?  // 选中的胶囊
+    @State private var navigateToFamilyTab = false  // 跳转到关闭签到 tab
+    @State private var navigateToReceivedCapsules = false  // 跳转到我收到的留言列表
+    @State private var navigateToCapsuleDetail = false  // 跳转留言详情
+    @State private var selectedReceivedCapsule: ReceivedCapsule?  // 选中的留言
     @State private var hasSentOverdueAlert = false  // 防止重复发送
     
     var body: some View {
@@ -38,7 +38,9 @@ struct HomeStatusView: View {
                         checkInCard
                         HomeAnnouncementBar(text: dataManager.systemConfig.homeAnnouncementText)
                         statusCard
-                        progressCard
+                        if !AppConfig.isChinaReviewMode {
+                            progressCard
+                        }
                         capsulePreview
                     }
                     .padding(.horizontal, 16)
@@ -111,7 +113,7 @@ struct HomeStatusView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FamilyModeChanged"))) { _ in
-                print("🔔 收到家人模式切换通知，刷新首页状态")
+                print("🔔 收到关闭签到切换通知，刷新首页状态")
                 Task { @MainActor in
                     viewModel.updateStatus(timerManager: timerManager)
                 }
@@ -126,12 +128,16 @@ struct HomeStatusView: View {
             // 隐藏的全局导航链接
             .background(
                 Group {
-                    NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) { EmptyView() }
-                        .opacity(0)
+                    if !AppConfig.isChinaReviewMode {
+                        NavigationLink(destination: WillAssetsView(), isActive: $navigateToWillAssets) { EmptyView() }
+                            .opacity(0)
+                    }
                     NavigationLink(destination: CapsuleList(dataManager: dataManager), isActive: $navigateToTimeCapsule) { EmptyView() }
                         .opacity(0)
-                    NavigationLink(destination: FamilyGuardView(), isActive: $navigateToFamilyTab) { EmptyView() }
-                        .opacity(0)
+                    if !AppConfig.isChinaReviewMode {
+                        NavigationLink(destination: FamilyGuardView(), isActive: $navigateToFamilyTab) { EmptyView() }
+                            .opacity(0)
+                    }
                     NavigationLink(destination: ReceivedCapsuleListView(), isActive: $navigateToReceivedCapsules) { EmptyView() }
                         .opacity(0)
                     NavigationLink(destination: Group {
@@ -148,8 +154,8 @@ struct HomeStatusView: View {
     
     // MARK: - 签到卡片
     private var checkInCard: some View {
-        // 👨‍👩‍👧 家人模式显示不同的 UI
-        let isFamilyMode = UserDefaults.standard.bool(forKey: "isFamilyMode")
+        // 👨‍👩‍👧 关闭签到模式显示不同的 UI
+        let isFamilyMode = !AppConfig.isChinaReviewMode && UserDefaults.standard.bool(forKey: "isFamilyMode")
         
         return VStack(spacing: 18) {
             HStack {
@@ -176,7 +182,7 @@ struct HomeStatusView: View {
             }
             
             if isFamilyMode {
-                // 👨‍👩‍👧 家人模式显示守护图标
+                // 👨‍👩‍👧 关闭签到模式显示提示图标
                 Image(systemName: "heart.circle.fill")
                     .font(.system(size: 72))
                     .foregroundColor(.white)
@@ -375,8 +381,8 @@ struct HomeStatusView: View {
                 Spacer()
                 
                 Button(action: {
-                    print("🔵 点击查看全部，切换到时光胶囊Tab")
-                    // ✅ 修复：直接切换到时光胶囊Tab（Tab index = 1）
+                    print("🔵 点击查看全部，切换到留言Tab")
+                    // ✅ 修复：直接切换到留言Tab（Tab index = 1）
                     NotificationCenter.default.post(
                         name: NSNotification.Name("SwitchToTab"),
                         object: nil,
@@ -393,10 +399,6 @@ struct HomeStatusView: View {
                 }
             }
             
-            ProgressRow(label: L10n.string(.myWills), progress: dataManager.getWillProgress(), color: Color(hex: "34C759"), action: {
-                print("🔵 点击我的嘱托进度")
-                navigateToWillAssets = true
-            })
             ProgressRow(label: L10n.string(.assetManagement), progress: dataManager.getAssetProgress(), color: Color(hex: "007AFF"), action: {
                 print("🔵 点击资产管理进度")
                 navigateToWillAssets = true
@@ -408,7 +410,7 @@ struct HomeStatusView: View {
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - 收到的胶囊预览
+    // MARK: - 收到的留言预览
     private var capsulePreview: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -423,7 +425,7 @@ struct HomeStatusView: View {
                 Spacer()
                 
                 Button(action: {
-                    print("🔵 点击全部胶囊")
+                    print("🔵 点击全部留言")
                     navigateToReceivedCapsules = true
                 }) {
                     HStack(spacing: 4) {
@@ -461,7 +463,7 @@ struct HomeStatusView: View {
             } else {
                 ForEach(dataManager.receivedCapsules.prefix(3)) { capsule in
                     ReceivedCapsulePreviewRow(capsule: capsule, onTap: {
-                        print("🔵 点击收到的胶囊：\(capsule.title)")
+                        print("🔵 点击收到的留言：\(capsule.title)")
                         selectedReceivedCapsule = capsule
                         navigateToCapsuleDetail = true
                     })
@@ -560,7 +562,7 @@ struct ProgressRow: View {
     }
 }
 
-// MARK: - 胶囊预览行
+// MARK: - 留言预览行
 struct CapsulePreviewRow: View {
     let capsule: TimeCapsule
     let onTap: () -> Void
@@ -619,7 +621,7 @@ struct CapsulePreviewRow: View {
     }
 }
 
-// MARK: - 收到的胶囊预览行
+// MARK: - 收到的留言预览行
 struct ReceivedCapsulePreviewRow: View {
     let capsule: ReceivedCapsule
     let onTap: () -> Void

@@ -41,7 +41,7 @@ struct PDFExportSheet: View {
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("生成 PDF 文件，仅用于个人整理和家庭沟通参考")
+                    Text("生成 PDF 文件，仅用于个人整理和信息参考")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }

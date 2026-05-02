@@ -11,38 +11,51 @@ struct OnboardingView: View {
     @Binding var isFirstLaunch: Bool
     @State private var currentPage = 0
     
-    let pages: [OnboardingPageItem] = [
-        OnboardingPageItem(
-            icon: "hand.thumbsup.fill",
-            title: L10n.string(.onboardingSafeCheckIn),
-            description: L10n.string(.onboardingSafeCheckInDesc),
-            color: Color(hex: "34C759")
-        ),
-        OnboardingPageItem(
-            icon: "capsule.fill",
-            title: L10n.string(.onboardingCapsule),
-            description: L10n.string(.onboardingCapsuleDesc),
-            color: Color(hex: "AF52DE")
-        ),
-        OnboardingPageItem(
-            icon: "doc.text.fill",
-            title: L10n.string(.onboardingWill),
-            description: L10n.string(.onboardingWillDesc),
-            color: Color(hex: "007AFF")
-        ),
-        OnboardingPageItem(
-            icon: "person.2.fill",
-            title: L10n.string(.onboardingFamilyGuard),
-            description: L10n.string(.onboardingFamilyGuardDesc),
-            color: Color(hex: "FF9500")
-        ),
-        OnboardingPageItem(
-            icon: "heart.fill",
-            title: L10n.string(.onboardingCompanion),
-            description: L10n.string(.onboardingCompanionDesc),
-            color: Color(hex: "FF3B30")
-        )
-    ]
+    private var pages: [OnboardingPageItem] {
+        var items: [OnboardingPageItem] = [
+            OnboardingPageItem(
+                icon: "hand.thumbsup.fill",
+                title: L10n.string(.onboardingSafeCheckIn),
+                description: L10n.string(.onboardingSafeCheckInDesc),
+                color: Color(hex: "34C759")
+            ),
+            OnboardingPageItem(
+                icon: "capsule.fill",
+                title: L10n.string(.onboardingCapsule),
+                description: L10n.string(.onboardingCapsuleDesc),
+                color: Color(hex: "AF52DE")
+            ),
+            OnboardingPageItem(
+                icon: "heart.fill",
+                title: L10n.string(.onboardingCompanion),
+                description: L10n.string(.onboardingCompanionDesc),
+                color: Color(hex: "FF3B30")
+            )
+        ]
+
+        if !AppConfig.isChinaReviewMode {
+            items.insert(
+                OnboardingPageItem(
+                    icon: "doc.text.fill",
+                    title: L10n.string(.onboardingWill),
+                    description: L10n.string(.onboardingWillDesc),
+                    color: Color(hex: "007AFF")
+                ),
+                at: 2
+            )
+            items.insert(
+                OnboardingPageItem(
+                    icon: "person.2.fill",
+                    title: L10n.string(.onboardingFamilyGuard),
+                    description: L10n.string(.onboardingFamilyGuardDesc),
+                    color: Color(hex: "FF9500")
+                ),
+                at: 3
+            )
+        }
+
+        return items
+    }
     
     var body: some View {
         ZStack {

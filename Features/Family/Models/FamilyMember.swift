@@ -2,13 +2,13 @@
 //  FamilyMember.swift
 //  终活
 //
-//  家人关系数据模型
+//  添加关系数据模型
 //
 
 import Foundation
 import CoreLocation
 
-/// 家人成员
+/// 添加成员
 struct FamilyMember: Identifiable, Codable {
     var id: String           // 成员 ID
     var relationId: String   // 关系 ID
@@ -18,9 +18,9 @@ struct FamilyMember: Identifiable, Codable {
     var relationship: String // 关系（配偶、父母等）
     var status: Status       // 关系状态
     var statusText: String   // 状态文本
-    var lastCheckInDate: Date? = nil  // 被守护端最后签到时间
-    var nextCheckInDeadline: Date? = nil  // 被守护端下次应签到的截止时间（来自 checkin_expire_at）
-    /// 对方是否处于"家人守护"模式（开启后对方不再需要签到，本端家人卡片应显示"家人守护中"）
+    var lastCheckInDate: Date? = nil  // 添加用户最后签到时间
+    var nextCheckInDeadline: Date? = nil  // 添加用户下次应签到的截止时间（来自 checkin_expire_at）
+    /// 对方是否处于关闭签到模式（开启后对方不再需要签到，本端卡片应显示无需签到状态）
     var isFamilyMode: Bool = false
     var createdAt: Date      // 创建时间
     var deviceInfo: DeviceInfo?  // 设备信息
@@ -138,7 +138,7 @@ struct DeviceInfo: Codable {
     }
 }
 
-/// 家人邀请码预览信息
+/// 添加邀请码预览信息
 struct FamilyInvitePreview: Identifiable, Codable {
     var id: String
     var inviteCode: String
@@ -151,7 +151,7 @@ struct FamilyInvitePreview: Identifiable, Codable {
     var status: String
 }
 
-/// 待确认的家人绑定请求
+/// 待确认的添加请求
 struct FamilyPendingRequest: Identifiable, Codable {
     var id: String
     var inviteCode: String

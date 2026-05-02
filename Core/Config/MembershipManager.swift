@@ -15,12 +15,12 @@ class MembershipManager: ObservableObject {
     @Published var isPremium: Bool = false
     @Published var memberType: String? = nil  // monthly/yearly/lifetime
     @Published var memberExpireAt: Date? = nil
-    @Published var maxCapsules: Int = 6       // 免费版默认6个总胶囊
-    @Published var maxTextCapsules: Int = 2   // 免费版默认2个文字胶囊
-    @Published var maxAudioCapsules: Int = 2  // 免费版默认2个录音胶囊
-    @Published var maxVideoCapsules: Int = 2  // 免费版默认2个视频胶囊
+    @Published var maxCapsules: Int = 6       // 免费版默认6个总留言
+    @Published var maxTextCapsules: Int = 2   // 免费版默认2个文字留言
+    @Published var maxAudioCapsules: Int = 2  // 免费版默认2个录音留言
+    @Published var maxVideoCapsules: Int = 2  // 免费版默认2个视频留言
     @Published var maxVideoMinutes: Int = 2   // 免费版默认2分钟
-    @Published var maxMediaCapsules: Int = 4  // 免费版默认4个媒体胶囊（录音+视频）
+    @Published var maxMediaCapsules: Int = 4  // 免费版默认4个媒体留言（录音+视频）
     @Published var aiAssistEnabled: Bool = false  // AI智能辅助是否启用
     @Published var lastCheckedAt: Date? = nil   // 上次检查时间
     
@@ -242,37 +242,37 @@ class MembershipManager: ObservableObject {
     
     // MARK: - 功能检查方法
     
-    /// 检查是否可以创建胶囊
+    /// 检查是否可以创建留言
     func canCreateCapsule(currentCount: Int) -> Bool {
         return currentCount < maxCapsules
     }
 
-    /// 检查是否可以创建指定类型胶囊
+    /// 检查是否可以创建指定类型留言
     func canCreateCapsule(of type: TimeCapsule.CapsuleType, currentCount: Int) -> Bool {
         return currentCount < capsuleLimit(for: type)
     }
     
-    /// 检查是否可以创建媒体胶囊（语音/视频）
+    /// 检查是否可以创建媒体留言（语音/视频）
     func canCreateMediaCapsule(currentMediaCount: Int) -> Bool {
         return currentMediaCount < maxMediaCapsules
     }
     
-    /// 获取剩余可创建胶囊数量
+    /// 获取剩余可创建留言数量
     func remainingCapsules(currentCount: Int) -> Int {
         return max(0, maxCapsules - currentCount)
     }
 
-    /// 获取指定类型胶囊的剩余可创建数量
+    /// 获取指定类型留言的剩余可创建数量
     func remainingCapsules(of type: TimeCapsule.CapsuleType, currentCount: Int) -> Int {
         return max(0, capsuleLimit(for: type) - currentCount)
     }
     
-    /// 获取剩余可创建媒体胶囊数量
+    /// 获取剩余可创建媒体留言数量
     func remainingMediaCapsules(currentMediaCount: Int) -> Int {
         return max(0, maxMediaCapsules - currentMediaCount)
     }
 
-    /// 获取指定类型胶囊的上限
+    /// 获取指定类型留言的上限
     func capsuleLimit(for type: TimeCapsule.CapsuleType) -> Int {
         switch type {
         case .text:
@@ -296,7 +296,7 @@ class MembershipManager: ObservableObject {
         return maxVideoMinutes * 60
     }
     
-    /// 检查是否可以创建遗嘱模块
+    /// 检查是否可以创建重要事项模块
     func canCreateWill(currentCount: Int) -> Bool {
         return canCreateCustomWill()
     }
@@ -321,7 +321,7 @@ class MembershipManager: ObservableObject {
         return currentDataExportEnabled()
     }
 
-    /// 检查是否有家庭守护功能
+    /// 检查是否有添加共享功能
     func canAddFamilyMember(currentCount: Int) -> Bool {
         return currentCount < currentFamilyLimit()
     }
@@ -331,7 +331,7 @@ class MembershipManager: ObservableObject {
         return currentAIAssistanceEnabled()
     }
 
-    /// 检查是否可以分享时光胶囊给家人
+    /// 检查是否可以分享留言给添加用户
     func canShareCapsule() -> Bool {
         return isPremium
     }
@@ -342,12 +342,12 @@ class MembershipManager: ObservableObject {
         return currentDataExportEnabled()
     }
 
-    /// 当前可创建的遗嘱模块数量
+    /// 当前可创建的重要事项模块数量
     func currentWillLimit() -> Int {
         return isPremium ? serverLimits.premiumMaxWillModules : serverLimits.freeMaxWillModules
     }
 
-    /// 当前可绑定的家人数量
+    /// 当前可添加的用户数量
     func currentFamilyLimit() -> Int {
         return isPremium ? serverLimits.premiumMaxFamily : serverLimits.freeMaxFamily
     }
@@ -429,8 +429,8 @@ class MembershipManager: ObservableObject {
         }
         
         print("✅ 会员限制已从服务器更新")
-        print("   免费版：\(freeMaxCapsules)胶囊（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
-        print("   会员版：\(premiumMaxCapsules)胶囊（文字\(premiumMaxTextCapsules)/录音\(premiumMaxAudioCapsules)/视频\(premiumMaxVideoCapsules)）/\(premiumMaxVideoMinutes)分钟")
+        print("   免费版：\(freeMaxCapsules)条留言（文字\(freeMaxTextCapsules)/录音\(freeMaxAudioCapsules)/视频\(freeMaxVideoCapsules)）/\(freeMaxVideoMinutes)分钟")
+        print("   会员版：\(premiumMaxCapsules)条留言（文字\(premiumMaxTextCapsules)/录音\(premiumMaxAudioCapsules)/视频\(premiumMaxVideoCapsules)）/\(premiumMaxVideoMinutes)分钟")
     }
     
     // MARK: - 会员类型显示

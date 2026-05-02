@@ -2,7 +2,7 @@
 //  UserManager.swift
 //  终活
 //
-//  用户管理 - 注册、登录、紧急联系人、定位
+//  用户管理 - 注册、登录、添加关系、定位
 //  技术文档：📖 终活 App 技术开发文档.md - 第 3 章 前端技术栈
 //
 
@@ -18,8 +18,8 @@ import UIKit
 /// 核心功能：
 /// - 用户注册/登录/退出
 /// - 位置服务（使用真实 GPS 精度）
-/// - 紧急联系人管理
-/// - 家人绑定与邀请码
+/// - 联系人管理
+/// - 添加绑定与邀请码
 /// - 本地数据持久化
 /// 
 /// 技术要点：
@@ -101,10 +101,12 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     /// 配置定位管理器
-    /// - 授权级别：高精度定位
-    /// - 距离过滤器：按配置项控制，默认更灵敏
-    /// - 活动类型：其他导航（自动优化定位策略）
+    /// - 仅保留兼容实现，定位功能由 AppConfig.isLocationUploadEnabled 控制
     private func setupLocationManager() {
+        guard AppConfig.isLocationUploadEnabled else {
+            locationAuthStatus = .notDetermined
+            return
+        }
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = AppConfig.locationDistanceFilter
@@ -115,6 +117,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // MARK: - 定位权限管理
     func requestLocationPermission() {
+        guard AppConfig.isLocationUploadEnabled else { return }
         locationManager.requestWhenInUseAuthorization()
     }
     
@@ -146,6 +149,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func requestAlwaysAuthorizationIfNeeded() {
+        guard isLocationUploadEnabled else { return }
+
         // ✅ P2 修复 #6: 更新注释
         // 如果用户修改了签到间隔（不是测试模式），请求后台定位
         guard let user = currentUser,
@@ -161,6 +166,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func startUpdatingLocation() {
+        guard isLocationUploadEnabled else { return }
         locationManager.startUpdatingLocation()
         print("🛰️ 开始定位")
     }
@@ -170,6 +176,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() -> String? {
+        guard isLocationUploadEnabled else { return nil }
         guard let location = currentLocation ?? locationManager.location else { return nil }
         return "\(location.coordinate.latitude), \(location.coordinate.longitude)"
     }
@@ -200,6 +207,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @MainActor
     func uploadLocation() {
+        guard isLocationUploadEnabled else { return }
+
         print("🔵 ====== uploadLocation 开始 ======")
         print("   - currentUser: \(currentUser?.name ?? "nil")")
         print("   - locationAuthStatus: \(locationAuthStatus)")
@@ -244,6 +253,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// ✅ P2 修复 #4: 使用真实精度，不再模拟
     /// ✅ P2 修复 #6: 更新注释与代码一致
     func startContinuousLocationUpdates() {
+        guard isLocationUploadEnabled else { return }
+
         guard !isContinuouslyUpdating else {
             print("⚠️ 已经在持续定位中")
             return
@@ -284,6 +295,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     /// 上传最新位置（即使用户未移动）- 定时器调用
     private func uploadLatestLocation() {
+        guard isLocationUploadEnabled else { return }
         guard let location = currentLocation ?? locationManager.location else {
             print("⚠️ 暂无可用位置")
             return
@@ -301,6 +313,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // ✅ P2 修复 #6: 更新注释
     // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
     private func handleLocationUpdate(_ location: CLLocation, fromTimer: Bool = false) {
+        guard isLocationUploadEnabled else { return }
         guard let user = currentUser else { return }
         
         let latitude = location.coordinate.latitude
@@ -362,6 +375,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard isLocationUploadEnabled else { return }
         guard let location = locations.last else { return }
         currentLocation = location
         
@@ -381,6 +395,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     private func uploadLocationToServer(userId: String, latitude: Double, longitude: Double, address: String, accuracy: Double? = nil) async {
+        guard isLocationUploadEnabled else { return }
         // ✅ P2 修复 #9: 使用 DebugConfig 控制日志
         // 获取 token
         let token = KeychainManager.shared.getToken() ?? ""
@@ -504,7 +519,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.currentUser = user
             self.isLoggedIn = true
             self.lastCheckInDate = user.lastCheckInDate
-            startUpdatingLocation()
             return .success(user)
         } else {
             return .failure(Error.saveFailed)
@@ -576,7 +590,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             await RealTimeSyncManager.shared.userDidLogin()
         }
         
-        startUpdatingLocation()
         return .success(user)
     }
     
@@ -710,7 +723,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    // 紧急联系人功能已移除（由家人替代）
+    // 紧急联系人功能已移除（由添加关系替代）
     
     @MainActor
     func recordCheckIn(isAuto: Bool = false, bypassCooldown: Bool = false) -> Result<Void, Error> {
@@ -745,13 +758,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.currentUser = user
         self.lastCheckInDate = user.lastCheckInDate
         
-        // 记录签到位置
-        if let locationStr = getCurrentLocation() {
-            print("📍 签到位置：\(locationStr)")
-        } else {
-            print("⚠️ 无位置信息（可能未授权定位）")
-        }
-        
         print("✅ 记录签到：\(isAuto ? "自动" : "手动")")
         
         if saveUser(user) {
@@ -768,28 +774,11 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 print("📝 1. 同步签到记录...")
                 await syncCheckInToServer(isAuto: isAuto)
                 
-                // 2. 签到成功后上传位置（无论自动还是手动）
-                print("📍 2. 上传位置...")
-                self.uploadLocation()
-                
-                // 3. 签到成功后同步所有数据
-                print("📦 3. 同步胶囊数据...")
-                if let result = await DataManager.shared.batchSyncCapsules() {
-                    print("✅ 胶囊同步完成：\(result)")
-                } else {
-                    print("❌ 胶囊同步失败或无数据")
+                // 2. 刷新添加缓存，确保签到后相关页面可尽快拿到最新签到时间
+                if AppConfig.showsFamilyFeatures {
+                    print("👨‍👩‍👧 2. 刷新添加缓存...")
+                    _ = try? await DataManager.shared.refreshFamilyMembers()
                 }
-                
-                print("📦 4. 同步遗嘱数据...")
-                if let result = await DataManager.shared.batchSyncWills() {
-                    print("✅ 遗嘱同步完成：\(result)")
-                } else {
-                    print("❌ 遗嘱同步失败或无数据")
-                }
-
-                // 5. 刷新家人缓存，确保签到后家人页可尽快拿到最新签到时间
-                print("👨‍👩‍👧 5. 刷新家人缓存...")
-                _ = try? await DataManager.shared.refreshFamilyMembers()
                 
                 print("🎉 所有同步任务完成！")
                 print("🔵 ====== recordCheckIn 结束 ======")
@@ -859,7 +848,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 // 重新拉取用户数据，更新签到次数
                 await fetchUserData()
 
-                // 刷新家人缓存，确保签到时间尽快同步到家人页与共享状态
+                // 刷新添加缓存，确保签到时间尽快同步到添加页与共享状态
                 _ = try? await DataManager.shared.refreshFamilyMembers()
             } else {
                 print("⚠️ 签到同步返回失败")
@@ -875,12 +864,16 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("❌ 签到同步失败：\(error)")
         }
     }
+
+    private var isLocationUploadEnabled: Bool {
+        AppConfig.isLocationUploadEnabled
+    }
     
     @MainActor
     func logout() {
         print("🔴 UserManager.logout() 被调用")
 
-        // 先解除本地数据沙箱绑定并清空内存，避免下一账号看到上一账号的胶囊/遗嘱等
+        // 先解除本地数据沙箱绑定并清空内存，避免下一账号看到上一账号的留言/重要事项等
         DataManager.shared.clearSessionUserData()
         
         self.currentUser = nil
@@ -1192,7 +1185,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         memberMaxVideoMinutes: memberMaxVideoMinutes,
                         aiAssistEnabled: aiAssistEnabled
                     )
-                    // 与后端 users.is_family_mode 一致（默认关）；设置页的「家人守护」开关同源
+                    // 与后端 users.is_family_mode 一致（默认关）；设置页的「共享提醒」开关同源
                     UserDefaults.standard.set(isFamilyModeFromServer, forKey: "isFamilyMode")
                 }
 
@@ -1291,7 +1284,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     _ = saveUser(currentUser)
                 }
 
-                // 发送方删除胶囊后，接收端列表依赖服务端清理 capsule_shares；此处刷新「收到的胶囊」
+                // 发送方删除留言后，接收端列表依赖服务端清理 capsule_shares；此处刷新「收到的留言」
                 await DataManager.shared.loadReceivedCapsules()
                 
             } else {
@@ -1419,27 +1412,27 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return predicate.evaluate(with: phone)
     }
     
-    // 🔥 更新胶囊数量（让 SettingsView 立即显示）
+    // 🔥 更新留言数量（让 SettingsView 立即显示）
     func updateCapsulesCount(_ count: Int) {
         DispatchQueue.main.async {
             self.currentUser?.capsulesCount = count
-            print("📊 胶囊数量已更新：\(count)")
+            print("📊 留言数量已更新：\(count)")
         }
     }
     
-    // 🔥 更新遗嘱数量（让 SettingsView 立即显示）
+    // 🔥 更新重要事项数量（让 SettingsView 立即显示）
     func updateWillModulesCount(_ count: Int) {
         DispatchQueue.main.async {
             self.currentUser?.willModulesCount = count
-            print("📊 遗嘱数量已更新：\(count)")
+            print("📊 重要事项数量已更新：\(count)")
         }
     }
     
-    // 🔥 更新家人数量（让 SettingsView 立即显示）
+    // 🔥 更新添加数量（让 SettingsView 立即显示）
     func updateFamilyCount(_ count: Int) {
         DispatchQueue.main.async {
             self.currentUser?.familyCount = count
-            print("📊 家人数量已更新：\(count)")
+            print("📊 添加数量已更新：\(count)")
         }
     }
     

@@ -88,6 +88,17 @@ struct ContentView: View {
     }
     
     private var mainTabView: some View {
+        Group {
+            if AppConfig.isChinaReviewMode {
+                chinaReviewTabView
+            } else {
+                fullFeatureTabView
+            }
+        }
+        .tint(Color(hex: "6366F1"))
+    }
+
+    private var fullFeatureTabView: some View {
         TabView(selection: $viewModel.selectedTab) {
             // 🚀 懒加载：使用 NavigationView 包装，延迟视图创建（iOS 15 兼容）
             NavigationView {
@@ -135,7 +146,35 @@ struct ContentView: View {
             }
             .tag(4)
         }
-        .tint(Color(hex: "6366F1"))
+    }
+
+    private var chinaReviewTabView: some View {
+        TabView(selection: $viewModel.selectedTab) {
+            NavigationView {
+                HomeStatusView()
+                    .navigationBarHidden(true)
+            }
+            .stackNavigationStyle()
+            .tabItem {
+                Label(L10n.string(.tabHome), systemImage: "house.fill")
+            }
+            .tag(0)
+
+            NavigationView {
+                CapsuleList(dataManager: dataManager)
+            }
+            .stackNavigationStyle()
+            .tabItem {
+                Label(L10n.string(.tabCapsule), systemImage: "clock.fill")
+            }
+            .tag(1)
+
+            SettingsView()
+                .tabItem {
+                    Label(L10n.string(.tabMe), systemImage: "person.fill")
+                }
+                .tag(2)
+        }
     }
 }
 

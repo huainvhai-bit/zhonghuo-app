@@ -2,7 +2,7 @@
 //  WillAssetsView.swift
 //  终活
 //
-//  嘱托与资产 - 完整的增删改查 + 模板
+//  事项与资产 - 完整的增删改查 + 模板
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ struct WillAssetsView: View {
     @State private var editingAsset: Asset? = nil
     @State private var showingPDFExport = false
     @State private var showingUpgradeForExport = false  // 导出功能需要会员
-    @State private var showingUpgradeForWill = false  // 新增嘱托数量需要会员限制
+    @State private var showingUpgradeForWill = false  // 新增事项数量需要会员限制
     @State private var showingMembershipView = false
     @State private var pdfExportSuccess = false
     @State private var templateContent = ""
@@ -219,7 +219,7 @@ struct WillAssetsView: View {
             infoCard(
                 icon: "📝",
                 title: L10n.text("重要事项说明", en: "Important note", ja: "重要事項の説明", ko: "중요 사항 안내"),
-                desc: L10n.text("这里用于个人整理和家庭沟通参考，不构成法律意见或法律文书。内容不会自动发送，只有您主动分享后家人才可查看。", en: "This area is for personal organization and family communication only. It is not legal advice or a legal document. Content is not sent automatically and is only visible after you manually share it.", ja: "ここは個人整理と家族共有の参考用です。法的助言や法的文書ではありません。内容は自動送信されず、手動共有後のみ家族が確認できます。", ko: "개인 정리와 가족 소통 참고용입니다. 법률 자문이나 법적 문서가 아닙니다. 내용은 자동 전송되지 않으며 직접 공유한 후에만 가족이 볼 수 있습니다.")
+                desc: L10n.text("这里用于个人整理和信息参考，不构成法律意见或法律文书。内容不会自动发送，只有您主动发送后添加用户才可查看。", en: "This area is for personal organization and reference only. It is not legal advice or a legal document. Content is not sent automatically and is only visible after you manually send it.", ja: "ここは個人整理と参考用です。法的助言や法的文書ではありません。内容は自動送信されず、手動送信後のみ相手が確認できます。", ko: "개인 정리와 참고용입니다. 법률 자문이나 법적 문서가 아닙니다. 내용은 자동 전송되지 않으며 직접 전송한 후에만 상대가 볼 수 있습니다.")
             )
             
             // 操作按钮
@@ -247,7 +247,7 @@ struct WillAssetsView: View {
             infoCard(
                 icon: "🔒",
                 title: L10n.text("安全提示", en: "Safety note", ja: "安全上の注意", ko: "안전 안내"),
-                desc: L10n.text("仅记录资产线索用于个人整理和家庭沟通参考，不存储密码和完整账号。建议记录账号后 4 位以便识别。", en: "Only asset references are stored for personal organization and family communication. Passwords and full account numbers are not stored. We recommend recording the last 4 digits of an account for identification.", ja: "個人整理と家族共有の参考として資産情報のみを保存し、パスワードや完全なアカウント番号は保存しません。識別のために末尾4桁の記録を推奨します。", ko: "개인 정리와 가족 소통 참고용으로 자산 정보만 기록하며, 비밀번호와 전체 계정 번호는 저장하지 않습니다. 식별을 위해 마지막 4자리를 기록하는 것을 권장합니다.")
+                desc: L10n.text("仅记录资产线索用于个人整理和信息参考，不存储密码和完整账号。建议记录账号后 4 位以便识别。", en: "Only asset references are stored for personal organization and reference. Passwords and full account numbers are not stored. We recommend recording the last 4 digits of an account for identification.", ja: "個人整理と参考として資産情報のみを保存し、パスワードや完全なアカウント番号は保存しません。識別のために末尾4桁の記録を推奨します。", ko: "개인 정리와 참고용으로 자산 정보만 기록하며, 비밀번호와 전체 계정 번호는 저장하지 않습니다. 식별을 위해 마지막 4자리를 기록하는 것을 권장합니다.")
             )
             
             // 资产列表
@@ -360,7 +360,7 @@ struct WillAssetsView: View {
     }
 }
 
-// MARK: - 遗嘱模块卡片
+    // MARK: - 重要事项模块卡片
 struct WillModuleCard: View {
     let module: WillModule
     let onTap: () -> Void
@@ -544,7 +544,7 @@ struct AssetRow: View {
     }
 }
 
-// MARK: - 遗嘱模块行（支持删除）
+    // MARK: - 重要事项模块行（支持删除）
 struct WillModuleRow: View {
     let module: WillModule
     let onTap: () -> Void
@@ -626,9 +626,9 @@ extension WillAssetsView {
 //  WillModuleEdit.swift
 //  终活
 //
-//  遗嘱模块编辑 + 模板
+    //  重要事项模块编辑 + 模板
 //
 
 import SwiftUI
 
-// MARK: - 编辑遗嘱模块弹窗
+    // MARK: - 编辑重要事项弹窗

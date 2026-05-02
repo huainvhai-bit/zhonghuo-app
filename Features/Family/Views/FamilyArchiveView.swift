@@ -2,8 +2,8 @@
 //  FamilyArchiveView.swift
 //  终活
 //
-//  家族档案馆（V2.0.0 核心功能）
-//  功能：家庭成员共享、共同编辑、家族树可视化
+//  添加档案馆（V2.0.0 核心功能）
+//  功能：添加用户协作、共同编辑、关系可视化
 //
 
 import SwiftUI
@@ -82,7 +82,7 @@ struct FamilyArchiveView: View {
                 .padding()
             }
             .background(Color(.systemBackground))
-            .navigationTitle(L10n.text("家族档案馆", en: "Family Archive", ja: "家族アーカイブ", ko: "가족 아카이브"))
+            .navigationTitle(L10n.text("添加档案馆", en: "Added Archive", ja: "追加アーカイブ", ko: "추가 아카이브"))
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
                 // loadArchives()
@@ -97,11 +97,11 @@ struct FamilyArchiveView: View {
     // MARK: - 欢迎横幅
     private var welcomeBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.text("家族档案馆", en: "Family Archive", ja: "家族アーカイブ", ko: "가족 아카이브"))
+            Text(L10n.text("添加档案馆", en: "Added Archive", ja: "追加アーカイブ", ko: "추가 아카이브"))
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.primary)
             
-            Text(L10n.text("共享家族记忆，传承家族故事", en: "Share family memories and pass on family stories", ja: "家族の記憶を共有し、家族の物語を受け継ぎます", ko: "가족의 기억을 공유하고 이야기를 이어갑니다"))
+            Text(L10n.text("记录回忆，保留重要故事", en: "Record memories and keep important stories.", ja: "思い出を記録し、大切な物語を残します。", ko: "추억을 기록하고 소중한 이야기를 남깁니다."))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
@@ -122,7 +122,7 @@ struct FamilyArchiveView: View {
         Button(action: { showingCreateModal = true }) {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
-                Text(L10n.text("创建家族档案", en: "Create archive", ja: "アーカイブを作成", ko: "아카이브 만들기"))
+                Text(L10n.text("创建添加档案", en: "Create archive", ja: "アーカイブを作成", ko: "아카이브 만들기"))
             }
             .font(.system(size: 16, weight: .semibold))
             .frame(maxWidth: .infinity)
@@ -137,7 +137,7 @@ struct FamilyArchiveView: View {
     // MARK: - 档案列表
     private var archiveList: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("家族档案", en: "Archives", ja: "アーカイブ", ko: "아카이브"))
+            Text(L10n.text("添加档案", en: "Archives", ja: "アーカイブ", ko: "아카이브"))
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.primary)
                 .padding(.horizontal, 4)
@@ -165,11 +165,11 @@ struct FamilyArchiveView: View {
                 .font(.system(size: 60))
                 .foregroundColor(.gray.opacity(0.3))
             
-            Text(L10n.text("暂无家族档案", en: "No archives yet", ja: "まだアーカイブはありません", ko: "아카이브가 아직 없습니다"))
+            Text(L10n.text("暂无添加档案", en: "No archives yet", ja: "まだアーカイブはありません", ko: "아직 추가된 아카이브가 없습니다"))
                 .font(.system(size: 16))
                 .foregroundColor(.secondary)
             
-            Text(L10n.text("创建第一个家族档案，与家人共享您的故事", en: "Create your first archive and share your story with family.", ja: "最初のアーカイブを作成して、家族と物語を共有しましょう。", ko: "첫 번째 아카이브를 만들고 가족과 이야기를 공유하세요."))
+            Text(L10n.text("创建第一个添加档案，记录您的故事", en: "Create your first archive and record your story.", ja: "最初のアーカイブを作成して、物語を記録しましょう。", ko: "첫 번째 아카이브를 만들어 이야기를 기록하세요."))
                 .font(.system(size: 14))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -324,7 +324,7 @@ struct CreateArchiveView: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
                     
-                    Toggle(L10n.text("公开分享", en: "Share publicly", ja: "公開共有", ko: "공개 공유"), isOn: $isPublic)
+                    Toggle(L10n.text("公开可见", en: "Visible to others", ja: "公開表示", ko: "공개 표시"), isOn: $isPublic)
                         .font(.system(size: 16))
                         .padding(.horizontal)
                 }
@@ -353,7 +353,7 @@ struct CreateArchiveView: View {
                 .padding(.bottom, 40)
             }
             .background(Color(.systemBackground))
-            .navigationTitle(L10n.text("创建家族档案", en: "Create archive", ja: "アーカイブを作成", ko: "아카이브 만들기"))
+            .navigationTitle(L10n.text("创建添加档案", en: "Create archive", ja: "アーカイブを作成", ko: "아카이브 만들기"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

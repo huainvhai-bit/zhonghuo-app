@@ -103,7 +103,12 @@ struct MembershipView: View {
             Text(L10n.string(.appName) + L10n.text("会员", en: " Membership", ja: "会員", ko: " 멤버십"))
                 .font(.system(size: 28, weight: .bold))
             
-            Text(L10n.text("你的数字遗产值得更好的保护", en: "Your digital legacy deserves better protection", ja: "あなたのデジタル資産は、より良い保護に値します", ko: "당신의 디지털 유산은 더 나은 보호를 받을 가치가 있습니다"))
+            Text(L10n.text(
+                AppConfig.isChinaReviewMode ? "为你的记录提供更完整的管理能力" : "你的数字遗产值得更好的保护",
+                en: AppConfig.isChinaReviewMode ? "Manage your records more completely" : "Your digital legacy deserves better protection",
+                ja: AppConfig.isChinaReviewMode ? "記録をより柔軟に管理できます" : "あなたのデジタル資産は、より良い保護に値します",
+                ko: AppConfig.isChinaReviewMode ? "기록을 더 체계적으로 관리할 수 있습니다" : "당신의 디지털 유산은 더 나은 보호를 받을 가치가 있습니다"
+            ))
                 .font(.system(size: 16))
                 .foregroundColor(.secondary)
         }
@@ -212,35 +217,37 @@ struct MembershipView: View {
                 
                 Divider()
                 
-                FeatureTableRow(
-                    icon: "doc.text.fill",
-                    title: L10n.string(.myWills),
-                    free: L10n.text("5 个默认模板", en: "5 default templates", ja: "5個の標準テンプレート", ko: "기본 템플릿 5개"),
-                    premium: L10n.text("可自定义，不限数量", en: "Custom, unlimited", ja: "カスタム可能・無制限", ko: "사용자 지정, 무제한"),
-                    isLast: false
-                )
-                
-                Divider()
-                
-                FeatureTableRow(
-                    icon: "icloud.fill",
-                    title: L10n.text("云端同步", en: "Cloud sync", ja: "クラウド同期", ko: "클라우드 동기화"),
-                    free: L10n.text("自动同步", en: "Auto sync", ja: "自動同期", ko: "자동 동기화"),
-                    premium: L10n.text("自动同步 + 一键恢复", en: "Auto sync + one-tap restore", ja: "自動同期 + ワンタップ復元", ko: "자동 동기화 + 원탭 복원"),
-                    isLast: false
-                )
-                
-                Divider()
-                
-                FeatureTableRow(
-                    icon: "person.2.fill",
-                    title: L10n.string(.familyGuard),
-                    free: L10n.text("1 位家人", en: "1 family member", ja: "1人", ko: "1명"),
-                    premium: L10n.text("5 位家人", en: "5 family members", ja: "5人", ko: "5명"),
-                    isLast: false
-                )
-                
-                Divider()
+                if !AppConfig.isChinaReviewMode {
+                    FeatureTableRow(
+                        icon: "doc.text.fill",
+                        title: L10n.string(.myWills),
+                        free: L10n.text("5 个默认模板", en: "5 default templates", ja: "5個の標準テンプレート", ko: "기본 템플릿 5개"),
+                        premium: L10n.text("可自定义，不限数量", en: "Custom, unlimited", ja: "カスタム可能・無制限", ko: "사용자 지정, 무제한"),
+                        isLast: false
+                    )
+                    
+                    Divider()
+                    
+                    FeatureTableRow(
+                        icon: "icloud.fill",
+                        title: L10n.text("云端同步", en: "Cloud sync", ja: "クラウド同期", ko: "클라우드 동기化"),
+                        free: L10n.text("自动同步", en: "Auto sync", ja: "自動同期", ko: "자동 동기화"),
+                        premium: L10n.text("自动同步 + 一键恢复", en: "Auto sync + one-tap restore", ja: "自動同期 + ワンタップ復元", ko: "자동 동기화 + 원탭 복원"),
+                        isLast: false
+                    )
+                    
+                    Divider()
+                    
+                    FeatureTableRow(
+                        icon: "person.2.fill",
+                        title: L10n.string(.familyGuard),
+                        free: L10n.text("1 位添加用户", en: "1 added user", ja: "1人", ko: "1명"),
+                        premium: L10n.text("5 位添加用户", en: "5 added users", ja: "5人", ko: "5명"),
+                        isLast: false
+                    )
+                    
+                    Divider()
+                }
                 
                 FeatureTableRow(
                     icon: "square.and.arrow.up.fill",

@@ -2,7 +2,7 @@
 //  CapsuleListViewModel.swift
 //  终活
 //
-//  胶囊列表状态与同步
+//  留言列表状态与同步
 //
 
 import Foundation
@@ -18,17 +18,19 @@ final class CapsuleListViewModel: ObservableObject {
         didLoadLocalCapsules = true
 
         if dataManager.capsules.isEmpty {
-            print("📂 本地胶囊为空，从文件加载...")
+            print("📂 本地留言为空，从文件加载...")
             let loadedCapsules = dataManager.loadCapsulesFromFile()
             dataManager.capsules = loadedCapsules
-            print("📂 已加载胶囊：\(loadedCapsules.count) 个")
+            print("📂 已加载留言：\(loadedCapsules.count) 个")
         } else {
-            print("📂 本地已有胶囊：\(dataManager.capsules.count) 个，优先使用本地数据")
+            print("📂 本地已有留言：\(dataManager.capsules.count) 个，优先使用本地数据")
         }
     }
 
     func refresh() async {
-        _ = await dataManager.batchSyncCapsules()
+        let loadedCapsules = dataManager.loadCapsulesFromFile()
+        dataManager.capsules = loadedCapsules
+        print("🔄 留言列表已刷新：\(loadedCapsules.count) 个")
     }
 
     func deleteCapsules(at offsets: IndexSet, filteredCapsules: [TimeCapsule]) {
@@ -38,8 +40,6 @@ final class CapsuleListViewModel: ObservableObject {
             dataManager.saveCapsulesToFile()
         }
 
-        Task {
-            _ = await dataManager.batchSyncCapsules()
-        }
+        print("🗑️ 留言已从本地删除，未执行云端同步")
     }
 }

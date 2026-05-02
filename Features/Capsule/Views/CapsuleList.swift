@@ -2,8 +2,8 @@
 //  Capsule/CapsuleList.swift
 //  终活
 //
-//  时光胶囊列表
-//  职责：胶囊展示 + 筛选 + 空状态
+//  时光留言列表
+//  职责：留言展示 + 筛选 + 空状态
 //
 
 import SwiftUI
@@ -15,15 +15,15 @@ struct CapsuleList: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = CapsuleListViewModel()
     @State private var selectedFilter: TimeCapsule.CapsuleType? = nil
-    @State private var showingAddCapsule = false  // ✅ 新增：控制新增胶囊弹窗
+    @State private var showingAddCapsule = false  // ✅ 新增：控制新增留言弹窗
     @State private var showingUpgradePrompt = false  // ✅ 升级提示
     @State private var showingMembershipView = false  // ✅ 会员页面
-    @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的胶囊
+    @State private var selectedCapsuleForShare: TimeCapsule? = nil  // 待分享的留言
     @State private var showingUpgradeForShare = false  // ✅ 分享功能需要会员
-    @State private var selectedCapsuleForEdit: TimeCapsule? = nil  // 待编辑的胶囊
-    @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的胶囊
+    @State private var selectedCapsuleForEdit: TimeCapsule? = nil  // 待编辑的留言
+    @State private var capsuleToDelete: TimeCapsule? = nil  // 待删除的留言
     @State private var showingDeleteAlert = false  // ✅ 删除确认弹窗
-    @State private var selectedCapsuleForDetail: TimeCapsule? = nil  // 待查看详情的胶囊
+    @State private var selectedCapsuleForDetail: TimeCapsule? = nil  // 待查看详情的留言
     @State private var shareCapsuleAlertMessage: String? = nil
     
     var filteredCapsules: [TimeCapsule] {
@@ -45,7 +45,7 @@ struct CapsuleList: View {
                         // 类型筛选
                         filterButtons
                         
-                        // 胶囊列表
+                        // 留言列表
                         if filteredCapsules.isEmpty {
                             emptyState
                         } else {
@@ -53,7 +53,7 @@ struct CapsuleList: View {
                             
                             // ✅ 底部新增按钮（仅列表有内容时显示）
                             Button(action: {
-                                // ✅ 检查胶囊数量限制
+                                // ✅ 检查留言数量限制
                                 let membership = MembershipManager.shared
                                 if !membership.canCreateCapsule(currentCount: dataManager.capsules.count) {
                                     showingUpgradePrompt = true
@@ -137,10 +137,10 @@ struct CapsuleList: View {
                             .font(.system(size: 48))
                             .foregroundColor(Color(hex: "6366F1"))
                         
-                        Text(L10n.text("留言共享是会员功能", en: "Message sharing is a premium feature", ja: "メッセージ共有は会員機能です", ko: "메시지 공유는 멤버십 기능입니다"))
+                        Text(L10n.text("留言发送是会员功能", en: "Message sending is a premium feature", ja: "メッセージ送信は会員機能です", ko: "메시지 전송은 멤버십 기능입니다"))
                             .font(.system(size: 20, weight: .bold))
                         
-                        Text(L10n.text("升级到会员版后，可将已创建的留言手动分享给家人", en: "Upgrade to premium to manually share messages with your family.", ja: "会員プランでは作成済みメッセージを手動で家族に共有できます。", ko: "멤버십에서는 작성한 메시지를 가족에게 직접 공유할 수 있습니다."))
+                        Text(L10n.text("升级到会员版后，可将已创建的留言手动发送给添加用户", en: "Upgrade to premium to manually send messages to added users.", ja: "会員プランでは作成済みメッセージを追加した相手に手動で送信できます。", ko: "멤버십에서는 작성한 메시지를 추가한 상대에게 직접 전송할 수 있습니다."))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -194,11 +194,11 @@ struct CapsuleList: View {
                     let receiverIds = selectedMembers.map { $0.relatedUserId }
                     do {
                         let result = try await self.dataManager.shareCapsule(capsuleId: capsule.id, receiverIds: receiverIds)
-                        print("✅ 胶囊分享成功：\(result)")
+                        print("✅ 留言发送成功：\(result)")
                         await MainActor.run { self.selectedCapsuleForShare = nil }
                     } catch {
                         let errorMsg = error.localizedDescription
-                        print("❌ 胶囊分享失败：\(errorMsg)")
+                        print("❌ 留言发送失败：\(errorMsg)")
                         await MainActor.run {
                             if errorMsg.contains("会员") || errorMsg.contains("premium") {
                                 self.selectedCapsuleForShare = nil
@@ -215,7 +215,7 @@ struct CapsuleList: View {
             )
         }
         .alert(
-            L10n.text("分享留言", en: "Share message", ja: "メッセージを共有", ko: "메시지 공유"),
+            L10n.text("发送留言", en: "Send message", ja: "メッセージを送信", ko: "메시지 전송"),
             isPresented: Binding(
                 get: { shareCapsuleAlertMessage != nil },
                 set: { if !$0 { shareCapsuleAlertMessage = nil } }
@@ -298,7 +298,7 @@ struct CapsuleList: View {
                 
                 Spacer()
                 
-                // 胶囊数量
+                // 留言数量
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(dataManager.capsules.count)")
                         .font(.system(size: 36, weight: .bold))
@@ -349,17 +349,17 @@ struct CapsuleList: View {
                     selectedFilter = nil
                 }
                 
-                // 文字胶囊
+                // 文字留言
                 FilterButton(title: "文字", icon: "doc.text", isSelected: selectedFilter == .text) {
                     selectedFilter = .text
                 }
                 
-                // 语音胶囊
+                // 语音留言
                 FilterButton(title: "语音", icon: "mic", isSelected: selectedFilter == .audio) {
                     selectedFilter = .audio
                 }
                 
-                // 视频胶囊
+                // 视频留言
                 FilterButton(title: "视频", icon: "video", isSelected: selectedFilter == .video) {
                     selectedFilter = .video
                 }
@@ -380,6 +380,10 @@ struct CapsuleList: View {
                         capsuleToDelete = capsule
                     },
                     onSend: {
+                        if AppConfig.isChinaReviewMode {
+                            print("📨 送审版：已隐藏留言发送入口")
+                            return
+                        }
                         if !MembershipManager.shared.canShareCapsule() {
                             showingUpgradeForShare = true
                             return
@@ -461,7 +465,7 @@ struct FilterButton: View {
     }
 }
 
-// MARK: - 胶囊卡片（✅ 优化：增强视觉效果）
+// MARK: - 留言卡片（✅ 优化：增强视觉效果）
 struct CapsuleCard: View {
     let capsule: TimeCapsule
     let onSend: () -> Void
@@ -525,13 +529,15 @@ struct CapsuleCard: View {
             Spacer()
             
             // 发送按钮
-            Button(action: onSend) {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color(hex: "6366F1"))
-                    .cornerRadius(10)
+            if !AppConfig.isChinaReviewMode {
+                Button(action: onSend) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color(hex: "6366F1"))
+                        .cornerRadius(10)
+                }
             }
             
             // 右侧箭头
@@ -585,7 +591,7 @@ struct StatBox: View {
     }
 }
 
-// MARK: - 分享胶囊弹窗
+// MARK: - 发送留言弹窗
 struct ShareCapsuleSheet: View {
     let capsule: TimeCapsule
     let familyMembers: [FamilyInfo]
@@ -593,7 +599,7 @@ struct ShareCapsuleSheet: View {
     let onShare: ([FamilyInfo]) async -> Void
     let onCancel: () -> Void
     
-    @State private var selectedMembers: Set<String> = []  // 选中的家人 ID
+    @State private var selectedMembers: Set<String> = []  // 选中的添加用户 ID
     @State private var isAllSelected = false
     @State private var isSending = false
     @State private var linearSendProgress: Double = 0
@@ -602,7 +608,7 @@ struct ShareCapsuleSheet: View {
         NavigationView {
             ZStack {
                 VStack(spacing: 20) {
-                // 胶囊信息
+                // 留言信息
                 HStack(spacing: 12) {
                     Image(systemName: capsule.type.icon)
                         .font(.system(size: 24))
@@ -614,7 +620,7 @@ struct ShareCapsuleSheet: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(capsule.title)
                             .font(.system(size: 16, weight: .semibold))
-                        Text(L10n.text("选择要发送的家人", en: "Choose family members to send to", ja: "送信する家族を選択", ko: "보낼 가족을 선택하세요"))
+                        Text(L10n.text("选择要发送的添加用户", en: "Choose contacts to send to", ja: "送信する相手を選択", ko: "보낼 상대를 선택하세요"))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -646,20 +652,20 @@ struct ShareCapsuleSheet: View {
                     .padding(.horizontal)
                 }
                 
-                // 家人列表
+                // 添加用户列表
                 if familyMembers.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "person.2.slash")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary)
-                        Text(L10n.text("暂无已绑定的家人", en: "No family bound yet", ja: "まだ家族が連携されていません", ko: "아직 연결된 가족이 없습니다"))
+                        Text(L10n.text("暂无已添加的用户", en: "No added users yet", ja: "まだ追加された相手がいません", ko: "아직 추가된 사용자가 없습니다"))
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        Text(L10n.text("请先在「家人共享」中添加家人", en: "Please add family members in Family Sharing", ja: "まず「家族共有」から家族を追加してください", ko: "먼저 가족 공유에서 가족을 추가하세요"))
+                        Text(L10n.text("请先在「添加用户」中添加用户", en: "Please add contacts in Added Users", ja: "まず「追加ユーザー」から相手を追加してください", ko: "먼저 추가 사용자에서 상대를 추가하세요"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Button(action: onAddFamily) {
-                            Text(L10n.text("去添加家人", en: "Add family", ja: "家族を追加", ko: "가족 추가"))
+                            Text(L10n.text("去添加用户", en: "Add contact", ja: "相手を追加", ko: "상대 추가"))
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
@@ -713,7 +719,7 @@ struct ShareCapsuleSheet: View {
                             linearSendProgress = 0
                         }
                     }) {
-                        Text(L10n.text("手动发送给家人", en: "Manually send to family", ja: "家族に手動送信", ko: "가족에게 직접 보내기"))
+                        Text(L10n.text("手动发送给添加用户", en: "Manually send to contacts", ja: "相手に手動送信", ko: "상대에게 직접 보내기"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -745,7 +751,7 @@ struct ShareCapsuleSheet: View {
                     HStack(spacing: 12) {
                         ProgressView()
                             .tint(Color(hex: "6366F1"))
-                        Text(L10n.text("正在手动发送给家人…", en: "Manually sending to family…", ja: "家族に手動送信中…", ko: "가족에게 직접 보내는 중…"))
+                        Text(L10n.text("正在手动发送给添加用户…", en: "Manually sending to contacts…", ja: "相手に手動送信中…", ko: "상대에게 직접 보내는 중…"))
                             .font(.system(size: 15, weight: .medium))
                     }
                     Text(L10n.text("请勿关闭此界面", en: "Please keep this sheet open.", ja: "この画面を閉じないでください", ko: "이 화면을 닫지 마세요"))
@@ -759,7 +765,7 @@ struct ShareCapsuleSheet: View {
                 .shadow(color: .black.opacity(0.18), radius: 20)
             }
             }
-            .navigationTitle(L10n.text("分享留言", en: "Share Message", ja: "メッセージを共有", ko: "메시지 공유"))
+            .navigationTitle(L10n.text("发送留言", en: "Send Message", ja: "メッセージを送信", ko: "메시지 전송"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -774,7 +780,7 @@ struct ShareCapsuleSheet: View {
     }
 }
 
-// MARK: - 家人分享行
+// MARK: - 添加发送行
 struct FamilyShareRow: View {
     let member: FamilyInfo
     let isSelected: Bool
@@ -788,7 +794,7 @@ struct FamilyShareRow: View {
                     .foregroundColor(isSelected ? Color(hex: "6366F1") : .secondary)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(member.relatedUserName ?? "家人")
+                    Text(member.relatedUserName ?? "添加用户")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.primary)
                     Text(member.relationType)
@@ -812,7 +818,7 @@ struct FamilyShareRow: View {
     }
 }
 
-// MARK: - 胶囊行
+// MARK: - 留言行
 struct CapsuleRow: View {
     let capsule: TimeCapsule
     @State private var showingDeleteConfirm = false
@@ -872,7 +878,7 @@ struct CapsuleRow: View {
 }
 
 
-// MARK: - 可滑动的胶囊卡片
+// MARK: - 可滑动的留言卡片
 struct SwipeableCapsuleCard: View {
     let capsule: TimeCapsule
     let onEdit: () -> Void

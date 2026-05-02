@@ -18,14 +18,14 @@ extension Color {
     static let appCardBackground = Color.white
 }
 
-// MARK: - 胶囊类型颜色
+// MARK: - 留言类型颜色
 extension TimeCapsule.CapsuleType {
     var swiftUIColor: Color {
         Color(hex: color)
     }
 }
 
-// MARK: - 遗嘱类型颜色
+// MARK: - 重要事项类型颜色
 extension WillModule.WillType {
     var swiftUIColor: Color {
         Color(hex: color)

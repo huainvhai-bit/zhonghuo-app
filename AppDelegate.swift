@@ -67,7 +67,7 @@ class PushNotificationManager: ObservableObject {
         }
     }
     
-    /// 创建胶囊开启提醒
+    /// 创建留言开启提醒
     func scheduleCapsuleOpenNotification(capsule: TimeCapsule) {
         let openAt = capsule.sendDate
         guard openAt > Date() else {
@@ -88,7 +88,7 @@ class PushNotificationManager: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                Logger.shared.e("PushNotificationManager: 胶囊通知失败：\(error.localizedDescription)")
+                Logger.shared.e("PushNotificationManager: 留言通知失败：\(error.localizedDescription)")
             }
         }
     }

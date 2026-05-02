@@ -49,7 +49,7 @@ struct ZhonghuoApp: App {
                 // ✅ 检查会员是否过期（基于本地缓存）
                 MembershipManager.shared.checkExpiration()
 
-                // 家人删除共享胶囊后，接收方需拉取 receivedCapsules 才能从列表消失
+                // 添加用户删除共享留言后，接收方需拉取 receivedCapsules 才能从列表消失
                 Task { @MainActor in
                     guard UserManager.shared.isLoggedIn else { return }
                     await DataManager.shared.loadReceivedCapsules()
@@ -288,7 +288,7 @@ class RealTimeSyncManager: ObservableObject {
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // 家人守护开关：未写入过 UserDefaults 时默认为关闭（与后端 users.is_family_mode 默认 0 一致）
+        // 添加共享开关：未写入过 UserDefaults 时默认为关闭（与后端 users.is_family_mode 默认 0 一致）
         UserDefaults.standard.register(defaults: ["isFamilyMode": false])
 
         // 同步设置默认 API URL（在后台任务注册前）
@@ -330,6 +330,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     // MARK: - 定位权限检测
     private func checkLocationPermission() {
+        guard AppConfig.isLocationUploadEnabled else {
+            locationManager.stopUpdatingLocation()
+            return
+        }
+
         let status = locationManager.authorizationStatus
         Logger.shared.d("🔵 定位权限检测：\(status.rawValue)")
         
@@ -355,6 +360,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     // MARK: - CLLocationManagerDelegate
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard AppConfig.isLocationUploadEnabled else {
+            manager.stopUpdatingLocation()
+            return
+        }
+
         let status = manager.authorizationStatus
         Logger.shared.d("🔵 定位权限变化：\(status.rawValue)")
         

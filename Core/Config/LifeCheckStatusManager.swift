@@ -109,19 +109,9 @@ class LifeCheckStatusManager: ObservableObject {
             // ✅ 修复：使用用户本地设置的签到间隔
             let checkInIntervalHours = currentCheckInIntervalHours()
             
-            // ✅ 获取当前位置
-            var locationDict: [String: Any]?
-            if let location = UserManager.shared.currentLocation {
-                locationDict = [
-                    "latitude": location.coordinate.latitude,
-                    "longitude": location.coordinate.longitude,
-                    "accuracy": location.horizontalAccuracy
-                ]
-            }
-            
             _ = try await DataManager.shared.checkIn(
                 checkInIntervalHours: Int(checkInIntervalHours),
-                location: locationDict
+                location: nil
             )
             print("✅ 后端签到成功，签到间隔：\(checkInIntervalHours) 小时")
         } catch {
@@ -205,7 +195,7 @@ class LifeCheckStatusManager: ObservableObject {
     
     // MARK: - 本机提醒
 
-    /// 仅保留本机提醒，不向联系人发送通知或报警。
+    /// 仅保留本机提醒，不向联系人发送通知。
     func notifyGuardianIfNeeded() {
         if !isSafe {
             print("ℹ️ 签到记录已到提醒时间，仅通过本机通知提醒用户本人")
@@ -253,10 +243,10 @@ class LifeCheckStatusManager: ObservableObject {
             return
         }
 
-        // 家人守护模式开启时，本人不再需要签到——同时取消本人所有的签到/超时提醒，
-        // 避免在守护状态下还收到"您已超时"等推送
+        // 关闭签到模式开启时，本人不再需要签到——同时取消本人所有的签到/超时提醒，
+        // 避免在共享状态下还收到"您已超时"等推送
         if UserDefaults.standard.bool(forKey: "isFamilyMode") {
-            print("👨‍👩‍👧 家人守护模式开启，取消并跳过本人签到提醒调度")
+            print("👨‍👩‍👧 关闭签到模式开启，取消并跳过本人签到提醒调度")
             cancelAllCheckInNotifications()
             return
         }
@@ -297,7 +287,7 @@ class LifeCheckStatusManager: ObservableObject {
             String(format: "%.3f", DataManager.shared.systemConfig.overduePushIntervalHours)
         ].joined(separator: "|")
 
-        // 取消之前的签到通知，避免误删胶囊/遗嘱等其他功能通知
+        // 取消之前的签到通知，避免误删留言/重要事项等其他功能通知
         cancelAllCheckInNotifications()
         
         // 如果已经过了首次提醒时间，立即设置
@@ -380,7 +370,7 @@ class LifeCheckStatusManager: ObservableObject {
         var notificationCount = 1
         let now = Date()
         
-        // 设置 5 个本机签到提醒，不向家人或联系人发送通知。
+        // 设置 5 个本机签到提醒，不向添加用户或联系人发送通知。
         while notificationCount <= 5 {
             if currentTime <= now {
                 currentTime.addTimeInterval(TimeInterval(intervalSeconds))
@@ -443,10 +433,10 @@ class LifeCheckStatusManager: ObservableObject {
         print("🗑️ 已取消所有签到提醒")
     }
 
-    // MARK: - 家人状态共享提醒
+    // MARK: - 添加状态共享提醒
 
-    /// 不再为家人的签到状态排程本地通知。
-    /// 家人关系仅用于双方确认后的最近签到时间共享，不做失联判断、报警或异常推送。
+    /// 不再为添加用户的签到状态排程本地通知。
+    /// 添加关系仅用于双方确认后的最近签到时间共享，不做异常推送。
     func scheduleFamilyOverdueNotifications(_ members: [FamilyMember]) {
         UNUserNotificationCenter.current().getPendingNotificationRequests { [weak self] requests in
             let toCancel = requests
@@ -455,14 +445,14 @@ class LifeCheckStatusManager: ObservableObject {
             if !toCancel.isEmpty {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: toCancel)
             }
-            print("ℹ️ 家人状态仅在 App 内展示，已取消家人状态到期本地通知（家人数 \(members.count)）")
+            print("ℹ️ 添加状态仅在 App 内展示，已取消状态到期本地通知（添加人数 \(members.count)）")
         }
     }
     
-    /// 通知所有监护人
+    /// 通知所有联系人
     func notifyGuardians() async {
         // 见证人和紧急联系人功能已移除
-        print("📞 联系人通知功能未启用：本应用不会自动报警或通知家人")
+        print("📞 联系人通知功能未启用：本应用不会向外部联系人发送通知")
     }
 }
 

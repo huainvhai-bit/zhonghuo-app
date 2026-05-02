@@ -72,27 +72,27 @@ struct WillPreviewView: View {
                             .foregroundColor(Color(hex: "AF52DE"))
                         
                         Text(L10n.text("""
-                        1. 本页面内容仅用于个人整理和家庭沟通参考，不构成法律意见或法律文书。
+                        1. 本页面内容仅用于个人整理和信息参考，不构成法律意见或法律文书。
 
-                        2. App 不会根据未签到、未操作或定位状态自动发送任何内容。
+                        2. App 不会根据未签到、未操作或关闭签到状态自动发送任何内容。
 
                         3. 如涉及法律、财产处分或其他专业事项，请咨询具备资质的专业人士。
                         """, en: """
-                        1. This page is for personal organization and family communication only. It is not legal advice or a legal document.
+                        1. This page is for personal organization and reference only. It is not legal advice or a legal document.
 
-                        2. The app does not automatically send any content based on missed check-ins, inactivity, or location status.
+                        2. The app does not automatically send any content based on missed check-ins, inactivity, or disabled status.
 
                         3. For legal, property, or other professional matters, please consult a qualified professional.
                         """, ja: """
-                        1. このページは個人整理と家族共有の参考用であり、法的助言や法的文書ではありません。
+                        1. このページは個人整理と参考用であり、法的助言や法的文書ではありません。
 
-                        2. 未チェックイン、未操作、位置情報などを条件に内容を自動送信することはありません。
+                        2. 未チェックイン、未操作、無効状態などを条件に内容を自動送信することはありません。
 
                         3. 法律、財産、その他専門的な事項については、資格を有する専門家にご相談ください。
                         """, ko: """
-                        1. 이 페이지는 개인 정리와 가족 소통 참고용이며, 법률 자문이나 법적 문서가 아닙니다.
+                        1. 이 페이지는 개인 정리와 참고용이며, 법률 자문이나 법적 문서가 아닙니다.
 
-                        2. 체크인 누락, 미사용, 위치 상태를 기준으로 내용을 자동 전송하지 않습니다.
+                        2. 체크인 누락, 미사용, 비활성 상태를 기준으로 내용을 자동 전송하지 않습니다.
 
                         3. 법률, 재산 또는 기타 전문 사항은 자격 있는 전문가와 상담하세요.
                         """))
@@ -155,7 +155,7 @@ struct WillPreviewView: View {
         case .property:
             return L10n.text("资产记录", en: "Asset Notes", ja: "資産メモ", ko: "자산 기록")
         case .heirs:
-            return L10n.text("家庭成员", en: "Family Contacts", ja: "家族連絡先", ko: "가족 연락처")
+            return L10n.text("添加用户", en: "Added Users", ja: "追加したユーザー", ko: "추가된 사용자")
         case .specialItems:
             return L10n.text("特殊物品", en: "Special Items", ja: "特別品", ko: "특별 물품")
         case .funeral:
@@ -195,7 +195,7 @@ extension WillPreviewView {
         
         // 附注
         pdfContent += L10n.text("### 说明\n", en: "### Notice\n", ja: "### 注意事項\n", ko: "### 안내\n")
-        pdfContent += L10n.text("本文件仅用于个人整理和家庭沟通参考，不构成法律意见或法律文书。\n", en: "This document is for personal organization and family communication only. It is not legal advice or a legal document.\n", ja: "この文書は個人整理と家族共有の参考用であり、法的助言や法的文書ではありません。\n", ko: "이 문서는 개인 정리와 가족 소통 참고용이며 법률 자문이나 법적 문서가 아닙니다.\n")
+        pdfContent += L10n.text("本文件仅用于个人整理和信息参考，不构成法律意见或法律文书。\n", en: "This document is for personal organization and reference only. It is not legal advice or a legal document.\n", ja: "この文書は個人整理と参考用であり、法的助言や法的文書ではありません。\n", ko: "이 문서는 개인 정리와 참고용이며 법률 자문이나 법적 문서가 아닙니다.\n")
         pdfContent += L10n.text("App 不会自动发送本文件中的任何内容。\n\n", en: "The app does not automatically send any content in this document.\n\n", ja: "アプリがこの文書内の内容を自動送信することはありません。\n\n", ko: "앱은 이 문서의 내용을 자동 전송하지 않습니다.\n\n")
         pdfContent += "\(L10n.text("生成时间：", en: "Generated at: ", ja: "生成日時: ", ko: "생성 시간: "))\(Date().localizedDateTimeString())\n"
         

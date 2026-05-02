@@ -13,7 +13,7 @@ private struct CachedTemplates {
         (
             L10n.text("资产记录模板", en: "Asset Notes Template", ja: "資産メモテンプレート", ko: "자산 기록 템플릿"),
             L10n.text("""
-            本人 [姓名]，现记录名下资产信息如下，供个人整理和家庭沟通参考：
+            本人 [姓名]，现记录名下资产信息如下，供个人整理和信息参考：
             
             一、房产
             位于 [地址] 的房产（房产证号：[号码]），备注：[填写说明]。
@@ -25,7 +25,7 @@ private struct CachedTemplates {
             包括但不限于股票、基金、保险、车辆等：[填写说明]。
             
             四、联系人
-            如需家人协助核对，可联系：[姓名/联系方式]。
+            如需添加用户协助核对，可联系：[姓名/联系方式]。
             """, en: """
             I, [Name], record my asset information for personal organization and family communication:
 
@@ -41,7 +41,7 @@ private struct CachedTemplates {
             4. Contact
             For family reference, contact: [Name / Contact].
             """, ja: """
-            私、[氏名] は、個人整理と家族共有の参考として資産情報を記録します。
+            私、[氏名] は、個人整理と共有参考として資産情報を記録します。
 
             1. 不動産
             [住所 / 登録番号 / メモ]
@@ -53,7 +53,7 @@ private struct CachedTemplates {
             [株式、投資信託、保険、車両などのメモ]
 
             4. 連絡先
-            家族が確認する際の連絡先：[氏名 / 連絡先]
+            相手が確認する際の連絡先：[氏名 / 連絡先]
             """, ko: """
             본인 [이름]은 개인 정리와 가족 공유 참고용으로 자산 정보를 기록합니다.
 
@@ -122,11 +122,11 @@ private struct CachedTemplates {
     
     static var heirsTemplates: [(title: String, content: String)] { [
         (
-            L10n.text("家庭成员记录", en: "Family Contacts", ja: "家族連絡先", ko: "가족 연락처"),
+            L10n.text("添加用户记录", en: "Added Contacts", ja: "追加連絡先", ko: "추가 연락처"),
             L10n.text("""
-            本人 [姓名]，现记录家庭成员和重要联系人信息如下：
+            本人 [姓名]，现记录添加用户和重要联系人信息如下：
             
-            一、家庭成员
+            一、添加用户
             配偶：[姓名]，身份证号：[号码]
             子女：[姓名]，身份证号：[号码]
             父母：[姓名]，身份证号：[号码]
@@ -134,8 +134,8 @@ private struct CachedTemplates {
             二、联系方式
             电话/地址/其他备注：[填写说明]
             
-            三、沟通备注
-            [填写希望家人了解的事项]
+            三、备注
+            [填写希望添加用户了解的事项]
             """, en: """
             I, [Name], record family members and important contacts:
 
@@ -150,9 +150,9 @@ private struct CachedTemplates {
             3. Communication notes
             [Notes for family]
             """, ja: """
-            私、[氏名] は、家族と重要な連絡先を記録します。
+            私、[氏名] は、共有相手と重要な連絡先を記録します。
 
-            1. 家族
+            1. 添加用户
             配偶者：[氏名 / 連絡先]
             子：[氏名 / 連絡先]
             父母：[氏名 / 連絡先]
@@ -160,8 +160,8 @@ private struct CachedTemplates {
             2. 連絡方法
             電話 / 住所 / その他メモ：[メモ]
 
-            3. 家族への共有メモ
-            [家族に伝えたい内容]
+            3. 添加备注
+            [共有相手に伝えたい内容]
             """, ko: """
             본인 [이름]은 가족과 중요한 연락처를 기록합니다.
 
@@ -234,13 +234,13 @@ private struct CachedTemplates {
         (
             L10n.text("个人偏好记录", en: "Personal Preferences", ja: "個人設定メモ", ko: "개인 선호 기록"),
             L10n.text("""
-            本人 [姓名]，现记录个人偏好如下，供家庭沟通参考：
+            本人 [姓名]，现记录个人偏好如下，供信息参考：
             
             一、生活偏好
-            [请填写您希望家人了解的生活习惯或偏好]
+            [请填写您希望添加用户了解的生活习惯或偏好]
             
-            二、家庭沟通
-            [请填写希望家人沟通时注意的事项]
+            二、备注说明
+            [请填写希望添加用户查看时注意的事项]
             
             三、其他备注
             [其他想记录的内容]
@@ -256,13 +256,13 @@ private struct CachedTemplates {
             3. Other notes
             [Other content]
             """, ja: """
-            私、[氏名] は、家族共有の参考として個人設定を記録します。
+            私、[氏名] は、共有参考として個人設定を記録します。
 
             1. 生活上の好み
-            [家族に知ってほしい習慣や好み]
+            [共有相手に知ってほしい習慣や好み]
 
-            2. 家族とのコミュニケーション
-            [家族とのやり取りで大切にしたいこと]
+            2. 共有相手とのコミュニケーション
+            [共有相手とのやり取りで大切にしたいこと]
 
             3. その他メモ
             [その他の内容]
@@ -280,15 +280,15 @@ private struct CachedTemplates {
             """)
         ),
         (
-            L10n.text("家庭沟通备注", en: "Family Notes", ja: "家族共有メモ", ko: "가족 공유 메모"),
+            L10n.text("备注说明", en: "Notes", ja: "メモ", ko: "메모"),
             L10n.text("""
-            本人 [姓名]，现记录希望家人了解的事项：
+            本人 [姓名]，现记录希望添加用户了解的事项：
             
             一、重要联系人
             [姓名/联系方式/关系]
             
-            二、家庭事项
-            [需要家人了解或协助的事项]
+            二、亲友事项
+            [需要添加用户了解或协助的事项]
             
             三、其他备注
             [其他说明]
@@ -304,13 +304,13 @@ private struct CachedTemplates {
             3. Other notes
             [Other notes]
             """, ja: """
-            私、[氏名] は、家族に共有したい内容を記録します。
+            私、[氏名] は、共有相手に伝えたい内容を記録します。
 
             1. 重要な連絡先
             [氏名 / 連絡先 / 関係]
 
-            2. 家族の事項
-            [家族に知ってほしい、または協力してほしい内容]
+            2. 共有事項
+            [共有相手に知ってほしい、または協力してほしい内容]
 
             3. その他メモ
             [その他]
@@ -450,7 +450,7 @@ struct EditWillModuleModal: View {
         case .property:
             return L10n.text("资产记录", en: "Asset Notes", ja: "資産メモ", ko: "자산 기록")
         case .heirs:
-            return L10n.text("家庭成员", en: "Family Contacts", ja: "家族連絡先", ko: "가족 연락처")
+            return L10n.text("添加用户", en: "Added Contacts", ja: "追加連絡先", ko: "추가 연락처")
         case .specialItems:
             return L10n.text("特殊物品", en: "Special Items", ja: "特別品", ko: "특별 물품")
         case .funeral:
@@ -488,15 +488,15 @@ struct TemplateModal: View {
             """
         ),
         (
-            title: "家庭沟通备注",
+            title: "备注说明",
             content: """
-            本人 [姓名]，现记录希望家人了解的事项：
+            本人 [姓名]，现记录希望添加用户了解的事项：
             
             一、重要联系人
             [姓名/联系方式/关系]
             
-            二、家庭事项
-            [需要家人了解或协助的事项]
+            二、添加事项
+            [需要添加用户了解或协助的事项]
             
             记录人：[签名]
             日期：[年] 年 [月] 月 [日] 日
@@ -505,13 +505,13 @@ struct TemplateModal: View {
         (
             title: "个人偏好",
             content: """
-            本人 [姓名]，现记录个人偏好如下，供家庭沟通参考：
+            本人 [姓名]，现记录个人偏好如下，供信息参考：
             
             一、生活偏好
-            [请填写您希望家人了解的生活习惯或偏好]
+            [请填写您希望添加用户了解的生活习惯或偏好]
             
-            二、家庭沟通
-            [请填写希望家人沟通时注意的事项]
+            二、备注说明
+            [请填写希望添加用户查看时注意的事项]
             
             三、其他
             [其他具体要求]

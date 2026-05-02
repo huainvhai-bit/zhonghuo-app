@@ -99,7 +99,7 @@ final class SettingsViewModel: ObservableObject {
 
     func restoreFromCloud() async {
         if let result = await dataManager.batchSyncCapsules() {
-            restoreMessage = "成功从云端恢复 \(result.total) 个胶囊"
+            restoreMessage = "成功从云端恢复 \(result.total) 条留言"
         } else {
             restoreMessage = "云端恢复失败，请检查网络连接"
         }
@@ -115,6 +115,10 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func checkLocationPermission() {
+        guard AppConfig.isLocationUploadEnabled else {
+            return
+        }
+
         let status = userManager.locationAuthStatus
         guard status == .notDetermined || status == .denied else {
             return
@@ -143,7 +147,7 @@ final class SettingsViewModel: ObservableObject {
         LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "签到间隔设置变更")
 
         // 关键修复：把新的签到间隔同步到服务端，否则后端 users.check_in_interval / checkin_expire_at
-        // 永远停留在旧值，导致家人 tab 与后台用户列表都看不到本次更改
+        // 永远停留在旧值，导致添加 tab 与后台用户列表都看不到本次更改
         let intervalHoursInt = Int(interval.hours)
         do {
             _ = try await APIManager.shared.updateCheckInInterval(hours: intervalHoursInt)

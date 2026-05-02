@@ -2,7 +2,7 @@
 //  ReceivedCapsuleListView.swift
 //  终活
 //
-//  我收到的时光胶囊列表
+//  我收到的时光留言列表
 //
 
 import SwiftUI
@@ -74,7 +74,7 @@ struct ReceivedCapsuleListView: View {
             Text(L10n.text("暂无收到的留言", en: "No received messages yet", ja: "まだ受け取ったメッセージはありません", ko: "아직 받은 메시지가 없습니다"))
                 .font(.headline)
                 .foregroundColor(.secondary)
-            Text(L10n.text("家人手动发送留言后，您将在这里看到", en: "Messages manually sent by family will appear here.", ja: "家族が手動送信したメッセージはここに表示されます。", ko: "가족이 직접 보낸 메시지가 여기에 표시됩니다."))
+            Text(L10n.text("对方手动发送留言后，您将在这里看到", en: "Messages manually sent by the other side will appear here.", ja: "相手が手動送信したメッセージはここに表示されます。", ko: "상대가 직접 보낸 메시지가 여기에 표시됩니다."))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

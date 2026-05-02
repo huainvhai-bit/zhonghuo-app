@@ -8,6 +8,32 @@
 import Foundation
 
 struct AppConfig {
+    // MARK: - 合规模式
+
+    /// 是否启用中国区送审收口模式
+    /// 当前默认关闭，优先保留原有功能结构，仅通过具体开关弱化定位与自动同步。
+    static let isChinaReviewMode = false
+
+    /// 家人相关功能是否展示
+    static var showsFamilyFeatures: Bool { true }
+
+    /// 重要事项相关功能是否展示
+    static var showsWillFeatures: Bool { true }
+
+    /// 是否允许持续定位上传
+    static var allowsContinuousLocationUpload: Bool { false }
+
+    /// 是否允许家人数据同步
+    static var allowsFamilyDataSync: Bool { true }
+
+    /// 是否允许重要事项数据同步
+    static var allowsWillDataSync: Bool { true }
+
+    /// 用户是否开启定位功能
+    static var isLocationUploadEnabled: Bool {
+        false
+    }
+
     // MARK: - API 配置
     
     /// 默认 API 服务器地址（HTTPS）

@@ -64,11 +64,8 @@ class CloudStorageManager: ObservableObject {
             // 2. 同步用户数据
             try await syncUserData()
             
-            // 3. 同步遗嘱数据
-            try await syncWillData()
-            
-            // 4. 同步胶囊数据
-            try await syncCapsuleData()
+            // 3. 事项与留言保持本地优先，不再自动写入 iCloud
+            print("⚠️ 事项与留言已切换为本地优先，跳过 iCloud 自动同步")
             
             await MainActor.run {
                 lastSyncDate = Date()
@@ -122,51 +119,6 @@ class CloudStorageManager: ObservableObject {
         
         try await uploadRecord(record)
         print("✅ 用户数据同步完成")
-    }
-    
-    /// 同步遗嘱数据
-    private func syncWillData() async throws {
-        let willModules = await MainActor.run {
-            DataManager.shared.willModules
-        }
-        print("📝 同步 \(willModules.count) 条遗嘱数据")
-        
-        for will in willModules {
-            let recordID = CKRecord.ID(recordName: "will_\(will.id)")
-            let record = CKRecord(recordType: "Will", recordID: recordID)
-            
-            // ✅ 修复：新版 CloudKit 直接使用值
-            record["title"] = will.title as CKRecordValue
-            record["content"] = will.content as CKRecordValue
-            record["updatedAt"] = Date() as CKRecordValue
-            
-            try await uploadRecord(record)
-        }
-        
-        print("✅ 遗嘱数据同步完成")
-    }
-    
-    /// 同步胶囊数据
-    private func syncCapsuleData() async throws {
-        let capsules = await MainActor.run {
-            DataManager.shared.capsules
-        }
-        print("📦 同步 \(capsules.count) 条胶囊数据")
-        
-        for capsule in capsules {
-            let recordID = CKRecord.ID(recordName: "capsule_\(capsule.id)")
-            let record = CKRecord(recordType: "TimeCapsule", recordID: recordID)
-            
-            // ✅ 修复：新版 CloudKit 直接使用值
-            record["title"] = capsule.title as CKRecordValue
-            record["content"] = capsule.content as CKRecordValue
-            record["sendDate"] = capsule.sendDate as CKRecordValue
-            record["isSent"] = (capsule.isSent ? 1 : 0) as CKRecordValue
-            
-            try await uploadRecord(record)
-        }
-        
-        print("✅ 胶囊数据同步完成")
     }
     
     // MARK: - 上传记录

@@ -76,10 +76,10 @@ struct DeleteAccountView: View {
                 }
             } message: {
                 Text(L10n.text(
-                    "账号一旦注销，您的留言、重要事项、资产、家人关系、签到记录等将被永久删除且无法恢复。",
-                    en: "Once deleted, your messages, important notes, assets, family relations and check-in records will be permanently removed and cannot be restored.",
-                    ja: "削除すると、メッセージ、重要事項、資産、家族関係、チェックイン記録などが完全に削除され、復元できません。",
-                    ko: "삭제하면 메시지, 중요 사항, 자산, 가족 관계, 체크인 기록 등이 영구히 삭제되며 복구할 수 없습니다."
+                    "账号一旦注销，您的留言、重要事项、资产、添加关系、签到记录等将被永久删除且无法恢复。",
+                    en: "Once deleted, your messages, important notes, assets, added relations and check-in records will be permanently removed and cannot be restored.",
+                    ja: "削除すると、メッセージ、重要事項、資産、追加関係、チェックイン記録などが完全に削除され、復元できません。",
+                    ko: "삭제하면 메시지, 중요 사항, 자산, 추가 관계, 체크인 기록 등이 영구히 삭제되며 복구할 수 없습니다."
                 ))
             }
             .alert(
@@ -239,7 +239,7 @@ struct DeleteAccountView: View {
 
     /// 注销成功后清掉所有本地缓存并退出登录
     /// - 再调 UserManager.logout()：解除沙箱、清内存、删 user_*.json、清 Token、广播 UserDidLogout
-    /// - 最后取消所有本地通知（签到提醒、家人超时提醒等）
+    /// - 最后取消所有本地通知（签到提醒、添加提醒等）
     @MainActor
     private func finishAndLogout() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()

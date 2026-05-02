@@ -2,7 +2,7 @@
 //  BindFamilyView.swift
 //  终活
 //
-//  绑定家人页面 - 输入邀请码或扫码
+//  添加用户页面 - 输入邀请码或扫码
 //
 
 import SwiftUI
@@ -36,7 +36,7 @@ struct BindFamilyView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.indigo)
                         
-                        Text(L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"))
+                        Text(L10n.text("添加用户", en: "Add User", ja: "ユーザーを追加", ko: "사용자 추가"))
                             .font(.system(size: 22, weight: .bold))
                         
                         Text(L10n.text("输入邀请码或扫描二维码", en: "Enter the invite code or scan the QR code", ja: "招待コードを入力するか、QRコードを読み取ってください", ko: "초대 코드를 입력하거나 QR 코드를 스캔하세요"))
@@ -118,7 +118,7 @@ struct BindFamilyView: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.secondary)
                         
-                        Text(L10n.text("确认后会先提交绑定申请，等待对方最终确认后才会正式成为家人关系。", en: "After confirmation, a binding request will be submitted first. The relationship becomes official only after the other side confirms it.", ja: "確認するとまず連携申請が送信されます。相手が最終確認してから正式な家族関係になります。", ko: "확인하면 먼저 연결 요청이 제출됩니다. 상대방이 최종 확인해야 정식 가족 관계가 됩니다."))
+                        Text(L10n.text("确认后会先提交添加申请，等待对方最终确认后才会正式生效。", en: "After confirmation, an add request will be submitted first. The relationship becomes active only after the other side confirms it.", ja: "確認するとまず追加申請が送信されます。相手が最終確認してから正式に有効になります。", ko: "확인하면 먼저 추가 요청이 제출됩니다. 상대방이 최종 확인해야 정식으로 적용됩니다."))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -127,7 +127,7 @@ struct BindFamilyView: View {
                     .padding(.bottom, 20)
                 }
             }
-            .navigationTitle(L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"))
+            .navigationTitle(L10n.text("添加用户", en: "Add User", ja: "ユーザーを追加", ko: "사용자 추가"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -146,11 +146,11 @@ struct BindFamilyView: View {
                 }
             } message: {
                 Text(successMessage.isEmpty
-                     ? L10n.text("绑定成功", en: "Binding succeeded", ja: "連携に成功しました", ko: "연결에 성공했습니다")
+                    ? L10n.text("添加成功", en: "Add succeeded", ja: "追加に成功しました", ko: "추가에 성공했습니다")
                      : successMessage)
             }
             .confirmationDialog(
-                L10n.text("确认家人绑定", en: "Confirm family binding", ja: "家族連携を確認", ko: "가족 연결 확인"),
+                L10n.text("确认添加关系", en: "Confirm adding", ja: "追加を確認", ko: "추가 확인"),
                 isPresented: $showingInviteConfirmation,
                 titleVisibility: .visible
             ) {
@@ -163,10 +163,10 @@ struct BindFamilyView: View {
             } message: {
                 if let preview = pendingInvitePreview {
                     Text(L10n.text(
-                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交绑定申请，等待对方最终确认后才会正式生效。",
-                        en: "You are about to submit a binding request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The binding becomes official only after the other side confirms it.",
-                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ連携申請を送信します。相手が最終確認してから正式に有効になります。",
-                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 연결 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
+                        "将与 \(preview.inviterName)（账号：\(preview.inviterAccount.isEmpty ? "未知" : preview.inviterAccount)）提交添加申请，等待对方最终确认后才会正式生效。",
+                        en: "You are about to submit an add request with \(preview.inviterName) (account: \(preview.inviterAccount.isEmpty ? "unknown" : preview.inviterAccount)). The link becomes active only after the other side confirms it.",
+                        ja: "\(preview.inviterName)（アカウント：\(preview.inviterAccount.isEmpty ? "不明" : preview.inviterAccount)）へ追加申請を送信します。相手が最終確認してから正式に有効になります。",
+                        ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 추가 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
             }
@@ -203,10 +203,10 @@ struct BindFamilyView: View {
                         .ignoresSafeArea()
                     
                     UpgradePromptView(
-                        feature: L10n.text("绑定家人", en: "Bind Family", ja: "家族を連携", ko: "가족 연결"),
-                        statusText: L10n.text("当前家人数量已达上限", en: "You have reached the family limit", ja: "家族数の上限に達しました", ko: "가족 수 한도에 도달했습니다"),
-                        currentLimit: L10n.text("当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位家人", en: "Up to \(MembershipManager.shared.currentFamilyLimit()) family members", ja: "最大 \(MembershipManager.shared.currentFamilyLimit()) 人の家族", ko: "최대 \(MembershipManager.shared.currentFamilyLimit())명의 가족"),
-                        targetLimit: L10n.text("会员版可绑定更多家人", en: "Premium can bind more family members", ja: "会員プランではより多く連携できます", ko: "멤버십에서는 더 많은 가족을 연결할 수 있습니다"),
+                        feature: L10n.text("添加用户", en: "Add User", ja: "ユーザーを追加", ko: "사용자 추가"),
+                        statusText: L10n.text("当前添加数量已达上限", en: "You have reached the adding limit", ja: "追加数の上限に達しました", ko: "추가 수 한도에 도달했습니다"),
+                        currentLimit: L10n.text("当前最多 \(MembershipManager.shared.currentFamilyLimit()) 位添加用户", en: "Up to \(MembershipManager.shared.currentFamilyLimit()) added users", ja: "最大 \(MembershipManager.shared.currentFamilyLimit()) 人まで追加できます", ko: "최대 \(MembershipManager.shared.currentFamilyLimit())명의 사용자까지 추가할 수 있습니다"),
+                        targetLimit: L10n.text("会员版可添加更多用户", en: "Premium can add more users", ja: "会員プランではより多く追加できます", ko: "멤버십에서는 더 많은 사용자를 추가할 수 있습니다"),
                         onUpgrade: {
                             showingUpgradeForFamily = false
                             showingMembershipView = true
@@ -266,7 +266,7 @@ struct BindFamilyView: View {
     private func bindFamilyAsync() async {
         let currentCount = DataManager.shared.familyMembers.count
         if !MembershipManager.shared.canAddFamilyMember(currentCount: currentCount) {
-            errorMessage = L10n.text("家人数量已达上限，升级会员可绑定更多家人", en: "You have reached the family limit. Upgrade to bind more family members.", ja: "家族数の上限に達しました。会員プランでより多く連携できます。", ko: "가족 수 한도에 도달했습니다. 멤버십을 업그레이드하면 더 많이 연결할 수 있습니다.")
+            errorMessage = L10n.text("添加数量已达上限，升级会员可添加更多用户", en: "You have reached the adding limit. Upgrade to add more users.", ja: "追加数の上限に達しました。会員プランでより多く追加できます。", ko: "추가 수 한도에 도달했습니다. 멤버십을 업그레이드하면 더 많이 추가할 수 있습니다.")
             showingUpgradeForFamily = true
             isBinding = false
             return
@@ -290,7 +290,7 @@ struct BindFamilyView: View {
         do {
             // ✅ 修复：使用 DataManager 统一函数
             let result = try await DataManager.shared.bindFamilyByInviteCode(inviteCode: inviteCode)
-            print("📡 绑定家人响应：\(result)")
+            print("📡 添加申请响应：\(result)")
             
             let success = result["success"] as? Bool ?? false
             if success {
@@ -325,13 +325,13 @@ struct BindFamilyView: View {
 
         do {
             let result = try await DataManager.shared.acceptFamilyInvite(relationId: preview.id)
-            print("📡 确认家人关系响应：\(result)")
+            print("📡 确认添加关系响应：\(result)")
 
             let success = result["success"] as? Bool ?? false
             if success {
                 _ = try? await DataManager.shared.refreshFamilyMembers()
                 pendingInvitePreview = nil
-                successMessage = result["message"] as? String ?? L10n.text("已提交绑定申请，等待对方确认", en: "Binding request submitted. Waiting for the other side to confirm.", ja: "連携申請を送信しました。相手の確認をお待ちください。", ko: "연결 요청을 제출했습니다. 상대방의 확인을 기다려 주세요.")
+                successMessage = result["message"] as? String ?? L10n.text("已提交添加申请，等待对方确认", en: "Add request submitted. Waiting for the other side to confirm.", ja: "追加申請を送信しました。相手の確認をお待ちください。", ko: "추가 요청을 제출했습니다. 상대방의 확인을 기다려 주세요.")
                 showingSuccess = true
             } else {
                 errorMessage = result["message"] as? String ?? L10n.string(.bindFailed)

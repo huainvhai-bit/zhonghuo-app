@@ -30,39 +30,34 @@ struct SettingsDetailView: View {
                 .ignoresSafeArea()
             
             List {
-                // 📍 定位服务
-                Section(header: Text(L10n.string(.locationService))) {
-                    NavigationLink(destination: LocationSettingsView()) {
-                        SettingsRow(icon: "location.fill", iconColor: .blue, title: L10n.string(.locationService), subtitle: L10n.string(.locationDesc))
+                if !AppConfig.isChinaReviewMode {
+                    // 👨‍👩‍👧 关闭签到设置
+                    Section(header: Text(L10n.string(.closeCheckIn))) {
+                    Toggle(isOn: $isFamilyMode) {
+                        SettingsRow(icon: "person.2.fill", iconColor: .green, title: L10n.string(.closeCheckIn), subtitle: L10n.string(.familyGuardHint))
+                    }
+                    .tint(Color(hex: "6366F1"))
+                    .onChange(of: isFamilyMode) { newValue in
+                        if newValue {
+                            CountdownTimerManager.shared.stop()
+                        } else {
+                            CountdownTimerManager.shared.start { }
+                        }
+                        NotificationCenter.default.post(name: NSNotification.Name("FamilyModeChanged"), object: nil)
+                        // 重新排程本人签到提醒：开启后会清空，关闭后会按当前签到记录重建
+                        LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "关闭签到设置切换")
+                        // 同步到后端：让首页状态与服务端保持一致
+                        Task {
+                            await DataManager.shared.setFamilyMode(enabled: newValue)
+                        }
                     }
                 }
-                
-                // 👨‍👩‍👧 家人共享设置
-                Section(header: Text(L10n.string(.familyGuard))) {
-                Toggle(isOn: $isFamilyMode) {
-                    SettingsRow(icon: "person.2.fill", iconColor: .green, title: L10n.string(.familyGuard), subtitle: L10n.string(.autoCheckIn))
-                }
-                .tint(Color(hex: "6366F1"))
-                .onChange(of: isFamilyMode) { newValue in
-                    if newValue {
-                        CountdownTimerManager.shared.stop()
-                    } else {
-                        CountdownTimerManager.shared.start { }
+                    
+                    Section(header: Text(L10n.string(.prompt))) {
+                        Text(L10n.string(.familyGuardHint))
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
                     }
-                    NotificationCenter.default.post(name: NSNotification.Name("FamilyModeChanged"), object: nil)
-                    // 重新排程本人签到提醒：开启共享后会清空，关闭后会按当前签到记录重建
-                    LifeCheckStatusManager.shared.requestNotificationRefresh(reason: "家人共享设置切换")
-                    // 同步到后端：让关联家人能在家人 tab 看到共享状态
-                    Task {
-                        await DataManager.shared.setFamilyMode(enabled: newValue)
-                    }
-                }
-            }
-                
-                Section(header: Text(L10n.string(.prompt))) {
-                    Text(L10n.string(.familyGuardHint))
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
                 }
                 
                 // 🎨 主题设置
@@ -270,34 +265,6 @@ struct SettingsRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - 定位服务设置
-struct LocationSettingsView: View {
-    @AppStorage("locationEnabled") private var locationEnabled = true
-    
-    var body: some View {
-        ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
-            
-            List {
-                Section(header: Text(L10n.string(.locationService))) {
-                    Toggle(L10n.string(.enableLocation), isOn: $locationEnabled)
-                        .tint(Color(hex: "6366F1"))
-                }
-                
-                Section(header: Text(L10n.text("说明", en: "Info", ja: "説明", ko: "설명"))) {
-                    Text(L10n.string(.locationDesc))
-                        .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                }
-            }
-            .listStyle(.insetGrouped)
-        }
-        .navigationTitle(L10n.string(.locationService))
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

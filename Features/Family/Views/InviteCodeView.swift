@@ -2,7 +2,7 @@
 //  InviteCodeView.swift
 //  终活
 //
-//  邀请码页面 - 显示二维码和邀请码
+//  添加邀请码页面 - 显示二维码和邀请码
 //
 
 import SwiftUI
@@ -113,10 +113,10 @@ struct InviteCodeView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.indigo)
                     
-                    Text(L10n.text("邀请家人", en: "Invite family", ja: "家族を招待", ko: "가족 초대"))
+                    Text(L10n.text("邀请添加用户", en: "Invite user", ja: "ユーザーを招待", ko: "사용자 초대"))
                         .font(.system(size: 20, weight: .bold))
                     
-                    Text(L10n.text("扫描二维码或分享邀请码", en: "Scan the QR code or share the invite code", ja: "QRコードを読み取るか、招待コードを共有してください", ko: "QR 코드를 스캔하거나 초대 코드를 공유하세요"))
+                    Text(L10n.text("扫描二维码或输入邀请码", en: "Scan the QR code or enter the invite code", ja: "QRコードを読み取るか、招待コードを入力してください", ko: "QR 코드를 스캔하거나 초대 코드를 입력하세요"))
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                 }
@@ -142,7 +142,7 @@ struct InviteCodeView: View {
                         .frame(width: 220, height: 220)
                     }
                     
-                    Text(L10n.text("扫描二维码快速绑定", en: "Scan the QR code to bind quickly", ja: "QRコードを読み取ってすばやく連携", ko: "QR 코드를 스캔해 빠르게 연결"))
+                    Text(L10n.text("扫描二维码快速添加", en: "Scan the QR code to add quickly", ja: "QRコードを読み取ってすばやく追加", ko: "QR 코드를 스캔해 빠르게 추가"))
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                 }
@@ -232,15 +232,15 @@ struct InviteCodeView: View {
                     HStack {
                         Image(systemName: "lightbulb")
                             .foregroundColor(.orange)
-                    Text(L10n.text("如何邀请家人？", en: "How do I invite family?", ja: "家族を招待するには？", ko: "가족은 어떻게 초대하나요?"))
+                    Text(L10n.text("如何邀请添加用户？", en: "How do I invite a user?", ja: "ユーザーをどう招待しますか？", ko: "사용자를 어떻게 초대하나요?"))
                             .font(.system(size: 15, weight: .semibold))
                     }
                     
                     VStack(alignment: .leading, spacing: 10) {
-                        InstructionRow(number: 1, text: L10n.text("分享邀请码或二维码给家人", en: "Share the invite code or QR code with your family.", ja: "招待コードまたはQRコードを家族に共有します。", ko: "초대 코드나 QR 코드를 가족에게 공유하세요."))
-                        InstructionRow(number: 2, text: L10n.text("家人在 App 中输入邀请码或扫码", en: "Family members enter the code or scan it in the app.", ja: "家族はアプリでコードを入力するか、スキャンします。", ko: "가족은 앱에서 코드를 입력하거나 스캔합니다."))
-                        InstructionRow(number: 3, text: L10n.text("对方确认后才会正式成为家人关系", en: "Only after the other side confirms will both sides become family members.", ja: "相手が確認してから正式に家族関係になります。", ko: "상대방이 확인한 후에야 정식 가족 관계가 됩니다."))
-                        InstructionRow(number: 4, text: L10n.text("可以互相查看设备信息和位置", en: "You can view each other's device info and location.", ja: "お互いの端末情報や位置情報を確認できます。", ko: "서로의 기기 정보와 위치를 볼 수 있습니다."))
+                        InstructionRow(number: 1, text: L10n.text("出示邀请码或二维码给对方", en: "Show the invite code or QR code to the other person.", ja: "招待コードまたはQRコードを相手に見せてください。", ko: "초대 코드나 QR 코드를 상대방에게 보여 주세요."))
+                        InstructionRow(number: 2, text: L10n.text("对方在 App 中输入邀请码或扫码", en: "The other person enters the code or scans it in the app.", ja: "相手はアプリでコードを入力するか、スキャンします。", ko: "상대방은 앱에서 코드를 입력하거나 스캔합니다."))
+                        InstructionRow(number: 3, text: L10n.text("对方确认后才会正式建立添加", en: "Only after the other side confirms will it be added.", ja: "相手が確認してから正式に追加されます。", ko: "상대방이 확인한 후에야 정식으로 추가됩니다."))
+                        InstructionRow(number: 4, text: L10n.text("可以互相查看设备信息", en: "You can view each other's device info.", ja: "お互いの端末情報を確認できます。", ko: "서로의 기기 정보를 볼 수 있습니다."))
                     }
                     .padding()
                     .background(Color.white.opacity(0.6))

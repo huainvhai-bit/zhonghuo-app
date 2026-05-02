@@ -137,6 +137,10 @@ final class ContentViewModel: ObservableObject {
     }
 
     func handleOpenFamilyGuard() {
+        guard AppConfig.showsFamilyFeatures else {
+            print("👨‍👩‍👧 送审版已隐藏添加页面入口")
+            return
+        }
         showingFamilyGuard = true
     }
 

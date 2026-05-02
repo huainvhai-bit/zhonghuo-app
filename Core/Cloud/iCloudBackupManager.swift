@@ -94,89 +94,16 @@ class iCloudBackupManager: ObservableObject {
         
         print("🔵 iCloudBackupManager: 开始同步所有数据...")
         
-        // 同步时光胶囊
-        syncCapsulesToiCloud()
-        
-        // 同步遗嘱
-        syncWillsToiCloud()
-        
+        // 留言与重要事项在中国区送审版中保持本地优先，不自动写入 iCloud
+        print("⚠️ iCloudBackupManager: 留言与重要事项保持本地优先，跳过自动同步")
         print("✅ iCloudBackupManager: 数据同步完成")
     }
     
-    /// 同步时光胶囊
-    private func syncCapsulesToiCloud() {
-        @MainActor
-        func doSync() {
-            let capsules = DataManager.shared.capsules
-            
-            capsules.forEach { capsule in
-                let record = CKRecord(recordType: "Capsule")
-                record["id"] = capsule.id as CKRecordValue
-                record["title"] = capsule.title as CKRecordValue
-                record["type"] = capsule.type.rawValue as CKRecordValue
-                record["content"] = capsule.content as CKRecordValue
-                
-                // 安全转换 Date?
-                if let sendDate = capsule.sendDate as Date? {
-                    record["sendDate"] = sendDate as CKRecordValue
-                }
-                
-                record["mediaServerURL"] = capsule.mediaServerURL as CKRecordValue
-                record["mediaURL"] = capsule.mediaURL as CKRecordValue
-                record["cloudBackupStatus"] = capsule.cloudBackupStatus.rawValue as CKRecordValue
-                
-                if let cloudBackupAt = capsule.cloudBackupAt as Date? {
-                    record["cloudBackupAt"] = cloudBackupAt as CKRecordValue
-                }
-                
-                privateCloudDatabase.save(record) { record, error in
-                    if let error = error {
-                        print("❌ iCloudBackupManager: 保存胶囊失败：\(error.localizedDescription)")
-                    } else {
-                        print("✅ iCloudBackupManager: 胶囊已同步：\(capsule.title)")
-                    }
-                }
-            }
-        }
-        
-        Task { @MainActor in
-            doSync()
-        }
-    }
-    
-    /// 同步遗嘱
-    private func syncWillsToiCloud() {
-        @MainActor
-        func doSync() {
-            let wills = DataManager.shared.willModules.filter { $0.isCompleted }
-            
-            wills.forEach { will in
-                let record = CKRecord(recordType: "Will")
-                record["id"] = will.id as CKRecordValue
-                record["type"] = will.type.rawValue as CKRecordValue
-                record["content"] = will.content as CKRecordValue
-                record["isCompleted"] = will.isCompleted as CKRecordValue
-                
-                privateCloudDatabase.save(record) { record, error in
-                    if let error = error {
-                        print("❌ iCloudBackupManager: 保存遗嘱失败：\(error.localizedDescription)")
-                    } else {
-                        print("✅ iCloudBackupManager: 遗嘱已同步：\(will.type)")
-                    }
-                }
-            }
-        }
-        
-        Task { @MainActor in
-            doSync()
-        }
-    }
-    
-    /// 同步家人
+    /// 同步添加用户
     private func syncFamilyMembersToiCloud() {
-        // ✅ 家人同步通过 GraphQL API 实现
-        print("🔵 iCloudBackupManager: 家人同步到 iCloud")
-        // 家人数据已存储在云端，无需额外同步
+        // ✅ 添加用户同步通过 GraphQL API 实现
+        print("🔵 iCloudBackupManager: 添加用户同步到 iCloud")
+        // 添加数据已存储在云端，无需额外同步
     }
     
     /// 同步资产
@@ -201,7 +128,7 @@ class iCloudBackupManager: ObservableObject {
     
     // MARK: - 查询 iCloud 数据
     
-    /// 查询时光胶囊（使用 `CKQueryOperation`，替代已弃用的 `perform(_:inZoneWith:completionHandler:)`）
+    /// 查询留言（使用 `CKQueryOperation`，替代已弃用的 `perform(_:inZoneWith:completionHandler:)`）
     func queryCapsules() {
         let query = CKQuery(recordType: "Capsule", predicate: NSPredicate(value: true))
         let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
@@ -211,9 +138,9 @@ class iCloudBackupManager: ObservableObject {
         operation.queryResultBlock = { result in
             switch result {
             case .failure(let error):
-                print("❌ iCloudBackupManager: 查询胶囊失败：\(error.localizedDescription)")
+                print("❌ iCloudBackupManager: 查询留言失败：\(error.localizedDescription)")
             case .success(let cursor):
-                print("✅ iCloudBackupManager: 胶囊 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
+                print("✅ iCloudBackupManager: 留言 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
                 // ✅ 若有 cursor，可用其再建 `CKQueryOperation` 拉取剩余页；合并逻辑以 GraphQL 为准。
             }
         }
@@ -221,7 +148,7 @@ class iCloudBackupManager: ObservableObject {
         privateCloudDatabase.add(operation)
     }
     
-    /// 查询遗嘱（同上）
+    /// 查询重要事项（同上）
     func queryWills() {
         let query = CKQuery(recordType: "Will", predicate: NSPredicate(value: true))
         let zoneID = CKRecordZone.ID(zoneName: "DefaultZone")
@@ -231,9 +158,9 @@ class iCloudBackupManager: ObservableObject {
         operation.queryResultBlock = { result in
             switch result {
             case .failure(let error):
-                print("❌ iCloudBackupManager: 查询遗嘱失败：\(error.localizedDescription)")
+                print("❌ iCloudBackupManager: 查询重要事项失败：\(error.localizedDescription)")
             case .success(let cursor):
-                print("✅ iCloudBackupManager: 遗嘱 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
+                print("✅ iCloudBackupManager: 重要事项 CK 查询已完成\(cursor != nil ? "（还有更多批次）" : "")")
             }
         }
 

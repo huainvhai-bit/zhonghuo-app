@@ -2,8 +2,8 @@
 //  Capsule/CapsuleDetailView.swift
 //  终活
 //
-//  时光胶囊详情视图
-//  职责：查看/播放胶囊内容
+//  时光留言详情视图
+//  职责：查看/播放留言内容
 //
 
 import SwiftUI
@@ -331,11 +331,7 @@ struct CapsuleDetailView: View {
     private func deleteCapsule() {
         dataManager.capsules.removeAll { $0.id == capsule.id }
         dataManager.saveCapsulesToFile()
-        
-        Task {
-            await dataManager.batchSyncCapsules()
-        }
-        
+        print("🗑️ 留言已从本地删除，未执行云端同步")
         dismiss()
     }
     
@@ -368,7 +364,7 @@ private struct PlaybackItem: Identifiable {
             dataManager: DataManager.shared,
             capsule: TimeCapsule(
                 id: UUID().uuidString,
-                title: "测试胶囊",
+                title: "测试留言",
                 content: "测试内容",
                 type: .video,
                 sendDate: Date(),
