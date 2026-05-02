@@ -11,12 +11,8 @@ import UIKit
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
-    @Published var showingLocationAlert = false
-    @Published var showingRestoreAlert = false
-    @Published var showingRestoreConfirmAlert = false
     @Published var showingUpdateAlert = false
     @Published var showingError = false
-    @Published var restoreMessage = ""
     @Published var latestVersion = ""
     @Published var updateUrl = ""
     @Published var selectedCheckInInterval: CheckInInterval = .twoDays
@@ -31,7 +27,6 @@ final class SettingsViewModel: ObservableObject {
         dataManager.loadAllData()
         setupNavigationBar()
         startDeviceMonitoring()
-        checkLocationPermission()
         refreshCheckInInterval()
         scheduleDeviceInfoUpload()
     }
@@ -97,39 +92,12 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    func restoreFromCloud() async {
-        if let result = await dataManager.batchSyncCapsules() {
-            restoreMessage = "成功从云端恢复 \(result.total) 条留言"
-        } else {
-            restoreMessage = "云端恢复失败，请检查网络连接"
-        }
-        showingRestoreAlert = true
-    }
-
     func startDeviceMonitoring() {
         deviceMonitor.startMonitoring()
     }
 
     func stopDeviceMonitoring() {
         deviceMonitor.stopMonitoring()
-    }
-
-    func checkLocationPermission() {
-        guard AppConfig.isLocationUploadEnabled else {
-            return
-        }
-
-        let status = userManager.locationAuthStatus
-        guard status == .notDetermined || status == .denied else {
-            return
-        }
-
-        if status == .denied {
-            showingLocationAlert = true
-            return
-        }
-
-        userManager.requestLocationPermission()
     }
 
     func updateCheckInInterval(_ interval: CheckInInterval) async {

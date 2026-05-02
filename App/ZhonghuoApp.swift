@@ -6,7 +6,6 @@
 import SwiftUI
 import Network
 import BackgroundTasks
-import CoreLocation
 
 @main
 struct ZhonghuoApp: App {
@@ -285,8 +284,7 @@ class RealTimeSyncManager: ObservableObject {
 }
 
 // MARK: - AppDelegate
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, CLLocationManagerDelegate {
-    private let locationManager = CLLocationManager()
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // 添加共享开关：未写入过 UserDefaults 时默认为关闭（与后端 users.is_family_mode 默认 0 一致）
         UserDefaults.standard.register(defaults: ["isFamilyMode": false])
@@ -316,9 +314,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             await LifeCheckStatusManager.shared.loadNotificationConfig()
         }
         
-        // ✅ 检测定位权限
-        checkLocationPermission()
-        
         // ✅ 启用后台任务
         startBackgroundTasks()
         setupCheckInNotifications()
@@ -326,68 +321,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         Logger.shared.i("终活 App 启动完成")
         return true
-    }
-    
-    // MARK: - 定位权限检测
-    private func checkLocationPermission() {
-        guard AppConfig.isLocationUploadEnabled else {
-            locationManager.stopUpdatingLocation()
-            return
-        }
-
-        let status = locationManager.authorizationStatus
-        Logger.shared.d("🔵 定位权限检测：\(status.rawValue)")
-        
-        switch status {
-        case .notDetermined:
-            // 首次请求定位权限
-            locationManager.delegate = self
-            locationManager.requestWhenInUseAuthorization()
-        case .denied, .restricted:
-            // 权限被拒绝或受限，发送通知提示用户
-            NotificationCenter.default.post(
-                name: NSNotification.Name("LocationPermissionDenied"),
-                object: nil
-            )
-        case .authorizedAlways, .authorizedWhenInUse:
-            // 已有权限，开始定位
-            locationManager.delegate = self
-            locationManager.startUpdatingLocation()
-        @unknown default:
-            break
-        }
-    }
-    
-    // MARK: - CLLocationManagerDelegate
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        guard AppConfig.isLocationUploadEnabled else {
-            manager.stopUpdatingLocation()
-            return
-        }
-
-        let status = manager.authorizationStatus
-        Logger.shared.d("🔵 定位权限变化：\(status.rawValue)")
-        
-        switch status {
-        case .authorizedAlways, .authorizedWhenInUse:
-            manager.startUpdatingLocation()
-        case .denied, .restricted:
-            NotificationCenter.default.post(
-                name: NSNotification.Name("LocationPermissionDenied"),
-                object: nil
-            )
-        default:
-            break
-        }
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // 定位更新，停止更新以节省电量
-        manager.stopUpdatingLocation()
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Logger.shared.e("定位失败：\(error.localizedDescription)")
     }
     
     /// 设置签到提醒通知

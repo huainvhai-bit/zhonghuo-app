@@ -27,7 +27,6 @@ struct FamilyGuardView: View {
     @State private var showingMembershipView = false
     @State private var inviteCode = ""
     @State private var qrImage: UIImage?
-    @State private var showingFamilyArchive = false  // 📚 添加档案
     @State private var showingInviteConfirmation = false
     @State private var pendingInvitePreview: FamilyInvitePreview?
     @State private var pendingFamilyRequests: [FamilyPendingRequest] = []
@@ -46,7 +45,7 @@ struct FamilyGuardView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
+                Color.appBackground.ignoresSafeArea()
                 
                 if isLoading {
                     // 加载状态
@@ -95,12 +94,6 @@ struct FamilyGuardView: View {
                     }
                 }
                 
-                // 📚 添加档案按钮
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingFamilyArchive = true }) {
-                        Image(systemName: "folder.fill")
-                    }
-                }
             }
             .confirmationDialog(
                 L10n.text("确认添加", en: "Confirm add", ja: "追加を確認", ko: "추가 확인"),
@@ -122,9 +115,6 @@ struct FamilyGuardView: View {
                         ko: "\(preview.inviterName)(계정: \(preview.inviterAccount.isEmpty ? "알 수 없음" : preview.inviterAccount))에게 추가 요청을 제출합니다. 상대방이 최종 확인해야 정식으로 적용됩니다."
                     ))
                 }
-            }
-            .sheet(isPresented: $showingFamilyArchive) {
-                FamilyArchiveView()
             }
             .sheet(isPresented: $showingBindFamily) {
                 BindFamilyView(onBound: {
@@ -309,7 +299,7 @@ struct FamilyGuardView: View {
             .padding(.vertical, 40)
         }
         .padding(20)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -420,7 +410,7 @@ struct FamilyGuardView: View {
             }
         }
         .padding(20)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -490,7 +480,7 @@ struct FamilyGuardView: View {
             }
         }
         .padding(20)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -525,7 +515,7 @@ struct FamilyGuardView: View {
             }
         }
         .padding(20)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -1354,7 +1344,7 @@ struct FamilyMemberCard: View {
 
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(12)
         .confirmationDialog(L10n.string(.bindRelationTitle), isPresented: $showingDeleteConfirm) {
             Button(L10n.string(.removeRelation), role: .destructive) {
@@ -1541,7 +1531,7 @@ struct FamilyPendingRequestCard: View {
             }
         }
         .padding(16)
-        .background(Color(.secondarySystemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(14)
     }
 }
@@ -1574,7 +1564,7 @@ struct ManualInputInviteCodeView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            .background(Color(hex: "FFF9E6"))
+            .background(Color.appCardBackground)
             .cornerRadius(12)
             .padding(.horizontal)
             
@@ -1592,7 +1582,7 @@ struct ManualInputInviteCodeView: View {
                         inviteCode = newValue.uppercased()
                     }
                     .padding()
-                    .background(Color(.systemBackground))
+                    .background(Color.appCardBackground)
                     .cornerRadius(12)
             }
             .padding(.horizontal)

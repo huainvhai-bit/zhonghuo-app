@@ -17,7 +17,6 @@ struct MembershipView: View {
     @State private var purchaseMessage = ""
     @State private var isPurchasing = false
     @State private var isRestoring = false
-    @State private var presentedLegalDocument: LegalDocumentType?
     
     var body: some View {
         NavigationView {
@@ -50,7 +49,7 @@ struct MembershipView: View {
                 }
                 .padding()
             }
-            .background(Color(.systemBackground))
+            .background(Color.appBackground)
             .navigationTitle(L10n.string(.openMembership))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -70,9 +69,6 @@ struct MembershipView: View {
             }
         }
         .stackNavigationStyle()
-        .sheet(item: $presentedLegalDocument) { document in
-            EmbeddedLegalDocumentView(type: document)
-        }
         .alert(L10n.string(.prompt), isPresented: $showingPurchaseAlert) {
             Button(L10n.string(.confirm)) {}
         } message: {
@@ -133,7 +129,7 @@ struct MembershipView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color.green.opacity(0.1))
+        .background(Color.green.opacity(0.12))
         .cornerRadius(12)
     }
     
@@ -229,16 +225,6 @@ struct MembershipView: View {
                     Divider()
                     
                     FeatureTableRow(
-                        icon: "icloud.fill",
-                        title: L10n.text("云端同步", en: "Cloud sync", ja: "クラウド同期", ko: "클라우드 동기化"),
-                        free: L10n.text("自动同步", en: "Auto sync", ja: "自動同期", ko: "자동 동기화"),
-                        premium: L10n.text("自动同步 + 一键恢复", en: "Auto sync + one-tap restore", ja: "自動同期 + ワンタップ復元", ko: "자동 동기화 + 원탭 복원"),
-                        isLast: false
-                    )
-                    
-                    Divider()
-                    
-                    FeatureTableRow(
                         icon: "person.2.fill",
                         title: L10n.string(.familyGuard),
                         free: L10n.text("1 位添加用户", en: "1 added user", ja: "1人", ko: "1명"),
@@ -257,7 +243,7 @@ struct MembershipView: View {
                     isLast: true
                 )
             }
-            .background(Color(.systemBackground))
+            .background(Color.appCardBackground)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -265,7 +251,7 @@ struct MembershipView: View {
             )
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(16)
     }
     
@@ -497,24 +483,18 @@ struct MembershipView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 16) {
-                Button {
-                    presentedLegalDocument = .privacy
-                } label: {
+                Link(destination: OfficialDocumentLinks.privacy) {
                     Text(L10n.string(.privacyPolicy))
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.plain)
 
                 Text("|")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                Button {
-                    presentedLegalDocument = .terms
-                } label: {
+                Link(destination: OfficialDocumentLinks.terms) {
                     Text(L10n.string(.termsOfService))
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.plain)
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -667,7 +647,7 @@ struct PlanCard: View {
                     .font(.system(size: 22))
             }
             .padding()
-            .background(isSelected ? Color(hex: "6366F1").opacity(0.1) : Color(.systemBackground))
+            .background(isSelected ? Color(hex: "6366F1").opacity(0.15) : Color.appCardBackground)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)

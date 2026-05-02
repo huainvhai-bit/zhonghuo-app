@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CoreLocation
 
 /// 添加成员
 struct FamilyMember: Identifiable, Codable {
@@ -83,10 +82,6 @@ struct DeviceInfo: Codable {
     var batteryLevel: Float     // 电量百分比（0-1）
     var batteryState: Int       // 充电状态（0=未知，1=未充电，2=充电中，3=充满）
     var lastUpdate: Date?       // 最后更新时间
-    var latitude: Double?       // 纬度（可选）
-    var longitude: Double?      // 经度（可选）
-    var address: String?        // 地址文本（可选）
-    var accuracy: Double?       // 定位精度（米，可选）
     
     /// 电量百分比文本
     var batteryLevelText: String {
@@ -124,18 +119,6 @@ struct DeviceInfo: Codable {
         }
     }
     
-    /// 是否有位置信息
-    var hasLocation: Bool {
-        return latitude != nil && longitude != nil
-    }
-    
-    /// 创建 CLLocationCoordinate2D
-    var coordinate: CLLocationCoordinate2D? {
-        guard let lat = latitude, let lon = longitude else {
-            return nil
-        }
-        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
-    }
 }
 
 /// 添加邀请码预览信息

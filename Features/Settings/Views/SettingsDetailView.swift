@@ -9,24 +9,19 @@ import SwiftUI
 
 struct SettingsDetailView: View {
     @Environment(\.dismiss) var dismiss
-    @ObservedObject var dataManager = DataManager.shared
     @ObservedObject var userManager = UserManager.shared
     @ObservedObject var themeManager = ThemeManager.shared
     @ObservedObject var languageManager = AppLanguageManager.shared
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false
     @AppStorage("isFamilyMode") private var isFamilyMode = false
     @State private var showingLogoutConfirm = false
-    @State private var showingRestoreAlert = false
-    @State private var showingRestoreConfirmAlert = false
-    @State private var showingUpgradeForCloudBackup = false
     @State private var showingMembershipView = false
     @State private var showingAbout = false
     @State private var showingDeleteAccount = false
-    @State private var restoreMessage = ""
     
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color.appBackground
                 .ignoresSafeArea()
             
             List {
@@ -71,24 +66,6 @@ struct SettingsDetailView: View {
                 Section(header: Text(L10n.string(.languageSection))) {
                     NavigationLink(destination: LanguageSettingsView()) {
                         SettingsRow(icon: "globe", iconColor: .green, title: L10n.string(.languageSettings), subtitle: languageManager.language.displayName)
-                    }
-                }
-                
-                // ☁️ 云端恢复
-                Section(header: Text(L10n.string(.appInfo))) {
-                    Button(action: {
-                        if MembershipManager.shared.canRestoreFromCloud() {
-                            showingRestoreConfirmAlert = true
-                        } else {
-                            showingUpgradeForCloudBackup = true
-                        }
-                    }) {
-                        SettingsRow(
-                            icon: "icloud.and.arrow.down.fill",
-                            iconColor: .cyan,
-                            title: L10n.text("云端恢复数据", en: "Restore from Cloud", ja: "クラウドから復元", ko: "클라우드 복원"),
-                            subtitle: L10n.text("从服务器恢复本地数据", en: "Restore local data from the server", ja: "サーバーからローカルデータを復元します", ko: "서버에서 로컬 데이터를 복원합니다")
-                        )
                     }
                 }
                 
@@ -160,39 +137,6 @@ struct SettingsDetailView: View {
         } message: {
             Text(L10n.text("确定要退出登录吗？退出后需要重新登录才能使用 App。", en: "Are you sure you want to sign out? You will need to sign in again to use the app.", ja: "本当にログアウトしますか？続けて使うには再度ログインが必要です。", ko: "정말 로그아웃하시겠습니까? 앱을 계속 사용하려면 다시 로그인해야 합니다."))
         }
-        .alert(L10n.text("云端恢复", en: "Cloud Restore", ja: "クラウド復元", ko: "클라우드 복원"), isPresented: $showingRestoreAlert) {
-            Button(L10n.string(.confirm), role: .cancel) {}
-        } message: {
-            Text(restoreMessage)
-        }
-        .alert(L10n.text("确认恢复", en: "Restore now?", ja: "今すぐ復元しますか？", ko: "지금 복원하시겠습니까?"), isPresented: $showingRestoreConfirmAlert) {
-            Button(L10n.string(.cancel), role: .cancel) {}
-            Button(L10n.text("确定恢复", en: "Restore", ja: "復元", ko: "복원")) {
-                restoreFromCloud()
-            }
-        } message: {
-            Text(L10n.text("确定要从云端恢复数据吗？这将覆盖本地数据。", en: "Restore data from the cloud? This will overwrite local data.", ja: "クラウドからデータを復元しますか？ローカルデータは上書きされます。", ko: "클라우드에서 데이터를 복원하시겠습니까? 로컬 데이터가 덮어써집니다."))
-        }
-        .sheet(isPresented: $showingUpgradeForCloudBackup) {
-            ZStack {
-                Color.black.opacity(0.5)
-                    .ignoresSafeArea()
-                
-                    UpgradePromptView(
-                        feature: L10n.text("云端恢复数据", en: "Cloud Restore", ja: "クラウド復元", ko: "클라우드 복원"),
-                        statusText: L10n.text("当前功能仅会员可用", en: "This feature is for members only", ja: "この機能は会員限定です", ko: "이 기능은 멤버십 전용입니다"),
-                        currentLimit: L10n.text("免费版不可使用", en: "Unavailable on free plan", ja: "無料プランでは利用できません", ko: "무료 플랜에서는 사용할 수 없습니다"),
-                        targetLimit: L10n.text("会员版可从云端恢复数据", en: "Premium can restore data from cloud", ja: "会員プランではクラウドから復元できます", ko: "멤버십에서는 클라우드에서 복원할 수 있습니다"),
-                        onUpgrade: {
-                            showingUpgradeForCloudBackup = false
-                            showingMembershipView = true
-                    },
-                    onCancel: {
-                        showingUpgradeForCloudBackup = false
-                    }
-                )
-            }
-        }
         .sheet(isPresented: $showingMembershipView) {
             NavigationView {
                 MembershipView()
@@ -220,18 +164,6 @@ struct SettingsDetailView: View {
         }
     }
     
-    private func restoreFromCloud() {
-        Task {
-            do {
-                if let result = await dataManager.batchSyncCapsules() {
-                    restoreMessage = "成功从云端恢复 \(result.total) 条留言"
-                } else {
-                    restoreMessage = "云端恢复失败，请检查网络连接"
-                }
-                showingRestoreAlert = true
-            }
-        }
-    }
     
     private func logout() {
         userManager.logout()
@@ -283,7 +215,7 @@ struct ThemeSettingsView: View {
     
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color.appBackground
                 .ignoresSafeArea()
             
             List {
@@ -323,7 +255,7 @@ struct LanguageSettingsView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color.appBackground
                 .ignoresSafeArea()
 
             List {

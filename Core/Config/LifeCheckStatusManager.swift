@@ -109,10 +109,7 @@ class LifeCheckStatusManager: ObservableObject {
             // ✅ 修复：使用用户本地设置的签到间隔
             let checkInIntervalHours = currentCheckInIntervalHours()
             
-            _ = try await DataManager.shared.checkIn(
-                checkInIntervalHours: Int(checkInIntervalHours),
-                location: nil
-            )
+            _ = try await DataManager.shared.checkIn(checkInIntervalHours: Int(checkInIntervalHours))
             print("✅ 后端签到成功，签到间隔：\(checkInIntervalHours) 小时")
         } catch {
             print("❌ 后端签到失败：\(error)")

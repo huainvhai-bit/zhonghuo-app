@@ -21,7 +21,7 @@ struct InviteCodeView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(.systemBackground).ignoresSafeArea()
+                Color.appBackground.ignoresSafeArea()
                 
                 if isLoading {
                     loadingView
@@ -127,7 +127,7 @@ struct InviteCodeView: View {
                     if !qrURL.isEmpty {
                         ZStack {
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white)
+                                .fill(Color.appCardBackground)
                                 .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 4)
                             
                             if let qrImage = generateQRCode(from: qrURL) {
@@ -171,7 +171,7 @@ struct InviteCodeView: View {
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 20)
-                    .background(Color(.systemBackground))
+                    .background(Color.appCardBackground)
                     .cornerRadius(12)
                     .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                     

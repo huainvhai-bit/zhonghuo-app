@@ -30,7 +30,7 @@ struct HomeStatusView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(.systemBackground)
+                Color.appBackground
                     .ignoresSafeArea()
 
                 ScrollView(.vertical, showsIndicators: false) {
@@ -297,7 +297,7 @@ struct HomeStatusView: View {
             .frame(height: 6)
         }
         .padding(18)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
@@ -405,7 +405,7 @@ struct HomeStatusView: View {
             })
         }
         .padding(18)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
@@ -471,7 +471,7 @@ struct HomeStatusView: View {
             }
         }
         .padding(18)
-        .background(Color(.systemBackground))
+        .background(Color.appCardBackground)
         .cornerRadius(18)
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
     }

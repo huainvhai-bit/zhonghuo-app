@@ -38,7 +38,6 @@
 		50DCBAECEB49FC1A418BDFD7 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 045761D3B73D998072BF9E1F /* IAPManager.swift */; };
 		50ED3EE1C5EB37B54E68C7C4 /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1F2299FCB5ED5D00BA7E2 /* CacheManager.swift */; };
 		579AC2CE08BDE794D357A276 /* ElectronicSignatureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314413A6788032D19A22F630 /* ElectronicSignatureManager.swift */; };
-		588B23A6C674CAD83174C5C2 /* FamilyArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C6462556E1984D4A645562 /* FamilyArchiveView.swift */; };
 		60E24C8E170C37C39ADDED32 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9ABB54EC69F5E1E493947B2 /* HapticFeedback.swift */; };
 		6449A81605E02F6758C4186D /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08BBF5D6016E155A26E01340 /* ThemeManager.swift */; };
 		66F10B55D9CAE3834BB56234 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7127E42F85BC847780542599 /* SettingsViewModel.swift */; };
@@ -107,7 +106,6 @@
 		08BBF5D6016E155A26E01340 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
-		13C6462556E1984D4A645562 /* FamilyArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyArchiveView.swift; sourceTree = "<group>"; };
 		14215F0679497741F049B173 /* CapsuleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleListViewModel.swift; sourceTree = "<group>"; };
 		14E2A1B51B6BD6F5F1A30C0D /* LegalDocumentContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalDocumentContent.swift; sourceTree = "<group>"; };
 		260CCE3C43731C3009CB85BA /* EmbeddedLegalDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedLegalDocumentView.swift; sourceTree = "<group>"; };
@@ -436,7 +434,6 @@
 			isa = PBXGroup;
 			children = (
 				436489E7FE94F62B8228B7A8 /* BindFamilyView.swift */,
-				13C6462556E1984D4A645562 /* FamilyArchiveView.swift */,
 				C1630FC5FFF88D97B8840410 /* FamilyGuardView.swift */,
 				07579CF4B3E70A217992B90F /* InviteCodeView.swift */,
 				277D91B2F8E37C42CD117562 /* QRCodeScannerView.swift */,
@@ -702,7 +699,6 @@
 				579AC2CE08BDE794D357A276 /* ElectronicSignatureManager.swift in Sources */,
 				1C239090EC3936E9166097DC /* EmbeddedLegalDocumentView.swift in Sources */,
 				1CA14A357D5C77C95FECAC5B /* ErrorHandler.swift in Sources */,
-				588B23A6C674CAD83174C5C2 /* FamilyArchiveView.swift in Sources */,
 				3DF26789364F9F88C47E60EB /* FamilyGuardView.swift in Sources */,
 				2B81B3F6F003B14260D75CB6 /* FamilyMember.swift in Sources */,
 				9E879E133E3B39CDA7BB087D /* ForceUpdateGate.swift in Sources */,

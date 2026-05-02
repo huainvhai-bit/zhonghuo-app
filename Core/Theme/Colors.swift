@@ -14,8 +14,18 @@ extension Color {
     static let appSuccess = Color(hex: "34C759")
     static let appWarning = Color(hex: "FF9500")
     static let appDanger = Color(hex: "FF3B30")
-    static let appBackground = Color(hex: "F2F2F7")
-    static let appCardBackground = Color.white
+    static var appBackground: Color {
+        Color(uiColor: .systemGroupedBackground)
+    }
+    static var appCardBackground: Color {
+        Color(.secondarySystemBackground)
+    }
+    static var appCardElevatedBackground: Color {
+        Color(.tertiarySystemBackground)
+    }
+    static var appDivider: Color {
+        Color(.separator)
+    }
 }
 
 // MARK: - 留言类型颜色

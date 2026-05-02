@@ -49,4 +49,5 @@ enum AppVersion {
 enum OfficialDocumentLinks {
     static let privacy = URL(string: "https://zhonghuo.zhonghuo.xyz/docs/privacy.html")!
     static let terms = URL(string: "https://zhonghuo.zhonghuo.xyz/docs/terms.html")!
+    static let support = URL(string: "https://zhonghuo.zhonghuo.xyz/docs/index.html")!
 }

@@ -71,10 +71,6 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSCameraUsageDescription: 本应用需要使用摄像头扫描邀请码，以便双方确认后添加用户
-        NSLocationWhenInUseUsageDescription: 本应用需要在您授权后记录位置信息，用于个人状态记录
-        NSLocationAlwaysAndWhenInUseUsageDescription: 本应用需要在您授权后记录位置信息，用于个人状态记录
-        UIBackgroundModes:
-          - location
         NSUserNotificationUsageDescription: 本应用需要发送本机通知提醒您更新签到记录
         UIUserNotificationSettings:
           UIUserNotificationType:

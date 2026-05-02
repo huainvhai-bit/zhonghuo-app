@@ -2053,10 +2053,10 @@ class DataManager: ObservableObject {
     
     /// 签到（GraphQL）
     // ✅ 统一：将 LifeCheckStatusManager 调用迁移到 DataManager
-    func checkIn(checkInIntervalHours: Int = 48, location: [String: Any]? = nil) async throws -> [String: Any] {
+    func checkIn(checkInIntervalHours: Int = 48) async throws -> [String: Any] {
         let mutation = """
-        mutation($checkInIntervalHours: Int, $location: JSON) {
-            checkIn(checkInIntervalHours: $checkInIntervalHours, location: $location) {
+        mutation($checkInIntervalHours: Int) {
+            checkIn(checkInIntervalHours: $checkInIntervalHours) {
                 success
                 checkInTime
                 expireTimestamp
@@ -2067,10 +2067,6 @@ class DataManager: ObservableObject {
         var variables: [String: Any] = [
             "checkInIntervalHours": checkInIntervalHours
         ]
-        
-        if let location = location {
-            variables["location"] = location
-        }
         
         let result = try await GraphQLClient.shared.query(mutation, variables: variables)
         

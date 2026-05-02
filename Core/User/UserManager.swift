@@ -8,7 +8,6 @@
 
 import Foundation
 import Combine
-import CoreLocation
 import UIKit
 
 // SyncManager 在同一模块中，无需额外 import
@@ -29,15 +28,13 @@ import UIKit
 /// - API 调用：GraphQL 架构
 /// 
 /// ✅ P2 修复 #6: 更新注释与代码一致
-class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+class UserManager: NSObject, ObservableObject {
     static let shared = UserManager()
     
     @Published var currentUser: User?
     @Published var isLoggedIn: Bool = false
     @Published var lastCheckInDate: Date?
     @Published var checkInInterval: CheckInInterval = .twoDays
-    @Published var currentLocation: CLLocation?
-    
     // 🔴 防重复签到标志
     private var isAutoSigningIn = false
     private var lastAutoSignInTime: Date = .distantPast
@@ -82,6 +79,7 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         fileManager.fileExists(atPath: userFileURL.path)
     }
     
+    #if false
     // MARK: - 定位管理
     
     /// 位置管理器
@@ -450,6 +448,8 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("❌ 位置上传失败：\(error)")
         }
     }
+
+    #endif
 
     // MARK: - GraphQL 辅助方法
     
@@ -865,10 +865,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    private var isLocationUploadEnabled: Bool {
-        AppConfig.isLocationUploadEnabled
-    }
-    
     @MainActor
     func logout() {
         print("🔴 UserManager.logout() 被调用")
@@ -911,10 +907,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.currentUser = user
             print("🔵 更新签到间隔：\(oldInterval.rawValue) → \(interval.rawValue)")
             print("📁 用户文件路径：\(userFileURL.path)")
-            
-            if interval != .oneMinute {
-                requestAlwaysAuthorizationIfNeeded()
-            }
             
             do {
                 let data = try JSONEncoder().encode(user)
@@ -1459,10 +1451,6 @@ class UserManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - 清理
     
     deinit {
-        continuousUploadTimer?.invalidate()
-        continuousUploadTimer = nil
-        locationManager.delegate = nil
-        locationManager.stopUpdatingLocation()
         print("♻️ UserManager 已释放")
     }
 }

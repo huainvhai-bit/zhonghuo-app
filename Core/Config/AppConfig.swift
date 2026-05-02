@@ -20,19 +20,11 @@ struct AppConfig {
     /// 重要事项相关功能是否展示
     static var showsWillFeatures: Bool { true }
 
-    /// 是否允许持续定位上传
-    static var allowsContinuousLocationUpload: Bool { false }
-
     /// 是否允许家人数据同步
     static var allowsFamilyDataSync: Bool { true }
 
     /// 是否允许重要事项数据同步
     static var allowsWillDataSync: Bool { true }
-
-    /// 用户是否开启定位功能
-    static var isLocationUploadEnabled: Bool {
-        false
-    }
 
     // MARK: - API 配置
     
@@ -61,20 +53,6 @@ struct AppConfig {
     
     /// 离线超时阈值（小时）- 超过这个时间未签到会变成红色警告
     static let offlineTimeoutHours: Double = 24
-    
-    // MARK: - 位置服务配置
-    
-    /// 位置更新距离过滤器（米）- 移动多少米才更新
-    static let locationDistanceFilter: Double = 10
-    
-    /// 持续定位时的距离过滤器（米）
-    static let continuousLocationDistanceFilter: Double = 5
-    
-    /// 位置上传间隔（秒）
-    static let locationUploadInterval: TimeInterval = 3
-    
-    /// 位置数据最大年龄（秒）- 超过这个时间的数据不使用
-    static let maxLocationAge: TimeInterval = 120
     
     // MARK: - PDF 配置
     

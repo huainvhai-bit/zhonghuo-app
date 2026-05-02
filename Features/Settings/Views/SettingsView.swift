@@ -62,11 +62,11 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @State private var showingEditProfile = false
     @State private var showingMembershipView = false  // 👑 会员页面
-    @State private var presentedLegalDocument: LegalDocumentType?
     @AppStorage("customServerURL") private var customServerURL = ""  // 空表示自动获取
     @State private var tempServerURL = ""
     @AppStorage("silentModeEnabled") private var silentModeEnabled = false  // 🤫 静默模式
     @ObservedObject var themeManager = ThemeManager.shared  // 🎨 主题管理
+    @Environment(\.colorScheme) private var colorScheme
     
     // ✅ 修复 #7: 版本号
     private var appVersion: String {
@@ -76,7 +76,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(.systemBackground)
+                Color.appBackground
                     .ignoresSafeArea()
                 
                 settingsList
@@ -95,17 +95,6 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingMembershipView) {
                 MembershipView()
-            }
-            .sheet(item: $presentedLegalDocument) { document in
-                EmbeddedLegalDocumentView(type: document)
-            }
-            .alert(L10n.string(.locationPermission), isPresented: $viewModel.showingLocationAlert) {
-                Button(L10n.string(.later), role: .cancel) {}
-                Button(L10n.string(.goSettings)) {
-                    viewModel.openAppSettings()
-                }
-            } message: {
-                Text(L10n.string(.locationAlwaysHint))
             }
             .alert(L10n.string(.prompt), isPresented: $viewModel.showingError) {
                 Button(L10n.string(.confirm), role: .cancel) {}
@@ -301,6 +290,8 @@ struct SettingsView: View {
         let shouldShowSensitiveCounts = !AppConfig.isChinaReviewMode
         let willsCount = shouldShowSensitiveCounts ? DataManager.shared.willModules.count : 0
         let familyCount = shouldShowSensitiveCounts ? DataManager.shared.familyMembers.count : 0  // ✅ 添加用户
+        let cardTopColor: Color = colorScheme == .dark ? Color.appCardBackground : .white
+        let cardBottomColor: Color = colorScheme == .dark ? Color.appCardElevatedBackground : Color(hex: "F8F9FF")
         
         VStack(spacing: 12) {
                     Text(L10n.string(.tabMe))
@@ -346,7 +337,7 @@ struct SettingsView: View {
         .padding(16)
         .background(
             LinearGradient(
-                gradient: Gradient(colors: [Color.white, Color(hex: "F8F9FF")]),
+                gradient: Gradient(colors: [cardTopColor, cardBottomColor]),
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -548,19 +539,6 @@ struct SettingsView: View {
         return L10n.string(.unknown)
     }
     
-    private var locationStatusText: String {
-        switch userManager.locationAuthStatus {
-        case .authorizedAlways:
-            return L10n.string(.backgroundLocationOn)
-        case .authorizedWhenInUse:
-            return L10n.string(.whenInUseOnly)
-        case .denied:
-            return L10n.string(.denied)
-        default:
-            return L10n.string(.notSet)
-        }
-    }
-
     /// 「会员有效」徽章第二行文案：到期日或终身说明
     private func membershipExpirySubtitle() -> String? {
         guard membershipManager.isPremium else { return nil }
@@ -1066,7 +1044,7 @@ extension SettingsView {
                 }
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(Color.appCardBackground)
             .cornerRadius(12)
             .padding(.horizontal)
             List {
@@ -1074,9 +1052,7 @@ extension SettingsView {
                     if let url = URL(string: "https://zhonghuo.zhonghuo.xyz") {
                         Link(L10n.string(.officialSite), destination: url)
                     }
-                    Button {
-                        presentedLegalDocument = .privacy
-                    } label: {
+                    Link(destination: OfficialDocumentLinks.privacy) {
                         HStack {
                             Text(L10n.string(.privacyPolicy))
                             Spacer()
@@ -1084,10 +1060,7 @@ extension SettingsView {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    .buttonStyle(.plain)
-                    Button {
-                        presentedLegalDocument = .terms
-                    } label: {
+                    Link(destination: OfficialDocumentLinks.terms) {
                         HStack {
                             Text(L10n.string(.termsOfService))
                             Spacer()
@@ -1095,7 +1068,14 @@ extension SettingsView {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    .buttonStyle(.plain)
+                    Link(destination: OfficialDocumentLinks.support) {
+                        HStack {
+                            Text(L10n.text("技术支持", en: "Support", ja: "サポート", ko: "지원"))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
                     // ⚖️ 法律声明
                     NavigationLink(destination: LegalDisclosureView()) {
