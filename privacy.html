@@ -1,167 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隐私政策</title>
+    <title>终活 App - 隐私政策</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root{
+            --bg:#f7f8ff;
+            --card:#ffffff;
+            --text:#1d2433;
+            --muted:#667085;
+            --p:#4f46e5;
+            --p2:#7c3aed;
+            --line:#e6e8f0;
+            --soft:#eef2ff;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.8;
-            color: #333;
-            background-color: #f5f5f7;
-            padding: 20px;
+        *{box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{
+            margin:0;
+            color:var(--text);
+            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+            line-height:1.78;
+            background:
+                radial-gradient(circle at 8% 4%, rgba(79,70,229,.16), transparent 24%),
+                radial-gradient(circle at 92% 0%, rgba(124,58,237,.14), transparent 26%),
+                linear-gradient(180deg,#fbfcff 0%,var(--bg) 42%,#fff 100%);
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 40px 50px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        a{color:var(--p);text-decoration:none;font-weight:700}
+        a:hover{text-decoration:underline}
+        .container{width:min(980px,calc(100% - 32px));margin:0 auto}
+        .hero{padding:56px 0 28px}
+        .badge{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:8px 14px;
+            border-radius:999px;
+            color:#3730a3;
+            background:linear-gradient(135deg,rgba(79,70,229,.12),rgba(124,58,237,.10));
+            border:1px solid rgba(79,70,229,.15);
+            font-size:14px;
+            font-weight:800;
+            letter-spacing:.02em;
         }
-        h1 {
-            font-size: 28px;
-            color: #1d1d1f;
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #6366F1;
+        h1{
+            margin:20px 0 12px;
+            font-size:clamp(34px,6vw,58px);
+            line-height:1.06;
+            letter-spacing:-.045em;
         }
-        h2 {
-            font-size: 20px;
-            color: #1d1d1f;
-            margin-top: 30px;
-            margin-bottom: 15px;
+        .subtitle{max-width:820px;color:var(--muted);font-size:18px;margin:0}
+        .meta,.nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+        .meta span{
+            padding:8px 12px;
+            border-radius:14px;
+            background:rgba(255,255,255,.78);
+            border:1px solid var(--line);
+            color:var(--muted);
+            font-size:14px;
         }
-        p {
-            margin-bottom: 15px;
-            text-align: justify;
+        .nav a{
+            padding:11px 15px;
+            border-radius:14px;
+            background:#fff;
+            border:1px solid var(--line);
+            box-shadow:0 10px 28px rgba(38,42,86,.06);
         }
-        ul {
-            margin-left: 30px;
-            margin-bottom: 15px;
+        .card{
+            margin:26px 0 60px;
+            background:rgba(255,255,255,.94);
+            border:1px solid var(--line);
+            border-radius:28px;
+            box-shadow:0 24px 70px rgba(38,42,86,.10);
+            overflow:hidden;
         }
-        li {
-            margin-bottom: 8px;
+        .notice{
+            margin:26px;
+            padding:20px 22px;
+            border-radius:22px;
+            background:linear-gradient(135deg,rgba(79,70,229,.10),rgba(124,58,237,.09));
+            border:1px solid rgba(79,70,229,.18);
         }
-        .update-time {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 30px;
+        .notice strong{color:#3730a3}
+        .content{padding:0 26px 30px}
+        section{padding:28px 0;border-top:1px solid var(--line)}
+        section:first-child{border-top:0}
+        h2{
+            margin:0 0 14px;
+            font-size:25px;
+            line-height:1.32;
+            letter-spacing:-.02em;
         }
-        .intro {
-            background: #f8f8fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        p{margin:10px 0}
+        ul{padding-left:22px;margin:10px 0}
+        li{margin:7px 0}
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:14px;
+            margin-top:16px;
         }
-        .contact {
-            background: #f0f0f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
+        .feature{
+            padding:18px;
+            border-radius:22px;
+            background:linear-gradient(135deg,#fff,var(--soft));
+            border:1px solid var(--line);
         }
-        .contact p {
-            margin-bottom: 5px;
+        .feature b{
+            display:block;
+            margin-bottom:6px;
+            color:#312e81;
+            font-size:17px;
         }
-        @media (max-width: 600px) {
-            .container {
-                padding: 25px 20px;
-            }
-            h1 {
-                font-size: 24px;
-            }
-            h2 {
-                font-size: 18px;
-            }
+        .timeline{
+            display:grid;
+            gap:14px;
+            margin-top:16px;
+        }
+        .timeline-item{
+            padding:16px 18px;
+            border-radius:20px;
+            background:#fff;
+            border:1px solid var(--line);
+        }
+        .timeline-item strong{
+            display:block;
+            margin-bottom:6px;
+            color:#312e81;
+        }
+        .footer{
+            text-align:center;
+            color:var(--muted);
+            font-size:14px;
+            padding:30px 0 52px;
+        }
+        @media (max-width: 720px){
+            .hero{padding-top:40px}
+            .grid{grid-template-columns:1fr}
+            .content{padding:0 18px 24px}
+            .notice{margin:18px}
+            section{padding:22px 0}
+            h2{font-size:22px}
+            .subtitle{font-size:16px}
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>隐私政策</h1>
-        <p class="update-time">更新时间：2026年4月24日<br>生效日期：2026年4月24日</p>
+    <main class="container">
+        <header class="hero">
+            <div class="badge">终活 App · 隐私政策</div>
+            <h1>隐私政策</h1>
+            <p class="subtitle">了解终活如何收集、使用、存储和保护你的个人信息。</p>
+            <div class="meta">
+                <span>生效日期：<strong>2026年5月2日</strong></span>
+                <span>最近更新：<strong>2026年5月2日</strong></span>
+                <span>提供方：<strong>终活项目团队</strong></span>
+            </div>
+            <nav class="nav">
+                <a href="./index.html">技术支持</a>
+                <a href="./terms.html">服务条款</a>
+                <a href="mailto:support@zhonghuo.app">联系我们</a>
+            </nav>
+        </header>
 
-        <div class="intro">
-            <p>本应用（简称「我们」）非常重视您的隐私和个人信息保护。本隐私政策旨在向您说明我们如何收集、使用、存储、共享和保护您的个人信息，以及您享有的相关权利。</p>
-            <p>请您在使用我们的服务前，仔细阅读并了解本隐私政策。如您不同意本政策的任何内容，请停止使用我们的服务。</p>
-        </div>
+        <article class="card">
+            <div class="notice">
+                <strong>重要提示：</strong>终活重视你的隐私与数据安全。请在使用本 App 前仔细阅读本隐私政策。若你不同意本政策的任何内容，请停止使用本 App。
+            </div>
 
-        <h2>一、信息收集</h2>
-        <p><strong>1. 您主动提供的信息</strong></p>
-        <ul>
-            <li>账户信息：手机号码、昵称、头像</li>
-            <li>留言内容：您主动创建的视频、语音或文字</li>
-            <li>重要事项：您主动填写的个人事项记录</li>
-            <li>添加用户信息：经双方确认后建立的共享关系信息</li>
-        </ul>
+            <div class="content">
+                <section>
+                    <h2>一、产品与适用范围</h2>
+                    <p>终活是一款个人记录管理平台，帮助你整理重要信息、时光留言和本机签到提醒。</p>
+                    <p>本隐私政策适用于你使用终活 App 及相关服务的全过程。</p>
+                </section>
 
-        <p><strong>2. 您使用服务时自动收集的信息</strong></p>
-        <ul>
-            <li>设备信息：设备型号、操作系统版本</li>
-            <li>位置信息：在您授权后用于个人状态记录和展示</li>
-            <li>使用日志：功能使用记录、操作时间</li>
-        </ul>
+                <section>
+                    <h2>二、我们是谁</h2>
+                    <p>终活 App 由<strong>终活项目团队</strong>提供。本政策中的“我们”指终活 App 及其提供方；“你”指注册、登录或使用本 App 的用户。</p>
+                    <p>联系邮箱：<a href="mailto:support@zhonghuo.app">support@zhonghuo.app</a><br>备用邮箱：<a href="mailto:huainvhai2@gmail.com">huainvhai2@gmail.com</a><br>官方网站：<a href="https://zhonghuo.zhonghuo.xyz">https://zhonghuo.zhonghuo.xyz</a></p>
+                </section>
 
-        <h2>二、信息使用</h2>
-        <p>我们收集您的信息用于以下目的：</p>
-        <ul>
-            <li>提供文字、语音、视频留言的录制、存储和手动发送服务</li>
-            <li>提供重要事项记录和同步服务</li>
-            <li>提供定期签到记录及本机提醒服务</li>
-            <li>在您授权并双方确认后，同步展示最近一次签到时间</li>
-            <li>建立和管理已确认的添加关系</li>
-            <li>改进我们的服务和用户体验</li>
-        </ul>
+                <section>
+                    <h2>三、我们收集的信息</h2>
+                    <p>为实现个人记录、手动留言、本机提醒、会员订阅和账号安全等功能，我们可能收集以下信息：</p>
+                    <div class="grid">
+                        <div class="feature"><b>账号信息</b>手机号、账号、昵称、头像、用户 ID、登录方式。</div>
+                        <div class="feature"><b>内容信息</b>文字、语音、视频、图片、重要事项、资产记录等。</div>
+                        <div class="feature"><b>状态信息</b>签到周期、签到时间、状态记录。</div>
+                        <div class="feature"><b>设备与日志</b>设备型号、系统版本、App 版本、IP 地址、崩溃日志。</div>
+                    </div>
+                    <p>当前版本不启用定位功能，也不会持续上传位置。</p>
+                </section>
 
-        <p><strong>重要说明：</strong>我们不会根据未签到、未操作、定位状态或其他条件自动触发任何外部通知、定位发送或内容发送。留言内容必须由用户主动点击发送后，添加用户才可能在 App 内查看。</p>
+                <section>
+                    <h2>四、我们如何使用信息</h2>
+                    <ul>
+                        <li>提供、维护和改进终活 App 的基础功能与会员订阅服务；</li>
+                        <li>帮助你管理时光留言、重要事项和本机签到提醒；</li>
+                        <li>仅在你主动点击发送后，向你指定的用户展示已发送内容；</li>
+                        <li>验证订阅状态、处理恢复购买、管理会员权益；</li>
+                        <li>进行账号安全保护、异常行为排查、客服支持和故障修复；</li>
+                        <li>遵守法律法规、监管要求和平台规则。</li>
+                    </ul>
+                </section>
 
-        <h2>三、信息存储</h2>
-        <p><strong>1. 存储地点</strong></p>
-        <p>您的信息存储在中华人民共和国境内的服务器上。</p>
+                <section>
+                    <h2>五、时光留言与签到说明</h2>
+                    <p>时光留言必须由用户手动创建并手动发送。系统不会因为未签到、未操作、超时或其他条件自动向任何人发送提醒、定位或内容。</p>
+                    <p>本机签到提醒仅用于你自己的设备，不会自动通知任何联系人。</p>
+                </section>
 
-        <p><strong>2. 存储期限</strong></p>
-        <ul>
-            <li>账户信息：您注销账户后，我们将删除您的个人信息</li>
-            <li>留言内容：在您主动删除前保存</li>
-            <li>重要事项：在您主动删除前保存</li>
-        </ul>
+                <section>
+                    <h2>六、信息提供与展示</h2>
+                    <p>在你明确操作或双方确认后，我们才会向你指定的用户展示最近一次签到记录或你手动发送的内容。</p>
+                    <p>未经你的明确操作，我们不会自动向任何联系人发送通知、状态或位置信息。</p>
+                </section>
 
-        <h2>四、信息共享</h2>
-        <p><strong>未经您的同意，我们不会与任何第三方共享您的个人信息，以下情况除外：</strong></p>
-        <ul>
-            <li>共享查看：经双方确认绑定后，向对方展示最近一次同步的签到时间和已手动发送的留言内容</li>
-            <li>法律要求：遵守法律法规、司法机关或监管机构的要求</li>
-        </ul>
+                <section>
+                    <h2>七、会员订阅与支付</h2>
+                    <p>终活可能提供自动续期订阅会员服务，例如月度会员和年度会员。会员权益、价格、周期和具体内容以 App 内展示及 App Store 购买页面为准。</p>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <strong>订阅与续费</strong>
+                            <p>订阅将通过你的 Apple ID 账户确认并扣款；自动续期订阅会在当前周期结束时自动续订，除非你在当前周期结束前至少 24 小时取消。</p>
+                        </div>
+                        <div class="timeline-item">
+                            <strong>取消订阅与恢复购买</strong>
+                            <p>你可以在 iPhone 设置或 App Store 的订阅管理页面取消自动续费；如需同步会员状态，可使用 App 内“恢复购买”功能。</p>
+                        </div>
+                    </div>
+                </section>
 
-        <h2>五、您的权利</h2>
-        <p>您有权：</p>
-        <ul>
-            <li>访问和查看您的个人信息</li>
-            <li>更正不准确的个人信息</li>
-            <li>删除您的个人信息</li>
-            <li>撤回同意</li>
-            <li>注销账户</li>
-        </ul>
+                <section>
+                    <h2>八、信息存储与保护</h2>
+                    <p>我们会采取合理可行的安全措施保护你的个人信息，包括访问控制、加密传输、权限管理、日志审计和安全监控。</p>
+                    <p>信息存储地点：中国大陆。若涉及跨境传输，我们会根据适用法律要求采取必要保护措施。</p>
+                </section>
 
-        <h2>六、未成年人保护</h2>
-        <p>我们非常重视对未成年人信息的保护。若您是未满18周岁的未成年人，请在监护人的陪同下阅读本隐私政策，并在取得监护人的同意后使用我们的服务。</p>
+                <section>
+                    <h2>九、信息保存期限</h2>
+                    <ul>
+                        <li>账号信息：通常保存至账号注销后，根据法律要求保留必要期限；</li>
+                        <li>时光留言、重要事项、资产记录等用户内容：保存至你主动删除、账号注销或服务规则触发删除；</li>
+                        <li>交易与订阅记录：根据支付、审计、财务和法律要求保存；</li>
+                        <li>日志信息：通常仅保存排障和安全所需的合理期限。</li>
+                    </ul>
+                </section>
 
-        <h2>七、隐私政策更新</h2>
-        <p>我们可能会不时更新本隐私政策。未经您明确同意，我们不会削减您按照本隐私政策所享有的权利。我们会在更新后通过App内提示或网站公告等方式通知您。</p>
+                <section>
+                    <h2>十、你的权利</h2>
+                    <p>在适用法律允许的范围内，你可以访问、更正、删除、导出个人信息，撤回部分授权，注销账号，或通过 Apple 系统管理或取消订阅。</p>
+                    <p>如需行使相关权利，请通过 <a href="mailto:support@zhonghuo.app">support@zhonghuo.app</a> 或 <a href="mailto:huainvhai2@gmail.com">huainvhai2@gmail.com</a> 联系我们。我们可能需要验证你的身份后再处理请求。</p>
+                </section>
 
-        <div class="contact">
-            <h2>八、联系我们</h2>
-            <p>如您对本隐私政策有任何疑问，请通过以下方式联系我们：</p>
-            <p>邮箱：support@zhonghuo.app</p>
-        </div>
-    </div>
+                <section>
+                    <h2>十一、未成年人保护</h2>
+                    <p>终活主要面向具备相应民事行为能力的成年人使用。若你是未成年人，请在监护人同意和指导下使用本 App。若我们发现未在监护人同意下收集了未成年人的个人信息，我们会依法尽快删除或采取其他必要措施。</p>
+                </section>
+
+                <section>
+                    <h2>十二、账号注销与数据删除</h2>
+                    <p>你可以在 App 内通过 <span style="padding:2px 8px;border-radius:10px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-weight:700;">我的 → 设置 → 注销账号</span> 申请注销账号。</p>
+                    <p>账号注销后，我们将停止为该账号提供服务，并根据法律法规和本政策删除或匿名化处理相关个人信息。请注意，注销账号可能导致时光留言、记录内容和会员权益无法继续使用。</p>
+                </section>
+
+                <section>
+                    <h2>十三、本政策的更新</h2>
+                    <p>我们可能根据产品功能、法律法规或运营需要更新本隐私政策。重大变更时，我们会通过 App 内通知、弹窗、站内消息或页面公告等方式提醒你。</p>
+                </section>
+
+                <section>
+                    <h2>十四、联系我们</h2>
+                    <p>提供方：终活项目团队<br>客服邮箱：<a href="mailto:support@zhonghuo.app">support@zhonghuo.app</a><br>备用邮箱：<a href="mailto:huainvhai2@gmail.com">huainvhai2@gmail.com</a><br>官方网站：<a href="https://zhonghuo.zhonghuo.xyz">https://zhonghuo.zhonghuo.xyz</a></p>
+                </section>
+            </div>
+        </article>
+    </main>
+
+    <footer class="footer">© 2026 终活. All rights reserved. ｜ <a href="mailto:support@zhonghuo.app">support@zhonghuo.app</a></footer>
 </body>
 </html>
