@@ -1,6 +1,6 @@
 //
 //  PushNotificationManager.swift
-//  终活
+//  安心助手
 //
 //  APNs 消息推送管理器
 //  功能：本机签到提醒、留言提醒、重要事项提醒

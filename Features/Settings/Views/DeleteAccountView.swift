@@ -1,6 +1,6 @@
 //
 //  DeleteAccountView.swift
-//  终活
+//  安心助手
 //
 //  注销账号
 //  职责：复用"找回密码"风格的密保问答二次校验，校验通过后调用后端 deleteAccount

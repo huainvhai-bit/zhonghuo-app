@@ -1,6 +1,6 @@
 //
 //  InputValidator.swift
-//  终活
+//  安心助手
 //
 //  输入验证工具类
 //

@@ -1,6 +1,6 @@
 //
 //  IAPManager.swift
-//  终活
+//  安心助手
 //
 //  Apple In-App Purchase 管理器
 //  使用 StoreKit 2 实现订阅购买

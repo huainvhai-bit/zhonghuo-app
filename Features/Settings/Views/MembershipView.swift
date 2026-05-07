@@ -1,6 +1,6 @@
 //
 //  MembershipView.swift
-//  终活
+//  安心助手
 //
 //  会员页面
 //

@@ -1,6 +1,6 @@
 //
 //  Capsule/CapsuleDetailView.swift
-//  终活
+//  安心助手
 //
 //  时光留言详情视图
 //  职责：查看/播放留言内容

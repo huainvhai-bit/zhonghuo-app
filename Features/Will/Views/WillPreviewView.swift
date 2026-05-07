@@ -1,6 +1,6 @@
 //
 //  WillPreviewView.swift
-//  终活
+//  安心助手
 //
 //  重要事项预览页面
 //

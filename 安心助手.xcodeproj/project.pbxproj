@@ -104,7 +104,7 @@
 		07579CF4B3E70A217992B90F /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
 		0801AA0D893A3DFD3FF9145F /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		08BBF5D6016E155A26E01340 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		0907848EFBF0EB56DA34CB2C /* 终活.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "终活.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0907848EFBF0EB56DA34CB2C /* 安心助手.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "安心助手.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E61F2E42F96B1EA054BEA0E /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		14215F0679497741F049B173 /* CapsuleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapsuleListViewModel.swift; sourceTree = "<group>"; };
 		14E2A1B51B6BD6F5F1A30C0D /* LegalDocumentContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalDocumentContent.swift; sourceTree = "<group>"; };
@@ -559,7 +559,7 @@
 		F104D99C2A8C99F917D8D723 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0907848EFBF0EB56DA34CB2C /* 终活.app */,
+				0907848EFBF0EB56DA34CB2C /* 安心助手.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -596,9 +596,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3AC11871DCF9E44D4B53BDC9 /* 终活 */ = {
+		3AC11871DCF9E44D4B53BDC9 /* 安心助手 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 208B1DFE951CDDF49B6113C0 /* Build configuration list for PBXNativeTarget "终活" */;
+			buildConfigurationList = 208B1DFE951CDDF49B6113C0 /* Build configuration list for PBXNativeTarget "安心助手" */;
 			buildPhases = (
 				3CDCF850A7D71CEEB8177FF2 /* Sources */,
 				4BE68008ECE7A750163D5937 /* Resources */,
@@ -607,11 +607,11 @@
 			);
 			dependencies = (
 			);
-			name = "终活";
+			name = "安心助手";
 			packageProductDependencies = (
 			);
-			productName = "终活";
-			productReference = 0907848EFBF0EB56DA34CB2C /* 终活.app */;
+			productName = "安心助手";
+			productReference = 0907848EFBF0EB56DA34CB2C /* 安心助手.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -628,7 +628,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9F0ADB07E5F18E85541FD872 /* Build configuration list for PBXProject "终活" */;
+			buildConfigurationList = 9F0ADB07E5F18E85541FD872 /* Build configuration list for PBXProject "安心助手" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -642,7 +642,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3AC11871DCF9E44D4B53BDC9 /* 终活 */,
+				3AC11871DCF9E44D4B53BDC9 /* 安心助手 */,
 			);
 		};
 /* End PBXProject section */
@@ -823,7 +823,7 @@
 					"-lresolv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhonghuo.app;
-				PRODUCT_NAME = "终活";
+				PRODUCT_NAME = "安心助手";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -903,7 +903,7 @@
 					"-lresolv",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zhonghuo.app;
-				PRODUCT_NAME = "终活";
+				PRODUCT_NAME = "安心助手";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -951,7 +951,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		208B1DFE951CDDF49B6113C0 /* Build configuration list for PBXNativeTarget "终活" */ = {
+		208B1DFE951CDDF49B6113C0 /* Build configuration list for PBXNativeTarget "安心助手" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				609F3343201E0E3F95FED40F /* Debug */,
@@ -960,7 +960,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		9F0ADB07E5F18E85541FD872 /* Build configuration list for PBXProject "终活" */ = {
+		9F0ADB07E5F18E85541FD872 /* Build configuration list for PBXProject "安心助手" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				25D388346BFDA2BF44E6547E /* Debug */,

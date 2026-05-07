@@ -1,6 +1,6 @@
 //
 //  AppStabilityManager.swift
-//  终活
+//  安心助手
 //
 //  应用稳定性管理 - 崩溃跟踪、错误报告
 //

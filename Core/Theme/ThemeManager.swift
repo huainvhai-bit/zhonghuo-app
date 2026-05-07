@@ -1,6 +1,6 @@
 //
 //  ThemeManager.swift
-//  终活
+//  安心助手
 //
 //  主题管理器 - 简化版
 //
@@ -402,7 +402,7 @@ enum L10n {
 
     private static let translations: [String: [String: String]] = [
         "chinese": [
-            "appName": "终活",
+            "appName": "安心助手",
             "appTagline": "记录重要时光，安心整理生活",
             "loginTitle": "登录账号",
             "loginSubtitle": "账号或手机号 + 密码/验证码 登录",
@@ -492,7 +492,7 @@ enum L10n {
             "onboardingFamilyGuard": "亲友共享",
             "onboardingFamilyGuardDesc": "添加并确认后，可查看彼此的最新签到记录。",
             "onboardingCompanion": "温暖陪伴",
-            "onboardingCompanionDesc": "终活帮助您记录重要时光和个人事项，让整理更清楚、更安心。",
+            "onboardingCompanionDesc": "安心助手帮助您记录重要时光和个人事项，让整理更清楚、更安心。",
             "nextPage": "下一页",
             "skip": "跳过",
             "startUsing": "开始使用",
@@ -554,7 +554,7 @@ enum L10n {
             "bindNow": "立即绑定",
             "bindSuccess": "绑定成功",
             "bindFailed": "绑定失败",
-            "homeWithYou": "终活记录重要时光",
+            "homeWithYou": "安心助手记录重要时光",
             "familyProtected": "当前无需签到",
             "familyCheckStatus": "首页已切换为无需签到",
             "autoCheckIn": "打开 App 即可自动更新记录",
@@ -573,7 +573,7 @@ enum L10n {
             "leaveBlankAuto": "留空表示自动从后端获取，深度绑定当前服务器地址",
             "testSuccess": "成功",
             "testFailed": "失败",
-            "appCopyright": "© 2026 终活 App. All rights reserved.",
+            "appCopyright": "© 2026 安心助手 App. All rights reserved.",
             "maleGender": "男",
             "femaleGender": "女",
             "monitorNormalTitle": "监测正常",
@@ -1107,7 +1107,7 @@ enum L10n {
             "leaveBlankAuto": "空欄にするとバックエンドから自動取得します。現在のサーバーに紐づきます。",
             "testSuccess": "成功",
             "testFailed": "失敗",
-            "appCopyright": "© 2026 终活 App. All rights reserved.",
+            "appCopyright": "© 2026 安心助手 App. All rights reserved.",
             "maleGender": "男性",
             "femaleGender": "女性",
             "monitorNormalTitle": "監視は正常です",
@@ -1203,7 +1203,7 @@ enum L10n {
             "themeGuide": "テーマ設定はアプリ全体の外観に影響します。お好みの配色を選んでください。"
         ],
         "korean": [
-            "appName": "终活",
+            "appName": "安心助手",
             "appTagline": "중요한 시간을 기록하고 안심하게 정리",
             "loginTitle": "로그인",
             "loginSubtitle": "계정 또는 휴대폰 + 비밀번호/인증코드로 로그인",

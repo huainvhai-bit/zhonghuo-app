@@ -1,6 +1,6 @@
 //
 //  SettingsViewModel.swift
-//  终活
+//  安心助手
 //
 //  设置页状态与侧效控制
 //

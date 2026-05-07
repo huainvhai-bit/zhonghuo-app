@@ -1,6 +1,6 @@
 //
 //  TokenManager.swift
-//  终活
+//  安心助手
 //
 //  Token 验证和刷新服务
 //  职责：验证 Token 是否过期、自动刷新 Token

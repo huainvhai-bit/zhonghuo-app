@@ -1,6 +1,6 @@
 //
 //  BackendSecurityPolicy.swift
-//  终活
+//  安心助手
 //
 //  与后端风控前缀（ACCOUNT_BANNED / IP_BANNED_*）对接：统一展示「因用户违规……」类人读文案，
 //  并可广播 SecurityPolicyViolation 通知以触发登出 + 全局提示。

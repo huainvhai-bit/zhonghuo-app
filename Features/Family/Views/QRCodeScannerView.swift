@@ -1,6 +1,6 @@
 //
 //  QRCodeScannerView.swift
-//  终活
+//  安心助手
 //
 //  二维码扫描器 - 使用 AVFoundation
 //

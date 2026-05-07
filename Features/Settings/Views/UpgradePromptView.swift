@@ -1,6 +1,6 @@
 //
 //  UpgradePromptView.swift
-//  终活
+//  安心助手
 //
 //  升级提示弹窗
 //

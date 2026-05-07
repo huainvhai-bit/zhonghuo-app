@@ -1,6 +1,6 @@
 //
 //  SettingsDetailView.swift
-//  终活
+//  安心助手
 //
 //  设置详情页面
 //

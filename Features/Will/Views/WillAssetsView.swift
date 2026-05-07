@@ -1,6 +1,6 @@
 //
 //  WillAssetsView.swift
-//  终活
+//  安心助手
 //
 //  事项与资产 - 完整的增删改查 + 模板
 //
@@ -624,7 +624,7 @@ extension WillAssetsView {
 
 //
 //  WillModuleEdit.swift
-//  终活
+//  安心助手
 //
     //  重要事项模块编辑 + 模板
 //

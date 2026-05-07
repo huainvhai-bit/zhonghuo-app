@@ -1,6 +1,6 @@
 //
 //  CapsuleListViewModel.swift
-//  终活
+//  安心助手
 //
 //  留言列表状态与同步
 //

@@ -1,6 +1,6 @@
 //
 //  NetworkUtils.swift
-//  终活
+//  安心助手
 //
 //  网络工具类
 //  职责：自动识别 HTTP/HTTPS 协议、URL 处理

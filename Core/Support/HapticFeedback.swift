@@ -1,6 +1,6 @@
 //
 //  HapticFeedback.swift
-//  终活
+//  安心助手
 //
 //  触觉反馈工具类
 //

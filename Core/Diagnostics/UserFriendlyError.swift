@@ -1,6 +1,6 @@
 //
 //  UserFriendlyError.swift
-//  终活
+//  安心助手
 //
 //  用户友好错误消息工具类
 //

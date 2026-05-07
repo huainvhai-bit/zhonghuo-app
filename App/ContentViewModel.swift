@@ -1,6 +1,6 @@
 //
 //  ContentViewModel.swift
-//  终活
+//  安心助手
 //
 //  根容器状态与生命周期管理
 //
