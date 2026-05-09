@@ -1,9 +1,9 @@
 //
 //  DataManager.swift
-//  安心助手
+//  安伴助手
 //
 //  数据管理中心 - 单例模式
-//  技术文档：📖 安心助手 App 技术开发文档.md - 3.3.1 DataManager
+//  技术文档：📖 安伴助手 App 技术开发文档.md - 3.3.1 DataManager
 //
 //  核心职责：
 //  - API 配置管理（动态获取服务器地址）
@@ -2483,7 +2483,7 @@ class DataManager: ObservableObject {
                 let rawEmail = configData["customerServiceEmail"] as? String ?? ""
                 let customerServiceEmail = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines)
 
-                let defaultAnnouncement = "欢迎使用安心助手，记录重要时光。"
+                let defaultAnnouncement = "欢迎使用安伴助手，记录重要时光。"
                 let rawAnnounce = (configData["homeAnnouncementText"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 let homeAnnouncementText = rawAnnounce.isEmpty ? defaultAnnouncement : rawAnnounce

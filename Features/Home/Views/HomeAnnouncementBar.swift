@@ -1,6 +1,6 @@
 //
 //  HomeAnnouncementBar.swift
-//  安心助手
+//  安伴助手
 //
 //  首页公告：管理员在后台「系统设置 → App 对外联系方式」中编辑，经 getConfig 下发。
 //  - 单行宽度超出可视区域时：自动跑马灯滚动
@@ -12,7 +12,7 @@ import SwiftUI
 struct HomeAnnouncementBar: View {
     let text: String
 
-    private static let defaultText = "欢迎使用安心助手，记录重要时光。"
+    private static let defaultText = "欢迎使用安伴助手，记录重要时光。"
 
     /// 两段文字之间的间隔（与循环周期 segment 对齐）
     private let segmentGap: CGFloat = 40

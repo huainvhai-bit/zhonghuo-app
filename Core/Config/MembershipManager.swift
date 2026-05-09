@@ -1,6 +1,6 @@
 //
 //  MembershipManager.swift
-//  安心助手
+//  安伴助手
 //
 //  会员管理
 //

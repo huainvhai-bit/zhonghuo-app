@@ -1,6 +1,6 @@
 //
 //  ElectronicSignatureManager.swift
-//  安心助手
+//  安伴助手
 //
 //  电子签章管理器（简化版）
 //  功能：电子签名、见证人签署

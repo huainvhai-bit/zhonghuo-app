@@ -1,6 +1,6 @@
 //
 //  ErrorHandler.swift
-//  安心助手
+//  安伴助手
 //
 //  统一错误处理类
 //  注意：AppError 定义在 AppError.swift 中

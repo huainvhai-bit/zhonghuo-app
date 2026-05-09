@@ -1,4 +1,4 @@
-name: 安心助手
+name: 安伴助手
 options:
   bundleIdPrefix: com.zhonghuo
   deploymentTarget:
@@ -7,10 +7,10 @@ options:
   groupSortPosition: top
   fileNaming: oghub
   generateEmptyDirectories: true
-  postGenCommand: cd .. && rm -rf DerivedData/安心助手-*
+  postGenCommand: cd .. && rm -rf DerivedData/安伴助手-*
 settings:
   base:
-    PRODUCT_NAME: 安心助手
+    PRODUCT_NAME: 安伴助手
     PRODUCT_BUNDLE_IDENTIFIER: com.zhonghuo.app
     MARKETING_VERSION: 2.0.1
     CURRENT_PROJECT_VERSION: 1
@@ -38,7 +38,7 @@ settings:
       - DEBUG=1
       - $(inherited)
 targets:
-  安心助手:
+  安伴助手:
     type: application
     platform: iOS
     sources:
@@ -52,8 +52,8 @@ targets:
     info:
       path: Info.plist
       properties:
-        CFBundleName: 安心助手
-        CFBundleDisplayName: 安心助手
+        CFBundleName: 安伴助手
+        CFBundleDisplayName: 安伴助手
         CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)

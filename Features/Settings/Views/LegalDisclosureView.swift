@@ -1,6 +1,6 @@
 //
 //  LegalDisclosureView.swift
-//  安心助手
+//  安伴助手
 //
 //  重要事项说明
 //
@@ -27,7 +27,7 @@ struct LegalDisclosureView: View {
                     infoSection(
                         title: L10n.text("功能定位", en: "Purpose", ja: "機能の位置づけ", ko: "기능 목적"),
                         content: L10n.text("""
-                        安心助手用于帮助用户记录个人重要事项、资产线索和手动留言。
+                        安伴助手用于帮助用户记录个人重要事项、资产线索和手动留言。
 
                         App 不会根据未签到、未操作、定位状态或其他条件自动发送任何内容，也不会向任何联系人发出外部通知或进行异常状态判断。
                         """, en: """

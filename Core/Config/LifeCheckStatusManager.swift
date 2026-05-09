@@ -1,6 +1,6 @@
 //
 //  LifeCheckStatusManager.swift
-//  安心助手
+//  安伴助手
 //
 //  生命签到状态管理
 //

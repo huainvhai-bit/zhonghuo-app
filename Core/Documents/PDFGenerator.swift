@@ -1,6 +1,6 @@
 //
 //  PDFGenerator.swift
-//  安心助手
+//  安伴助手
 //
 //  重要事项 PDF 导出功能
 //  ✅ P2 修复 #5: 添加自动分页逻辑
@@ -28,7 +28,7 @@ class PDFGenerator {
             ctx.beginPage()
             
             // 标题
-            let title = "安心助手 - 重要事项记录"
+            let title = "安伴助手 - 重要事项记录"
             let titleAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 24),
                 .foregroundColor: UIColor.black
@@ -296,7 +296,7 @@ class PDFGenerator {
             .foregroundColor: UIColor.lightGray
         ]
         
-        let footerText = "本文件由安心助手 App 生成 • 仅供个人整理参考"
+        let footerText = "本文件由安伴助手 App 生成 • 仅供个人整理参考"
         let footerSize = footerText.size(withAttributes: footerAttributes)
         footerText.draw(at: CGPoint(x: (pdfPageWidth - footerSize.width) / 2, y: pdfFooterY))
     }

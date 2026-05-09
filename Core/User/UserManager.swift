@@ -1,9 +1,9 @@
 //
 //  UserManager.swift
-//  安心助手
+//  安伴助手
 //
 //  用户管理 - 注册、登录、添加关系、定位
-//  技术文档：📖 安心助手 App 技术开发文档.md - 第 3 章 前端技术栈
+//  技术文档：📖 安伴助手 App 技术开发文档.md - 第 3 章 前端技术栈
 //
 
 import Foundation
@@ -219,7 +219,7 @@ class UserManager: NSObject, ObservableObject {
         
         guard locationAuthStatus == .authorizedAlways || locationAuthStatus == .authorizedWhenInUse else {
             print("⚠️ 定位未授权 (\(locationAuthStatus))，跳过位置上传")
-            print("💡 请在 设置 → 隐私 → 定位服务 中允许安心助手 App 使用定位")
+            print("💡 请在 设置 → 隐私 → 定位服务 中允许安伴助手 App 使用定位")
             return
         }
         

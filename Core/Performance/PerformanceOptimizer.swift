@@ -1,6 +1,6 @@
 //
 //  PerformanceOptimizer.swift
-//  安心助手
+//  安伴助手
 //
 //  性能优化工具类
 //

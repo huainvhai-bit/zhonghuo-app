@@ -1,6 +1,6 @@
 //
 //  iCloudBackupManager.swift
-//  安心助手
+//  安伴助手
 //
 //  iCloud 自动备份管理器（简化版）
 //  功能：自动备份到 iCloud，支持跨设备同步

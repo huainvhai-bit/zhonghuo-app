@@ -1,6 +1,6 @@
 //
 //  AccessibilityEnhancer.swift
-//  安心助手
+//  安伴助手
 //
 //  无障碍功能增强工具类
 //

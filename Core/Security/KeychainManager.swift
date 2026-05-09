@@ -1,6 +1,6 @@
 //
 //  KeychainManager.swift
-//  安心助手
+//  安伴助手
 //
 //  Keychain 安全存储 - 用于永久登录
 //  功能：安全存储 Token、密码等敏感信息

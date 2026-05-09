@@ -1,6 +1,6 @@
 //
 //  AppCaptchaService.swift
-//  安心助手
+//  安伴助手
 //
 //  App 图形验证码加载服务
 //

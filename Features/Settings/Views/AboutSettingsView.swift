@@ -1,6 +1,6 @@
 //
 //  Settings/AboutSettingsView.swift
-//  安心助手
+//  安伴助手
 //
 //  关于设置视图
 //  职责：检查更新、关于我们等

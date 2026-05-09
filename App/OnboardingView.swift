@@ -1,6 +1,6 @@
 //
 //  OnboardingView.swift
-//  安心助手
+//  安伴助手
 //
 //  新手引导页面
 //

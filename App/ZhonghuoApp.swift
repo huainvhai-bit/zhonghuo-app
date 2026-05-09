@@ -1,6 +1,6 @@
 //
 //  ZhonghuoApp.swift
-//  安心助手 App 入口
+//  安伴助手 App 入口
 //
 
 import SwiftUI
@@ -319,7 +319,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         setupCheckInNotifications()
         Logger.shared.i("后台任务已启用")
         
-        Logger.shared.i("安心助手 App 启动完成")
+        Logger.shared.i("安伴助手 App 启动完成")
         return true
     }
     

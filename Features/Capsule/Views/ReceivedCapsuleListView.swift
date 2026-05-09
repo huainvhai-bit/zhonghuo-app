@@ -1,6 +1,6 @@
 //
 //  ReceivedCapsuleListView.swift
-//  安心助手
+//  安伴助手
 //
 //  我收到的时光留言列表
 //

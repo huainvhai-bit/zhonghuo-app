@@ -1,6 +1,6 @@
 //
 //  Capsule/CapsuleEditView.swift
-//  安心助手
+//  安伴助手
 //
 //  时光留言编辑视图
 //  职责：添加/编辑留言

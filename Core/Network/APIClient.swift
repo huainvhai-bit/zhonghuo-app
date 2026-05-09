@@ -1,6 +1,6 @@
 //
 //  APIClient.swift
-//  安心助手
+//  安伴助手
 //
 //  GraphQL + REST API 客户端
 //  职责：统一执行 GraphQL 查询和 REST API 调用

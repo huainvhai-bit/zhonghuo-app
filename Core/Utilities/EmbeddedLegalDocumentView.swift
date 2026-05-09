@@ -1,6 +1,6 @@
 //
 //  EmbeddedLegalDocumentView.swift
-//  安心助手
+//  安伴助手
 //
 //  App 内嵌法务文档查看器
 //

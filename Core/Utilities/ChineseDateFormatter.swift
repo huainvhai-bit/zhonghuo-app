@@ -1,6 +1,6 @@
 //
 //  ChineseDateFormatter.swift
-//  安心助手
+//  安伴助手
 //
 //  统一的中文日期格式工具
 //

@@ -1,6 +1,6 @@
 //
 //  Models.swift
-//  安心助手
+//  安伴助手
 //
 //  完整数据模型 - 支持增删改查
 //
@@ -942,7 +942,7 @@ struct SystemConfig: Codable {
     var customerServiceEmail: String = ""
 
     /// App 首页横幅公告（`getConfig.homeAnnouncementText`）；空串时 UI 使用默认欢迎语
-    var homeAnnouncementText: String = "欢迎使用安心助手，记录重要时光。"
+    var homeAnnouncementText: String = "欢迎使用安伴助手，记录重要时光。"
 }
 
 extension SystemConfig {
@@ -968,7 +968,7 @@ struct ConfigResponse: Codable {
 }
 //
 //  APIManager.swift
-//  安心助手
+//  安伴助手
 //
 //  统一 API 管理器 - 基于 GraphQL
 //  所有数据请求都通过此管理器
@@ -1121,7 +1121,7 @@ enum APIError: LocalizedError {
 }
 //
 //  GraphQLClient.swift
-//  安心助手
+//  安伴助手
 //
 //  GraphQL 客户端 - 统一数据查询
 //

@@ -1,6 +1,6 @@
 //
 //  WillPreviewView.swift
-//  安心助手
+//  安伴助手
 //
 //  重要事项预览页面
 //
