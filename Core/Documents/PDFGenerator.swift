@@ -296,7 +296,7 @@ class PDFGenerator {
             .foregroundColor: UIColor.lightGray
         ]
         
-        let footerText = "本文件由安伴助手 App 生成 • 仅供个人整理参考"
+        let footerText = "本文件由安伴助手生成 • 仅供个人整理参考"
         let footerSize = footerText.size(withAttributes: footerAttributes)
         footerText.draw(at: CGPoint(x: (pdfPageWidth - footerSize.width) / 2, y: pdfFooterY))
     }
